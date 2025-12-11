@@ -71,10 +71,41 @@ export default function Dashboard() {
     const [userProfile, setUserProfile] = useState('');
     const [availableProfiles, setAvailableProfiles] = useState<string[]>([]);
     const [newProfileName, setNewProfileName] = useState('');
-    const [analyzing, setAnalyzing] = useState(false);
-    const [transactions, setTransactions] = useState<any[]>([]);
-    const [syncError, setSyncError] = useState<string>('');
-    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [pullY, setPullY] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [touchStartY, setTouchStartY] = useState(0);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const handlePullTouchStart = (e: React.TouchEvent) => {
+        if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
+            setTouchStartY(e.targetTouches[0].clientY);
+        }
+    };
+
+    const handlePullTouchMove = (e: React.TouchEvent) => {
+        if (touchStartY === 0) return;
+        const currentY = e.targetTouches[0].clientY;
+        const deltaY = currentY - touchStartY;
+        if (deltaY > 0 && (!scrollContainerRef.current || scrollContainerRef.current.scrollTop === 0)) {
+            // Resistive pull
+            setPullY(Math.min(deltaY * 0.5, 120));
+        }
+    };
+
+    const handlePullTouchEnd = async () => {
+        if (pullY > 60) {
+            setIsRefreshing(true);
+            setPullY(60); // Keep loading spinner visible
+            await performAutoSync(supabaseUrl, supabaseKey, userProfile);
+            setTimeout(() => {
+                setIsRefreshing(false);
+                setPullY(0);
+            }, 500);
+        } else {
+            setPullY(0);
+        }
+        setTouchStartY(0);
+    };
 
     // Password Modal State
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -709,7 +740,7 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center font-bold text-white text-xl shadow-[0_0_15px_rgba(37,99,235,0.5)]">K</div>
+                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(37,99,235,0.5)]" />
                             <div>
                                 <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">KORAUTO</h1>
                             </div>
@@ -777,15 +808,6 @@ export default function Dashboard() {
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
-
-                            {isSyncing && <span className="text-xs text-blue-400 font-mono animate-pulse mr-2">Syncing...</span>}
-                            <button onClick={async () => {
-                                setIsSyncing(true);
-                                await performAutoSync(supabaseUrl, supabaseKey, userProfile);
-                                setTimeout(() => setIsSyncing(false), 500);
-                            }} className={`bg-[#1a1a1a] border border-white/10 p-2.5 rounded-xl text-gray-400 hover:text-white transition-all ${isSyncing ? 'animate-spin text-blue-500' : ''} `}>
-                                <RefreshCw className="w-5 h-5" />
-                            </button>
 
                             <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
@@ -921,186 +943,200 @@ export default function Dashboard() {
                                 </div>
                             </motion.div>
                         ))}
-                    </div></>) : view === 'bank' ? (
-                        <BankStatementView apiKey={apiKey} transactions={transactions} setTransactions={setTransactions} analyzing={analyzing} setAnalyzing={setAnalyzing} saveTransactions={saveTransactions} />
-                    ) : view === 'settings' ? (
-                        <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
-                            <h2 className="text-xl font-bold mb-4">Settings</h2>
-                            <div className="space-y-4">
-                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                    </div>
+                </>) : view === 'bank' ? (
+                    <BankStatementView apiKey={apiKey} transactions={transactions} setTransactions={setTransactions} analyzing={analyzing} setAnalyzing={setAnalyzing} saveTransactions={saveTransactions} />
+                ) : view === 'settings' ? (
+                    <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
+                        <h2 className="text-xl font-bold mb-4">Settings</h2>
+                        <div className="space-y-4">
+                            <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
 
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-400">User Profile</label>
-                                    <div className="flex gap-2">
-                                        <select value={userProfile} onChange={e => {
-                                            setUserProfile(e.target.value);
-                                            Preferences.set({ key: 'user_profile', value: e.target.value });
-                                        }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
-                                            <option value="">Select Profile</option>
-                                            {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                        <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
-                                        <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
-                                    </div>
+                            <div className="space-y-2">
+                                <label className="text-sm text-gray-400">User Profile</label>
+                                <div className="flex gap-2">
+                                    <select value={userProfile} onChange={e => {
+                                        setUserProfile(e.target.value);
+                                        Preferences.set({ key: 'user_profile', value: e.target.value });
+                                    }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                                        <option value="">Select Profile</option>
+                                        {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                    <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
                                 </div>
+                                <div className="flex gap-2">
+                                    <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
+                                    <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
+                                </div>
+                            </div>
 
-                                <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-                                <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                            <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                            <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
 
-                                <div className="h-px bg-white/10 my-4" />
-                                <button onClick={handleOneClickImport} className="w-full bg-blue-600/20 text-blue-400 font-bold py-3 rounded-xl border border-blue-500/30 flex items-center justify-center gap-2 mb-4">
-                                    <Download className="w-5 h-5" /> Import Recovered Sales ({RECOVERED_SALES.length})
-                                </button>
+                            <div className="h-px bg-white/10 my-4" />
+                            <button onClick={handleOneClickImport} className="w-full bg-blue-600/20 text-blue-400 font-bold py-3 rounded-xl border border-blue-500/30 flex items-center justify-center gap-2 mb-4">
+                                <Download className="w-5 h-5" /> Import Recovered Sales ({RECOVERED_SALES.length})
+                            </button>
 
-                                <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
-                                <div className="h-px bg-white/10 my-4" />
-                                <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                            <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
+                            <div className="h-px bg-white/10 my-4" />
+                            <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                        </div>
+                    </div>
+                ) : (
+                    <div
+                        className="flex-1 overflow-auto relative"
+                        ref={scrollContainerRef}
+                        onTouchStart={handlePullTouchStart}
+                        onTouchMove={handlePullTouchMove}
+                        onTouchEnd={handlePullTouchEnd}
+                    >
+                        {/* Pull Refresh Indicator */}
+                        <div className="absolute left-0 right-0 flex justify-center items-center pointer-events-none transition-transform" style={{ top: -50, transform: `translateY(${pullY}px)` }}>
+                            <div className="bg-[#1a1a1a] rounded-full p-2 shadow-lg border border-white/10">
+                                <RefreshCw className={`w-5 h-5 text-blue-400 ${isRefreshing ? 'animate-spin' : ''} ${pullY > 60 ? 'rotate-180' : ''} transition-transform`} />
                             </div>
                         </div>
-                    ) : (
-                    <div className="flex-1 overflow-auto">
-                        {Object.entries(groupedSales).map(([groupTitle, groupItems]) => (
-                            <div key={groupTitle} className="mb-8">
-                                {groupBy !== 'none' && (
-                                    <h2 className="text-xl font-bold mb-4 text-blue-400 pl-2 border-l-4 border-blue-500">{groupTitle} <span className="text-gray-500 text-sm font-normal">({groupItems.length})</span></h2>
-                                )}
-                                {groupBy === 'none' ? (
-                                    <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
-                                        const reordered = newOrder.map((item, index) => ({ ...item, sortOrder: index }));
-                                        // Update local sorting
-                                        setSales(prev => {
-                                            const next = [...prev];
-                                            newOrder.forEach((newItem, newIndex) => {
-                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                        <div style={{ transform: `translateY(${pullY}px)`, transition: isRefreshing ? 'transform 0.2s' : 'none' }}>
+                            {Object.entries(groupedSales).map(([groupTitle, groupItems]) => (
+                                <div key={groupTitle} className="mb-8">
+                                    {groupBy !== 'none' && (
+                                        <h2 className="text-xl font-bold mb-4 text-blue-400 pl-2 border-l-4 border-blue-500">{groupTitle} <span className="text-gray-500 text-sm font-normal">({groupItems.length})</span></h2>
+                                    )}
+                                    {groupBy === 'none' ? (
+                                        <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
+                                            const reordered = newOrder.map((item, index) => ({ ...item, sortOrder: index }));
+                                            // Update local sorting
+                                            setSales(prev => {
+                                                const next = [...prev];
+                                                newOrder.forEach((newItem, newIndex) => {
+                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                });
+                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                             });
-                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                        });
-                                    }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {filteredSales.map(s => (
-                                            <SortableSaleItem key={s.id} s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-                                        ))}
-                                    </Reorder.Group>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {groupItems.map(s => (
-                                            <div key={s.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group">
-                                                <div className="absolute top-4 left-4 z-10">
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                                                        <CheckSquare className="w-3.5 h-3.5" />
-                                                    </button>
+                                        }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            {filteredSales.map(s => (
+                                                <SortableSaleItem key={s.id} s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
+                                            ))}
+                                        </Reorder.Group>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            {groupItems.map(s => (
+                                                <div key={s.id} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group">
+                                                    <div className="absolute top-4 left-4 z-10">
+                                                        <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
+                                                            <CheckSquare className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex justify-between mb-4 pl-8">
+                                                        <div className="font-bold">{s.brand} {s.model}</div>
+                                                        <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
+                                                    </div>
+                                                    <div className="text-sm text-gray-400 space-y-2 pl-8">
+                                                        <div className="flex justify-between"><span>VIN</span><span>{s.vin}</span></div>
+                                                        <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
+                                                        <div className="flex justify-between pt-2 border-t border-white/5"><span className="text-white font-bold">€{(s.soldPrice || 0).toLocaleString()}</span></div>
+                                                    </div>
+                                                    {/* Balance Badge */}
+                                                    <div className="absolute bottom-4 right-4">
+                                                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
+                                                            Bal: €{((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))).toLocaleString()}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between mb-4 pl-8">
-                                                    <div className="font-bold">{s.brand} {s.model}</div>
-                                                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
-                                                </div>
-                                                <div className="text-sm text-gray-400 space-y-2 pl-8">
-                                                    <div className="flex justify-between"><span>VIN</span><span>{s.vin}</span></div>
-                                                    <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                                                    <div className="flex justify-between pt-2 border-t border-white/5"><span className="text-white font-bold">€{(s.soldPrice || 0).toLocaleString()}</span></div>
-                                                </div>
-                                                {/* Balance Badge */}
-                                                <div className="absolute bottom-4 right-4">
-                                                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
-                                                        Bal: €{((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))).toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
 
                 )}
 
-                {/* Floating Bulk Action Bar */}
-                <AnimatePresence>
-                    {selectedIds.size > 0 && (
-                        <motion.div
-                            initial={{ y: 100, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: 100, opacity: 0 }}
-                            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
-                        >
-                            <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
-                                <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
-                                Selected
-                            </div>
-
-                            {selectedIds.size === 1 && (
-                                <button
-                                    onClick={() => {
-                                        const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                        if (sale) { setEditingSale(sale); setIsModalOpen(true); }
-                                    }}
-                                    className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
+                        {/* Floating Bulk Action Bar */}
+                        <AnimatePresence>
+                            {selectedIds.size > 0 && (
+                                <motion.div
+                                    initial={{ y: 100, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 100, opacity: 0 }}
+                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
                                 >
-                                    <Edit className="w-5 h-5 text-blue-400" />
-                                    <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
-                                </button>
+                                    <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
+                                        <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
+                                        Selected
+                                    </div>
+
+                                    {selectedIds.size === 1 && (
+                                        <button
+                                            onClick={() => {
+                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                                if (sale) { setEditingSale(sale); setIsModalOpen(true); }
+                                            }}
+                                            className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
+                                        >
+                                            <Edit className="w-5 h-5 text-blue-400" />
+                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
+                                        </button>
+                                    )}
+
+                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <Copy className="w-5 h-5 text-green-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
+                                    </button>
+
+                                    <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <ArrowRight className="w-5 h-5 text-yellow-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
+                                    </button>
+
+                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <Trash2 className="w-5 h-5 text-red-500" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
+                                    </button>
+
+                                    <div className="w-px h-8 bg-white/10 mx-1" />
+
+                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </motion.div>
                             )}
-
-                            <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                <Copy className="w-5 h-5 text-green-400" />
-                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
-                            </button>
-
-                            <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                <ArrowRight className="w-5 h-5 text-yellow-400" />
-                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
-                            </button>
-
-                            <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                <Trash2 className="w-5 h-5 text-red-500" />
-                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
-                            </button>
-
-                            <div className="w-px h-8 bg-white/10 mx-1" />
-
-                            <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </main>
+                        </AnimatePresence>
+                    </main>
 
             {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
-            {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
-            {showPasswordModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
-                    <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
-                        <div className="relative mb-6">
-                            <input
-                                type={isPasswordVisible ? 'text' : 'password'}
-                                className="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white outline-none focus:border-blue-500 transition-colors"
-                                placeholder="Password"
-                                value={passwordInput}
-                                onChange={e => setPasswordInput(e.target.value)}
-                                autoFocus
-                                onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
-                            />
-                            <button
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                            >
-                                {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
-                            <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">Submit</button>
+                {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
+                {showPasswordModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
+                        <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
+                            <div className="relative mb-6">
+                                <input
+                                    type={isPasswordVisible ? 'text' : 'password'}
+                                    className="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white outline-none focus:border-blue-500 transition-colors"
+                                    placeholder="Password"
+                                    value={passwordInput}
+                                    onChange={e => setPasswordInput(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
+                                />
+                                <button
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                >
+                                    {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
+                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">Submit</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-            <AiAssistant data={sales} apiKey={apiKey} />
+                )}
+                <AiAssistant data={sales} apiKey={apiKey} />
         </div >
     );
 }
