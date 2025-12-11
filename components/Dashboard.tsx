@@ -10,6 +10,7 @@ import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion
 
 import { Preferences } from '@capacitor/preferences';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 import SaleModal from './SaleModal';
 import InvoiceModal from './InvoiceModal';
 import ProfileSelector from './ProfileSelector';
@@ -95,7 +96,7 @@ export default function Dashboard() {
         }
     };
 
-    import { Capacitor } from '@capacitor/core';
+
 
     // ...
 
@@ -627,6 +628,9 @@ export default function Dashboard() {
     };
 
     const filteredSales = sales.filter(s => {
+        // Visibility Rule: Non-Admins cannot see Admin's sales
+        if (userProfile !== 'Admin' && s.soldBy === 'Admin') return false;
+
         const term = searchTerm.toLowerCase().trim();
         if (!term) return true;
         return JSON.stringify(s).toLowerCase().includes(term);

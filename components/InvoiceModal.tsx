@@ -7,6 +7,7 @@ import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 interface Props {
     isOpen: boolean;
@@ -39,7 +40,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
 
-            import { Capacitor } from '@capacitor/core';
+
 
             if (!Capacitor.isNativePlatform()) {
                 // Web: Download directly
