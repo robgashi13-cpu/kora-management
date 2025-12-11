@@ -38,6 +38,39 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale }: Pro
     const [activeTab, setActiveTab] = useState('Vehicle');
     const [contractType, setContractType] = useState<'deposit' | 'full' | null>(null);
 
+    // Swipe Logic
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+    const tabs = ['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'];
+
+    const minSwipeDistance = 50;
+
+    const onSwipeLeft = () => {
+        const currIdx = tabs.indexOf(activeTab);
+        if (currIdx < tabs.length - 1) setActiveTab(tabs[currIdx + 1]);
+    };
+
+    const onSwipeRight = () => {
+        const currIdx = tabs.indexOf(activeTab);
+        if (currIdx > 0) setActiveTab(tabs[currIdx - 1]);
+    };
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
+
+    const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+        if (isLeftSwipe) onSwipeLeft();
+        if (isRightSwipe) onSwipeRight();
+    };
+
     useEffect(() => {
         if (existingSale) {
             // Migration logic: Ensure arrays exist if legacy singulars exist
@@ -232,166 +265,173 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale }: Pro
                     </button>
                 </div>
 
-                <div className="flex bg-[#111] border-b border-white/5 mx-6 mt-4 p-1 rounded-lg">
+                <div className="flex bg-[#111] border-b border-white/5 mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
                     {['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                            className={`flex-1 min-w-[80px] py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap px-2 ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
                         >
                             {tab}
                         </button>
                     ))}
                 </div>
 
-                <form
-                    onSubmit={handleSubmit}
-                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-6 overflow-y-auto no-scrollbar flex-1 flex flex-col gap-6"
+                <div
+                    className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                 >
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'Vehicle' && (
-                            <motion.div key="vehicle" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
-                                    <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
-                                </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Year</label>
-                                        <select name="year" value={formData.year} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
-                                            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
+                    <form
+                        onSubmit={handleSubmit}
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                        className="p-6 flex flex-col gap-6"
+                    >
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'Vehicle' && (
+                                <motion.div key="vehicle" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
+                                        <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
                                     </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Color</label>
-                                        <select name="color" value={formData.color} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
-                                            <option value="">Select</option>
-                                            {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Year</label>
+                                            <select name="year" value={formData.year} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
+                                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Color</label>
+                                            <select name="color" value={formData.color} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
+                                                <option value="">Select</option>
+                                                {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
                                     </div>
-                                    <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
-                                    <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'Logistics' && (
-                            <motion.div key="logistics" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
-                                    <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
-                                </div>
-                                <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Shipping Date</label>
-                                        <input type="date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none" />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
+                                        <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
                                     </div>
-                                </div>
-                            </motion.div>
-                        )}
+                                </motion.div>
+                            )}
 
-                        {activeTab === 'Financials' && (
-                            <motion.div key="financials" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-5">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
-                                    <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
-                                </div>
+                            {activeTab === 'Logistics' && (
+                                <motion.div key="logistics" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
+                                        <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
+                                    </div>
+                                    <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Shipping Date</label>
+                                            <input type="date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none" />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
 
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Payments</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
-                                        <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
-                                        <div className="col-span-2 grid grid-cols-2 gap-3">
-                                            <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Dep. Date</label>
-                                                <input type="date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full" />
+                            {activeTab === 'Financials' && (
+                                <motion.div key="financials" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-5">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
+                                        <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
+                                    </div>
+
+                                    <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase">Payments</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
+                                            <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
+                                            <div className="col-span-2 grid grid-cols-2 gap-3">
+                                                <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Dep. Date</label>
+                                                    <input type="date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Status</label>
-                                        <select name="status" value={formData.status} onChange={handleChange} className="bg-[#1a1a1a] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none">
-                                            <option value="New">New</option>
-                                            <option value="In Progress">In Progress</option>
-                                            <option value="Shipped">Shipped</option>
-                                            <option value="Completed">Completed</option>
-                                            <option value="Cancelled">Cancelled</option>
-                                        </select>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Status</label>
+                                            <select name="status" value={formData.status} onChange={handleChange} className="bg-[#1a1a1a] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none">
+                                                <option value="New">New</option>
+                                                <option value="In Progress">In Progress</option>
+                                                <option value="Shipped">Shipped</option>
+                                                <option value="Completed">Completed</option>
+                                                <option value="Cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                        <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
+                                            <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
+                                            <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
+                                        </label>
                                     </div>
-                                    <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
-                                        <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
-                                        <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
-                                    </label>
-                                </div>
 
-                                <div className="p-4 rounded-xl bg-black/40 border border-white/10 flex justify-between items-center">
-                                    <span className="text-sm text-gray-400 font-bold uppercase">Balance Due</span>
-                                    <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-400' : 'text-green-500'}`}>
-                                        €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        )}
+                                    <div className="p-4 rounded-xl bg-black/40 border border-white/10 flex justify-between items-center">
+                                        <span className="text-sm text-gray-400 font-bold uppercase">Balance Due</span>
+                                        <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                            €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </motion.div>
+                            )}
 
-                        {activeTab === 'Docs' && (
-                            <motion.div key="docs" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4 h-full">
-                                <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
-                                <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
-                                <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />
-                            </motion.div>
-                        )}
+                            {activeTab === 'Docs' && (
+                                <motion.div key="docs" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4 h-full">
+                                    <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
+                                    <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
+                                    <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />
+                                </motion.div>
+                            )}
 
 
-                        {activeTab === 'Contracts' && (
-                            <motion.div key="contracts" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-6 h-full justify-center items-center p-8">
-                                <div className="text-center space-y-2 mb-4">
-                                    <h3 className="text-xl font-bold text-white">Generate Documents</h3>
-                                    <p className="text-gray-400 text-sm">Create printable contracts automatically filled with sale details.</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                                    <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-blue-500 hover:bg-white/5 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="font-bold text-lg text-white">Deposit Agreement</div>
-                                            <div className="text-xs text-gray-500 mt-1">Marrëveshje për Kapar</div>
-                                        </div>
-                                    </button>
+                            {activeTab === 'Contracts' && (
+                                <motion.div key="contracts" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-6 h-full justify-center items-center p-8">
+                                    <div className="text-center space-y-2 mb-4">
+                                        <h3 className="text-xl font-bold text-white">Generate Documents</h3>
+                                        <p className="text-gray-400 text-sm">Create printable contracts automatically filled with sale details.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                                        <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-blue-500 hover:bg-white/5 rounded-2xl transition-all group">
+                                            <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                                <FileText className="w-8 h-8" />
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="font-bold text-lg text-white">Deposit Agreement</div>
+                                                <div className="text-xs text-gray-500 mt-1">Marrëveshje për Kapar</div>
+                                            </div>
+                                        </button>
 
-                                    <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-purple-500 hover:bg-white/5 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="font-bold text-lg text-white">Full Contract</div>
-                                            <div className="text-xs text-gray-500 mt-1">Marrëveshje Interne</div>
-                                        </div>
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                        <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-purple-500 hover:bg-white/5 rounded-2xl transition-all group">
+                                            <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                                <FileText className="w-8 h-8" />
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="font-bold text-lg text-white">Full Contract</div>
+                                                <div className="text-xs text-gray-500 mt-1">Marrëveshje Interne</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                    {/* Footer Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-auto">
-                        <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 font-bold transition-all">Cancel</button>
-                        <button type="submit" className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-xl shadow-blue-900/20 active:scale-95 transition-all w-full md:w-auto">
-                            {existingSale ? 'Update Sale' : 'Create Sale'}
-                        </button>
-                    </div>
-                </form>
+                        {/* Footer Actions */}
+                        <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-auto">
+                            <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 font-bold transition-all">Cancel</button>
+                            <button type="submit" className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-xl shadow-blue-900/20 active:scale-95 transition-all w-full md:w-auto">
+                                {existingSale ? 'Update Sale' : 'Create Sale'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </motion.div>
             {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
         </div >
