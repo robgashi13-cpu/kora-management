@@ -21,3 +21,4 @@ A high-tech, modern car sales management dashboard designed for iOS and iPad.
 4. Tap the **Share** button (box with arrow up).
 5. Tap **Add to Home Screen**.
 6. Launch the app from your home screen.
+# KORAUTOMANAGMENT
