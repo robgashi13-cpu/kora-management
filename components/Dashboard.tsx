@@ -492,9 +492,10 @@ export default function Dashboard() {
                             shippingDate: rec.shippingDate || null,
                             costToBuy: rec.costToBuy || 0,
                             soldPrice: rec.soldPrice || 0,
-                            amountPaidCash: rec.amountPaidCash || 0,
-                            amountPaidBank: rec.amountPaidBank || 0,
-                            deposit: rec.deposit || 0,
+                            // FORCE BALANCE TO 0: Set Paid = Sold
+                            amountPaidCash: rec.soldPrice || 0,
+                            amountPaidBank: 0,
+                            deposit: 0,
                             servicesCost: rec.servicesCost || 30.51,
                             tax: rec.tax || 0,
                             amountPaidToKorea: 0,
