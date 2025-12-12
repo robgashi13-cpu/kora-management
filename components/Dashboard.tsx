@@ -18,9 +18,8 @@ import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
-const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice, onMove }: any) => {
+const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice }: any) => {
     const controls = useDragControls();
-    const [showMoveMenu, setShowMoveMenu] = useState(false);
 
     return (
         <Reorder.Item value={s} dragListener={false} dragControls={controls} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors touch-none">
@@ -37,23 +36,7 @@ const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice, onMove
 
             <div className="flex justify-between mb-4 pl-8 pr-12">
                 <div className="font-bold text-lg">{s.brand} {s.model}</div>
-                <div className="flex gap-2">
-                    <div className="relative">
-                        <button onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }} className="text-gray-500 hover:text-white p-1 hover:bg-white/10 rounded transition-colors"><Move className="w-5 h-5" /></button>
-                        {showMoveMenu && (
-                            <div className="absolute right-0 top-8 bg-[#252525] border border-white/10 rounded-xl shadow-2xl z-50 w-40 flex flex-col p-1" onClick={e => e.stopPropagation()}>
-                                <div className="text-[10px] uppercase font-bold text-gray-500 px-2 py-1">Move To</div>
-                                {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(tab => (
-                                    <button key={tab} onClick={() => { onMove(s, tab); setShowMoveMenu(false); }} className="text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors capitalize">
-                                        {tab.toLowerCase()}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        {showMoveMenu && <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMoveMenu(false) }} />}
-                    </div>
-                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
-                </div>
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
             </div>
             <div className="text-sm text-gray-400 space-y-2 pl-8">
                 <div className="flex justify-between"><span>VIN</span><span className="font-mono">{s.vin}</span></div>
@@ -263,6 +246,12 @@ export default function Dashboard() {
         await updateSalesAndSave([...newItems, ...sales]);
     };
 
+    const handleLogout = async () => {
+        setUserProfile('');
+        await Preferences.remove({ key: 'user_profile' });
+        setShowProfileMenu(false);
+    };
+
     const handleAddProfile = async () => {
         if (!newProfileName.trim()) return;
         const updated = [...availableProfiles, newProfileName.trim()];
@@ -347,7 +336,12 @@ export default function Dashboard() {
 
             // Ensure Profile exists for sync
             // Always start with empty profile to show Netflix-style selector
-            setUserProfile('');
+            let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
+            if (storedProfile) {
+                setUserProfile(storedProfile);
+            } else {
+                setUserProfile('');
+            }
 
             let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
             if (profiles) {
@@ -732,15 +726,7 @@ export default function Dashboard() {
         return groups;
     }, [filteredSales, groupBy]);
 
-    const handleMove = (sale: CarSale, category: string) => {
-        let newStatus: SaleStatus = 'In Progress';
-        if (category === 'SHIPPED') newStatus = 'Shipped';
-        if (category === 'INSPECTIONS') newStatus = 'Inspection';
-        if (category === 'AUTOSALLON') newStatus = 'Autosallon';
 
-        const updatedSales = sales.map(s => s.id === sale.id ? { ...s, status: newStatus } : s);
-        updateSalesAndSave(updatedSales);
-    };
 
     if (!userProfile) {
         return <ProfileSelector
@@ -834,6 +820,10 @@ export default function Dashboard() {
                                     <button onClick={quickAddProfile} className="w-full text-left px-3 py-2 text-green-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
                                         <Plus className="w-4 h-4" /> Add Profile
                                     </button>
+                                    <div className="h-px bg-white/10 my-2" />
+                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                        <div className="w-4 h-4 flex items-center justify-center border border-current rounded-sm text-[10px]">L</div> Log Out
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -923,7 +913,7 @@ export default function Dashboard() {
                                 }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14', display: 'grid' }}>
                                     {filteredSales.map(s => (
                                         <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} onMove={handleMove} />
+                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
                                         </div>
                                     ))}
                                 </Reorder.Group>
@@ -931,7 +921,7 @@ export default function Dashboard() {
                                 <>
                                     {filteredSales.map(s => (
                                         <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} onMove={handleMove} />
+                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
                                         </div>
                                     ))}
                                 </>
@@ -997,14 +987,6 @@ export default function Dashboard() {
                                             €{calculateBalance(sale).toLocaleString()}
                                         </span>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-4 gap-1 mt-2">
-                                    {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(tab => (
-                                        <button key={tab} onClick={(e) => { e.stopPropagation(); handleMove(sale, tab); }}
-                                            className={`text-[9px] uppercase font-bold py-2 rounded-lg border border-white/10 ${activeCategory === tab ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-white/5 text-gray-500'}`}>
-                                            {tab.slice(0, 4)}...
-                                        </button>
-                                    ))}
                                 </div>
                             </motion.div>
                         ))}
