@@ -16,6 +16,7 @@ import InvoiceModal from './InvoiceModal';
 import ProfileSelector from './ProfileSelector';
 import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
+import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
     if (price <= 20000) return 50;
