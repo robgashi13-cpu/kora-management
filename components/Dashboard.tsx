@@ -14,7 +14,6 @@ import { Capacitor } from '@capacitor/core';
 import SaleModal from './SaleModal';
 import InvoiceModal from './InvoiceModal';
 import ProfileSelector from './ProfileSelector';
-import BankStatementView from './BankStatementView';
 import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -58,7 +57,8 @@ const INITIAL_SALES: CarSale[] = [];
 
 export default function Dashboard() {
     const [sales, setSales] = useState<CarSale[]>([]);
-    const [view, setView] = useState<'dashboard' | 'invoices' | 'bank' | 'settings'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'invoices' | 'settings'>('dashboard');
+    const [activeCategory, setActiveCategory] = useState<'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
@@ -133,7 +133,17 @@ export default function Dashboard() {
 
 
 
-    // ...
+
+    // Invoice Auto-Sync
+    useEffect(() => {
+        if (invoiceSale) {
+            const updated = sales.find(s => s.id === invoiceSale.id);
+            if (updated && JSON.stringify(updated) !== JSON.stringify(invoiceSale)) {
+                setInvoiceSale(updated);
+            }
+        }
+    }, [sales, invoiceSale]);
+
 
     const updateSalesAndSave = async (newSales: CarSale[]) => {
         setSales(newSales);
@@ -666,6 +676,12 @@ export default function Dashboard() {
         // Visibility Rule: Non-Admins cannot see Admin's sales
         if (userProfile !== 'Admin' && s.soldBy === 'Admin') return false;
 
+        // Category Filter
+        if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
+        if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
+        if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
+        if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+
         const term = searchTerm.toLowerCase().trim();
         if (!term) return true;
         return JSON.stringify(s).toLowerCase().includes(term);
@@ -750,7 +766,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="hidden md:flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
-                            {['dashboard', 'invoices', 'bank', 'settings'].map((tab) => (
+                            {['dashboard', 'invoices', 'settings'].map((tab) => (
                                 <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[#252525] text-white shadow-inner' : 'text-gray-500 hover:text-gray-300'} `}>
                                     <span className="capitalize">{tab}</span>
                                 </button>
@@ -831,6 +847,22 @@ export default function Dashboard() {
                 </button>
 
                 {view === 'dashboard' ? (<>
+                    {/* Sub-Tabs for Dashboard Categories */}
+                    <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                        {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all whitespace-nowrap ${activeCategory === cat
+                                    ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]'
+                                    : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
                         <div className="grid text-sm divide-y divide-white/5 min-w-max"
                             style={{
@@ -948,9 +980,7 @@ export default function Dashboard() {
                             </motion.div>
                         ))}
                     </div>
-                </>) : view === 'bank' ? (
-                    <BankStatementView apiKey={apiKey} transactions={transactions} setTransactions={setTransactions} analyzing={analyzing} setAnalyzing={setAnalyzing} saveTransactions={saveTransactions} />
-                ) : view === 'settings' ? (
+                </>) : view === 'settings' ? (
                     <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
                         <h2 className="text-xl font-bold mb-4">Settings</h2>
                         <div className="space-y-4">

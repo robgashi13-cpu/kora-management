@@ -1,5 +1,5 @@
 export type PaymentMethod = 'Cash' | 'Bank' | 'Mixed';
-export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled';
+export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled' | 'Inspection' | 'Autosallon';
 
 export interface Attachment {
     name: string;
