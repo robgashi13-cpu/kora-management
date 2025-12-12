@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
 import { RECOVERED_SALES } from './RecoveredData';
 import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff } from 'lucide-react';
@@ -71,6 +71,10 @@ export default function Dashboard() {
     const [userProfile, setUserProfile] = useState('');
     const [availableProfiles, setAvailableProfiles] = useState<string[]>([]);
     const [newProfileName, setNewProfileName] = useState('');
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [analyzing, setAnalyzing] = useState(false);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [syncError, setSyncError] = useState<string>('');
     const [pullY, setPullY] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
@@ -1051,64 +1055,65 @@ export default function Dashboard() {
                                 </div>
                             ))}
                         </div>
-
+                    </div>
                 )}
 
-                        {/* Floating Bulk Action Bar */}
-                        <AnimatePresence>
-                            {selectedIds.size > 0 && (
-                                <motion.div
-                                    initial={{ y: 100, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 100, opacity: 0 }}
-                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
+                {/* Floating Bulk Action Bar */}
+                <AnimatePresence>
+                    {selectedIds.size > 0 && (
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
+                        >
+                            <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
+                                <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
+                                Selected
+                            </div>
+
+                            {selectedIds.size === 1 && (
+                                <button
+                                    onClick={() => {
+                                        const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                        if (sale) { setEditingSale(sale); setIsModalOpen(true); }
+                                    }}
+                                    className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
                                 >
-                                    <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
-                                        <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
-                                        Selected
-                                    </div>
-
-                                    {selectedIds.size === 1 && (
-                                        <button
-                                            onClick={() => {
-                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                                if (sale) { setEditingSale(sale); setIsModalOpen(true); }
-                                            }}
-                                            className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
-                                        >
-                                            <Edit className="w-5 h-5 text-blue-400" />
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
-                                        </button>
-                                    )}
-
-                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <Copy className="w-5 h-5 text-green-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
-                                    </button>
-
-                                    <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <ArrowRight className="w-5 h-5 text-yellow-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
-                                    </button>
-
-                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
-                                    </button>
-
-                                    <div className="w-px h-8 bg-white/10 mx-1" />
-
-                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </motion.div>
+                                    <Edit className="w-5 h-5 text-blue-400" />
+                                    <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
+                                </button>
                             )}
-                        </AnimatePresence>
-                    </main>
+
+                            <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                <Copy className="w-5 h-5 text-green-400" />
+                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
+                            </button>
+
+                            <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                <ArrowRight className="w-5 h-5 text-yellow-400" />
+                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
+                            </button>
+
+                            <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                <Trash2 className="w-5 h-5 text-red-500" />
+                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
+                            </button>
+
+                            <div className="w-px h-8 bg-white/10 mx-1" />
+
+                            <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </main>
 
             {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
-                {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
-                {showPasswordModal && (
+            {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
+            {
+                showPasswordModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
                         <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
                             <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
@@ -1135,8 +1140,9 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                )}
-                <AiAssistant data={sales} apiKey={apiKey} />
+                )
+            }
+            <AiAssistant data={sales} apiKey={apiKey} />
         </div >
     );
 }
