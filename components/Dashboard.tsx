@@ -91,11 +91,11 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             {/* 5. Plate/VIN */}
             <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
                 <div className="text-white font-mono">{s.plateNumber}</div>
-                <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
+                <div className="text-gray-600 font-mono" title={s.vin}>{(s.vin || '').slice(-6)}</div>
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+            <div className="px-3 h-full flex items-center text-gray-300 whitespace-normal break-words leading-tight border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
 
             {/* 7. Seller */}
             <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
@@ -125,7 +125,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 userProfile === 'Admin' && <>
                     <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
                     <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
-                    <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
+                    <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
                 </>
             }
 
@@ -1074,7 +1074,7 @@ export default function Dashboard() {
                             style={{
                                 gridTemplateColumns: userProfile === 'Admin'
                                     ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 100px 100px"
-                                    : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 110px 100px 100px 100px"
+                                    : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 110px 100px 100px"
                             }}>
                             <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13' }}>
                                 <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
