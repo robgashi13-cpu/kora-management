@@ -502,7 +502,7 @@ export default function Dashboard() {
                             paidDateToKorea: null,
                             paidDateFromClient: null,
                             paymentMethod: 'Cash', // Default
-                            status: rec.status as any || 'Completed',
+                            status: 'In Progress', // User Request: All new imported as In Progress
                             createdAt: new Date().toISOString(),
                             sortOrder: currentSales.length,
                             soldBy: 'System'
