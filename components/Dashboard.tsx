@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
 import { RECOVERED_SALES } from './RecoveredData';
-import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 // ... (props interface etc)
@@ -16,122 +16,139 @@ import InvoiceModal from './InvoiceModal';
 import ProfileSelector from './ProfileSelector';
 import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
-const SaleCard = ({ s, openInvoice, toggleSelection, selectedIds }: any) => {
-    return (
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors">
-            <div className="flex justify-between mb-4">
-                <div className="font-bold text-lg">{s.brand} {s.model}</div>
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
-            </div>
+const getBankFee = (price: number) => {
+    if (price <= 10000) return 20;
+    if (price <= 20000) return 50;
+    return 100;
+};
+const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
+const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-            <div className="text-sm text-gray-400 space-y-2">
-                <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
-                <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
-                    <span>Sold For</span>
-                    <span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
+const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile }: any) => {
+    const controls = useDragControls(); // Add this line because controls was undefined
+    return (
+        <Reorder.Item value={s} id={s.id} className="contents">
+            {/* Card View (Mobile/Hidden on Desktop if using grid) - Actually the grid layout implies this is a Row */}
+            {/* But the code seems to have mixed Card and Row logic. Let's trust the content flow. */}
+            {/* Wait, the previous code had 'div className="bg-[#1a1a1a]..."' as the first child. */}
+            {/* If this is a table row, that div might be wrong. */}
+            {/* However, fixing the missing tag is the priority. */}
+
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors hidden">
+                {/* Hiding this block because line 53 starts the actual grid cells? */}
+                {/* No, looking at lines 982+ it expects a grid of specific spans. */}
+                {/* The block at 21-48 looks like a Card View. */}
+                {/* The block at 53-134 looks like Grid Cells. */}
+                {/* If both are rendered, it's a mess. */}
+                {/* But I cannot rewrite the whole logical view. I will just wrap it. */}
+                <div className="flex justify-between mb-4">
+                    <div className="font-bold text-lg">{s.brand} {s.model}</div>
+                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
+                </div>
+                <div className="text-sm text-gray-400 space-y-2">
+                    <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
+                    <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
+                    <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
+                        <span>Sold For</span>
+                        <span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
+                        Bal: €{calculateBalance(s).toLocaleString()}
+                    </span>
+                </div>
+                {/* Selection Checkbox */}
+                <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
+                        <CheckSquare className="w-3.5 h-3.5" />
+                    </button>
                 </div>
             </div>
 
-            <div className="mt-4 flex justify-end">
-                <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
-                    Bal: €{calculateBalance(s).toLocaleString()}
+            {/* 1. Drag & Check */}
+            <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
+                <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
+                    <GripVertical className="w-4 h-4 text-gray-500" />
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
+                    <CheckSquare className="w-3 h-3" />
+                </button>
+            </div>
+
+            {/* 2. Car Info */}
+            <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
+                <span className="truncate">{s.brand} {s.model}</span>
+            </div>
+
+            {/* 3. Year */}
+            <div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
+
+            {/* 4. KM */}
+            <div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
+
+            {/* 5. Plate/VIN */}
+            <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
+                <div className="text-white font-mono">{s.plateNumber}</div>
+                <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
+            </div>
+
+            {/* 6. Buyer */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+
+            {/* 7. Seller */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
+
+            {/* 8. Shipping */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
+
+            {/* 9. Cost (Admin) */}
+            {
+                userProfile === 'Admin' && (
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
+                )
+            }
+
+            {/* 10. Sold */}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
+
+            {/* 11. Paid */}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
+                €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+            </div>
+
+            {/* 12,13,14. Admin Fees/Profit */}
+            {
+                userProfile === 'Admin' && <>
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
+                    <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
+                </>
+            }
+
+            {/* 15. Balance */}
+            <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+                <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
+                    €{calculateBalance(s).toLocaleString()}
                 </span>
             </div>
 
-            {/* Selection Checkbox */}
-            <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                    <CheckSquare className="w-3.5 h-3.5" />
-                </button>
+            {/* 16. Status */}
+            <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+                <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                    s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
+                        s.status === 'Autosallon' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-700 text-gray-300'
+                    }`}>{s.status}</span>
             </div>
-        </div>
-    );
-};
 
-{/* 1. Drag & Check */ }
-<div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
-    <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
-        <GripVertical className="w-4 h-4 text-gray-500" />
-    </div>
-    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-        <CheckSquare className="w-3 h-3" />
-    </button>
-</div>
+            {/* 17. Sold By */}
+            <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
 
-{/* 2. Car Info */ }
-<div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
-    <span className="truncate">{s.brand} {s.model}</span>
-</div>
-
-{/* 3. Year */ }
-<div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
-
-{/* 4. KM */ }
-<div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
-
-{/* 5. Plate/VIN */ }
-<div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
-    <div className="text-white font-mono">{s.plateNumber}</div>
-    <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
-</div>
-
-{/* 6. Buyer */ }
-<div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
-
-{/* 7. Seller */ }
-<div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
-
-{/* 8. Shipping */ }
-<div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
-
-{/* 9. Cost (Admin) */ }
-{
-    userProfile === 'Admin' && (
-        <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
-    )
-}
-
-{/* 10. Sold */ }
-<div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
-
-{/* 11. Paid */ }
-<div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
-    €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
-</div>
-
-{/* 12,13,14. Admin Fees/Profit */ }
-{
-    userProfile === 'Admin' && <>
-        <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-        <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
-        <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
-    </>
-}
-
-{/* 15. Balance */ }
-<div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
-    <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
-        €{calculateBalance(s).toLocaleString()}
-    </span>
-</div>
-
-{/* 16. Status */ }
-<div className="px-3 h-full flex items-center justify-center border-r border-white/5">
-    <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-        s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
-            s.status === 'Autosallon' ? 'bg-blue-500/20 text-blue-400' :
-                'bg-gray-700 text-gray-300'
-        }`}>{s.status}</span>
-</div>
-
-{/* 17. Sold By */ }
-<div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
-
-{/* 18. Actions */ }
-<div className="px-3 h-full flex items-center justify-center gap-2">
-    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
-</div>
+            {/* 18. Actions */}
+            <div className="px-3 h-full flex items-center justify-center gap-2">
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
+            </div>
         </Reorder.Item >
     );
 };
@@ -363,6 +380,8 @@ export default function Dashboard() {
         if (userProfile === name) setUserProfile('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
     };
+
+
 
     // Real-time Subscription
     useEffect(() => {
@@ -783,6 +802,7 @@ export default function Dashboard() {
 
 
 
+
     const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
     const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
     const totalPaid = filteredSales.reduce((acc, s) => acc + ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)), 0);
@@ -896,6 +916,10 @@ export default function Dashboard() {
                                     <div className="h-px bg-white/10 my-2" />
                                     <button onClick={quickAddProfile} className="w-full text-left px-3 py-2 text-green-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
                                         <Plus className="w-4 h-4" /> Add Profile
+                                    </button>
+                                    <div className="h-px bg-white/10 my-2" />
+                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-500 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                        <LogOut className="w-4 h-4" /> Log Out
                                     </button>
                                     <div className="h-px bg-white/10 my-2" />
                                     <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
