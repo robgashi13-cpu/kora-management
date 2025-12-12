@@ -23,6 +23,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.25",
     "html2pdf.js": "^0.12.1",
+    "lovable-tagger": "^1.1.13",
     "lucide-react": "^0.556.0",
     "next": "16.0.8",
     "openai": "^6.10.0",
