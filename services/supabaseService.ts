@@ -17,7 +17,7 @@ const toRemote = (s: CarSale, userProfile: string) => ({
     vin: s.vin,
     seller_name: s.sellerName,
     buyer_name: s.buyerName,
-    buyer_personal_id: s.buyerPersonalId,
+    // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB
     shipping_name: s.shippingName,
     shipping_date: s.shippingDate,
     include_transport: s.includeTransport,
