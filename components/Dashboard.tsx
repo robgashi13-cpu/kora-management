@@ -429,38 +429,48 @@ export default function Dashboard() {
     useEffect(() => { isModalOpenRef.current = isModalOpen; }, [isModalOpen]);
 
     useEffect(() => {
-        const loadSettings = async () => {
-            // Enforce New Credentials provided by user
-            const NEW_URL = "https://zqsofkosyepcaealphbu.supabase.co";
-            const NEW_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
+        const initSettings = async () => {
+            try {
+                // Ensure Supabase URL/Key exist
+                let { value: url } = await Preferences.get({ key: 'supabase_url' });
+                let { value: keyName } = await Preferences.get({ key: 'supabase_key' }); // Renamed variable to avoid conflict
 
-            setSupabaseUrl(NEW_URL);
-            setSupabaseKey(NEW_KEY);
-            await Preferences.set({ key: 'supabase_url', value: NEW_URL });
-            await Preferences.set({ key: 'supabase_key', value: NEW_KEY });
+                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
+                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-            const { value: key } = await Preferences.get({ key: 'openai_api_key' });
-            if (key) setApiKey(key);
+                setSupabaseUrl(url);
+                setSupabaseKey(keyName);
 
-            // Ensure Profile exists for sync
-            // Always start with empty profile to show Netflix-style selector
-            let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
-            if (storedProfile) {
-                setUserProfile(storedProfile);
-            } else {
-                setUserProfile('');
-            }
+                // Update env if changed (legacy check)
+                if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
+                if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
 
-            let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
-            if (profiles) {
-                setAvailableProfiles(JSON.parse(profiles));
-            } else {
-                const defaults = ["Admin", "User"];
-                setAvailableProfiles(defaults);
-                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
+                const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
+                if (apiKeyVal) setApiKey(apiKeyVal);
+
+                // Ensure Profile exists for sync
+                // Always start with empty profile to show Netflix-style selector
+                let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
+                if (storedProfile) {
+                    setUserProfile(storedProfile);
+                }
+
+                let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
+                if (profiles) {
+                    setAvailableProfiles(JSON.parse(profiles));
+                } else {
+                    const defaults = ["Admin", "User"];
+                    setAvailableProfiles(defaults);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
+                }
+            } catch (e) {
+                console.error("Initialization Failed:", e);
             }
         };
+        initSettings();
+    }, []);
 
+    useEffect(() => {
         const loadSales = async () => {
             try {
                 // 1. Load Local Data First for Immediate Display
