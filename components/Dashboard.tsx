@@ -138,13 +138,13 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 16. Status */}
             <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
-                <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Completed' ? 'bg-blue-500/20 text-blue-400' :
-                        s.status === 'In Progress' ? 'bg-orange-500/20 text-orange-400' :
-                            s.status === 'New' ? 'bg-green-500/20 text-green-400' :
-                                s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-                                    s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
-                                        s.status === 'Autosallon' ? 'bg-cyan-500/20 text-cyan-400' :
-                                            'bg-gray-700 text-gray-300'
+                <span className={`text-[10px] uppercase font-bold ${s.status === 'Completed' ? 'text-blue-400' :
+                        s.status === 'In Progress' ? 'text-orange-400' :
+                            s.status === 'New' ? 'text-green-400' :
+                                s.status === 'Shipped' ? 'text-purple-400' :
+                                    s.status === 'Inspection' ? 'text-yellow-400' :
+                                        s.status === 'Autosallon' ? 'text-cyan-400' :
+                                            'text-gray-400'
                     }`}>{s.status}</span>
             </div>
 
