@@ -467,6 +467,55 @@ export default function Dashboard() {
                     const saved = localStorage.getItem('car_sales_data');
                     if (saved) currentSales = JSON.parse(saved);
                 }
+
+                // AUTO-IMPORT RECOVERED SALES (One-time merge based on VIN)
+                const existingVins = new Set(currentSales.map((s: any) => (s.vin || '').trim().toUpperCase()));
+                let hasAdditions = false;
+
+                RECOVERED_SALES.forEach((rec: any) => {
+                    const vin = (rec.vin || '').trim().toUpperCase();
+                    if (vin && !existingVins.has(vin)) {
+                        // Map to CarSale type with defaults
+                        const newSale: CarSale = {
+                            id: Date.now().toString(36) + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2),
+                            brand: rec.brand || 'Unknown',
+                            model: rec.model || '',
+                            year: rec.year || 2000,
+                            km: rec.km || 0,
+                            color: rec.color || '',
+                            plateNumber: rec.plateNumber || '',
+                            vin: rec.vin || '',
+                            sellerName: rec.sellerName || '',
+                            buyerName: rec.buyerName || '',
+                            buyerPersonalId: rec.buyerPersonalId || '',
+                            shippingName: rec.shippingName || '',
+                            shippingDate: rec.shippingDate || null,
+                            costToBuy: rec.costToBuy || 0,
+                            soldPrice: rec.soldPrice || 0,
+                            amountPaidCash: rec.amountPaidCash || 0,
+                            amountPaidBank: rec.amountPaidBank || 0,
+                            deposit: rec.deposit || 0,
+                            servicesCost: rec.servicesCost || 30.51,
+                            tax: rec.tax || 0,
+                            amountPaidToKorea: 0,
+                            paidDateToKorea: null,
+                            paidDateFromClient: null,
+                            paymentMethod: 'Cash', // Default
+                            status: rec.status as any || 'Completed',
+                            createdAt: new Date().toISOString(),
+                            sortOrder: currentSales.length,
+                            soldBy: 'System'
+                        };
+                        currentSales.push(newSale);
+                        existingVins.add(vin); // Prevent dupes if RECOVERED has dupes
+                        hasAdditions = true;
+                    }
+                });
+
+                if (hasAdditions) {
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(currentSales) });
+                }
+
                 setSales(currentSales.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
