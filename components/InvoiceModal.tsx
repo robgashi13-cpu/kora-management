@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from 'react';
 import { X, Printer, Download, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
@@ -113,8 +112,8 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     <div className="flex justify-between items-start mb-8">
                         <div>
                             {/* Logo Placeholder - replaced with actual logo */}
-                            {/* Logo Placeholder - replaced with actual logo */}
-                            <Image src="/logo.jpg" alt="RG SH.P.K" width={150} height={80} className="mb-4 object-contain" />
+                            {/* Logo Placeholder - replaced with actual logo                                    */}
+                            <img src="/logo_new.jpg" alt="KORAUTO Logo" className="w-full h-full object-cover mb-4 object-contain" />
                             <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
                             <p className="text-gray-500 mt-2">#{sale.vin.slice(-6).toUpperCase()}</p>
                         </div>

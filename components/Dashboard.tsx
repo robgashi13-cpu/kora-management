@@ -18,36 +18,98 @@ import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
-const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice }: any) => {
+const getBankFee = (price: number) => {
+    if (price <= 10000) return 20;
+    if (price <= 20000) return 50;
+    return 100;
+};
+const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
+const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
+
+const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice, userProfile }: any) => {
     const controls = useDragControls();
 
     return (
-        <Reorder.Item value={s} dragListener={false} dragControls={controls} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors touch-none">
-            {/* Drag Handle */}
-            <div className="absolute top-5 right-4 text-gray-600 cursor-grab active:cursor-grabbing hover:text-white touch-none p-2 hover:bg-white/5 rounded-lg transition-colors z-20" onPointerDown={(e) => controls.start(e)}>
-                <GripVertical className="w-6 h-6" />
-            </div>
+        <Reorder.Item value={s} dragListener={false} dragControls={controls} className="grid grid-cols-subgrid bg-[#1a1a1a] border-b border-white/5 hover:bg-white/10 transition-colors items-center group relative h-14 text-sm" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
 
-            <div className="absolute top-4 left-4 z-10">
-                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                    <CheckSquare className="w-3.5 h-3.5" />
+            {/* 1. Drag & Check */}
+            <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
+                <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
+                    <GripVertical className="w-4 h-4 text-gray-500" />
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
+                    <CheckSquare className="w-3 h-3" />
                 </button>
             </div>
 
-            <div className="flex justify-between mb-4 pl-8 pr-12">
-                <div className="font-bold text-lg">{s.brand} {s.model}</div>
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
-            </div>
-            <div className="text-sm text-gray-400 space-y-2 pl-8">
-                <div className="flex justify-between"><span>VIN</span><span className="font-mono">{s.vin}</span></div>
-                <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                <div className="flex justify-between pt-2 border-t border-white/5 mt-2"><span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span></div>
+            {/* 2. Car Info */}
+            <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
+                <span className="truncate">{s.brand} {s.model}</span>
             </div>
 
-            <div className="absolute bottom-4 right-4">
-                <span className={`text-xs font-bold px-2 py-1 rounded-md ${((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
-                    Bal: €{((s.soldPrice || 0) - ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0))).toLocaleString()}
+            {/* 3. Year */}
+            <div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
+
+            {/* 4. KM */}
+            <div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
+
+            {/* 5. Plate/VIN */}
+            <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
+                <div className="text-white font-mono">{s.plateNumber}</div>
+                <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
+            </div>
+
+            {/* 6. Buyer */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+
+            {/* 7. Seller */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
+
+            {/* 8. Shipping */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
+
+            {/* 9. Cost (Admin) */}
+            {userProfile === 'Admin' && (
+                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
+            )}
+
+            {/* 10. Sold */}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
+
+            {/* 11. Paid */}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
+                €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+            </div>
+
+            {/* 12,13,14. Admin Fees/Profit */}
+            {userProfile === 'Admin' && <>
+                <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+                <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
+                <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
+            </>}
+
+            {/* 15. Balance */}
+            <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+                <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
+                    €{calculateBalance(s).toLocaleString()}
                 </span>
+            </div>
+
+            {/* 16. Status */}
+            <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+                <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                    s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
+                        s.status === 'Autosallon' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-700 text-gray-300'
+                    }`}>{s.status}</span>
+            </div>
+
+            {/* 17. Sold By */}
+            <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
+
+            {/* 18. Actions */}
+            <div className="px-3 h-full flex items-center justify-center gap-2">
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
             </div>
         </Reorder.Item>
     );
@@ -698,13 +760,7 @@ export default function Dashboard() {
         return JSON.stringify(s).toLowerCase().includes(term);
     });
 
-    const getBankFee = (price: number) => {
-        if (price <= 10000) return 20;
-        if (price <= 20000) return 50;
-        return 100;
-    };
-    const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
-    const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
+
 
     const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
     const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
@@ -912,17 +968,13 @@ export default function Dashboard() {
                                     });
                                 }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14', display: 'grid' }}>
                                     {filteredSales.map(s => (
-                                        <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-                                        </div>
+                                        <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
                                     ))}
                                 </Reorder.Group>
                             ) : (
                                 <>
                                     {filteredSales.map(s => (
-                                        <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-                                        </div>
+                                        <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
                                     ))}
                                 </>
                             )}
