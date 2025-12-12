@@ -470,23 +470,63 @@ export default function Dashboard() {
                     if (saved) currentSales = JSON.parse(saved);
                 }
 
-                // AUTO-IMPORT RECOVERED SALES (One-time merge based on VIN)
-                const existingVins = new Set(currentSales.map((s: any) => (s.vin || '').trim().toUpperCase()));
-                let hasAdditions = false;
+                // AUTO-IMPORT & REPAIR RECOVERED SALES
+                // "fix sync error item if something... is missing... skip it" -> Check required fields
+                // "make all this cars sold in progress" -> Update existing ones too
+                let hasChanges = false;
+                const existingVinMap = new Map();
+                currentSales.forEach((s: any, i: number) => {
+                    if (s.vin) existingVinMap.set(s.vin.trim().toUpperCase(), i);
+                });
 
                 RECOVERED_SALES.forEach((rec: any) => {
-                    const vin = (rec.vin || '').trim().toUpperCase();
-                    if (vin && !existingVins.has(vin)) {
-                        // Map to CarSale type with defaults
+                    // 1. SKIP INVALID ROWS
+                    if (!rec.brand || !rec.model || !rec.vin) return;
+
+                    const vin = rec.vin.trim().toUpperCase();
+                    const existingIndex = existingVinMap.get(vin);
+
+                    if (existingIndex !== undefined) {
+                        // 2. UPDATE EXISTING
+                        const s = currentSales[existingIndex];
+                        let modified = false;
+
+                        // Force Status 'In Progress'
+                        if (s.status !== 'In Progress') {
+                            s.status = 'In Progress';
+                            modified = true;
+                        }
+
+                        // Force Balance 0 (Paid = Sold)
+                        // Only if soldPrice is present (rec.soldPrice might be 0/undefined)
+                        const targetSold = rec.soldPrice || s.soldPrice || 0;
+                        const currentPaid = (s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0);
+
+                        // We strictly follow the rule: Paid = Sold
+                        if (Math.abs(currentPaid - targetSold) > 1) { // tolerance
+                            s.soldPrice = targetSold;
+                            s.amountPaidCash = targetSold;
+                            s.amountPaidBank = 0;
+                            s.deposit = 0;
+                            modified = true;
+                        }
+
+                        if (modified) {
+                            currentSales[existingIndex] = s;
+                            hasChanges = true;
+                        }
+
+                    } else {
+                        // 3. ADD NEW
                         const newSale: CarSale = {
                             id: Date.now().toString(36) + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2),
-                            brand: rec.brand || 'Unknown',
-                            model: rec.model || '',
+                            brand: rec.brand,
+                            model: rec.model,
                             year: rec.year || 2000,
                             km: rec.km || 0,
                             color: rec.color || '',
                             plateNumber: rec.plateNumber || '',
-                            vin: rec.vin || '',
+                            vin: vin,
                             sellerName: rec.sellerName || '',
                             buyerName: rec.buyerName || '',
                             buyerPersonalId: rec.buyerPersonalId || '',
@@ -494,8 +534,7 @@ export default function Dashboard() {
                             shippingDate: rec.shippingDate || null,
                             costToBuy: rec.costToBuy || 0,
                             soldPrice: rec.soldPrice || 0,
-                            // FORCE BALANCE TO 0: Set Paid = Sold
-                            amountPaidCash: rec.soldPrice || 0,
+                            amountPaidCash: rec.soldPrice || 0, // Force 0 Balance
                             amountPaidBank: 0,
                             deposit: 0,
                             servicesCost: rec.servicesCost || 30.51,
@@ -503,23 +542,23 @@ export default function Dashboard() {
                             amountPaidToKorea: 0,
                             paidDateToKorea: null,
                             paidDateFromClient: null,
-                            paymentMethod: 'Cash', // Default
-                            status: 'In Progress', // User Request: All new imported as In Progress
+                            paymentMethod: 'Cash',
+                            status: 'In Progress',
                             createdAt: new Date().toISOString(),
                             sortOrder: currentSales.length,
                             soldBy: 'System'
                         };
                         currentSales.push(newSale);
-                        existingVins.add(vin); // Prevent dupes if RECOVERED has dupes
-                        hasAdditions = true;
+                        existingVinMap.set(vin, currentSales.length - 1);
+                        hasChanges = true;
                     }
                 });
 
-                if (hasAdditions) {
+                if (hasChanges) {
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(currentSales) });
                 }
 
-                setSales(currentSales.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+                setSales(currentSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
                 const { value: key } = await Preferences.get({ key: 'openai_api_key' });
