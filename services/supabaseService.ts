@@ -39,7 +39,7 @@ const toRemote = (s: CarSale, userProfile: string) => ({
     // Store attachments in JSONB
     attachments: { bankReceipt: s.bankReceipt, bankReceipts: s.bankReceipts, bankInvoices: s.bankInvoices, depositInvoices: s.depositInvoices },
     last_edited_by: userProfile,
-    sold_by: s.soldBy
+    // sold_by: s.soldBy // Schema mismatch: column missing in DB
 });
 
 // Helper to map Remote (snake) to Local (camel)
