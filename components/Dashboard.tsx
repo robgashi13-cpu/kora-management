@@ -922,10 +922,6 @@ export default function Dashboard() {
                                     <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-500 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
                                         <LogOut className="w-4 h-4" /> Log Out
                                     </button>
-                                    <div className="h-px bg-white/10 my-2" />
-                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
-                                        <div className="w-4 h-4 flex items-center justify-center border border-current rounded-sm text-[10px]">L</div> Log Out
-                                    </button>
                                 </div>
                             )}
                         </div>
