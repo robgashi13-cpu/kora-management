@@ -114,9 +114,11 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
 
             {/* 11. Paid */}
-            <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
-                €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
-            </div>
+            {userProfile === 'Admin' && (
+                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
+                    €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+                </div>
+            )}
 
             {/* 12,13,14. Admin Fees/Profit */}
             {
@@ -1035,14 +1037,15 @@ export default function Dashboard() {
                                     ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 100px 100px"
                                     : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 110px 100px 100px 100px"
                             }}>
-                            <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
+                            <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13' }}>
                                 <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                     {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                 </div>
                                 <div className="p-3 pl-2">Car Info</div> <div className="p-3 text-center">Year</div> <div className="p-3 text-center">KM</div> <div className="p-3">Plate/VIN</div>
                                 <div className="p-3">Buyer</div> <div className="p-3">Seller</div> <div className="p-3">Shipping</div>
                                 {userProfile === 'Admin' && <div className="p-3 text-right">Cost</div>}
-                                <div className="p-3 text-right">Sold</div> <div className="p-3 text-right">Paid</div>
+                                <div className="p-3 text-right">Sold</div>
+                                {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
                                 {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
                                 <div className="p-3 text-right">Balance</div> <div className="p-3 text-center">Status</div> <div className="p-3 text-center">Sold By</div> <div className="p-3"></div>
                             </div>
@@ -1058,7 +1061,7 @@ export default function Dashboard() {
                                         });
                                         return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                     });
-                                }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14', display: 'grid' }}>
+                                }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13', display: 'grid' }}>
                                     {filteredSales.map(s => (
                                         <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
                                     ))}
