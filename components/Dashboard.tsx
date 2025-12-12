@@ -18,12 +18,13 @@ import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
-const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice }: any) => {
+const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice, onMove }: any) => {
     const controls = useDragControls();
+    const [showMoveMenu, setShowMoveMenu] = useState(false);
 
     return (
         <Reorder.Item value={s} dragListener={false} dragControls={controls} className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors touch-none">
-            {/* Drag Handle - The Grip */}
+            {/* Drag Handle */}
             <div className="absolute top-5 right-4 text-gray-600 cursor-grab active:cursor-grabbing hover:text-white touch-none p-2 hover:bg-white/5 rounded-lg transition-colors z-20" onPointerDown={(e) => controls.start(e)}>
                 <GripVertical className="w-6 h-6" />
             </div>
@@ -36,7 +37,23 @@ const SortableSaleItem = ({ s, toggleSelection, selectedIds, openInvoice }: any)
 
             <div className="flex justify-between mb-4 pl-8 pr-12">
                 <div className="font-bold text-lg">{s.brand} {s.model}</div>
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
+                <div className="flex gap-2">
+                    <div className="relative">
+                        <button onClick={(e) => { e.stopPropagation(); setShowMoveMenu(!showMoveMenu); }} className="text-gray-500 hover:text-white p-1 hover:bg-white/10 rounded transition-colors"><Move className="w-5 h-5" /></button>
+                        {showMoveMenu && (
+                            <div className="absolute right-0 top-8 bg-[#252525] border border-white/10 rounded-xl shadow-2xl z-50 w-40 flex flex-col p-1" onClick={e => e.stopPropagation()}>
+                                <div className="text-[10px] uppercase font-bold text-gray-500 px-2 py-1">Move To</div>
+                                {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(tab => (
+                                    <button key={tab} onClick={() => { onMove(s, tab); setShowMoveMenu(false); }} className="text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/10 rounded-lg transition-colors capitalize">
+                                        {tab.toLowerCase()}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        {showMoveMenu && <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMoveMenu(false) }} />}
+                    </div>
+                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
+                </div>
             </div>
             <div className="text-sm text-gray-400 space-y-2 pl-8">
                 <div className="flex justify-between"><span>VIN</span><span className="font-mono">{s.vin}</span></div>
@@ -715,6 +732,16 @@ export default function Dashboard() {
         return groups;
     }, [filteredSales, groupBy]);
 
+    const handleMove = (sale: CarSale, category: string) => {
+        let newStatus: SaleStatus = 'In Progress';
+        if (category === 'SHIPPED') newStatus = 'Shipped';
+        if (category === 'INSPECTIONS') newStatus = 'Inspection';
+        if (category === 'AUTOSALLON') newStatus = 'Autosallon';
+
+        const updatedSales = sales.map(s => s.id === sale.id ? { ...s, status: newStatus } : s);
+        updateSalesAndSave(updatedSales);
+    };
+
     if (!userProfile) {
         return <ProfileSelector
             profiles={availableProfiles}
@@ -881,43 +908,37 @@ export default function Dashboard() {
                                 {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
                                 <div className="p-3 text-right">Balance</div> <div className="p-3 text-center">Status</div> <div className="p-3 text-center">Sold By</div> <div className="p-3"></div>
                             </div>
-                            {filteredSales.map(sale => (
-                                <div key={sale.id} className={`grid grid-cols-subgrid hover:bg-white/5 border-b border-white/5 items-center ${selectedIds.has(sale.id) ? 'bg-blue-900/10' : ''} `}
-                                    onClick={() => { setEditingSale(sale); setIsModalOpen(true); }}
-                                    style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                                    <div className="p-3 flex items-center justify-center" onClick={(e) => { e.stopPropagation(); toggleSelection(sale.id); }}>
-                                        {selectedIds.has(sale.id) ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-gray-600 hover:text-gray-400" />}
-                                    </div>
-                                    <div className="p-3 pl-2 font-medium text-white">{sale.brand} {sale.model} <div className="text-xs text-gray-500">{sale.color}</div></div>
-                                    <div className="p-3 text-center text-gray-400">{sale.year}</div>
-                                    <div className="p-3 text-center text-gray-400">{(sale.km || 0).toLocaleString()}</div>
-                                    <div className="p-3 text-xs text-gray-300"><div>{sale.plateNumber}</div><div className="truncate w-20" title={sale.vin}>{sale.vin ? sale.vin.slice(-6) : ''}</div></div>
-                                    <div className="p-3 text-gray-300">{sale.buyerName}</div>
-                                    <div className="p-3 text-gray-400">{sale.sellerName}</div>
-                                    <div className="p-3 text-xs"> <div className="text-blue-400">{sale.shippingName}</div> <div>{sale.shippingDate}</div> </div>
+                            {/* Render Rows */}
+                            {groupBy === 'none' ? (
+                                <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
+                                    const reordered = newOrder.map((item, index) => ({ ...item, sortOrder: index }));
+                                    setSales(prev => {
+                                        const next = [...prev];
+                                        newOrder.forEach((newItem, newIndex) => {
+                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                        });
+                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                    });
+                                }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14', display: 'grid' }}>
+                                    {filteredSales.map(s => (
+                                        <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
+                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} onMove={handleMove} />
+                                        </div>
+                                    ))}
+                                </Reorder.Group>
+                            ) : (
+                                <>
+                                    {filteredSales.map(s => (
+                                        <div key={s.id} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
+                                            <SortableSaleItem s={s} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} onMove={handleMove} />
+                                        </div>
+                                    ))}
+                                </>
+                            )}
 
-                                    {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-gray-400">€{(sale.costToBuy || 0).toLocaleString()}</div>}
-
-                                    <div className="p-3 text-right font-mono text-white">€{(sale.soldPrice || 0).toLocaleString()}</div>
-                                    <div className="p-3 text-right font-mono text-gray-400">€{((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0)).toLocaleString()}</div>
-
-                                    {userProfile === 'Admin' && <>
-                                        <div className="p-3 text-right text-xs font-mono text-gray-500">€{getBankFee(sale.soldPrice || 0)}</div>
-                                        <div className="p-3 text-right text-xs font-mono text-gray-500">€{(sale.servicesCost ?? 30.51)}</div>
-                                        <div className={`p-3 text-right font-mono font-bold ${calculateProfit(sale) > 0 ? 'text-blue-500' : 'text-red-500'} `}>€{calculateProfit(sale).toLocaleString()}</div>
-                                    </>}
-
-                                    <div className={`p-3 text-right font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-gray-600'} `}>€{calculateBalance(sale).toLocaleString()}</div>
-                                    <div className="p-3 text-center"><span className="px-2 py-1 rounded-full text-xs bg-gray-800 text-gray-300">{sale.status}</span></div>
-                                    <div className="p-3 text-center text-xs text-gray-500 uppercase">{sale.soldBy || '-'}</div>
-                                    <div className="p-3 flex gap-2">
-                                        <button onClick={(e) => { e.stopPropagation(); openInvoice(sale, e); }} className="p-1 text-blue-400 hover:bg-blue-500/20 rounded"><FileText className="w-4 h-4" /></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(sale.id, e); }} className="p-1 text-red-400 hover:bg-red-500/20 rounded"><Trash2 className="w-4 h-4" /></button>
-                                    </div>
-                                </div>
-                            ))}
                             {/* Footer Totals */}
-                            <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 17' : 'span 13' }}>
+                            <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
                                 <div className="p-3 text-right col-span-8">Totals</div>
                                 {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
                                 <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
@@ -976,6 +997,14 @@ export default function Dashboard() {
                                             €{calculateBalance(sale).toLocaleString()}
                                         </span>
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-4 gap-1 mt-2">
+                                    {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(tab => (
+                                        <button key={tab} onClick={(e) => { e.stopPropagation(); handleMove(sale, tab); }}
+                                            className={`text-[9px] uppercase font-bold py-2 rounded-lg border border-white/10 ${activeCategory === tab ? 'bg-blue-600/20 text-blue-400' : 'hover:bg-white/5 text-gray-500'}`}>
+                                            {tab.slice(0, 4)}...
+                                        </button>
+                                    ))}
                                 </div>
                             </motion.div>
                         ))}
