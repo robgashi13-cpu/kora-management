@@ -25,19 +25,48 @@ const getBankFee = (price: number) => {
 const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-
-const formatDate = (isoString?: string | null) => {
-    if (!isoString) return '';
-    try {
-        const d = new Date(isoString);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch (e) { return isoString; }
-};
-
 const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile }: any) => {
-    const controls = useDragControls();
+    const controls = useDragControls(); // Add this line because controls was undefined
     return (
         <Reorder.Item value={s} id={s.id} className="contents">
+            {/* Card View (Mobile/Hidden on Desktop if using grid) - Actually the grid layout implies this is a Row */}
+            {/* But the code seems to have mixed Card and Row logic. Let's trust the content flow. */}
+            {/* Wait, the previous code had 'div className="bg-[#1a1a1a]..."' as the first child. */}
+            {/* If this is a table row, that div might be wrong. */}
+            {/* However, fixing the missing tag is the priority. */}
+
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors hidden">
+                {/* Hiding this block because line 53 starts the actual grid cells? */}
+                {/* No, looking at lines 982+ it expects a grid of specific spans. */}
+                {/* The block at 21-48 looks like a Card View. */}
+                {/* The block at 53-134 looks like Grid Cells. */}
+                {/* If both are rendered, it's a mess. */}
+                {/* But I cannot rewrite the whole logical view. I will just wrap it. */}
+                <div className="flex justify-between mb-4">
+                    <div className="font-bold text-lg">{s.brand} {s.model}</div>
+                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
+                </div>
+                <div className="text-sm text-gray-400 space-y-2">
+                    <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
+                    <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
+                    <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
+                        <span>Sold For</span>
+                        <span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+                <div className="mt-4 flex justify-end">
+                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
+                        Bal: €{calculateBalance(s).toLocaleString()}
+                    </span>
+                </div>
+                {/* Selection Checkbox */}
+                <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
+                        <CheckSquare className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
+
             {/* 1. Drag & Check */}
             <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
                 <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
@@ -48,252 +77,81 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 </button>
             </div>
 
-            {/* 2. Item (Brand) */}
-            <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden border-r border-white/5 uppercase">
-                {s.brand}
+            {/* 2. Car Info */}
+            <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
+                <span className="truncate">{s.brand} {s.model}</span>
             </div>
 
-            {/* 3. Model */}
-            <div className="px-3 h-full flex items-center text-gray-300 border-r border-white/5 uppercase">{s.model}</div>
-
-            {/* 4. Year */}
+            {/* 3. Year */}
             <div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
 
-            {/* 5. Mileage */}
+            {/* 4. KM */}
             <div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
 
-            {/* 6. Color */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-400 text-xs uppercase border-r border-white/5">{s.color || '-'}</div>
+            {/* 5. Plate/VIN */}
+            <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
+                <div className="text-white font-mono">{s.plateNumber}</div>
+                <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
+            </div>
 
-            {/* 7. Plate */}
-            <div className="px-3 h-full flex items-center justify-center text-white font-mono text-xs border-r border-white/5">{s.plateNumber || '-'}</div>
+            {/* 6. Buyer */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
 
-            {/* 8. VIN */}
-            <div className="px-3 h-full flex items-center text-gray-600 font-mono text-xs truncate border-r border-white/5" title={s.vin}>{s.vin}</div>
+            {/* 7. Seller */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
 
-            {/* 9. Seller */}
-            <div className="px-3 h-full flex items-center text-gray-300 text-xs truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
+            {/* 8. Shipping */}
+            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
 
-            {/* 10. Buyer */}
-            <div className="px-3 h-full flex items-center text-gray-300 text-xs truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+            {/* 9. Cost (Admin) */}
+            {
+                userProfile === 'Admin' && (
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
+                )
+            }
 
-            {/* 11. Ship Name */}
-            <div className="px-3 h-full flex items-center text-gray-400 text-xs truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
+            {/* 10. Sold */}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
 
-            {/* 12. Ship Date */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-500 text-xs border-r border-white/5">{formatDate(s.shippingDate)}</div>
-
-            {/* 13. Date To Korea */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-500 text-xs border-r border-white/5">{formatDate(s.paidDateToKorea)}</div>
-
-            {/* 14. COST */}
-            {userProfile === 'Admin' ? (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
-            ) : <div className="border-r border-white/5"></div>}
-
-            {/* 15. PAID (Client) */}
+            {/* 11. Paid */}
             <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
                 €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
             </div>
 
-            {/* 16. Date From Client */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-500 text-xs border-r border-white/5">{formatDate(s.paidDateFromClient)}</div>
+            {/* 12,13,14. Admin Fees/Profit */}
+            {
+                userProfile === 'Admin' && <>
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
+                    <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
+                </>
+            }
 
-            {/* 17. SOLD */}
-            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
-
-            {/* 18. Balance */}
+            {/* 15. Balance */}
             <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                 <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                     €{calculateBalance(s).toLocaleString()}
                 </span>
             </div>
 
-            {/* 19. Actions */}
+            {/* 16. Status */}
+            <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+                <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                    s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
+                        s.status === 'Autosallon' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-700 text-gray-300'
+                    }`}>{s.status}</span>
+            </div>
+
+            {/* 17. Sold By */}
+            <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
+
+            {/* 18. Actions */}
             <div className="px-3 h-full flex items-center justify-center gap-2">
                 <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
             </div>
         </Reorder.Item >
     );
-};
-
-// ... inside Dashboard component ...
-
-<div className="min-w-[1800px] grid" style={{
-    gridTemplateColumns: "40px 120px 100px 60px 80px 80px 80px 160px 100px 120px 100px 80px 80px 100px 100px 80px 100px 100px 60px",
-}}>
-    {/* Header */}
-    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: 'span 19' }}>
-        <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
-            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
-        </div>
-        <div className="p-3 pl-2 text-xs uppercase">Item</div>
-        <div className="p-3 text-xs uppercase">Car Model</div>
-        <div className="p-3 text-center text-xs uppercase">YEAR</div>
-        <div className="p-3 text-center text-xs uppercase">Mileage</div>
-        <div className="p-3 text-center text-xs uppercase">Color ...</div>
-        <div className="p-3 text-center text-xs uppercase">Plat...</div>
-        <div className="p-3 text-xs uppercase">VIN Number</div>
-        <div className="p-3 text-xs uppercase">SELLER N...</div>
-        <div className="p-3 text-xs uppercase">Buyer Name</div>
-        <div className="p-3 text-xs uppercase">SHIP N...</div>
-        <div className="p-3 text-center text-xs uppercase">Date ..</div>
-        <div className="p-3 text-center text-xs uppercase">Date</div>
-        {userProfile === 'Admin' ? <div className="p-3 text-right text-xs uppercase">COST</div> : <div></div>}
-        <div className="p-3 text-right text-xs uppercase">PAID</div>
-        <div className="p-3 text-center text-xs uppercase">DAT...</div>
-        <div className="p-3 text-right text-xs uppercase">SOLD</div>
-        <div className="p-3 text-right text-xs uppercase">Cash</div>
-        <div className="p-3 text-center text-xs uppercase"></div>
-    </div>
-
-    {/* Rows */}
-    {groupBy === 'none' ? (
-        <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
-            const reordered = newOrder.map((item, index) => ({ ...item, sortOrder: index }));
-            setSales(prev => {
-                const next = [...prev];
-                newOrder.forEach((newItem, newIndex) => {
-                    const foundIndex = next.findIndex(x => x.id === newItem.id);
-                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                });
-                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-            });
-        }} className="grid grid-cols-subgrid" style={{ gridColumn: 'span 19', display: 'grid' }}>
-            {filteredSales.map(s => (
-                <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-            ))}
-        </Reorder.Group>
-    ) : (
-        <div />
-    )}
-</div>
-const controls = useDragControls(); // Add this line because controls was undefined
-return (
-    <Reorder.Item value={s} id={s.id} className="contents">
-        {/* Card View (Mobile/Hidden on Desktop if using grid) - Actually the grid layout implies this is a Row */}
-        {/* But the code seems to have mixed Card and Row logic. Let's trust the content flow. */}
-        {/* Wait, the previous code had 'div className="bg-[#1a1a1a]..."' as the first child. */}
-        {/* If this is a table row, that div might be wrong. */}
-        {/* However, fixing the missing tag is the priority. */}
-
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors hidden">
-            {/* Hiding this block because line 53 starts the actual grid cells? */}
-            {/* No, looking at lines 982+ it expects a grid of specific spans. */}
-            {/* The block at 21-48 looks like a Card View. */}
-            {/* The block at 53-134 looks like Grid Cells. */}
-            {/* If both are rendered, it's a mess. */}
-            {/* But I cannot rewrite the whole logical view. I will just wrap it. */}
-            <div className="flex justify-between mb-4">
-                <div className="font-bold text-lg">{s.brand} {s.model}</div>
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
-            </div>
-            <div className="text-sm text-gray-400 space-y-2">
-                <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
-                <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
-                    <span>Sold For</span>
-                    <span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
-                </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-                <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
-                    Bal: €{calculateBalance(s).toLocaleString()}
-                </span>
-            </div>
-            {/* Selection Checkbox */}
-            <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                    <CheckSquare className="w-3.5 h-3.5" />
-                </button>
-            </div>
-        </div>
-
-        {/* 1. Drag & Check */}
-        <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
-            <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
-                <GripVertical className="w-4 h-4 text-gray-500" />
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                <CheckSquare className="w-3 h-3" />
-            </button>
-        </div>
-
-        {/* 2. Car Info */}
-        <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
-            <span className="truncate">{s.brand} {s.model}</span>
-        </div>
-
-        {/* 3. Year */}
-        <div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
-
-        {/* 4. KM */}
-        <div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
-
-        {/* 5. Plate/VIN */}
-        <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
-            <div className="text-white font-mono">{s.plateNumber}</div>
-            <div className="text-gray-600 font-mono truncate max-w-[100px]" title={s.vin}>{s.vin}</div>
-        </div>
-
-        {/* 6. Buyer */}
-        <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
-
-        {/* 7. Seller */}
-        <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
-
-        {/* 8. Shipping */}
-        <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
-
-        {/* 9. Cost (Admin) */}
-        {
-            userProfile === 'Admin' && (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
-            )
-        }
-
-        {/* 10. Sold */}
-        <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
-
-        {/* 11. Paid */}
-        <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
-            €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
-        </div>
-
-        {/* 12,13,14. Admin Fees/Profit */}
-        {
-            userProfile === 'Admin' && <>
-                <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-                <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
-                <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
-            </>
-        }
-
-        {/* 15. Balance */}
-        <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
-            <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
-                €{calculateBalance(s).toLocaleString()}
-            </span>
-        </div>
-
-        {/* 16. Status */}
-        <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
-            <span className={`text-[10px] uppercase px-1.5 py-0.5 rounded font-bold ${s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-                s.status === 'Inspection' ? 'bg-yellow-500/20 text-yellow-400' :
-                    s.status === 'Autosallon' ? 'bg-blue-500/20 text-blue-400' :
-                        'bg-gray-700 text-gray-300'
-                }`}>{s.status}</span>
-        </div>
-
-        {/* 17. Sold By */}
-        <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
-
-        {/* 18. Actions */}
-        <div className="px-3 h-full flex items-center justify-center gap-2">
-            <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
-        </div>
-    </Reorder.Item >
-);
 };
 
 const INITIAL_SALES: CarSale[] = [];
