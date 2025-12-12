@@ -138,7 +138,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 16. Status */}
             <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
-                <span className={`text-[10px] uppercase font-bold ${s.status === 'Completed' ? 'text-blue-400' :
+                <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${s.status === 'Completed' ? 'text-blue-400' :
                     s.status === 'In Progress' ? 'text-orange-400' :
                         s.status === 'New' ? 'text-green-400' :
                             s.status === 'Shipped' ? 'text-purple-400' :
@@ -1076,8 +1076,8 @@ export default function Dashboard() {
                         <div className="grid text-sm divide-y divide-white/5 min-w-max"
                             style={{
                                 gridTemplateColumns: userProfile === 'Admin'
-                                    ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 140px 100px 100px"
-                                    : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 140px 100px 100px"
+                                    ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 160px 100px 100px"
+                                    : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 160px 100px 100px"
                             }}>
                             <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13' }}>
                                 <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
