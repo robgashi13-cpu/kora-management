@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -186,6 +186,7 @@ const INITIAL_SALES: CarSale[] = [];
 
 export default function Dashboard() {
     const dirtyIds = useRef<Set<string>>(new Set());
+    const [isPending, startTransition] = useTransition();
     const [sales, setSales] = useState<CarSale[]>([]);
     const [view, setView] = useState('profile_select');
     const [userProfile, setUserProfile] = useState<string | null>(null);
@@ -1293,10 +1294,12 @@ export default function Dashboard() {
                                                     setShowPasswordModal(true);
                                                     return;
                                                 }
-                                                setUserProfile(p);
-                                                Preferences.set({ key: 'user_profile', value: p });
                                                 setShowProfileMenu(false);
-                                                performAutoSync(supabaseUrl, supabaseKey, p);
+                                                startTransition(() => {
+                                                    setUserProfile(p);
+                                                });
+                                                Preferences.set({ key: 'user_profile', value: p });
+                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                             }}
                                                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${userProfile === p ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/5'} `}>
                                                 <span>{p}</span>
