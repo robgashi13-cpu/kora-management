@@ -304,10 +304,11 @@ export default function Dashboard() {
         } catch (e) { console.error("Profile Sync Error", e); }
     };
 
-    // Load profiles from cloud on startup
+    // Load profiles from cloud on startup and periodically
     useEffect(() => {
+        if (!supabaseUrl || !supabaseKey) return;
+
         const syncProfilesFromCloud = async () => {
-            if (!supabaseUrl || !supabaseKey) return;
             try {
                 const client = createClient(supabaseUrl, supabaseKey);
                 const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
@@ -320,7 +321,13 @@ export default function Dashboard() {
                 }
             } catch (e) { console.error("Profile Cloud Sync Error", e); }
         };
+
         syncProfilesFromCloud();
+
+        // Sync profiles every 30 seconds to catch deletions from other devices
+        const interval = setInterval(syncProfilesFromCloud, 30000);
+
+        return () => clearInterval(interval);
     }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
