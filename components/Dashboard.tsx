@@ -109,7 +109,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             }
 
             {/* 10. Sold */}
-            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
 
             {/* 11. Paid */}
             {userProfile === 'Admin' && (
@@ -119,16 +119,16 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 12,13,14. Fees/Tax/Profit */}
-            {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>}
-            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>}
+            <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+            <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
             {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
 
             {/* 15. Balance */}
-            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+            <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                 <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                     €{calculateBalance(s).toLocaleString()}
                 </span>
-            </div>}
+            </div>
 
             {/* 15b. Korea Paid (Admin Only) */}
             {userProfile === 'Admin' && (
@@ -1343,11 +1343,9 @@ export default function Dashboard() {
                                     style={{
                                         gridTemplateColumns: userProfile === 'Admin'
                                             ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
-                                            : canViewPrices
-                                                ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 160px 100px 100px"
-                                                : "40px 250px 100px 100px 120px 150px 150px 150px 160px 100px 100px"
+                                            : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 160px 100px 100px"
                                     }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 14' : 'span 11' }}>
+                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 15' }}>
                                         <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
@@ -1375,14 +1373,14 @@ export default function Dashboard() {
                                         {userProfile === 'Admin' && <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
                                             Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
-                                        {canViewPrices && <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>}
+                                        </div>
                                         {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
-                                        {userProfile === 'Admin' && <div className="p-3 text-right">Bank Fee</div>}
-                                        {canViewPrices && <div className="p-3 text-right">Tax</div>}
+                                        <div className="p-3 text-right">Bank Fee</div>
+                                        <div className="p-3 text-right">Tax</div>
                                         {userProfile === 'Admin' && <div className="p-3 text-right text-blue-400">Profit</div>}
-                                        {canViewPrices && <div className="p-3 text-right">Balance</div>}
+                                        <div className="p-3 text-right">Balance</div>
                                         {userProfile === 'Admin' && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
@@ -1404,7 +1402,7 @@ export default function Dashboard() {
                                             });
                                             return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 14' : 'span 11', display: 'grid' }}>
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 15', display: 'grid' }}>
                                         {filteredSales.map(s => (
                                             <SortableSaleItem
                                                 key={s.id}
@@ -1421,7 +1419,7 @@ export default function Dashboard() {
                                     </Reorder.Group>
 
                                     {/* Footer Totals */}
-                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 14' }}>
+                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 15' }}>
                                         <div className="p-3 text-right col-span-8">Totals</div>
                                         {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
                                         <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
