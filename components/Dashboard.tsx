@@ -1366,7 +1366,13 @@ export default function Dashboard() {
                                                         {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
                                                     </span>
                                                 </div>
-                                                {/* Hidden Profit Debug Line */}
+                                                {/* Korea Payment Status */}
+                                                <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
+                                                    <span className="text-gray-600">Korea:</span>
+                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
+                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </motion.div>
                                     </motion.div>
