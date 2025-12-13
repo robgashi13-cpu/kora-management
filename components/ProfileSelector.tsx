@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -24,6 +24,33 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [showPassword, setShowPassword] = useState(false);
 
     const [pendingProfile, setPendingProfile] = useState<string | null>(null);
+
+    // Long press detection (4 seconds = 4000ms)
+    const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+    const isLongPress = useRef(false);
+
+    const handleTouchStart = () => {
+        isLongPress.current = false;
+        longPressTimer.current = setTimeout(() => {
+            isLongPress.current = true;
+            setIsManaging(true);
+        }, 4000);
+    };
+
+    const handleTouchEnd = () => {
+        if (longPressTimer.current) {
+            clearTimeout(longPressTimer.current);
+            longPressTimer.current = null;
+        }
+    };
+
+    const handleProfileClick = (p: string) => {
+        if (isLongPress.current) {
+            isLongPress.current = false;
+            return; // Don't select if it was a long press
+        }
+        handleSelect(p);
+    };
 
     const handleSelect = (p: string) => {
         if (p === 'Admin' || p === 'Robert') {
@@ -110,9 +137,13 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             key={p}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => handleSelect(p)}
-                            className="group flex flex-col items-center gap-4 relative cursor-pointer"
-                        >
+                            onClick={() => handleProfileClick(p)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseDown={handleTouchStart}
+                            onMouseUp={handleTouchEnd}
+                            onMouseLeave={handleTouchEnd}
+                            className="group flex flex-col items-center gap-4 relative cursor-pointer">
                             <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-2xl border-2 transition-colors overflow-hidden ${(p === 'Admin' || p === 'Robert') ? 'bg-gradient-to-br from-red-900 to-black border-red-500/50 group-hover:border-red-500'
                                 : 'bg-gradient-to-br from-blue-900 to-black border-blue-500/50 group-hover:border-blue-500'
                                 }`}>
