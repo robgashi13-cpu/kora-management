@@ -1303,7 +1303,7 @@ export default function Dashboard() {
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
                                 {filteredSales.map(sale => (
-                                    <div key={sale.id} className="relative border-b border-white/5 bg-red-600/20">
+                                    <div key={sale.id} className="relative border-b border-white/5">
                                         {/* Background Action (Delete) */}
                                         <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
                                             <Trash2 className="text-white w-5 h-5" />
@@ -1311,6 +1311,9 @@ export default function Dashboard() {
 
                                         {/* Foreground Card */}
                                         <motion.div
+                                            layout
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
                                             drag="x"
                                             dragDirectionLock
                                             dragConstraints={{ left: -80, right: 0 }}
@@ -1320,8 +1323,7 @@ export default function Dashboard() {
                                                     if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
                                                 }
                                             }}
-                                            className={`p-3 flex items-center gap-3 relative z-10 ${selectedIds.has(sale.id) ? 'bg-blue-900/40' : 'bg-[#1a1a1a]'
-                                                }`}
+                                            className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
                                             onClick={() => {
                                                 if (selectedIds.size > 0) {
                                                     toggleSelection(sale.id);
@@ -1334,7 +1336,7 @@ export default function Dashboard() {
                                                 e.preventDefault();
                                                 toggleSelection(sale.id);
                                             }}
-                                            style={{ backgroundColor: '#1a1a1a' }} // Ensure opaque background for swipe
+                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }} // Opaque Blue-900 or Black
                                         >
                                             {/* Selection Indicator */}
                                             {selectedIds.size > 0 && (
