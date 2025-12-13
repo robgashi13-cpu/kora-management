@@ -1427,17 +1427,14 @@ export default function Dashboard() {
                         {/* Global Tabs (Visible on Dashboard and Invoices) */}
                         {view !== 'settings' && (
                             <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                                {(['SALES', 'INVOICES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
-                                    const isActive = cat === 'INVOICES' ? view === 'invoices' : (view === 'dashboard' && activeCategory === cat);
+                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
+                                    const isActive = (view === 'dashboard' && activeCategory === cat);
                                     return (
                                         <button
                                             key={cat}
                                             onClick={() => {
-                                                if (cat === 'INVOICES') setView('invoices');
-                                                else {
-                                                    setView('dashboard');
-                                                    setActiveCategory(cat as any);
-                                                }
+                                                setView('dashboard');
+                                                setActiveCategory(cat as any);
                                             }}
                                             className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
                                                 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
