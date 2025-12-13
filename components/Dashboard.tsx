@@ -134,6 +134,15 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 </span>
             </div>}
 
+            {/* 15b. Korea Paid (Admin Only) */}
+            {userProfile === 'Admin' && (
+                <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                        {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                    </span>
+                </div>
+            )}
+
             {/* 16. Status */}
             <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
                 <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${s.status === 'Completed' ? 'text-blue-400' :
@@ -1337,12 +1346,12 @@ export default function Dashboard() {
                                 <div className="grid text-sm divide-y divide-white/5 min-w-max"
                                     style={{
                                         gridTemplateColumns: userProfile === 'Admin'
-                                            ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 160px 100px 100px"
+                                            ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
                                             : canViewPrices
                                                 ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 160px 100px 100px"
                                                 : "40px 250px 100px 100px 120px 150px 150px 150px 160px 100px 100px"
                                     }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : canViewPrices ? 'span 13' : 'span 11' }}>
+                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 13' : 'span 11' }}>
                                         <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
@@ -1376,6 +1385,7 @@ export default function Dashboard() {
                                         {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
                                         {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
                                         {canViewPrices && <div className="p-3 text-right">Balance</div>}
+                                        {userProfile === 'Admin' && <div className="p-3 text-center">Korea</div>}
                                         <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
                                             Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
@@ -1394,7 +1404,7 @@ export default function Dashboard() {
                                             });
                                             return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : canViewPrices ? 'span 13' : 'span 11', display: 'grid' }}>
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 13' : 'span 11', display: 'grid' }}>
                                         {filteredSales.map(s => (
                                             <SortableSaleItem
                                                 key={s.id}
@@ -1411,7 +1421,7 @@ export default function Dashboard() {
                                     </Reorder.Group>
 
                                     {/* Footer Totals */}
-                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
+                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 14' }}>
                                         <div className="p-3 text-right col-span-8">Totals</div>
                                         {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
                                         <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
