@@ -118,14 +118,10 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 </div>
             )}
 
-            {/* 12,13,14. Admin Fees/Profit */}
-            {
-                userProfile === 'Admin' && <>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
-                    <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>
-                </>
-            }
+            {/* 12,13,14. Fees/Tax/Profit */}
+            {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>}
+            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>}
+            {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
 
             {/* 15. Balance */}
             {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
@@ -137,7 +133,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             {/* 15b. Korea Paid (Admin Only) */}
             {userProfile === 'Admin' && (
                 <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
+                    <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-400'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
@@ -1348,10 +1344,10 @@ export default function Dashboard() {
                                         gridTemplateColumns: userProfile === 'Admin'
                                             ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
                                             : canViewPrices
-                                                ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 160px 100px 100px"
+                                                ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 160px 100px 100px"
                                                 : "40px 250px 100px 100px 120px 150px 150px 150px 160px 100px 100px"
                                     }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 13' : 'span 11' }}>
+                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 14' : 'span 11' }}>
                                         <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
@@ -1383,7 +1379,9 @@ export default function Dashboard() {
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
                                         {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
-                                        {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
+                                        {userProfile === 'Admin' && <div className="p-3 text-right">Bank Fee</div>}
+                                        {canViewPrices && <div className="p-3 text-right">Tax</div>}
+                                        {userProfile === 'Admin' && <div className="p-3 text-right text-blue-400">Profit</div>}
                                         {canViewPrices && <div className="p-3 text-right">Balance</div>}
                                         {userProfile === 'Admin' && <div className="p-3 text-center">Korea</div>}
                                         <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
@@ -1404,7 +1402,7 @@ export default function Dashboard() {
                                             });
                                             return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 13' : 'span 11', display: 'grid' }}>
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : canViewPrices ? 'span 14' : 'span 11', display: 'grid' }}>
                                         {filteredSales.map(s => (
                                             <SortableSaleItem
                                                 key={s.id}
