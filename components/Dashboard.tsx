@@ -934,8 +934,22 @@ export default function Dashboard() {
         return JSON.stringify(s).toLowerCase().includes(term);
     }).sort((a, b) => {
         // Apply sorting
-        let aVal: any = a[sortBy as keyof CarSale];
-        let bVal: any = b[sortBy as keyof CarSale];
+        let aVal: any = '';
+        let bVal: any = '';
+
+        if (sortBy === 'koreaBalance') {
+            aVal = (a.costToBuy || 0) - (a.amountPaidToKorea || 0);
+            bVal = (b.costToBuy || 0) - (b.amountPaidToKorea || 0);
+        } else if (sortBy === 'dueBalance') {
+            aVal = calculateBalance(a);
+            bVal = calculateBalance(b);
+        } else if (sortBy === 'nameAlphabetic') {
+            aVal = ((a.brand || '') + ' ' + (a.model || '')).trim();
+            bVal = ((b.brand || '') + ' ' + (b.model || '')).trim();
+        } else {
+            aVal = a[sortBy as keyof CarSale];
+            bVal = b[sortBy as keyof CarSale];
+        }
 
         // Handle string sorting
         if (typeof aVal === 'string' && typeof bVal === 'string') {
@@ -943,9 +957,9 @@ export default function Dashboard() {
             bVal = bVal.toLowerCase();
         }
 
-        // Handle undefined/null
-        if (aVal === undefined || aVal === null) aVal = '';
-        if (bVal === undefined || bVal === null) bVal = '';
+        // Handle undefined/null (treat as 0 for numbers, empty for strings)
+        if (aVal === undefined || aVal === null) aVal = typeof aVal === 'number' ? 0 : '';
+        if (bVal === undefined || bVal === null) bVal = typeof bVal === 'number' ? 0 : '';
 
         if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
@@ -1156,6 +1170,28 @@ export default function Dashboard() {
                             <input placeholder="Search cars..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2 items-center">
+                            {/* Grouping Dropdown - Hidden on Mobile */}
+                            <div className="relative">
+                                <ArrowUpDown className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => {
+                                        setSortBy(e.target.value);
+                                        // Auto-set direction based on type for better UX
+                                        if (e.target.value === 'nameAlphabetic') setSortDir('asc');
+                                        else if (e.target.value === 'createdAt') setSortDir('desc'); // Newest first
+                                        else setSortDir('desc'); // Balances usually decrease or show high debt first
+                                    }}
+                                    className="bg-[#1a1a1a] border border-white/10 text-white text-xs md:text-sm rounded-xl pl-8 pr-4 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer w-[120px] md:w-auto truncate"
+                                >
+                                    <option value="createdAt">Date Added</option>
+                                    <option value="nameAlphabetic">Name (A-Z)</option>
+                                    <option value="dueBalance">Balance (Client)</option>
+                                    <option value="koreaBalance">Balance (Korea)</option>
+                                    <option value="year">Year</option>
+                                </select>
+                            </div>
+
                             {/* Grouping Dropdown - Hidden on Mobile */}
                             <select
                                 value={groupBy}
