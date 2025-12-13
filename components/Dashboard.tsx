@@ -1218,7 +1218,7 @@ export default function Dashboard() {
                                     <div className="max-h-40 overflow-y-auto space-y-1">
                                         {availableProfiles.map(p => (
                                             <button key={p} onClick={() => {
-                                                if (p === 'Admin' && userProfile !== 'Admin') {
+                                                if ((p === 'Admin' || p === 'Robert') && userProfile !== p) {
                                                     setPendingProfile(p);
                                                     setPasswordInput('');
                                                     setIsPasswordVisible(false);
