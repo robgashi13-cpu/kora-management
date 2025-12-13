@@ -12,6 +12,7 @@ interface Props {
     existingSale: CarSale | null;
     inline?: boolean;
     defaultStatus?: SaleStatus;
+    isAdmin?: boolean;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -34,7 +35,7 @@ const COLORS = [
 
 import ContractModal from './ContractModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New' }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('Vehicle');
@@ -320,14 +321,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
                                 </div>
 
-                                {/* Korea/Supplier Payments */}
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Supplier (Korea)</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
-                                        <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
+                                {/* Korea/Supplier Payments (Admin Only) */}
+                                {isAdmin && (
+                                    <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                                        <h4 className="text-xs font-bold text-gray-400 uppercase">Supplier (Korea)</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
+                                            <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 {/* Client Payments */}
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">

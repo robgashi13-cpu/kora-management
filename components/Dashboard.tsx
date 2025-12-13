@@ -28,7 +28,7 @@ const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costTo
 
 const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile, canViewPrices, onClick, onDelete }: any) => {
     const controls = useDragControls();
-    const isAdmin = ['Admin', 'Robert'].includes(userProfile || '');
+    const isAdmin = userProfile === 'Admin';
     return (
         <Reorder.Item value={s} id={s.id} className="contents group hover:bg-white/5">
             {/* Hidden Card View */}
@@ -198,12 +198,10 @@ export default function Dashboard() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-    const canViewPrices = ['Robert Gashi', 'Admin', 'Robert'].includes(userProfile || '');
-    const isAdmin = ['Admin', 'Robert'].includes(userProfile || '');
+    const canViewPrices = userProfile === 'Admin';
+    const isAdmin = userProfile === 'Admin';
 
-
-    // Legacy/Other State
-    const [activeCategory, setActiveCategory] = useState<'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
+    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formResetKey, setFormResetKey] = useState(0);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
@@ -1067,8 +1065,8 @@ export default function Dashboard() {
     };
 
     const filteredSales = sales.filter(s => {
-        // Visibility Rule: Non-Admins cannot see Admin's sales
-        if (userProfile !== 'Admin' && s.soldBy === 'Admin') return false;
+        // Visibility Rule: Non-Admins strictly see ONLY their own sales
+        if (userProfile !== 'Admin' && s.soldBy !== userProfile) return false;
 
         // Category Filter
         if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
@@ -1383,6 +1381,7 @@ export default function Dashboard() {
                                     setView('landing');
                                 }}
                                 existingSale={null}
+                                isAdmin={isAdmin}
                             />
                         </div>
                     </div>
@@ -1789,6 +1788,7 @@ export default function Dashboard() {
                     onSave={handleAddSale}
                     existingSale={editingSale}
                     defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                    isAdmin={isAdmin}
                 />
             )}
             {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
