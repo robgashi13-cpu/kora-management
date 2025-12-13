@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Paperclip, FileText } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
 import { CarSale, SaleStatus, PaymentMethod, Attachment } from '@/app/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -267,10 +267,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             </div>
 
             <div
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col"
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2"
             >
                 <form
                     onSubmit={handleSubmit}
@@ -285,19 +282,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Year</label>
-                                        <select name="year" value={formData.year} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
-                                            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Color</label>
-                                        <select name="color" value={formData.color} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
-                                            <option value="">Select</option>
-                                            {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
+                                    <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
+                                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                                    </Select>
+                                    <Select label="Color" name="color" value={formData.color} onChange={handleChange}>
+                                        <option value="">Select</option>
+                                        {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </Select>
                                     <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -316,10 +307,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Shipping Date</label>
-                                        <input type="date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none" />
-                                    </div>
+                                    <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
                             </motion.div>
                         )}
@@ -336,10 +324,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     <h4 className="text-xs font-bold text-gray-400 uppercase">Supplier (Korea)</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Paid Date (KR)</label>
-                                            <input type="date" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
-                                        </div>
+                                        <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
                                     </div>
                                 </div>
 
@@ -350,30 +335,21 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                         <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                         <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
                                         <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
-                                        <div className="flex flex-col gap-1">
-                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Dep. Date</label>
-                                            <input type="date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
-                                        </div>
+                                        <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
                                         <div className="col-span-1 sm:col-span-2">
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Full Payment Date</label>
-                                                <input type="date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
-                                            </div>
+                                            <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Status</label>
-                                        <select name="status" value={formData.status} onChange={handleChange} className="bg-[#1a1a1a] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none">
-                                            <option value="New">New</option>
-                                            <option value="In Progress">In Progress</option>
-                                            <option value="Shipped">Shipped</option>
-                                            <option value="Completed">Completed</option>
-                                            <option value="Cancelled">Cancelled</option>
-                                        </select>
-                                    </div>
+                                    <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
+                                        <option value="New">New</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Shipped">Shipped</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </Select>
                                     <div className="flex flex-col gap-1">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold ml-1 opacity-0">Transport</label>
                                         <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
@@ -475,11 +451,38 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Input = ({ label, className = "", ...props }: any) => (
-
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
         <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
         <input
-            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg p-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
+            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
+            {...props}
+        />
+    </div>
+);
+
+const Select = ({ label, children, ...props }: any) => (
+    <div className="flex flex-col gap-1 text-left w-full">
+        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
+        <div className="relative w-full">
+            <select
+                className="appearance-none bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-full h-[46px]"
+                {...props}
+            >
+                {children}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                <ChevronDown className="h-4 w-4" />
+            </div>
+        </div>
+    </div>
+);
+
+const DateInput = ({ label, ...props }: any) => (
+    <div className="flex flex-col gap-1 w-full">
+        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
+        <input
+            type="date"
+            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
             {...props}
         />
     </div>
