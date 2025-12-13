@@ -1306,7 +1306,12 @@ export default function Dashboard() {
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
                                 {filteredSales.map(sale => (
-                                    <div key={sale.id} className="relative border-b border-white/5">
+                                    <motion.div
+                                        key={sale.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        className="relative border-b border-white/5"
+                                    >
                                         {/* Background Action (Delete) */}
                                         <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
                                             <Trash2 className="text-white w-5 h-5" />
@@ -1315,8 +1320,6 @@ export default function Dashboard() {
                                         {/* Foreground Card */}
                                         <motion.div
                                             layout
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
                                             drag="x"
                                             dragDirectionLock
                                             dragConstraints={{ left: -80, right: 0 }}
@@ -1366,7 +1369,7 @@ export default function Dashboard() {
                                                 {/* Hidden Profit Debug Line */}
                                             </div>
                                         </motion.div>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         </>) : view === 'settings' ? (
