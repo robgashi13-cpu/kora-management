@@ -1299,7 +1299,7 @@ export default function Dashboard() {
                         {/* Floating Action Button for Add Sale */}
                         <button
                             onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
-                            className={`md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center ${selectedIds.size > 0 ? 'hidden' : ''}`}
+                            className={`md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center ${selectedIds.size > 0 || activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON' ? 'hidden' : ''}`}
                         >
                             <Plus className="w-6 h-6" />
                         </button>
@@ -1690,10 +1690,11 @@ export default function Dashboard() {
             </main>
 
             {/* Contextual FAB for Inspections/Autosallon */}
+            {/* Contextual FAB for Inspections/Autosallon - Visible on ALL devices if active */}
             {(activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON') && (
                 <button
                     onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
-                    className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-2xl z-40 active:scale-95 transition-transform"
+                    className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-2xl z-[100] active:scale-95 transition-transform hover:scale-110"
                 >
                     <Plus className="w-8 h-8" />
                 </button>
