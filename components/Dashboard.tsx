@@ -1068,8 +1068,8 @@ export default function Dashboard() {
         // Filter out system config rows
         if (s.id === 'config_profile_avatars') return false;
 
-        // Visibility Rule: Non-Admins strictly see ONLY their own sales
-        if (userProfile !== 'Admin' && s.soldBy !== userProfile) return false;
+        // Allow all cars to be seen, masked info handled in render
+
 
         // Category Filter
         if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
