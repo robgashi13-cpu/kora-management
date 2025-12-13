@@ -11,6 +11,7 @@ interface Props {
     onSave: (sale: CarSale) => void;
     existingSale: CarSale | null;
     inline?: boolean;
+    defaultStatus?: SaleStatus;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -33,8 +34,8 @@ const COLORS = [
 
 import ContractModal from './ContractModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false }: Props) {
-    const [formData, setFormData] = useState<Partial<CarSale>>(EMPTY_SALE);
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New' }: Props) {
+    const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('Vehicle');
     const [contractType, setContractType] = useState<'deposit' | 'full' | null>(null);

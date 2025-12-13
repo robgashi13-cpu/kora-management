@@ -16,6 +16,7 @@ import ContractModal from './ContractModal';
 import ProfileSelector from './ProfileSelector';
 import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
+import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -200,19 +201,58 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
 
-    // Initialize Avatars
+    // Initialize & Sync Avatars
     useEffect(() => {
-        const init = async () => {
-            const storedAvatars = await Preferences.get({ key: 'profile_avatars' });
-            if (storedAvatars.value) setProfileAvatars(JSON.parse(storedAvatars.value));
-        }
-        init();
-    }, []);
+        const syncAvatars = async () => {
+            const stored = (await Preferences.get({ key: 'profile_avatars' })).value;
+            let current = stored ? JSON.parse(stored) : {};
+
+            if (supabaseUrl && supabaseKey) {
+                try {
+                    const client = createClient(supabaseUrl, supabaseKey);
+                    const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                    if (data?.attachments?.avatars) {
+                        current = { ...current, ...data.attachments.avatars };
+                        setProfileAvatars(current);
+                        await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(current) });
+                    } else {
+                        setProfileAvatars(current);
+                    }
+                } catch (e) {
+                    console.error("Avatar Sync Error", e);
+                    setProfileAvatars(current);
+                }
+            } else {
+                setProfileAvatars(current);
+            }
+        };
+        syncAvatars();
+    }, [supabaseUrl, supabaseKey]);
 
     const handleEditAvatar = async (name: string, base64: string) => {
         const updated = { ...profileAvatars, [name]: base64 };
         setProfileAvatars(updated);
         await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(updated) });
+
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createClient(supabaseUrl, supabaseKey);
+                await client.from('sales').upsert({
+                    id: 'config_profile_avatars',
+                    brand: 'CONFIG',
+                    model: 'AVATARS',
+                    status: 'Completed',
+                    year: new Date().getFullYear(),
+                    km: 0,
+                    cost_to_buy: 0,
+                    sold_price: 0,
+                    amount_paid_cash: 0,
+                    amount_paid_bank: 0,
+                    deposit: 0,
+                    attachments: { avatars: updated }
+                });
+            } catch (e) { console.error("Avatar Upload Error", e); }
+        }
     };
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
@@ -1646,9 +1686,28 @@ export default function Dashboard() {
                         </AnimatePresence>
                     </>
                 )}
+
             </main>
 
-            {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
+            {/* Contextual FAB for Inspections/Autosallon */}
+            {(activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON') && (
+                <button
+                    onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
+                    className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-2xl z-40 active:scale-95 transition-transform"
+                >
+                    <Plus className="w-8 h-8" />
+                </button>
+            )}
+
+            {isModalOpen && (
+                <SaleModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={handleAddSale}
+                    existingSale={editingSale}
+                    defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                />
+            )}
             {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
             {contractSale && <ContractModal sale={contractSale} type={contractType} onClose={() => setContractSale(null)} />}
             {
