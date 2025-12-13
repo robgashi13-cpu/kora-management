@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -1064,7 +1064,10 @@ export default function Dashboard() {
         } catch (e) { console.error(e); }
     };
 
-    const filteredSales = sales.filter(s => {
+    const filteredSales = React.useMemo(() => sales.filter(s => {
+        // Filter out system config rows
+        if (s.id === 'config_profile_avatars') return false;
+
         // Visibility Rule: Non-Admins strictly see ONLY their own sales
         if (userProfile !== 'Admin' && s.soldBy !== userProfile) return false;
 
@@ -1096,20 +1099,20 @@ export default function Dashboard() {
             bVal = b[sortBy as keyof CarSale];
         }
 
-        // Handle string sorting
-        if (typeof aVal === 'string' && typeof bVal === 'string') {
-            aVal = aVal.toLowerCase();
-            bVal = bVal.toLowerCase();
-        }
-
         // Handle undefined/null (treat as 0 for numbers, empty for strings)
         if (aVal === undefined || aVal === null) aVal = typeof aVal === 'number' ? 0 : '';
         if (bVal === undefined || bVal === null) bVal = typeof bVal === 'number' ? 0 : '';
 
-        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
-        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        // Handle string sorting
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+            return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        // Handle number sorting
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+        }
         return 0;
-    });
+    }), [sales, userProfile, activeCategory, searchTerm, sortBy, sortDir]);
 
     // Toggle sort column
     const toggleSort = (column: string) => {
