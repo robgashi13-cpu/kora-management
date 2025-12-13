@@ -1182,7 +1182,7 @@ export default function Dashboard() {
                     </button>
 
                     <button
-                        onClick={() => setView('dashboard')}
+                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
                         className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
                     >
                         <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
