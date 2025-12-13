@@ -1669,6 +1669,7 @@ export default function Dashboard() {
                                         </button>
                                         {showMoveMenu && (
                                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1a1a] border border-white/20 rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col gap-1 w-32 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Sales</button>
                                                 <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Shipped</button>
                                                 <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Inspections</button>
                                                 <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Autosallon</button>
