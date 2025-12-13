@@ -45,10 +45,10 @@ const toRemote = (s: CarSale, userProfile: string) => ({
         depositInvoices: s.depositInvoices,
         notes: s.notes,
         group: s.group,
-        buyerPersonalId: s.buyerPersonalId
+        buyerPersonalId: s.buyerPersonalId,
+        soldBy: s.soldBy
     },
     last_edited_by: userProfile,
-    sold_by: s.soldBy
 });
 
 // Helper to map Remote (snake) to Local (camel)
@@ -94,7 +94,7 @@ const fromRemote = (r: any): CarSale => ({
     group: r.group || r.attachments?.group,
 
     createdAt: r.created_at || new Date().toISOString(),
-    soldBy: r.sold_by,
+    soldBy: r.sold_by || r.attachments?.soldBy,
 });
 
 export const syncSalesWithSupabase = async (
