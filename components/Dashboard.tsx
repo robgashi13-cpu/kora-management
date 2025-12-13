@@ -137,12 +137,11 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             {/* 16. Status */}
             <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
                 <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${s.status === 'Completed' ? 'text-blue-400' :
-                    s.status === 'In Progress' ? 'text-orange-400' :
+                    (s.status === 'In Progress' || s.status === 'Autosallon') ? 'text-orange-400' :
                         s.status === 'New' ? 'text-green-400' :
                             s.status === 'Shipped' ? 'text-purple-400' :
                                 s.status === 'Inspection' ? 'text-yellow-400' :
-                                    s.status === 'Autosallon' ? 'text-cyan-400' :
-                                        'text-gray-400'
+                                    'text-gray-400'
                     }`}>{s.status}</span>
             </div>
 
@@ -1491,8 +1490,9 @@ export default function Dashboard() {
                                                         <div className="flex justify-between items-start">
                                                             <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
                                                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
-                                                                sale.status === 'New' ? 'bg-blue-500/10 text-blue-400' :
-                                                                    'bg-gray-800 text-gray-400'
+                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
+                                                                    sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                                        'bg-gray-800 text-gray-400'
                                                                 }`}>{sale.status}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
