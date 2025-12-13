@@ -1497,7 +1497,14 @@ export default function Dashboard() {
                                                 toggleSelection={toggleSelection}
                                                 selectedIds={selectedIds}
                                                 openInvoice={openInvoice}
-                                                onClick={() => { setEditingSale(s); setIsModalOpen(true); }}
+                                                onClick={() => {
+                                                    if (!isAdmin && s.soldBy !== userProfile) {
+                                                        alert("You do not have permission to edit this sale.");
+                                                        return;
+                                                    }
+                                                    setEditingSale(s);
+                                                    setIsModalOpen(true);
+                                                }}
                                                 onDelete={handleDeleteSingle}
                                             />
                                         ))}
