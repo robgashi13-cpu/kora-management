@@ -647,9 +647,11 @@ export default function Dashboard() {
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
                 if (salesRes.data) {
-                    setSales(salesRes.data);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(salesRes.data) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(salesRes.data));
+                    // Deduplicate results based on ID to prevent duplicates
+                    const uniqueSales = Array.from(new Map(salesRes.data.map((s: CarSale) => [s.id, s])).values());
+                    setSales(uniqueSales);
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(uniqueSales) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(uniqueSales));
                 }
             } else if (salesRes.error) {
                 console.error("Sales Sync Failed:", salesRes.error);
