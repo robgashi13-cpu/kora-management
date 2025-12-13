@@ -647,8 +647,33 @@ export default function Dashboard() {
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
                 if (salesRes.data) {
-                    // Deduplicate results based on ID to prevent duplicates
-                    const uniqueSales = Array.from(new Map(salesRes.data.map((s: CarSale) => [s.id, s])).values());
+                    // Aggressive Deduplication: Filter by ID, VIN, and Plate Number
+                    const seenIds = new Set<string>();
+                    const seenVins = new Set<string>();
+                    const seenPlates = new Set<string>();
+
+                    const uniqueSales = salesRes.data.filter((s: CarSale) => {
+                        // 1. Check ID
+                        if (seenIds.has(s.id)) return false;
+
+                        // 2. Check VIN (if present and valid length > 5 to avoid short garbage)
+                        if (s.vin && s.vin.trim().length > 5) {
+                            const normalizedVin = s.vin.trim().toUpperCase();
+                            if (seenVins.has(normalizedVin)) return false;
+                            seenVins.add(normalizedVin);
+                        }
+
+                        // 3. Check Plate (if present)
+                        if (s.plateNumber && s.plateNumber.trim().length > 3) {
+                            const normalizedPlate = s.plateNumber.trim().toUpperCase().replace(/\s+/g, '');
+                            if (seenPlates.has(normalizedPlate)) return false;
+                            seenPlates.add(normalizedPlate);
+                        }
+
+                        seenIds.add(s.id);
+                        return true;
+                    });
+
                     setSales(uniqueSales);
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(uniqueSales) });
                     localStorage.setItem('car_sales_data', JSON.stringify(uniqueSales));
