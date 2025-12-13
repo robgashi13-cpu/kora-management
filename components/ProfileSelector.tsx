@@ -112,16 +112,29 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         </div>
                         <span className="text-xl text-gray-400 group-hover:text-white transition-colors">{p}</span>
                         {p !== 'Admin' && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingProfile(p);
-                                    setEditName(p);
-                                }}
-                                className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/80 rounded-full text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </button>
+                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingProfile(p);
+                                        setEditName(p);
+                                    }}
+                                    className="p-2 bg-black/50 hover:bg-black/80 rounded-full text-gray-400 hover:text-white"
+                                    title="Edit Profile"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm(`Delete profile "${p}"?`)) onDelete(p);
+                                    }}
+                                    className="p-2 bg-black/50 hover:bg-red-900/80 rounded-full text-gray-400 hover:text-red-400"
+                                    title="Delete Profile"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         )}
                     </motion.div>
                 ))}
