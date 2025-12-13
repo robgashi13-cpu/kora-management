@@ -23,8 +23,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    const [pendingProfile, setPendingProfile] = useState<string | null>(null);
+
     const handleSelect = (p: string) => {
-        if (p === 'Admin') {
+        if (p === 'Admin' || p === 'Robert') {
+            setPendingProfile(p);
             setShowPasswordModal(true);
             setPassword('');
             setShowPassword(false);
@@ -34,9 +37,10 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const confirmPassword = () => {
-        if (password === 'Robertoo1396$') {
-            onSelect('Admin');
+        if (password === 'Robertoo1396$' && pendingProfile) {
+            onSelect(pendingProfile);
             setShowPasswordModal(false);
+            setPendingProfile(null);
         } else {
             alert("Incorrect Password!");
         }
@@ -109,11 +113,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onClick={() => handleSelect(p)}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer"
                         >
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-2xl border-2 transition-colors overflow-hidden ${p === 'Admin' ? 'bg-gradient-to-br from-red-900 to-black border-red-500/50 group-hover:border-red-500'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-2xl border-2 transition-colors overflow-hidden ${(p === 'Admin' || p === 'Robert') ? 'bg-gradient-to-br from-red-900 to-black border-red-500/50 group-hover:border-red-500'
                                 : 'bg-gradient-to-br from-blue-900 to-black border-blue-500/50 group-hover:border-blue-500'
                                 }`}>
                                 {avatars[p] ? <img src={avatars[p]} alt={p} className="w-full h-full object-cover" /> :
-                                    p === 'Admin' ? <Lock className="w-12 h-12 text-red-500" /> :
+                                    (p === 'Admin' || p === 'Robert') ? <Lock className="w-12 h-12 text-red-500" /> :
                                         <span className="text-white">{p[0].toUpperCase()}</span>}
                             </div>
                             <span className="text-xl text-gray-400 group-hover:text-white transition-colors">{p}</span>
