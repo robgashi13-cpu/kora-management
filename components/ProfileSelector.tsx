@@ -15,6 +15,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [newName, setNewName] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
+    const [isManaging, setIsManaging] = useState(false);
 
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [password, setPassword] = useState('');
@@ -112,7 +113,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         </div>
                         <span className="text-xl text-gray-400 group-hover:text-white transition-colors">{p}</span>
                         {p !== 'Admin' && (
-                            <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <div className={`absolute top-2 right-2 flex gap-2 transition-all ${isManaging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -139,17 +140,25 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     </motion.div>
                 ))}
 
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsAdding(true)}
-                    className="group flex flex-col items-center gap-4"
-                >
-                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center border-2 border-white/20 hover:bg-white/10 transition-colors bg-black/50">
-                        <Plus className="w-12 h-12 text-gray-400 group-hover:text-white" />
-                    </div>
-                    <span className="text-xl text-gray-400 group-hover:text-white transition-colors">Add Profile</span>
-                </motion.button>
+                <div className="flex flex-col items-center gap-4">
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsAdding(true)}
+                        className="group flex flex-col items-center gap-4"
+                    >
+                        <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center border-2 border-white/20 hover:bg-white/10 transition-colors bg-black/50">
+                            <Plus className="w-12 h-12 text-gray-400 group-hover:text-white" />
+                        </div>
+                        <span className="text-xl text-gray-400 group-hover:text-white transition-colors">Add Profile</span>
+                    </motion.button>
+                    <button
+                        onClick={() => setIsManaging(!isManaging)}
+                        className={`text-sm font-bold px-6 py-2 rounded-full border transition-all ${isManaging ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : 'bg-white/5 border-white/20 text-gray-500 hover:text-white hover:bg-white/10'}`}
+                    >
+                        {isManaging ? 'Done Managing' : 'Manage Profiles'}
+                    </button>
+                </div>
             </div>
 
             {/* Admin Password Modal */}
