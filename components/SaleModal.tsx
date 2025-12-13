@@ -357,10 +357,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                             <option value="Cancelled">Cancelled</option>
                                         </select>
                                     </div>
-                                    <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
-                                        <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
-                                        <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
-                                    </label>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1 opacity-0">Transport</label>
+                                        <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
+                                            <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
+                                            <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="p-4 rounded-xl bg-black/40 border border-white/10 flex justify-between items-center">
@@ -459,7 +462,7 @@ const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1 ${className}`}>
         <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
         <input
-            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg p-2.5 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full"
+            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg p-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
             {...props}
         />
     </div>

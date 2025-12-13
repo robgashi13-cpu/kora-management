@@ -75,7 +75,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pt-[max(3rem,env(safe-area-inset-top))] print:p-0">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] print:p-0">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md print:hidden" onClick={onClose} />
 
             <motion.div

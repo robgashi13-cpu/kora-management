@@ -87,7 +87,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const seller = { name: "ROBERT GASHI", id: "1232189645", phone: "048181116" };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md" onClick={onClose}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-black/90 backdrop-blur-md" onClick={onClose}>
             <div className="bg-[#1a1a1a] text-white w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
                 {/* Header Actions */}
                 <div className="flex justify-between items-center p-4 border-b border-white/10 bg-[#111]">
