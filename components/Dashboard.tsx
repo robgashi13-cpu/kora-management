@@ -1177,26 +1177,28 @@ export default function Dashboard() {
 
                 <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
                     <button
-                        onClick={() => setView('add_sale')}
+                        id="btn-add-sale"
+                        onClick={(e) => { e.stopPropagation(); setView('add_sale'); }}
                         className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-blue-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-blue-900/20"
                     >
-                        <div className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <div className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 pointer-events-none">
                             <Plus className="w-12 h-12" />
                         </div>
-                        <div className="text-center">
+                        <div className="text-center pointer-events-none">
                             <div className="text-3xl font-bold text-white mb-2">Add New Sale</div>
                             <div className="text-gray-500">Record a new vehicle sale</div>
                         </div>
                     </button>
 
                     <button
-                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
+                        id="btn-view-sales"
+                        onClick={(e) => { e.stopPropagation(); setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
                         className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
                     >
-                        <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                        <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 pointer-events-none">
                             <Clipboard className="w-12 h-12" />
                         </div>
-                        <div className="text-center">
+                        <div className="text-center pointer-events-none">
                             <div className="text-3xl font-bold text-white mb-2">View Sales</div>
                             <div className="text-gray-500">Access dashboard & history</div>
                         </div>
