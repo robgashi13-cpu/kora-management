@@ -887,6 +887,7 @@ export default function Dashboard() {
             return newSales;
         });
 
+        alert(editingSale ? 'Sale updated successfully!' : 'Sale created successfully!');
         setIsModalOpen(false);
         setEditingSale(null);
         setFormResetKey(prev => prev + 1);
@@ -1414,7 +1415,7 @@ export default function Dashboard() {
                                 onClose={() => setView('landing')}
                                 onSave={(sale) => {
                                     handleAddSale(sale);
-                                    setView('landing');
+                                    setView('dashboard');
                                 }}
                                 existingSale={null}
                                 isAdmin={isAdmin}
