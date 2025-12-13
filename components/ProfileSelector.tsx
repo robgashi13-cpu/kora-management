@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X } from 'lucide-react';
+import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ProfileSelectorProps {
@@ -8,9 +8,11 @@ interface ProfileSelectorProps {
     onAdd: (name: string) => void;
     onDelete: (name: string) => void;
     onEdit: (oldName: string, newName: string) => void;
+    avatars: Record<string, string>;
+    onEditAvatar: (name: string, base64: string) => void;
 }
 
-export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit }: ProfileSelectorProps) {
+export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar }: ProfileSelectorProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
@@ -107,10 +109,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onClick={() => handleSelect(p)}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer"
                         >
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-2xl border-2 transition-colors ${p === 'Admin' ? 'bg-gradient-to-br from-red-900 to-black border-red-500/50 group-hover:border-red-500'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-2xl border-2 transition-colors overflow-hidden ${p === 'Admin' ? 'bg-gradient-to-br from-red-900 to-black border-red-500/50 group-hover:border-red-500'
                                 : 'bg-gradient-to-br from-blue-900 to-black border-blue-500/50 group-hover:border-blue-500'
                                 }`}>
-                                {p === 'Admin' ? <Lock className="w-12 h-12 text-red-500" /> : <span className="text-white">{p[0].toUpperCase()}</span>}
+                                {p === 'Admin' ? <Lock className="w-12 h-12 text-red-500" /> :
+                                    avatars[p] ? <img src={avatars[p]} alt={p} className="w-full h-full object-cover" /> :
+                                        <span className="text-white">{p[0].toUpperCase()}</span>}
                             </div>
                             <span className="text-xl text-gray-400 group-hover:text-white transition-colors">{p}</span>
                             {p !== 'Admin' && (
@@ -198,6 +202,37 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         <div className="bg-[#1a1a1a] p-8 rounded-2xl border border-white/10 w-full max-w-md text-center relative">
                             <button onClick={() => setEditingProfile(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X className="w-6 h-6" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-white">Edit Profile</h2>
+
+                            {/* Avatar Upload */}
+                            <div className="relative w-24 h-24 mx-auto mb-6 group">
+                                <div className="w-full h-full rounded-full overflow-hidden border-2 border-white/20 bg-black flex items-center justify-center">
+                                    {avatars[editingProfile] ? (
+                                        <img src={avatars[editingProfile]} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <span className="text-4xl text-gray-500">{editingProfile[0]}</span>
+                                    )}
+                                </div>
+                                <label className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full cursor-pointer hover:bg-blue-500 transition-colors shadow-lg">
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                    if (typeof reader.result === 'string') {
+                                                        onEditAvatar(editingProfile, reader.result);
+                                                    }
+                                                };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }}
+                                    />
+                                    <Camera className="w-4 h-4 text-white" />
+                                </label>
+                            </div>
 
                             <input
                                 autoFocus

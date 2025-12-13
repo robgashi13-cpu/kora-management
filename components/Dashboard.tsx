@@ -198,6 +198,22 @@ export default function Dashboard() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string>('');
     const [pullY, setPullY] = useState(0);
+    const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
+
+    // Initialize Avatars
+    useEffect(() => {
+        const init = async () => {
+            const storedAvatars = await Preferences.get({ key: 'profile_avatars' });
+            if (storedAvatars.value) setProfileAvatars(JSON.parse(storedAvatars.value));
+        }
+        init();
+    }, []);
+
+    const handleEditAvatar = async (name: string, base64: string) => {
+        const updated = { ...profileAvatars, [name]: base64 };
+        setProfileAvatars(updated);
+        await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(updated) });
+    };
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -1023,6 +1039,8 @@ export default function Dashboard() {
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
+            avatars={profileAvatars}
+            onEditAvatar={handleEditAvatar}
         />;
     }
 
@@ -1107,7 +1125,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="hidden md:flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
-                            {['dashboard', 'invoices', 'settings'].map((tab) => (
+                            {['dashboard', 'invoices', ...(userProfile === 'Admin' ? ['settings'] : [])].map((tab) => (
                                 <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[#252525] text-white shadow-inner' : 'text-gray-500 hover:text-gray-300'} `}>
                                     <span className="capitalize">{tab}</span>
                                 </button>
