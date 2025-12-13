@@ -314,10 +314,14 @@ export default function Dashboard() {
                 const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
                 if (data?.attachments?.profiles) {
                     const cloudProfiles: string[] = data.attachments.profiles;
+                    // Use cloud as source of truth - don't merge with defaults
+                    setAvailableProfiles(cloudProfiles);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(cloudProfiles) });
+                } else {
+                    // Only set defaults if cloud has no data
                     const systemDefaults = ['Robert Gashi', 'Admin', 'User', 'Robert'];
-                    const merged = Array.from(new Set([...cloudProfiles, ...systemDefaults])).filter(p => p !== 'Ardian Gashi');
-                    setAvailableProfiles(merged);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
+                    setAvailableProfiles(systemDefaults);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(systemDefaults) });
                 }
             } catch (e) { console.error("Profile Cloud Sync Error", e); }
         };
@@ -677,17 +681,14 @@ export default function Dashboard() {
                 let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
                 if (profiles) {
                     const loaded = JSON.parse(profiles);
-                    // Filter out Ardian if present? User said "remove ardian".
-                    // But if it's in Loaded, we should respect it UNLESS we force remove.
-                    // "remove ardian gashi profile" implies from NOW on.
-                    // If I remove it here, it will be gone.
-                    const systemDefaults = ['Robert Gashi', 'Admin', 'User'];
-                    const merged = Array.from(new Set([...loaded, ...systemDefaults])).filter(p => p !== 'Ardian Gashi');
-                    setAvailableProfiles(merged);
+                    // Use stored profiles as-is - don't merge with defaults
+                    setAvailableProfiles(loaded);
                 } else {
-                    const defaults = ['Robert Gashi', 'Admin', 'User'];
+                    const defaults = ['Robert Gashi', 'Admin', 'User', 'Robert'];
                     setAvailableProfiles(defaults);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
+                    // Also sync to cloud on first run
+                    syncProfilesToCloud(defaults);
                 }
             } catch (e) {
                 console.error("Initialization Failed:", e);
