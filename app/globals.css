@@ -41,12 +41,32 @@ html {
 }
 
 
+
+/* Safe Area Variables */
+:root {
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
+}
+
 body {
   color: var(--foreground);
   background: #000000;
   background-color: #000000;
+  /* Force */
   font-family: Arial, Helvetica, sans-serif;
   overscroll-behavior-y: none;
+  /* Ensure full height coverage */
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Ensure no white background leaks */
+#root,
+#__next {
+  background-color: #000000;
+  min-height: 100%;
 }
 
 

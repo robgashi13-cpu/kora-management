@@ -48,7 +48,7 @@ export default function AiAssistant({ data, apiKey }: { data: any, apiKey: strin
             {/* Floating Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className={`fixed bottom-6 right-6 p-4 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl hover:scale-110 transition-transform z-40 ${isOpen ? 'hidden' : 'flex'}`}
+                className={`fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 p-4 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl hover:scale-110 transition-transform z-[60] ${isOpen ? 'hidden' : 'flex'}`}
             >
                 <Sparkles className="w-6 h-6 animate-pulse" />
             </button>
@@ -60,7 +60,7 @@ export default function AiAssistant({ data, apiKey }: { data: any, apiKey: strin
                         initial={{ opacity: 0, y: 50, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        className="fixed bottom-6 right-6 w-[calc(100vw-3rem)] sm:w-96 h-[600px] max-h-[80vh] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+                        className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 w-[calc(100vw-3rem)] sm:w-96 h-[600px] max-h-[80vh] bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl z-[60] flex flex-col overflow-hidden"
                     >
                         {/* Header */}
                         <div className="p-4 bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-b border-white/10 flex justify-between items-center backdrop-blur-md">
