@@ -77,83 +77,83 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 2. Car Info - Click to edit */}
-            <div onClick={onClick} className="px-1.5 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5 cursor-pointer hover:text-blue-400">
+            <div onClick={onClick} className="px-1 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5 cursor-pointer hover:text-blue-400">
                 <span className="truncate">{s.brand} {s.model}</span>
             </div>
 
             {/* 3. Year */}
-            <div className="px-1.5 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
+            <div className="px-1 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
 
             {/* 4. KM */}
-            <div className="px-1.5 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
+            <div className="px-1 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1.5 h-full flex flex-col justify-center text-xs border-r border-white/5">
+            <div className="px-1 h-full flex flex-col justify-center text-xs border-r border-white/5">
                 <div className="text-white font-mono">{s.plateNumber}</div>
                 <div className="text-gray-600 font-mono" title={s.vin}>{(s.vin || '').slice(-6)}</div>
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1.5 h-full flex items-center text-gray-300 whitespace-normal break-words leading-tight border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+            <div className="px-1 h-full flex items-center text-gray-300 whitespace-normal break-words leading-tight border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
 
             {/* 7. Seller */}
-            <div className="px-1.5 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
+            <div className="px-1 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
 
             {/* 8. Shipping */}
-            <div className="px-1.5 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
+            <div className="px-1 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
 
             {/* 9. Cost (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) && (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
             )}
             {!isAdmin && s.soldBy !== userProfile && (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
             ) : (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
                     €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                 </div>
             ) : (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
-                    {isAdmin && <div className="px-1.5 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
+                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
-                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+                <div className="px-1 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                     <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-1.5 h-full flex items-center justify-center border-r border-white/5">
+                <div className="px-1 h-full flex items-center justify-center border-r border-white/5">
                     <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-400'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
@@ -161,7 +161,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 16. Status */}
-            <div className="px-1.5 h-full flex items-center justify-center border-r border-white/5">
+            <div className="px-1 h-full flex items-center justify-center border-r border-white/5">
                 <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${s.status === 'Completed' ? 'text-blue-400' :
                     (s.status === 'In Progress' || s.status === 'Autosallon') ? 'text-orange-400' :
                         s.status === 'New' ? 'text-green-400' :
@@ -172,10 +172,10 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1.5 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
+            <div className="px-1 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
 
             {/* 18. Actions */}
-            <div className="px-1.5 h-full flex items-center justify-center">
+            <div className="px-1 h-full flex items-center justify-center">
                 <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg" title="View Invoice"><FileText className="w-5 h-5" /></button>
             </div>
         </Reorder.Item >
@@ -1451,23 +1451,23 @@ export default function Dashboard() {
                         {view === 'dashboard' ? (<>
 
                             <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
-                                <div className="grid text-xs divide-y divide-white/5 min-w-max"
+                                <div className="grid text-[10px] divide-y divide-white/5 min-w-max"
                                     style={{
                                         gridTemplateColumns: isAdmin
-                                            ? "35px 180px 60px 80px 90px 110px 110px 110px 90px 90px 90px 70px 70px 80px 90px 90px 120px 80px 50px"
-                                            : "35px 180px 60px 80px 90px 110px 110px 110px 90px 90px 90px 70px 90px 90px 120px 80px 50px"
+                                            ? "30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 50px 60px 70px 70px 90px 60px 40px"
+                                            : "30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 70px 70px 90px 60px 40px"
                                     }}>
                                     <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-1.5 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
+                                        <div className="p-1 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
-                                        <div className="p-1.5 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                        <div className="p-1 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
                                             Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        <div className="p-1 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
                                             Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        <div className="p-1 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
                                             KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
                                         <div className="p-1.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
