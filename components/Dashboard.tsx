@@ -1383,7 +1383,9 @@ export default function Dashboard() {
                                         {canViewPrices && <div className="p-3 text-right">Tax</div>}
                                         {userProfile === 'Admin' && <div className="p-3 text-right text-blue-400">Profit</div>}
                                         {canViewPrices && <div className="p-3 text-right">Balance</div>}
-                                        {userProfile === 'Admin' && <div className="p-3 text-center">Korea</div>}
+                                        {userProfile === 'Admin' && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>}
                                         <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
                                             Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
