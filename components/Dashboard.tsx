@@ -1118,24 +1118,24 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div className="relative group w-full md:w-auto">
+                    <div className="flex gap-3 justify-between items-center">
+                        <div className="relative group flex-1 md:flex-none">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                            <input placeholder="Search..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input placeholder="Search cars..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
-                        <div className="flex gap-2 w-full md:w-auto justify-end items-center">
-                            {/* Grouping Dropdown */}
+                        <div className="flex gap-2 items-center">
+                            {/* Grouping Dropdown - Hidden on Mobile */}
                             <select
                                 value={groupBy}
                                 onChange={(e) => setGroupBy(e.target.value as any)}
-                                className="bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                                className="hidden md:block bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
                             >
                                 <option value="none">No Grouping</option>
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
 
-                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
+                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="hidden md:flex bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
                         </div>
@@ -1288,13 +1288,14 @@ export default function Dashboard() {
                                 </div>
                             </div>
                             {/* Mobile Card View */}
-                            <div className="md:hidden flex flex-col gap-4 overflow-auto flex-1 pb-20">
+                            {/* Mobile Compact List View */}
+                            <div className="md:hidden flex flex-col pb-20">
                                 {filteredSales.map(sale => (
                                     <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
                                         key={sale.id}
-                                        className={`bg-[#1a1a1a] border rounded-xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-all relative ${selectedIds.has(sale.id) ? 'border-blue-500 bg-blue-900/10 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/10'
+                                        className={`p-3 border-b border-white/5 flex items-center gap-3 active:bg-white/5 transition-colors relative ${selectedIds.has(sale.id) ? 'bg-blue-900/20' : 'bg-[#1a1a1a]'
                                             }`}
                                         onClick={() => {
                                             if (selectedIds.size > 0) {
@@ -1309,47 +1310,35 @@ export default function Dashboard() {
                                             toggleSelection(sale.id);
                                         }}
                                     >
-                                        {selectedIds.has(sale.id) && (
-                                            <div className="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1 z-10 shadow-lg animate-in zoom-in">
-                                                <CheckSquare className="w-4 h-4" />
+                                        {/* Selection Indicator (only visible when selection mode is active) */}
+                                        {selectedIds.size > 0 && (
+                                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
+                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                             </div>
                                         )}
 
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <div className="font-bold text-white text-lg">{sale.brand} {sale.model}</div>
-                                                <div className="text-sm text-gray-500">{sale.year} • {(sale.km || 0).toLocaleString()} km</div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start">
+                                                <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
+                                                    sale.status === 'New' ? 'bg-blue-500/10 text-blue-400' :
+                                                        'bg-gray-800 text-gray-400'
+                                                    }`}>{sale.status}</span>
                                             </div>
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${sale.status === 'Completed' ? 'bg-green-500/20 text-green-400' :
-                                                sale.status === 'New' ? 'bg-blue-500/20 text-blue-400' :
-                                                    'bg-gray-700 text-gray-300'
-                                                } `}>{sale.status}</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mt-2 bg-black/20 p-2 rounded-lg">
-                                            <div>VIN: <span className="text-gray-300 font-mono">{sale.vin.slice(-6)}...</span></div>
-                                            <div className="text-right">Buyer: <span className="text-gray-300">{sale.buyerName}</span></div>
-                                            <div className="col-span-2 flex justify-between pt-2 mt-2 border-t border-white/5">
-                                                <span>Sold By: <span className="text-blue-400">{sale.soldBy || 'Admin'}</span></span>
+                                            <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                {/* Show Balance if outstanding, else Sold Price */}
+                                                {calculateBalance(sale) > 0 ? (
+                                                    <span className="text-red-400 font-mono">Bal: €{calculateBalance(sale).toLocaleString()}</span>
+                                                ) : (
+                                                    <span className="text-green-500/70 font-mono">€{sale.soldPrice?.toLocaleString() || '0'}</span>
+                                                )}
                                             </div>
-                                        </div>
-
-                                        <div className="flex justify-between items-center pt-2 border-t border-white/5 h-12">
-                                            {userProfile === 'Admin' ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] text-gray-500 uppercase">Profit</span>
-                                                    <span className={`font-bold font-mono ${calculateProfit(sale) > 0 ? 'text-blue-400' : 'text-red-400'} `}>
-                                                        €{calculateProfit(sale).toLocaleString()}
-                                                    </span>
+                                            {selectedIds.has(sale.id) === false && userProfile === 'Admin' && calculateProfit(sale) !== 0 && (
+                                                <div className="text-[10px] text-right text-gray-600 mt-0.5">
+                                                    Pr: <span className={calculateProfit(sale) > 0 ? 'text-blue-500' : 'text-red-500'}>€{calculateProfit(sale)}</span>
                                                 </div>
-                                            ) : <div />}
-
-                                            <div className="flex flex-col text-right">
-                                                <span className="text-[10px] text-gray-500 uppercase">Balance</span>
-                                                <span className={`font-bold font-mono ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-400'} `}>
-                                                    €{calculateBalance(sale).toLocaleString()}
-                                                </span>
-                                            </div>
+                                            )}
                                         </div>
                                     </motion.div>
                                 ))}
