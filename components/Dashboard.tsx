@@ -1534,11 +1534,15 @@ export default function Dashboard() {
                                                 layout
                                                 drag="x"
                                                 dragDirectionLock
-                                                dragConstraints={{ left: -80, right: 0 }}
-                                                dragElastic={0.1}
+                                                dragConstraints={{ left: 0, right: 0 }}
+                                                dragElastic={{ left: 0.8, right: 0 }}
+                                                dragSnapToOrigin
                                                 onDragEnd={(e, { offset, velocity }) => {
-                                                    if (offset.x < -60) {
-                                                        if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
+                                                    if (offset.x < -100) {
+                                                        const shouldDelete = confirm('Delete this item?');
+                                                        if (shouldDelete) {
+                                                            handleDeleteSingle(sale.id);
+                                                        }
                                                     }
                                                 }}
                                                 className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
