@@ -12,6 +12,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import SaleModal from './SaleModal';
 import InvoiceModal from './InvoiceModal';
+import ContractModal from './ContractModal';
 import ProfileSelector from './ProfileSelector';
 import AiAssistant from './AiAssistant';
 import { chatWithData, processImportedData } from '@/services/openaiService';
@@ -181,6 +182,8 @@ export default function Dashboard() {
     const [expandedGroups, setExpandedGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [customGroups, setCustomGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
+    const [contractSale, setContractSale] = useState<CarSale | null>(null);
+    const [contractType, setContractType] = useState<'deposit' | 'full'>('full');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<string>('createdAt');
@@ -1447,16 +1450,33 @@ export default function Dashboard() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
-                                                    <span className="text-xs text-gray-600">
-                                                        {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}
-                                                    </span>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                        className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-xs"
-                                                    >
-                                                        <FileText className="w-4 h-4" /> View Invoice
-                                                    </button>
+                                                <div className="mt-4 pt-3 border-t border-white/5 block">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <span className="text-xs text-gray-600">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-orange-400" />
+                                                            View Deposit
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-blue-400" />
+                                                            View Contract
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-green-400" />
+                                                            View Invoice
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -1526,6 +1546,7 @@ export default function Dashboard() {
 
             {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
             {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
+            {contractSale && <ContractModal sale={contractSale} type={contractType} onClose={() => setContractSale(null)} />}
             {
                 showPasswordModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
