@@ -1167,23 +1167,10 @@ export default function Dashboard() {
                     <p className="text-gray-400 text-lg">Select an operation to proceed</p>
                 </div>
 
-                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
-                    <button
-                        onClick={() => setView('add_sale')}
-                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-blue-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-blue-900/20"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                            <Plus className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-white mb-2">Add New Sale</div>
-                            <div className="text-gray-500">Record a new vehicle sale</div>
-                        </div>
-                    </button>
-
+                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8 justify-center">
                     <button
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
-                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
+                        className="flex-1 max-w-md bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
                     >
                         <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
                             <Clipboard className="w-12 h-12" />
@@ -1343,429 +1330,403 @@ export default function Dashboard() {
             </header>
 
             <main className="flex-1 overflow-hidden bg-[#0a0a0a] p-4 md:p-8 flex flex-col relative">
-                {view === 'add_sale' ? (
-                    <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center justify-between mb-6">
-                            <button onClick={() => setView('landing')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                                <ArrowRight className="w-5 h-5 rotate-180" /> Back to Menu
-                            </button>
-                            <h2 className="text-2xl font-bold text-white">New Sale Entry</h2>
-                            <div className="w-20" /> {/* Spacer */}
+                <>
+
+                    {/* Global Tabs (Visible on Dashboard and Invoices) */}
+                    {view !== 'settings' && (
+                        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                            {(['SALES', 'INVOICES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
+                                const isActive = cat === 'INVOICES' ? view === 'invoices' : (view === 'dashboard' && activeCategory === cat);
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => {
+                                            if (cat === 'INVOICES') setView('invoices');
+                                            else {
+                                                setView('dashboard');
+                                                setActiveCategory(cat as any);
+                                            }
+                                        }}
+                                        className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
+                                            ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
+                                            : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
+                                            }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div className="h-[calc(100%-4rem)] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-                            <SaleModal
-                                isOpen={true}
-                                inline={true}
-                                onClose={() => setView('landing')}
-                                onSave={(sale) => {
-                                    handleAddSale(sale);
-                                    // Optionally stay on page or go back. User said "when filled... add to cars sold but hide table".
-                                    // Usually implies done.
-                                    setView('landing');
-                                }}
-                                existingSale={null}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <>
+                    )}
 
-                        {/* Global Tabs (Visible on Dashboard and Invoices) */}
-                        {view !== 'settings' && (
-                            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                                {(['SALES', 'INVOICES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
-                                    const isActive = cat === 'INVOICES' ? view === 'invoices' : (view === 'dashboard' && activeCategory === cat);
-                                    return (
-                                        <button
-                                            key={cat}
-                                            onClick={() => {
-                                                if (cat === 'INVOICES') setView('invoices');
-                                                else {
-                                                    setView('dashboard');
-                                                    setActiveCategory(cat as any);
-                                                }
-                                            }}
-                                            className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
-                                                ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
-                                                : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
-                                                }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                    {view === 'dashboard' ? (<>
 
-                        {view === 'dashboard' ? (<>
-
-                            <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
-                                <div className="grid text-sm divide-y divide-white/5 min-w-max"
-                                    style={{
-                                        gridTemplateColumns: isAdmin
-                                            ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
-                                            : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 120px 160px 100px 100px"
-                                    }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
-                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
-                                        </div>
-                                        <div className="p-3 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
-                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
-                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
-                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
-                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
-                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
-                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
-                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
-                                            Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
-                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-right">Paid</div>
-                                        <div className="p-3 text-right">Bank Fee</div>
-                                        <div className="p-3 text-right">Tax</div>
-                                        {isAdmin && <div className="p-3 text-right text-blue-400">Profit</div>}
-                                        <div className="p-3 text-right">Balance</div>
-                                        {isAdmin && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
-                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>}
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
-                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
-                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
-                                        <div className="p-3"></div>
+                        <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
+                            <div className="grid text-sm divide-y divide-white/5 min-w-max"
+                                style={{
+                                    gridTemplateColumns: isAdmin
+                                        ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
+                                        : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 120px 160px 100px 100px"
+                                }}>
+                                <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                    <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
+                                        {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                     </div>
-                                    {/* Render Rows - Simple flat list */}
-                                    <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
-                                        setSales(prev => {
-                                            const next = [...prev];
-                                            newOrder.forEach((newItem, newIndex) => {
-                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                            });
-                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                    <div className="p-3 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                        Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                        Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                        Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                        Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                        Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                        Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-right">Paid</div>
+                                    <div className="p-3 text-right">Bank Fee</div>
+                                    <div className="p-3 text-right">Tax</div>
+                                    {isAdmin && <div className="p-3 text-right text-blue-400">Profit</div>}
+                                    <div className="p-3 text-right">Balance</div>
+                                    {isAdmin && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                        Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>}
+                                    <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                        Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                        Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                    </div>
+                                    <div className="p-3"></div>
+                                </div>
+                                {/* Render Rows - Simple flat list */}
+                                <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
+                                    setSales(prev => {
+                                        const next = [...prev];
+                                        newOrder.forEach((newItem, newIndex) => {
+                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17', display: 'grid' }}>
-                                        {filteredSales.map(s => (
-                                            <SortableSaleItem
-                                                key={s.id}
-                                                s={s}
-                                                userProfile={userProfile}
-                                                canViewPrices={canViewPrices}
-                                                toggleSelection={toggleSelection}
-                                                selectedIds={selectedIds}
-                                                openInvoice={openInvoice}
-                                                onClick={() => { setEditingSale(s); setIsModalOpen(true); }}
-                                                onDelete={handleDeleteSingle}
-                                            />
-                                        ))}
-                                    </Reorder.Group>
-
-                                    {/* Footer Totals */}
-                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-3 text-right col-span-8">Totals</div>
-                                        {isAdmin && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
-                                        <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
-                                        <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
-                                        {isAdmin && <>
-                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
-                                        </>}
-                                        <div className="p-3 col-span-3"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Mobile Card View */}
-                            {/* Mobile Compact List View - Swipeable */}
-                            <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                {activeCategory === 'SALES' ? (
-                                    <div className="absolute inset-0 overflow-y-auto no-scrollbar">
-                                        <SaleModal
-                                            key={formResetKey}
-                                            isOpen={true}
-                                            onClose={() => { }}
-                                            onSave={handleAddSale}
-                                            existingSale={null}
-                                            inline={true}
+                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                    });
+                                }} className="grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17', display: 'grid' }}>
+                                    {filteredSales.map(s => (
+                                        <SortableSaleItem
+                                            key={s.id}
+                                            s={s}
+                                            userProfile={userProfile}
+                                            canViewPrices={canViewPrices}
+                                            toggleSelection={toggleSelection}
+                                            selectedIds={selectedIds}
+                                            openInvoice={openInvoice}
+                                            onClick={() => { setEditingSale(s); setIsModalOpen(true); }}
+                                            onDelete={handleDeleteSingle}
                                         />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
-                                        {filteredSales.map(sale => (
-                                            <motion.div
-                                                key={sale.id}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                className="relative border-b border-white/5"
-                                            >
-                                                {/* Background Action (Delete) */}
-                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                    <Trash2 className="text-white w-5 h-5" />
-                                                </div>
+                                    ))}
+                                </Reorder.Group>
 
-                                                {/* Foreground Card */}
-                                                <motion.div
-                                                    layout
-                                                    drag="x"
-                                                    dragDirectionLock
-                                                    dragConstraints={{ left: -80, right: 0 }}
-                                                    dragElastic={0.1}
-                                                    onDragEnd={(e, { offset, velocity }) => {
-                                                        if (offset.x < -60) {
-                                                            if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
-                                                        }
-                                                    }}
-                                                    className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
-                                                    onClick={() => {
-                                                        if (selectedIds.size > 0) {
-                                                            toggleSelection(sale.id);
-                                                        } else {
-                                                            setEditingSale(sale);
-                                                            setIsModalOpen(true);
-                                                        }
-                                                    }}
-                                                    onContextMenu={(e) => {
-                                                        e.preventDefault();
-                                                        toggleSelection(sale.id);
-                                                    }}
-                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }}
-                                                >
-                                                    {selectedIds.size > 0 && (
-                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
-                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
-                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
-                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
-                                                                    sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                                        'bg-gray-800 text-gray-400'
-                                                                }`}>{sale.status}</span>
-                                                        </div>
-                                                        <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
-                                                                {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
-                                                            <span className="text-gray-600">Korea:</span>
-                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
-                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </>) : view === 'settings' ? (
-                            <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
-                                <h2 className="text-xl font-bold mb-4">Settings</h2>
-                                <div className="space-y-4">
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">User Profile</label>
-                                        <div className="flex gap-2">
-                                            <select value={userProfile} onChange={e => {
-                                                setUserProfile(e.target.value);
-                                                Preferences.set({ key: 'user_profile', value: e.target.value });
-                                            }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
-                                                <option value="">Select Profile</option>
-                                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
-                                            </select>
-                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
-                                            <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
-                                        </div>
-                                    </div>
-
-                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-
-                                    <div className="h-px bg-white/10 my-4" />
-                                    <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
-                                    <div className="h-px bg-white/10 my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                                {/* Footer Totals */}
+                                <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                    <div className="p-3 text-right col-span-8">Totals</div>
+                                    {isAdmin && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
+                                    <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
+                                    <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
+                                    {isAdmin && <>
+                                        <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
+                                        <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
+                                        <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
+                                    </>}
+                                    <div className="p-3 col-span-3"></div>
                                 </div>
                             </div>
-                        ) : view === 'invoices' ? (
-                            <div className="flex-1 overflow-auto p-6">
-                                <h2 className="text-2xl font-bold text-white mb-6">Invoices</h2>
-                                {filteredSales.length === 0 ? (
-                                    <div className="text-center text-gray-500 py-20">
-                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                        <p>No invoices to display</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {filteredSales.map(s => (
-                                            <div
-                                                key={s.id}
-                                                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 hover:border-blue-500/30 transition-all cursor-pointer group"
-                                                onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
+                        </div>
+                        {/* Mobile Card View */}
+                        {/* Mobile Compact List View - Swipeable */}
+                        <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
+                            {activeCategory === 'SALES' ? (
+                                <div className="absolute inset-0 overflow-y-auto no-scrollbar">
+                                    <SaleModal
+                                        key={formResetKey}
+                                        isOpen={true}
+                                        onClose={() => { }}
+                                        onSave={handleAddSale}
+                                        existingSale={null}
+                                        inline={true}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
+                                    {filteredSales.map(sale => (
+                                        <motion.div
+                                            key={sale.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="relative border-b border-white/5"
+                                        >
+                                            {/* Background Action (Delete) */}
+                                            <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                <Trash2 className="text-white w-5 h-5" />
+                                            </div>
+
+                                            {/* Foreground Card */}
+                                            <motion.div
+                                                layout
+                                                drag="x"
+                                                dragDirectionLock
+                                                dragConstraints={{ left: -80, right: 0 }}
+                                                dragElastic={0.1}
+                                                onDragEnd={(e, { offset, velocity }) => {
+                                                    if (offset.x < -60) {
+                                                        if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
+                                                    }
+                                                }}
+                                                className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
+                                                onClick={() => {
+                                                    if (selectedIds.size > 0) {
+                                                        toggleSelection(sale.id);
+                                                    } else {
+                                                        setEditingSale(sale);
+                                                        setIsModalOpen(true);
+                                                    }
+                                                }}
+                                                onContextMenu={(e) => {
+                                                    e.preventDefault();
+                                                    toggleSelection(sale.id);
+                                                }}
+                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }}
                                             >
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div>
-                                                        <div className="font-bold text-white text-lg">{s.brand} {s.model}</div>
-                                                        <div className="text-xs text-gray-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
+                                                {selectedIds.size > 0 && (
+                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
+                                                        {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                     </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-blue-500/20 text-blue-400' :
-                                                        s.status === 'In Progress' ? 'bg-orange-500/20 text-orange-400' :
-                                                            s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-                                                                'bg-gray-500/20 text-gray-400'
-                                                        }`}>{s.status}</span>
-                                                </div>
-                                                <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between text-gray-400">
-                                                        <span>Buyer</span>
-                                                        <span className="text-white truncate ml-2">{s.buyerName || '-'}</span>
+                                                )}
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
+                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
+                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
+                                                                sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                                    'bg-gray-800 text-gray-400'
+                                                            }`}>{sale.status}</span>
                                                     </div>
-                                                    <div className="flex justify-between text-gray-400">
-                                                        <span>VIN</span>
-                                                        <span className="font-mono text-xs text-gray-500">{(s.vin || '').slice(-8)}</span>
+                                                    <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                        <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                                            {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
+                                                        </span>
                                                     </div>
-                                                    <div className="h-px bg-white/5 my-2" />
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">Sold Price</span>
-                                                        <span className="text-green-400 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-400">Balance</span>
-                                                        <span className={calculateBalance(s) > 0 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
-                                                            €{calculateBalance(s).toLocaleString()}
+                                                    <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
+                                                        <span className="text-gray-600">Korea:</span>
+                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
+                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 pt-3 border-t border-white/5 block">
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <span className="text-xs text-gray-600">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-3 gap-2">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-orange-400" />
-                                                            View Deposit
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-blue-400" />
-                                                            View Contract
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-green-400" />
-                                                            View Invoice
-                                                        </button>
-                                                    </div>
+                                            </motion.div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>) : view === 'settings' ? (
+                        <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
+                            <h2 className="text-xl font-bold mb-4">Settings</h2>
+                            <div className="space-y-4">
+                                <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-400">User Profile</label>
+                                    <div className="flex gap-2">
+                                        <select value={userProfile} onChange={e => {
+                                            setUserProfile(e.target.value);
+                                            Preferences.set({ key: 'user_profile', value: e.target.value });
+                                        }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                                            <option value="">Select Profile</option>
+                                            {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                        <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
+                                        <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
+                                    </div>
+                                </div>
+
+                                <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                                <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+
+                                <div className="h-px bg-white/10 my-4" />
+                                <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
+                                <div className="h-px bg-white/10 my-4" />
+                                <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                            </div>
+                        </div>
+                    ) : view === 'invoices' ? (
+                        <div className="flex-1 overflow-auto p-6">
+                            <h2 className="text-2xl font-bold text-white mb-6">Invoices</h2>
+                            {filteredSales.length === 0 ? (
+                                <div className="text-center text-gray-500 py-20">
+                                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p>No invoices to display</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    {filteredSales.map(s => (
+                                        <div
+                                            key={s.id}
+                                            className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 hover:border-blue-500/30 transition-all cursor-pointer group"
+                                            onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
+                                        >
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <div className="font-bold text-white text-lg">{s.brand} {s.model}</div>
+                                                    <div className="text-xs text-gray-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
+                                                </div>
+                                                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-blue-500/20 text-blue-400' :
+                                                    s.status === 'In Progress' ? 'bg-orange-500/20 text-orange-400' :
+                                                        s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                                                            'bg-gray-500/20 text-gray-400'
+                                                    }`}>{s.status}</span>
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between text-gray-400">
+                                                    <span>Buyer</span>
+                                                    <span className="text-white truncate ml-2">{s.buyerName || '-'}</span>
+                                                </div>
+                                                <div className="flex justify-between text-gray-400">
+                                                    <span>VIN</span>
+                                                    <span className="font-mono text-xs text-gray-500">{(s.vin || '').slice(-8)}</span>
+                                                </div>
+                                                <div className="h-px bg-white/5 my-2" />
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Sold Price</span>
+                                                    <span className="text-green-400 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Balance</span>
+                                                    <span className={calculateBalance(s) > 0 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                                                        €{calculateBalance(s).toLocaleString()}
+                                                    </span>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
-
-                        {/* Floating Bulk Action Bar */}
-                        <AnimatePresence>
-                            {selectedIds.size > 0 && (
-                                <motion.div
-                                    initial={{ y: 100, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 100, opacity: 0 }}
-                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
-                                >
-                                    <div className="px-4 border-r border-white/10 mr-2 flex flex-col items-center justify-center min-w-[60px]">
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Selected</span>
-                                        <span className="font-mono text-xl font-bold text-blue-400 leading-none">{selectedIds.size}</span>
-                                    </div>
-
-                                    {selectedIds.size === 1 && (
-                                        <button
-                                            onClick={() => {
-                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                                if (sale) { setEditingSale(sale); setIsModalOpen(true); }
-                                            }}
-                                            className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
-                                        >
-                                            <Edit className="w-5 h-5 text-blue-400" />
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
-                                        </button>
-                                    )}
-
-                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <Copy className="w-5 h-5 text-green-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
-                                    </button>
-
-                                    <div className="relative">
-                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                            <ArrowRight className="w-5 h-5 text-yellow-400" />
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
-                                        </button>
-                                        {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1a1a] border border-white/20 rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col gap-1 w-32 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
-                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Sales</button>
-                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Shipped</button>
-                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Inspections</button>
-                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Autosallon</button>
+                                            <div className="mt-4 pt-3 border-t border-white/5 block">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <span className="text-xs text-gray-600">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
+                                                        className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                    >
+                                                        <FileText className="w-4 h-4 text-orange-400" />
+                                                        View Deposit
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
+                                                        className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                    >
+                                                        <FileText className="w-4 h-4 text-blue-400" />
+                                                        View Contract
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
+                                                        className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                    >
+                                                        <FileText className="w-4 h-4 text-green-400" />
+                                                        View Invoice
+                                                    </button>
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
-
-                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <CheckSquare className="w-5 h-5 text-blue-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Sold</span>
-                                    </button>
-
-                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
-                                    </button>
-
-                                    <div className="w-px h-8 bg-white/10 mx-1" />
-
-                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </motion.div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
-                        </AnimatePresence>
-                    </>
-                )}
+                        </div>
+                    ) : null}
+
+                    {/* Floating Bulk Action Bar */}
+                    <AnimatePresence>
+                        {selectedIds.size > 0 && (
+                            <motion.div
+                                initial={{ y: 100, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 100, opacity: 0 }}
+                                className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
+                            >
+                                <div className="px-4 border-r border-white/10 mr-2 flex flex-col items-center justify-center min-w-[60px]">
+                                    <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Selected</span>
+                                    <span className="font-mono text-xl font-bold text-blue-400 leading-none">{selectedIds.size}</span>
+                                </div>
+
+                                {selectedIds.size === 1 && (
+                                    <button
+                                        onClick={() => {
+                                            const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                            if (sale) { setEditingSale(sale); setIsModalOpen(true); }
+                                        }}
+                                        className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
+                                    >
+                                        <Edit className="w-5 h-5 text-blue-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
+                                    </button>
+                                )}
+
+                                <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                    <Copy className="w-5 h-5 text-green-400" />
+                                    <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
+                                </button>
+
+                                <div className="relative">
+                                    <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <ArrowRight className="w-5 h-5 text-yellow-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
+                                    </button>
+                                    {showMoveMenu && (
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1a1a] border border-white/20 rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col gap-1 w-32 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+                                            <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Sales</button>
+                                            <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Shipped</button>
+                                            <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Inspections</button>
+                                            <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Autosallon</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                    <CheckSquare className="w-5 h-5 text-blue-400" />
+                                    <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Sold</span>
+                                </button>
+
+                                <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                    <Trash2 className="w-5 h-5 text-red-500" />
+                                    <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
+                                </button>
+
+                                <div className="w-px h-8 bg-white/10 mx-1" />
+
+                                <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </>
 
             </main>
 
