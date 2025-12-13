@@ -28,6 +28,7 @@ const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costTo
 
 const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile, canViewPrices, onClick, onDelete }: any) => {
     const controls = useDragControls();
+    const isAdmin = ['Admin', 'Robert'].includes(userProfile || '');
     return (
         <Reorder.Item value={s} id={s.id} className="contents group hover:bg-white/5">
             {/* Hidden Card View */}
@@ -102,22 +103,22 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
 
             {/* 9. Cost (Admin OR own sale) */}
-            {(userProfile === 'Admin' || s.soldBy === userProfile) && (
+            {(isAdmin || s.soldBy === userProfile) && (
                 <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
             )}
-            {userProfile !== 'Admin' && s.soldBy !== userProfile && (
+            {!isAdmin && s.soldBy !== userProfile && (
                 <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
-            {(userProfile === 'Admin' || s.soldBy === userProfile) ? (
+            {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
             ) : (
                 <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
-            {(userProfile === 'Admin' || s.soldBy === userProfile) ? (
+            {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
                     €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                 </div>
@@ -126,11 +127,11 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
-            {(userProfile === 'Admin' || s.soldBy === userProfile) ? (
+            {(isAdmin || s.soldBy === userProfile) ? (
                 <>
                     <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
                     <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
-                    {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
@@ -140,7 +141,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
-            {(userProfile === 'Admin' || s.soldBy === userProfile) ? (
+            {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                     <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                         €{calculateBalance(s).toLocaleString()}
@@ -151,7 +152,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
-            {userProfile === 'Admin' && (
+            {isAdmin && (
                 <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
                     <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-400'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
@@ -197,7 +198,8 @@ export default function Dashboard() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-    const canViewPrices = ['Robert Gashi', 'Admin'].includes(userProfile || '');
+    const canViewPrices = ['Robert Gashi', 'Admin', 'Robert'].includes(userProfile || '');
+    const isAdmin = ['Admin', 'Robert'].includes(userProfile || '');
 
 
     // Legacy/Other State
@@ -1190,7 +1192,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="hidden md:flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
-                            {['dashboard', 'invoices', ...(userProfile === 'Admin' ? ['settings'] : [])].map((tab) => (
+                            {['dashboard', 'invoices', ...(isAdmin ? ['settings'] : [])].map((tab) => (
                                 <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[#252525] text-white shadow-inner' : 'text-gray-500 hover:text-gray-300'} `}>
                                     <span className="capitalize">{tab}</span>
                                 </button>
@@ -1361,11 +1363,11 @@ export default function Dashboard() {
                             <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
                                 <div className="grid text-sm divide-y divide-white/5 min-w-max"
                                     style={{
-                                        gridTemplateColumns: userProfile === 'Admin'
+                                        gridTemplateColumns: isAdmin
                                             ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
                                             : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 120px 160px 100px 100px"
                                     }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 17' }}>
+                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
                                         <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
@@ -1399,9 +1401,9 @@ export default function Dashboard() {
                                         <div className="p-3 text-right">Paid</div>
                                         <div className="p-3 text-right">Bank Fee</div>
                                         <div className="p-3 text-right">Tax</div>
-                                        {userProfile === 'Admin' && <div className="p-3 text-right text-blue-400">Profit</div>}
+                                        {isAdmin && <div className="p-3 text-right text-blue-400">Profit</div>}
                                         <div className="p-3 text-right">Balance</div>
-                                        {userProfile === 'Admin' && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                        {isAdmin && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
                                         <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
@@ -1422,7 +1424,7 @@ export default function Dashboard() {
                                             });
                                             return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 17', display: 'grid' }}>
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17', display: 'grid' }}>
                                         {filteredSales.map(s => (
                                             <SortableSaleItem
                                                 key={s.id}
@@ -1439,12 +1441,12 @@ export default function Dashboard() {
                                     </Reorder.Group>
 
                                     {/* Footer Totals */}
-                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 19' : 'span 17' }}>
+                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
                                         <div className="p-3 text-right col-span-8">Totals</div>
-                                        {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
+                                        {isAdmin && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
                                         <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
                                         <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
-                                        {userProfile === 'Admin' && <>
+                                        {isAdmin && <>
                                             <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
                                             <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
                                             <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
