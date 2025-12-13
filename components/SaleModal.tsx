@@ -245,7 +245,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             onClick={(e) => e.stopPropagation()}
             className={`${inline ? 'w-full h-full flex flex-col bg-[#1a1a1a]' : 'bg-[#1a1a1a] border border-white/10 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]'}`}
         >
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
                 <h2 className="text-xl font-bold text-white">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                 {!inline && (
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
@@ -254,7 +254,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 )}
             </div>
 
-            <div className="flex bg-[#111] border-b border-white/5 mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
+            <div className="flex bg-[#111] border-b border-white/5 mx-4 md:mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
                 {['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'].map(tab => (
                     <button
                         key={tab}
@@ -272,7 +272,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-6 flex flex-col gap-6"
+                    className="p-4 md:p-6 flex flex-col gap-6"
                 >
                     <AnimatePresence mode="wait">
                         {activeTab === 'Vehicle' && (
@@ -429,7 +429,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     if (inline) {
         return (
-            <div className="w-full h-full relative p-4 overflow-hidden flex flex-col">
+            <div className="w-full h-full relative p-0 overflow-hidden flex flex-col">
                 {previewOverlay}
                 {Content}
                 {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
