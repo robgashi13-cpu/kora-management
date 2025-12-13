@@ -111,11 +111,10 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     {/* Invoice Header */}
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                            {/* Logo Placeholder - replaced with actual logo */}
-                            {/* Logo Placeholder - replaced with actual logo                                    */}
-                            <img src="/logo_new.jpg" alt="KORAUTO Logo" className="w-full h-full object-cover mb-4 object-contain" />
+                            {/* Company Logo */}
+                            <img src="/logo_new.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
                             <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
-                            <p className="text-gray-500 mt-2">#{sale.vin.slice(-6).toUpperCase()}</p>
+                            <p className="text-gray-500 mt-2">#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                         </div>
                         <div className="text-right">
                             <div className="text-xl font-bold mb-1">RG SH.P.K</div>
@@ -155,16 +154,9 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                 <td className="py-4">
                                     <div className="font-bold text-gray-900">{sale.year} {sale.brand} {sale.model}</div>
                                     <div className="text-sm text-gray-500">VIN: {sale.vin} | Color: {sale.color}</div>
-                                    <div className="text-sm text-gray-500 mt-1">Mileage: {sale.km.toLocaleString()} km</div>
+                                    <div className="text-sm text-gray-500 mt-1">Mileage: {(sale.km || 0).toLocaleString()} km</div>
                                 </td>
-                                <td className="py-4 text-right font-bold text-gray-900">€{(sale.soldPrice - 200).toLocaleString()}</td>
-                            </tr>
-                            <tr className="border-b border-gray-100">
-                                <td className="py-4">
-                                    <div className="font-bold text-gray-900">Services</div>
-                                    <div className="text-sm text-gray-500">Service Fee</div>
-                                </td>
-                                <td className="py-4 text-right font-bold text-gray-900">€169.49</td>
+                                <td className="py-4 text-right font-bold text-gray-900">€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -173,15 +165,19 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     <div className="w-1/2 ml-auto">
                         <div className="flex justify-between py-2 text-gray-600">
                             <span>Subtotal</span>
-                            <span>€{(sale.soldPrice - 200).toLocaleString()}</span>
+                            <span>€{((sale.soldPrice || 0) - 200).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between py-2 text-gray-600">
+                            <span>Services</span>
+                            <span>€169.49</span>
                         </div>
                         <div className="flex justify-between py-2 text-gray-600 border-b border-gray-200 mb-2">
                             <span>Tax (TVSH 18%)</span>
                             <span>€30.51</span>
                         </div>
-                        <div className="flex justify-between py-2 border-b-2 border-gray-900 mb-2">
-                            <span className="font-bold text-gray-900">Grand Total</span>
-                            <span className="font-bold text-gray-900">€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <div className="flex justify-between py-3 border-t-2 border-gray-900">
+                            <span className="font-bold text-lg text-gray-900">Grand Total</span>
+                            <span className="font-bold text-lg text-gray-900">€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 

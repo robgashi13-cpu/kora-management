@@ -42,7 +42,7 @@ export interface CarSale {
 
     amountPaidToKorea?: number; // New field
     paidDateToKorea: string | null; // ISO date string
-    paidDateFromClient: string | null; // ISO date string
+    paidDateFromClient?: string | null; // ISO date string
 
     paymentMethod: PaymentMethod;
     status: SaleStatus;
@@ -57,4 +57,5 @@ export interface CarSale {
     createdAt: string;
     sortOrder?: number;
     soldBy?: string;
+    group?: string; // For grouping (e.g. "15 november SANG SHIN")
 }

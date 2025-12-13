@@ -115,72 +115,97 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     >
                         {type === 'deposit' && (
                             <>
-                                <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                <div className="header-row">
-                                    <div className="deposit-title">KONTRATË PËR KAPAR</div>
-                                    <div className="korauto-title">KORAUTO</div>
+                                {/* Header */}
+                                <div className="text-center mb-8 pb-4 border-b-2 border-black">
+                                    <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
+                                    <h1 className="text-2xl font-bold uppercase mb-1">KORAUTO</h1>
+                                    <div className="text-lg font-bold uppercase">KONTRATË PËR KAPAR</div>
                                 </div>
 
-                                <div className="flex justify-between mb-8">
-                                    <div>Nr. Ref: <span className="highlight">{sale.id.slice(0, 8).toUpperCase()}</span></div>
-                                    <div>Data: <span className="highlight">{today}</span></div>
+                                {/* Reference and Date */}
+                                <div className="flex justify-between mb-6 text-sm">
+                                    <div>Nr. Ref: <strong>{sale.id.slice(0, 8).toUpperCase()}</strong></div>
+                                    <div>Data: <strong>{today}</strong></div>
                                 </div>
 
-                                <div className="parties-container">
-                                    <div className="party-box">
-                                        <div className="party-title">1. Shitësi:</div>
-                                        <div className="info-row"><span className="label">Emri:</span> {seller.name}</div>
-                                        <div className="info-row"><span className="label">Nr. personal:</span> {seller.id}</div>
-                                        <div className="info-row"><span className="label">Tel:</span> {seller.phone}</div>
+                                {/* Parties Section */}
+                                <div className="grid grid-cols-2 gap-8 mb-6">
+                                    <div>
+                                        <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">1. Shitësi:</div>
+                                        <div className="space-y-1 text-sm">
+                                            <div><span className="inline-block w-24">Emri:</span> <strong>{seller.name}</strong></div>
+                                            <div><span className="inline-block w-24">Nr. personal:</span> {seller.id}</div>
+                                            <div><span className="inline-block w-24">Tel:</span> {seller.phone}</div>
+                                        </div>
                                     </div>
-                                    <div className="party-box">
-                                        <div className="party-title">2. Blerësi (Kaparidhënësi):</div>
-                                        <div className="info-row"><span className="label">Emri:</span> {sale.buyerName}</div>
-                                        <div className="info-row"><span className="label">Nr. personal:</span> {sale.buyerPersonalId || "________________"}</div>
+                                    <div>
+                                        <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">2. Blerësi (Kaparidhënësi):</div>
+                                        <div className="space-y-1 text-sm">
+                                            <div><span className="inline-block w-24">Emri:</span> <strong>{sale.buyerName}</strong></div>
+                                            <div><span className="inline-block w-24">Nr. personal:</span> {sale.buyerPersonalId || "________________"}</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="blue-header">Neni 1 – Objekti i Kontratës</div>
-                                <p>
-                                    Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
-                                </p>
-                                <ul className="list-none pl-0 font-bold mb-4">
-                                    <li>- Marka: {sale.brand}</li>
-                                    <li>- Modeli: {sale.model}</li>
-                                    <li>- Nr. shasie: {sale.vin}</li>
-                                </ul>
+                                {/* Article 1 */}
+                                <div className="mb-4">
+                                    <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 1 – Objekti i Kontratës</div>
+                                    <p className="text-sm mb-2">
+                                        Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
+                                    </p>
+                                    <ul className="list-none text-sm font-bold mb-2">
+                                        <li>- Marka: {sale.brand}</li>
+                                        <li>- Modeli: {sale.model}</li>
+                                        <li>- Nr. shasie: {sale.vin}</li>
+                                    </ul>
+                                </div>
 
-                                <div className="blue-header">Neni 2 – Shuma e Kaparit</div>
-                                <p>
-                                    Blerësi i dorëzon shitësit shumën prej <strong>{sale.deposit}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{sale.soldPrice}€</strong>. Deri ne Prishtine
-                                </p>
+                                {/* Article 2 */}
+                                <div className="mb-4">
+                                    <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 2 – Shuma e Kaparit</div>
+                                    <p className="text-sm">
+                                        Blerësi i dorëzon shitësit shumën prej <strong>{sale.deposit}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{sale.soldPrice}€</strong>. Deri ne Prishtine
+                                    </p>
+                                </div>
 
-                                <div className="blue-header">Neni 3 – Detyrimet e Palëve</div>
-                                <ul className="list-none pl-0 mb-4">
-                                    <li className="mb-2">- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
-                                    <li>- Blerësi angazhohet ta përfundojë pagesën dhe ta marrë veturën brenda afatit të caktuar</li>
-                                </ul>
+                                {/* Article 3 */}
+                                <div className="mb-4">
+                                    <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 3 – Detyrimet e Palëve</div>
+                                    <ul className="list-none text-sm">
+                                        <li className="mb-1">- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
+                                        <li>- Blerësi angazhohet ta përfundojë pagesën dhe ta marrë veturën brenda afatit të caktuar</li>
+                                    </ul>
+                                </div>
 
-                                <div className="blue-header">Neni 4 – Anulimi i Marrëveshjes</div>
-                                <ul className="list-none pl-0 mb-4">
-                                    <li className="mb-2">- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
-                                    <li>- Nëse shitësi heq dorë ose nuk e përmbush marrëveshjen, është i obliguar të kthejë shumën e kaparit.</li>
-                                </ul>
+                                {/* Article 4 */}
+                                <div className="mb-4">
+                                    <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 4 – Anulimi i Marrëveshjes</div>
+                                    <ul className="list-none text-sm">
+                                        <li className="mb-1">- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
+                                        <li>- Nëse shitësi heq dorë ose nuk e përmbush marrëveshjen, është i obliguar të kthejë shumën e kaparit.</li>
+                                    </ul>
+                                </div>
 
-                                <div className="blue-header">Neni 5 – Dispozita të Përgjithshme</div>
-                                <ul className="list-none pl-0 mb-4">
-                                    <li className="mb-2">- Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</li>
-                                    <li>- Për çdo kontest eventual, palët pajtohen që të zgjidhet me marrëveshje ose në Gjykatën kompetente në Prishtine.</li>
-                                </ul>
+                                {/* Article 5 */}
+                                <div className="mb-8">
+                                    <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 5 – Dispozita të Përgjithshme</div>
+                                    <ul className="list-none text-sm">
+                                        <li className="mb-1">- Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</li>
+                                        <li>- Për çdo kontest eventual, palët pajtohen që të zgjidhet me marrëveshje ose në Gjykatën kompetente në Prishtine.</li>
+                                    </ul>
+                                </div>
 
-                                <div className="footer">
-                                    <div className="signature-box">
-                                        <div style={{ paddingBottom: '30px' }}>Shitësi (Nënshkrimi)</div>
-                                        <div className="signature-line">_______________________</div>
+                                {/* Signatures */}
+                                <div className="grid grid-cols-2 gap-12 mt-16 pt-8 border-t border-black">
+                                    <div className="text-center">
+                                        <div className="text-sm mb-20">Shitësi (Nënshkrimi)</div>
+                                        <div className="border-b border-black mx-4"></div>
+                                        <div className="mt-2 font-bold text-sm">{seller.name}</div>
                                     </div>
-                                    <div className="signature-box" style={{ textAlign: 'right' }}>
-                                        <div style={{ paddingBottom: '30px' }}>Blerësi (Nënshkrimi)</div>
-                                        <div className="signature-line" style={{ display: 'inline-block', width: '100%' }}>_______________________</div>
+                                    <div className="text-center">
+                                        <div className="text-sm mb-20">Blerësi (Nënshkrimi)</div>
+                                        <div className="border-b border-black mx-4"></div>
+                                        <div className="mt-2 font-bold text-sm">{sale.buyerName}</div>
                                     </div>
                                 </div>
                             </>
@@ -219,7 +244,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 </div>
 
                                 <p className="font-bold mt-4 mb-4">
-                                    Z. {seller.name} vepron si ndërmjetës, ndërsa ARDIAN GASHI si blerës.
+                                    Z. {seller.name} vepron si ndërmjetës, ndërsa {sale.buyerName} si blerës.
                                 </p>
 
                                 <hr className="mb-6 border-black" />

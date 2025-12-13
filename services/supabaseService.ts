@@ -88,7 +88,6 @@ export const syncSalesWithSupabase = async (
     userProfile: string
 ): Promise<{ success: boolean; data?: CarSale[]; error?: string }> => {
     try {
-        // 1. Upsert Local to Remote
         // 1. Upsert Local to Remote (Row-by-Row to isolate huge payloads)
         const salesToPush = localSales.map(s => toRemote(s, userProfile));
         let errorCount = 0;
@@ -101,9 +100,9 @@ export const syncSalesWithSupabase = async (
                     .upsert(item, { onConflict: 'id' });
 
                 if (upsertError) {
-                    console.error("Sync Error Item:", item.id, upsertError);
+                    console.error("Sync Error Item:", item.id, "Error:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
                     errorCount++;
-                    lastError = upsertError.message || JSON.stringify(upsertError);
+                    lastError = upsertError.message || upsertError.code || upsertError.details || "Unknown sync error";
                 }
             } catch (e: any) {
                 console.error("Network Sync Error Item:", item.id, e);
@@ -112,19 +111,21 @@ export const syncSalesWithSupabase = async (
             }
         }
 
-        if (errorCount > 0) {
-            return { success: false, error: `Completed with ${errorCount} errors. Last: ${lastError}` };
-        }
-
-        // 2. Fetch Final State
-        const { data: finalSales, error: finalFetchError } = await client
+        // 2. Fetch Latest State from Supabase
+        const { data: remoteSales, error: fetchError } = await client
             .from('sales')
             .select('*');
 
-        if (finalFetchError) return { success: false, error: finalFetchError.message };
+        if (fetchError) {
+            console.error("Fetch Error:", fetchError);
+            return { success: false, error: fetchError.message };
+        }
 
-        const mappedSales = (finalSales || []).map(fromRemote);
-        return { success: true, data: mappedSales };
+        // 3. Map Remote to Local
+        const syncedSales = remoteSales ? remoteSales.map(r => fromRemote(r)) : localSales;
+
+        // Return latest remote state (which includes our just-pushed changes generally, unless race condition)
+        return { success: true, data: syncedSales };
 
     } catch (e: any) {
         console.error("Supabase Sync Exception:", e);

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
-import { RECOVERED_SALES } from './RecoveredData';
-import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut } from 'lucide-react';
+import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 // ... (props interface etc)
@@ -25,23 +24,12 @@ const getBankFee = (price: number) => {
 const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile }: any) => {
-    const controls = useDragControls(); // Add this line because controls was undefined
+const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile, canViewPrices, onClick, onDelete }: any) => {
+    const controls = useDragControls();
     return (
-        <Reorder.Item value={s} id={s.id} className="contents">
-            {/* Card View (Mobile/Hidden on Desktop if using grid) - Actually the grid layout implies this is a Row */}
-            {/* But the code seems to have mixed Card and Row logic. Let's trust the content flow. */}
-            {/* Wait, the previous code had 'div className="bg-[#1a1a1a]..."' as the first child. */}
-            {/* If this is a table row, that div might be wrong. */}
-            {/* However, fixing the missing tag is the priority. */}
-
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative group shadow-lg hover:border-blue-500/30 transition-colors hidden">
-                {/* Hiding this block because line 53 starts the actual grid cells? */}
-                {/* No, looking at lines 982+ it expects a grid of specific spans. */}
-                {/* The block at 21-48 looks like a Card View. */}
-                {/* The block at 53-134 looks like Grid Cells. */}
-                {/* If both are rendered, it's a mess. */}
-                {/* But I cannot rewrite the whole logical view. I will just wrap it. */}
+        <Reorder.Item value={s} id={s.id} className="contents group hover:bg-white/5">
+            {/* Hidden Card View */}
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative shadow-lg hover:border-blue-500/30 transition-colors hidden">
                 <div className="flex justify-between mb-4">
                     <div className="font-bold text-lg">{s.brand} {s.model}</div>
                     <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-blue-300"><FileText className="w-5 h-5" /></button>
@@ -49,16 +37,16 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 <div className="text-sm text-gray-400 space-y-2">
                     <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
                     <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                    <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
+                    {canViewPrices && <div className="flex justify-between pt-2 border-t border-white/5 mt-2">
                         <span>Sold For</span>
                         <span className="text-white font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
-                    </div>
+                    </div>}
                 </div>
-                <div className="mt-4 flex justify-end">
+                {canViewPrices && <div className="mt-4 flex justify-end">
                     <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'} `}>
                         Bal: €{calculateBalance(s).toLocaleString()}
                     </span>
-                </div>
+                </div>}
                 {/* Selection Checkbox */}
                 <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
@@ -67,18 +55,26 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 </div>
             </div>
 
-            {/* 1. Drag & Check */}
-            <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5">
+            {/* 1. Checkbox Column - NO onClick propagation */}
+            <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5 z-10">
                 <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
                     <GripVertical className="w-4 h-4 text-gray-500" />
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-white/20 text-transparent hover:border-white/40'} `}>
-                    <CheckSquare className="w-3 h-3" />
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleSelection(s.id);
+                    }}
+                    className={`w-5 h-5 border-2 flex items-center justify-center transition-all cursor-pointer relative z-20 ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-500 text-white' : 'border-gray-400 bg-transparent hover:border-blue-400 hover:bg-blue-500/20'}`}
+                >
+                    {selectedIds.has(s.id) && <CheckSquare className="w-3.5 h-3.5" />}
                 </button>
             </div>
 
-            {/* 2. Car Info */}
-            <div className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5">
+            {/* 2. Car Info - Click to edit */}
+            <div onClick={onClick} className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5 cursor-pointer hover:text-blue-400">
                 <span className="truncate">{s.brand} {s.model}</span>
             </div>
 
@@ -111,7 +107,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             }
 
             {/* 10. Sold */}
-            <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
+            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>}
 
             {/* 11. Paid */}
             {userProfile === 'Admin' && (
@@ -130,11 +126,11 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             }
 
             {/* 15. Balance */}
-            <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+            {canViewPrices && <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                 <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                     €{calculateBalance(s).toLocaleString()}
                 </span>
-            </div>
+            </div>}
 
             {/* 16. Status */}
             <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
@@ -152,8 +148,8 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
 
             {/* 18. Actions */}
-            <div className="px-3 h-full flex items-center justify-center gap-2">
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors"><FileText className="w-4 h-4" /></button>
+            <div className="px-3 h-full flex items-center justify-center">
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg" title="View Invoice"><FileText className="w-5 h-5" /></button>
             </div>
         </Reorder.Item >
     );
@@ -163,21 +159,36 @@ const INITIAL_SALES: CarSale[] = [];
 
 export default function Dashboard() {
     const [sales, setSales] = useState<CarSale[]>([]);
-    const [view, setView] = useState<'dashboard' | 'invoices' | 'settings'>('dashboard');
+    const [view, setView] = useState('profile_select');
+    const [userProfile, setUserProfile] = useState<string | null>(null);
+    const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', 'Admin', 'User']);
+    const [isLoading, setIsLoading] = useState(true);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [pendingProfile, setPendingProfile] = useState('');
+    const [passwordInput, setPasswordInput] = useState('');
+    const [newProfileName, setNewProfileName] = useState('');
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+    const canViewPrices = ['Robert Gashi', 'Admin'].includes(userProfile || '');
+
+
+    // Legacy/Other State
     const [activeCategory, setActiveCategory] = useState<'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
+    const [expandedGroups, setExpandedGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
+    const [customGroups, setCustomGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState<string>('createdAt');
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [apiKey, setApiKey] = useState('');
     const [importStatus, setImportStatus] = useState<string>('');
     const [isSyncing, setIsSyncing] = useState(false);
     const [supabaseUrl, setSupabaseUrl] = useState('');
     const [supabaseKey, setSupabaseKey] = useState('');
-    const [userProfile, setUserProfile] = useState('');
-    const [availableProfiles, setAvailableProfiles] = useState<string[]>([]);
-    const [newProfileName, setNewProfileName] = useState('');
-    const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string>('');
@@ -206,7 +217,7 @@ export default function Dashboard() {
         if (pullY > 60) {
             setIsRefreshing(true);
             setPullY(60); // Keep loading spinner visible
-            await performAutoSync(supabaseUrl, supabaseKey, userProfile);
+            if (userProfile) await performAutoSync(supabaseUrl, supabaseKey, userProfile);
             setTimeout(() => {
                 setIsRefreshing(false);
                 setPullY(0);
@@ -217,11 +228,7 @@ export default function Dashboard() {
         setTouchStartY(0);
     };
 
-    // Password Modal State
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [passwordInput, setPasswordInput] = useState('');
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [pendingProfile, setPendingProfile] = useState('');
+
 
     const handlePasswordSubmit = () => {
         if (passwordInput === 'Robertoo1396$') {
@@ -280,7 +287,6 @@ export default function Dashboard() {
         loadTx();
     }, []);
 
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
 
     const saveTransactions = async (txs: any[]) => {
@@ -319,7 +325,25 @@ export default function Dashboard() {
     };
 
     const handleBulkDelete = async () => {
-        if (!confirm(`Delete ${selectedIds.size} items ? `)) return;
+        if (!confirm(`Delete ${selectedIds.size} items permanently?`)) return;
+
+        // Get IDs to delete
+        const idsToDelete = Array.from(selectedIds);
+
+        // Delete from Supabase immediately
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                for (const id of idsToDelete) {
+                    await client.from('sales').delete().eq('id', id);
+                }
+                console.log("Deleted from Supabase:", idsToDelete.length, "records");
+            } catch (e) {
+                console.error("Supabase delete error:", e);
+            }
+        }
+
+        // Delete locally
         const newSales = sales.filter(s => !selectedIds.has(s.id));
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
@@ -329,6 +353,43 @@ export default function Dashboard() {
         const newSales = sales.map(s => selectedIds.has(s.id) ? { ...s, status } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
+    };
+
+    // Delete a single car immediately
+    const handleDeleteSingle = async (id: string) => {
+        if (!confirm('Delete this car permanently?')) return;
+
+        // Delete from Supabase immediately
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                await client.from('sales').delete().eq('id', id);
+                console.log("Deleted from Supabase:", id);
+            } catch (e) {
+                console.error("Supabase delete error:", e);
+            }
+        }
+
+        // Delete locally
+        const newSales = sales.filter(s => s.id !== id);
+        await updateSalesAndSave(newSales);
+    };
+
+    // Group management functions
+    const toggleGroup = (groupName: string) => {
+        setExpandedGroups(prev =>
+            prev.includes(groupName)
+                ? prev.filter(g => g !== groupName)
+                : [...prev, groupName]
+        );
+    };
+
+    const handleDeleteGroup = async (groupName: string) => {
+        if (!confirm(`Delete group "${groupName}" and all its cars?`)) return;
+        const newSales = sales.filter(s => s.group !== groupName);
+        await updateSalesAndSave(newSales);
+        setCustomGroups(prev => prev.filter(g => g !== groupName));
+        setExpandedGroups(prev => prev.filter(g => g !== groupName));
     };
 
     const handleBulkCopy = () => {
@@ -387,11 +448,22 @@ export default function Dashboard() {
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
     };
 
+    const handleEditProfile = async (oldName: string, newName: string) => {
+        if (!newName.trim() || availableProfiles.includes(newName)) return;
+        const updated = availableProfiles.map(p => p === oldName ? newName : p);
+        setAvailableProfiles(updated);
+        if (userProfile === oldName) {
+            setUserProfile(newName);
+            await Preferences.set({ key: 'user_profile', value: newName });
+        }
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+    };
+
 
 
     // Real-time Subscription
     useEffect(() => {
-        if (!supabaseUrl || !supabaseKey) return;
+        if (!supabaseUrl || !supabaseKey || !userProfile) return;
         const client = createSupabaseClient(supabaseUrl, supabaseKey);
 
         console.log("Subscribing to realtime changes...");
@@ -401,7 +473,7 @@ export default function Dashboard() {
                 console.log('Realtime Change:', payload);
                 // Trigger auto-sync to pull latest data and merge
                 // We pass undefined for sales to force a fresh read from Persistence to avoid stale closure state
-                performAutoSync(supabaseUrl, supabaseKey, userProfile);
+                if (userProfile) performAutoSync(supabaseUrl, supabaseKey, userProfile);
             })
             .subscribe();
 
@@ -428,903 +500,1008 @@ export default function Dashboard() {
     const isModalOpenRef = React.useRef(isModalOpen);
     useEffect(() => { isModalOpenRef.current = isModalOpen; }, [isModalOpen]);
 
-    const initSettings = async () => {
-        // Hardcoded Credentials (as fallback/default)
-        const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
+    useEffect(() => {
+        const initSettings = async () => {
+            // Hardcoded Credentials (as fallback/default)
+            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
 
-        try {
-            // Ensure Supabase URL/Key exist
-            let { value: url } = await Preferences.get({ key: 'supabase_url' });
-            let { value: keyName } = await Preferences.get({ key: 'supabase_key' }); // Renamed variable to avoid conflict
-
-            if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
-            if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
-
-            setSupabaseUrl(url);
-            setSupabaseKey(keyName);
-
-            // Update env if changed (legacy check)
-            if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
-            if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
-
-            const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
-            if (apiKeyVal) setApiKey(apiKeyVal);
-
-            // Ensure Profile exists for sync
-            // Always start with empty profile to show Netflix-style selector
-            let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
-            if (storedProfile) {
-                setUserProfile(storedProfile);
-            }
-
-            let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
-            if (profiles) {
-                setAvailableProfiles(JSON.parse(profiles));
-            } else {
-                const defaults = ["Admin", "User"];
-                setAvailableProfiles(defaults);
-                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
-            }
-        } catch (e) {
-            console.error("Initialization Failed:", e);
-        }
-    };
-    initSettings();
-}, []);
-
-useEffect(() => {
-    const loadSales = async () => {
-        try {
-            // 1. Load Local Data First for Immediate Display
-            let currentSales = INITIAL_SALES;
-            const { value } = await Preferences.get({ key: 'car_sales_data' });
-            if (value) {
-                currentSales = JSON.parse(value);
-            } else {
-                const saved = localStorage.getItem('car_sales_data');
-                if (saved) currentSales = JSON.parse(saved);
-            }
-
-            // AUTO-IMPORT & REPAIR RECOVERED SALES
-            // "fix sync error item if something... is missing... skip it" -> Check required fields
-            // "make all this cars sold in progress" -> Update existing ones too
-            let hasChanges = false;
-            const existingVinMap = new Map();
-            currentSales.forEach((s: any, i: number) => {
-                if (s.vin) existingVinMap.set(s.vin.trim().toUpperCase(), i);
-            });
-
-            RECOVERED_SALES.forEach((rec: any) => {
-                // 1. SKIP INVALID ROWS
-                if (!rec.brand || !rec.model || !rec.vin) return;
-
-                const vin = rec.vin.trim().toUpperCase();
-                const existingIndex = existingVinMap.get(vin);
-
-                if (existingIndex !== undefined) {
-                    // 2. UPDATE EXISTING
-                    const s = currentSales[existingIndex];
-                    let modified = false;
-
-                    // Force Status 'In Progress'
-                    if (s.status !== 'In Progress') {
-                        s.status = 'In Progress';
-                        modified = true;
-                    }
-
-                    // Force Balance 0 (Paid = Sold)
-                    // Only if soldPrice is present (rec.soldPrice might be 0/undefined)
-                    const targetSold = rec.soldPrice || s.soldPrice || 0;
-                    const currentPaid = (s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0);
-
-                    // We strictly follow the rule: Paid = Sold
-                    if (Math.abs(currentPaid - targetSold) > 1) { // tolerance
-                        s.soldPrice = targetSold;
-                        s.amountPaidCash = targetSold;
-                        s.amountPaidBank = 0;
-                        s.deposit = 0;
-                        modified = true;
-                    }
-
-                    if (modified) {
-                        currentSales[existingIndex] = s;
-                        hasChanges = true;
-                    }
-
-                } else {
-                    // 3. ADD NEW
-                    const newSale: CarSale = {
-                        id: Date.now().toString(36) + Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2),
-                        brand: rec.brand,
-                        model: rec.model,
-                        year: rec.year || 2000,
-                        km: rec.km || 0,
-                        color: rec.color || '',
-                        plateNumber: rec.plateNumber || '',
-                        vin: vin,
-                        sellerName: rec.sellerName || '',
-                        buyerName: rec.buyerName || '',
-                        buyerPersonalId: rec.buyerPersonalId || '',
-                        shippingName: rec.shippingName || '',
-                        shippingDate: rec.shippingDate || null,
-                        costToBuy: rec.costToBuy || 0,
-                        soldPrice: rec.soldPrice || 0,
-                        amountPaidCash: rec.soldPrice || 0, // Force 0 Balance
-                        amountPaidBank: 0,
-                        deposit: 0,
-                        servicesCost: rec.servicesCost || 30.51,
-                        tax: rec.tax || 0,
-                        amountPaidToKorea: 0,
-                        paidDateToKorea: null,
-                        paidDateFromClient: null,
-                        paymentMethod: 'Cash',
-                        status: 'In Progress',
-                        createdAt: new Date().toISOString(),
-                        sortOrder: currentSales.length,
-                        soldBy: 'System'
-                    };
-                    currentSales.push(newSale);
-                    existingVinMap.set(vin, currentSales.length - 1);
-                    hasChanges = true;
-                }
-            });
-
-            if (hasChanges) {
-                await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(currentSales) });
-            }
-
-            setSales(currentSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
-
-            // 2. Fetch/Sync with Supabase (Background)
-            const { value: key } = await Preferences.get({ key: 'openai_api_key' });
-            const { value: sbUrl } = await Preferences.get({ key: 'supabase_url' });
-            const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
-            const { value: profile } = await Preferences.get({ key: 'user_profile' });
-
-            if (key && sbUrl && sbKey && profile) {
-                performAutoSync(sbUrl, sbKey, profile, currentSales);
-            }
-        } catch (e) {
-            console.error("Load failed", e);
-        }
-    };
-
-    const initApp = async () => {
-        await loadSettings();
-        await loadSales();
-    };
-    initApp();
-
-    // Auto-sync on focus
-    const onFocus = async () => {
-        // Prevent sync if user is editing
-        if (isModalOpenRef.current) return;
-
-        const { value: url } = await Preferences.get({ key: 'supabase_url' });
-        const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
-        const { value: prof } = await Preferences.get({ key: 'user_profile' });
-        if (url && sbKey && prof) {
-            console.log("App focused, syncing...", url);
-            const { value: s } = await Preferences.get({ key: 'car_sales_data' });
-            const latestSales = s ? JSON.parse(s) : [];
-            performAutoSync(url, sbKey, prof, latestSales);
-        }
-    };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-}, []);
-
-const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
-    setIsSyncing(true);
-    setSyncError(''); // Clear previous errors
-    console.log("Starting AutoSync to:", url);
-
-    try {
-        let localSalesToSync = currentLocalSales;
-        if (!localSalesToSync) {
-            const { value } = await Preferences.get({ key: 'car_sales_data' });
-            localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
-        }
-        if (!localSalesToSync) localSalesToSync = [];
-
-        const client = createSupabaseClient(url.trim(), key.trim());
-
-        // Sync Sales
-        const salesRes = await syncSalesWithSupabase(client, localSalesToSync, profile.trim());
-        if (salesRes.success && salesRes.data) {
-            console.log("Sales Sync Success:", salesRes.data.length);
-            setSales(salesRes.data.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)));
-            await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(salesRes.data) });
-        } else if (salesRes.error) {
-            console.error("Sales Sync Failed:", salesRes.error);
-            setSyncError(`Sales Sync Failed: ${salesRes.error} `);
-        }
-
-        // Sync Transactions
-        const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
-        let localTxs = [];
-        try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
-
-        const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim());
-        if (txRes.success && txRes.data) {
-            console.log("TX Sync Success:", txRes.data.length);
-            setTransactions(txRes.data);
-            await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
-        } else if (txRes.error) {
-            console.error("TX Sync Failed:", txRes.error);
-            setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
-        }
-
-    } catch (e: any) {
-        console.error("Auto Sync Exception", e);
-        setSyncError(`Sync Exception: ${e.message} `);
-    }
-    finally { setIsSyncing(false); }
-};
-
-const handleAddSale = (sale: CarSale) => {
-    const newSales = editingSale
-        ? sales.map(s => s.id === sale.id ? { ...sale, lastEditedBy: userProfile } : s)
-        : [...sales, { ...sale, soldBy: userProfile }]; // Attributed to current user
-    updateSalesAndSave(newSales);
-    setIsModalOpen(false);
-    setEditingSale(null);
-};
-
-const saveSettings = async () => {
-    await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
-    await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
-    await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
-    await Preferences.set({ key: 'user_profile', value: userProfile.trim() });
-    alert('Settings Saved!');
-};
-
-const handleDelete = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
-};
-
-const handleDeleteAll = async () => {
-    if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
-        if (confirm('Please confirm again: DELETE ALL DATA?')) {
-            updateSalesAndSave([]);
             try {
-                await Preferences.remove({ key: 'car_sales_data' });
-                localStorage.removeItem('car_sales_data');
-                alert('All data has been deleted.');
-            } catch (e) { console.error('Error clearing data', e); }
-        }
-    }
-};
+                // Ensure Supabase URL/Key exist
+                let { value: url } = await Preferences.get({ key: 'supabase_url' });
+                let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
 
-const openInvoice = (sale: CarSale, e: React.MouseEvent) => { e.stopPropagation(); setInvoiceSale(sale); };
+                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
+                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-const handleFullBackup = async () => {
-    const backupData = {
-        version: 1,
-        timestamp: new Date().toISOString(),
-        type: 'full_backup',
-        sales,
-        transactions,
-        settings: {
-            apiKey,
-            supabaseUrl,
-            supabaseKey,
-            userProfile
-        }
-    };
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rg_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-};
+                setSupabaseUrl(url);
+                setSupabaseKey(keyName);
 
-const handleOneClickImport = async () => {
-    if (!confirm(`Import ${RECOVERED_SALES.length} recovered cars ? `)) return;
+                if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
+                if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
 
-    // Basic mapping for recovered data
-    const mapped = RECOVERED_SALES.map(s => ({
-        ...s,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        soldBy: 'Admin', // Default to Admin for recovered data
-        paymentMethod: 'Cash' as any,
-        amountPaidBank: 0,
-        deposit: 0,
-        servicesCost: 0,
-        tax: 0,
-        includeTransport: false,
-        // Ensure numbers
-        costToBuy: Number(s.costToBuy),
-        soldPrice: Number(s.soldPrice),
-        amountPaidCash: Number(s.amountPaidCash),
-        year: Number(s.year),
-        km: Number(s.km)
-    })) as unknown as CarSale[];
+                const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
+                if (apiKeyVal) setApiKey(apiKeyVal);
 
-    // Filter duplicates by VIN
-    const currentVins = new Set(sales.map(s => s.vin));
-    const newSales = mapped.filter(s => !currentVins.has(s.vin));
-
-    if (newSales.length === 0) {
-        alert('All recovered cars are already in your database!');
-        return;
-    }
-
-    await updateSalesAndSave([...sales, ...newSales]);
-    alert(`Successfully imported ${newSales.length} cars!`);
-};
-
-const handleImport = async () => {
-    try {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json, .xlsx';
-        input.onchange = async (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-                setImportStatus('Reading file...');
-                await new Promise(r => setTimeout(r, 100));
-
-                if (file.name.endsWith('.json')) {
-                    const text = await file.text();
-                    try {
-                        const data = JSON.parse(text);
-
-                        // Check for Full Backup Structure
-                        if (data.type === 'full_backup' && data.sales) {
-                            if (confirm('Restoring Full Backup! This will OVERWRITE current data. Continue?')) {
-                                // 1. Restore Operations
-                                await updateSalesAndSave(data.sales || []);
-                                await saveTransactions(data.transactions || []);
-
-                                // 2. Restore Settings
-                                if (data.settings) {
-                                    if (data.settings.apiKey) { setApiKey(data.settings.apiKey); await Preferences.set({ key: 'openai_api_key', value: data.settings.apiKey }); }
-                                    if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
-                                    if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
-                                    if (data.settings.userProfile) { setUserProfile(data.settings.userProfile); await Preferences.set({ key: 'user_profile', value: data.settings.userProfile }); }
-                                }
-
-                                setImportStatus('Full Backup Restored Successfully!');
-                                setTimeout(() => window.location.reload(), 1500); // Reload to apply settings fresh
-                            }
-                            return;
-                        }
-
-                        // Fallback to legacy JSON array import
-                        if (Array.isArray(data)) {
-                            // Assume it's just sales list
-                            if (confirm(`Import ${data.length} sales ? `)) {
-                                await updateSalesAndSave([...data, ...sales]); // Merge
-                                setImportStatus('Imported JSON successfully');
-                            }
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        setImportStatus('Invalid JSON File');
-                    }
-                    return;
+                let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
+                if (storedProfile) {
+                    setUserProfile(storedProfile);
+                    setView('landing');
                 }
 
-                if (file.name.endsWith('.xlsx')) {
-                    try {
-                        const XLSX = await import('xlsx');
-                        const arrayBuffer = await file.arrayBuffer();
-                        const workbook = XLSX.read(arrayBuffer);
-                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(sheet);
-                        setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
-
-                        // Helper for standard mapping
-                        const mapStandardImport = (data: any[]) => {
-                            const findVal = (row: any, keys: string[]) => {
-                                const rowKeys = Object.keys(row);
-                                for (const key of keys) {
-                                    if (row[key] !== undefined) return row[key];
-                                    const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                    const foundKey = rowKeys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanKey));
-                                    if (foundKey && row[foundKey] !== undefined) return row[foundKey];
-                                }
-                                return undefined;
-                            };
-                            const parseNum = (val: any) => {
-                                if (typeof val === 'number') return val;
-                                if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
-                                return 0;
-                            };
-                            const parseDate = (val: any) => {
-                                if (!val) return undefined;
-                                if (val instanceof Date) return val.toISOString().split('T')[0];
-                                if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000)).toISOString().split('T')[0];
-                                return String(val);
-                            };
-
-                            return data.map((row: any) => ({
-                                id: findVal(row, ['id', 'ID', 'uuid']) || crypto.randomUUID(),
-                                brand: findVal(row, ['brand', 'item', 'make', 'car model']) || 'Unknown',
-                                model: findVal(row, ['model', 'car model', 'type']) || 'Unknown',
-                                year: parseInt(findVal(row, ['year', 'yr']) || new Date().getFullYear()),
-                                km: parseNum(findVal(row, ['km', 'mileage', 'odometer', 'kilometers'])),
-                                vin: findVal(row, ['vin', 'vin number', 'chassis']) || 'N/A',
-                                costToBuy: parseNum(findVal(row, ['costToBuy', 'cost', 'buyPrice', 'purchasePrice'])),
-                                soldPrice: parseNum(findVal(row, ['soldPrice', 'sold', 'salePrice'])),
-                                amountPaidCash: parseNum(findVal(row, ['amountPaidCash', 'cash', 'paid-cash'])),
-                                amountPaidBank: parseNum(findVal(row, ['amountPaidBank', 'bank', 'paid-check', 'paid check'])),
-                                deposit: parseNum(findVal(row, ['deposit', 'downPayment'])),
-                                servicesCost: parseNum(findVal(row, ['services', 'serviceCost'])),
-                                tax: parseNum(findVal(row, ['tax', 'taxes', 'vat', 'faturat'])),
-                                color: findVal(row, ['color', 'paint']),
-                                buyerName: findVal(row, ['buyerName', 'buyer name', 'client']),
-                                sellerName: findVal(row, ['sellerName', 'seller name', 'seller']),
-                                shippingName: findVal(row, ['shippingName', 'ship name', 'shipper']),
-                                shippingDate: parseDate(findVal(row, ['shippingDate', 'ship date', 'date'])),
-                                plateNumber: findVal(row, ['plateNumber', 'plate', 'registration']),
-                                status: findVal(row, ['status', 'state']) || 'In Progress',
-                                paymentMethod: findVal(row, ['paymentMethod', 'method']),
-                                paidDateToKorea: parseDate(findVal(row, ['paidDateToKorea', 'paidKorea', 'date to korea'])),
-                                paidDateFromClient: parseDate(findVal(row, ['paidDateFromClient', 'paidClient', 'date from client', 'paid date'])),
-                                invoiceId: findVal(row, ['invoiceId', 'invoice']),
-                                createdAt: new Date().toISOString()
-                            })) as CarSale[];
-                        };
-
-                        let importedSales = mapStandardImport(jsonData);
-                        if (apiKey && confirm('Use OpenAI for enhanced import?')) {
-                            try {
-                                setImportStatus('AI Analysis...');
-                                importedSales = await processImportedData(apiKey, jsonData, setImportStatus);
-                            } catch (e) { importedSales = mapStandardImport(jsonData); }
-                        }
-                        updateSalesAndSave([...sales, ...importedSales]);
-                        setImportStatus('');
-
-                    } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
+                let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
+                if (profiles) {
+                    const loaded = JSON.parse(profiles);
+                    // Filter out Ardian if present? User said "remove ardian".
+                    // But if it's in Loaded, we should respect it UNLESS we force remove.
+                    // "remove ardian gashi profile" implies from NOW on.
+                    // If I remove it here, it will be gone.
+                    const systemDefaults = ['Robert Gashi', 'Admin', 'User'];
+                    const merged = Array.from(new Set([...loaded, ...systemDefaults])).filter(p => p !== 'Ardian Gashi');
+                    setAvailableProfiles(merged);
+                } else {
+                    const defaults = ['Robert Gashi', 'Admin', 'User'];
+                    setAvailableProfiles(defaults);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
                 }
+            } catch (e) {
+                console.error("Initialization Failed:", e);
+            } finally {
+                setIsLoading(false);
             }
         };
-        input.click();
-    } catch (e) { console.error(e); }
-};
+        initSettings();
+    }, []);
 
-const filteredSales = sales.filter(s => {
-    // Visibility Rule: Non-Admins cannot see Admin's sales
-    if (userProfile !== 'Admin' && s.soldBy === 'Admin') return false;
+    useEffect(() => {
+        const loadSales = async () => {
+            try {
+                // 1. Load Local Data First for Immediate Display
+                let currentSales = INITIAL_SALES;
+                const { value } = await Preferences.get({ key: 'car_sales_data' });
+                if (value) {
+                    currentSales = JSON.parse(value);
+                } else {
+                    const saved = localStorage.getItem('car_sales_data');
+                }
 
-    // Category Filter
-    if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
-    if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
-    if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
-    if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+                // Just load the saved data - no auto-import
+                setSales(currentSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return true;
-    return JSON.stringify(s).toLowerCase().includes(term);
-});
+                // 2. Fetch/Sync with Supabase (Background)
+                const { value: key } = await Preferences.get({ key: 'openai_api_key' });
+                const { value: sbUrl } = await Preferences.get({ key: 'supabase_url' });
+                const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
+                const { value: profile } = await Preferences.get({ key: 'user_profile' });
 
+                if (key && sbUrl && sbKey && profile) {
+                    performAutoSync(sbUrl, sbKey, profile, currentSales);
+                }
+            } catch (e) {
+                console.error("Load failed", e);
+            }
+        };
 
+        const initApp = async () => {
+            await loadSales();
+        };
+        initApp();
 
+        // Auto-sync on focus
+        const onFocus = async () => {
+            // Prevent sync if user is editing
+            if (isModalOpenRef.current) return;
 
-const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
-const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
-const totalPaid = filteredSales.reduce((acc, s) => acc + ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)), 0);
-const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
-const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
-const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
+            const { value: url } = await Preferences.get({ key: 'supabase_url' });
+            const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
+            const { value: prof } = await Preferences.get({ key: 'user_profile' });
+            if (url && sbKey && prof) {
+                console.log("App focused, syncing...", url);
+                const { value: s } = await Preferences.get({ key: 'car_sales_data' });
+                const latestSales = s ? JSON.parse(s) : [];
+                performAutoSync(url, sbKey, prof, latestSales);
+            }
+        };
+        window.addEventListener('focus', onFocus);
+        return () => window.removeEventListener('focus', onFocus);
+    }, []);
 
-const [groupBy, setGroupBy] = useState<'none' | 'status' | 'brand'>('none');
+    const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
+        setIsSyncing(true);
+        setSyncError(''); // Clear previous errors
+        console.log("Starting AutoSync to:", url);
 
-const groupedSales = React.useMemo(() => {
-    if (groupBy === 'none') return { 'All': filteredSales };
-    const groups: Record<string, CarSale[]> = {};
-    filteredSales.forEach(s => {
-        const key = groupBy === 'status' ? s.status : s.brand;
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(s);
-    });
-    return groups;
-}, [filteredSales, groupBy]);
+        try {
+            let localSalesToSync = currentLocalSales;
+            if (!localSalesToSync) {
+                const { value } = await Preferences.get({ key: 'car_sales_data' });
+                localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
+            }
+            if (!localSalesToSync) localSalesToSync = [];
 
+            const client = createSupabaseClient(url.trim(), key.trim());
 
+            // Sync Sales - ONE-WAY PUSH ONLY (local to remote)
+            const salesRes = await syncSalesWithSupabase(client, localSalesToSync, profile.trim());
+            if (salesRes.success) {
+                console.log("Sales Sync Success - content synced");
+                if (salesRes.data) {
+                    setSales(salesRes.data);
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(salesRes.data) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(salesRes.data));
+                }
+            } else if (salesRes.error) {
+                console.error("Sales Sync Failed:", salesRes.error);
+                setSyncError(`Sales Sync Failed: ${salesRes.error} `);
+            }
 
-if (!userProfile) {
-    return <ProfileSelector
-        profiles={availableProfiles}
-        onSelect={(p) => {
-            setUserProfile(p);
-            // Also trigger sync or anything needed
-        }}
-        onAdd={(name) => {
-            const updated = [...availableProfiles, name];
-            setAvailableProfiles(updated);
-            Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-            setUserProfile(name);
-        }}
-    />;
-}
+            // Sync Transactions
+            const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
+            let localTxs = [];
+            try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
 
-return (
-    <div className="h-screen flex flex-col bg-[#111111] text-gray-100 font-sans">
-        {importStatus && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center">
-                <div className="bg-[#1a1a1a] border border-white/10 p-8 rounded-2xl flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <p>{importStatus}</p>
-                </div>
-            </div>
-        )}
+            const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim());
+            if (txRes.success && txRes.data) {
+                console.log("TX Sync Success:", txRes.data.length);
+                setTransactions(txRes.data);
+                await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
+            } else if (txRes.error) {
+                console.error("TX Sync Failed:", txRes.error);
+                setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
+            }
 
-        {/* Global Sync Error Toast */}
-        {syncError && (
-            <div className="fixed top-20 right-4 z-[90] bg-red-950/90 border border-red-500/50 text-white p-4 rounded-xl shadow-2xl max-w-md backdrop-blur-md">
-                <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <strong className="text-red-200 text-sm">Sync Issues Detected</strong>
-                    </div>
-                    <button onClick={() => setSyncError('')} className="p-1 hover:bg-white/10 rounded"><X className="w-4 h-4 text-red-200" /></button>
-                </div>
-                <p className="text-xs font-mono text-gray-300 break-words leading-relaxed">{syncError}</p>
-            </div>
-        )}
-
-        <header className="bg-[#111111]/80 backdrop-blur-xl border-b border-white/5 p-4 pt-[calc(env(safe-area-inset-top)+2rem)] sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto flex flex-col gap-4">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(37,99,235,0.5)]" />
-                        <div>
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">KORAUTO</h1>
-                        </div>
-                    </div>
-                    <div className="hidden md:flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
-                        {['dashboard', 'invoices', 'settings'].map((tab) => (
-                            <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[#252525] text-white shadow-inner' : 'text-gray-500 hover:text-gray-300'} `}>
-                                <span className="capitalize">{tab}</span>
-                            </button>
-                        ))}
-                    </div>
-                    <div className="relative">
-                        <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[1px] shadow-lg hover:shadow-cyan-500/50 transition-shadow">
-                            <div className="w-full h-full rounded-full bg-[#111111] flex items-center justify-center text-xs font-bold text-gray-300">
-                                {userProfile ? userProfile[0].toUpperCase() : 'U'}
-                            </div>
-                        </button>
-
-                        {showProfileMenu && (
-                            <div className="absolute right-0 top-12 bg-[#1a1a1a] border border-white/10 rounded-xl p-2 w-48 shadow-2xl z-[60] animate-in fade-in slide-in-from-top-2">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold px-2 py-1 mb-1">Switch Profile</div>
-                                <div className="max-h-40 overflow-y-auto space-y-1">
-                                    {availableProfiles.map(p => (
-                                        <button key={p} onClick={() => {
-                                            if (p === 'Admin' && userProfile !== 'Admin') {
-                                                setPendingProfile(p);
-                                                setPasswordInput('');
-                                                setIsPasswordVisible(false);
-                                                setShowPasswordModal(true);
-                                                return;
-                                            }
-                                            setUserProfile(p);
-                                            Preferences.set({ key: 'user_profile', value: p });
-                                            setShowProfileMenu(false);
-                                            performAutoSync(supabaseUrl, supabaseKey, p);
-                                        }}
-                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${userProfile === p ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/5'} `}>
-                                            <span>{p}</span>
-                                            {userProfile === p && <CheckSquare className="w-3 h-3" />}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="h-px bg-white/10 my-2" />
-                                <button onClick={quickAddProfile} className="w-full text-left px-3 py-2 text-green-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
-                                    <Plus className="w-4 h-4" /> Add Profile
-                                </button>
-                                <div className="h-px bg-white/10 my-2" />
-                                <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-500 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
-                                    <LogOut className="w-4 h-4" /> Log Out
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div className="relative group w-full md:w-auto">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                        <input placeholder="Search..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                    <div className="flex gap-2 w-full md:w-auto justify-end items-center">
-                        {/* Grouping Dropdown */}
-                        <select
-                            value={groupBy}
-                            onChange={(e) => setGroupBy(e.target.value as any)}
-                            className="bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                        >
-                            <option value="none">No Grouping</option>
-                            <option value="status">Group by Status</option>
-                            <option value="brand">Group by Brand</option>
-                        </select>
-
-                        <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
-                            <Plus className="w-4 h-4" /> Add Sale
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <main className="flex-1 overflow-hidden bg-[#0a0a0a] p-4 md:p-8 flex flex-col relative">
-            {/* Floating Action Button for Add Sale */}
-            <button
-                onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
-                className="md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
-            >
-                <Plus className="w-6 h-6" />
-            </button>
-
-            {view === 'dashboard' ? (<>
-                {/* Sub-Tabs for Dashboard Categories */}
-                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                    {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => setActiveCategory(cat)}
-                            className={`px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all whitespace-nowrap ${activeCategory === cat
-                                ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]'
-                                : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
-                                }`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
-                    <div className="grid text-sm divide-y divide-white/5 min-w-max"
-                        style={{
-                            gridTemplateColumns: userProfile === 'Admin'
-                                ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 160px 100px 100px"
-                                : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 160px 100px 100px"
-                        }}>
-                        <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13' }}>
-                            <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
-                                {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
-                            </div>
-                            <div className="p-3 pl-2">Car Info</div> <div className="p-3 text-center">Year</div> <div className="p-3 text-center">KM</div> <div className="p-3">Plate/VIN</div>
-                            <div className="p-3">Buyer</div> <div className="p-3">Seller</div> <div className="p-3">Shipping</div>
-                            {userProfile === 'Admin' && <div className="p-3 text-right">Cost</div>}
-                            <div className="p-3 text-right">Sold</div>
-                            {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
-                            {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
-                            <div className="p-3 text-right">Balance</div> <div className="p-3 text-center">Status</div> <div className="p-3 text-center">Sold By</div> <div className="p-3"></div>
-                        </div>
-                        {/* Render Rows */}
-                        {groupBy === 'none' ? (
-                            <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
-                                const reordered = newOrder.map((item, index) => ({ ...item, sortOrder: index }));
-                                setSales(prev => {
-                                    const next = [...prev];
-                                    newOrder.forEach((newItem, newIndex) => {
-                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                    });
-                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                });
-                            }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 13', display: 'grid' }}>
-                                {filteredSales.map(s => (
-                                    <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-                                ))}
-                            </Reorder.Group>
-                        ) : (
-                            <>
-                                {filteredSales.map(s => (
-                                    <SortableSaleItem key={s.id} s={s} userProfile={userProfile} toggleSelection={toggleSelection} selectedIds={selectedIds} openInvoice={openInvoice} />
-                                ))}
-                            </>
-                        )}
-
-                        {/* Footer Totals */}
-                        <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
-                            <div className="p-3 text-right col-span-8">Totals</div>
-                            {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
-                            <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
-                            <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
-                            {userProfile === 'Admin' && <>
-                                <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
-                                <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
-                            </>}
-                            <div className="p-3 col-span-3"></div>
-                        </div>
-                    </div>
-                </div>
-                {/* Mobile Card View */}
-                <div className="md:hidden flex flex-col gap-4 overflow-auto flex-1 pb-20">
-                    {filteredSales.map(sale => (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            key={sale.id}
-                            className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform"
-                            onClick={() => { setEditingSale(sale); setIsModalOpen(true); }}
-                        >
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <div className="font-bold text-white text-lg">{sale.brand} {sale.model}</div>
-                                    <div className="text-sm text-gray-500">{sale.year} • {(sale.km || 0).toLocaleString()} km</div>
-                                </div>
-                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${sale.status === 'Completed' ? 'bg-green-500/20 text-green-400' :
-                                    sale.status === 'New' ? 'bg-blue-500/20 text-blue-400' :
-                                        'bg-gray-700 text-gray-300'
-                                    } `}>{sale.status}</span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mt-2 bg-black/20 p-2 rounded-lg">
-                                <div>VIN: <span className="text-gray-300 font-mono">{sale.vin.slice(-6)}...</span></div>
-                                <div className="text-right">Buyer: <span className="text-gray-300">{sale.buyerName}</span></div>
-                                <div className="col-span-2 flex justify-between pt-2 mt-2 border-t border-white/5">
-                                    <span>Sold By: <span className="text-blue-400">{sale.soldBy || 'Admin'}</span></span>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center pt-2 border-t border-white/5 h-12">
-                                {userProfile === 'Admin' ? (
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-gray-500 uppercase">Profit</span>
-                                        <span className={`font-bold font-mono ${calculateProfit(sale) > 0 ? 'text-blue-400' : 'text-red-400'} `}>
-                                            €{calculateProfit(sale).toLocaleString()}
-                                        </span>
-                                    </div>
-                                ) : <div />}
-
-                                <div className="flex flex-col text-right">
-                                    <span className="text-[10px] text-gray-500 uppercase">Balance</span>
-                                    <span className={`font-bold font-mono ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-400'} `}>
-                                        €{calculateBalance(sale).toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            </>) : view === 'settings' ? (
-                <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
-                    <h2 className="text-xl font-bold mb-4">Settings</h2>
-                    <div className="space-y-4">
-                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-
-                        <div className="space-y-2">
-                            <label className="text-sm text-gray-400">User Profile</label>
-                            <div className="flex gap-2">
-                                <select value={userProfile} onChange={e => {
-                                    setUserProfile(e.target.value);
-                                    Preferences.set({ key: 'user_profile', value: e.target.value });
-                                }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
-                                    <option value="">Select Profile</option>
-                                    {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
-                                </select>
-                                <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
-                            </div>
-                            <div className="flex gap-2">
-                                <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
-                                <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
-                            </div>
-                        </div>
-
-                        <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-                        <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-
-                        <div className="h-px bg-white/10 my-4" />
-                        <button onClick={handleOneClickImport} className="w-full bg-blue-600/20 text-blue-400 font-bold py-3 rounded-xl border border-blue-500/30 flex items-center justify-center gap-2 mb-4">
-                            <Download className="w-5 h-5" /> Import Recovered Sales ({RECOVERED_SALES.length})
-                        </button>
-
-                        <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
-                        <div className="h-px bg-white/10 my-4" />
-                        <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
-                    </div>
-                </div>
-            ) : view === 'invoices' ? (
-                <div className="flex-1 overflow-auto p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredSales.map(s => (
-                            <SortableSaleItem key={s.id} s={s} openInvoice={openInvoice} toggleSelection={toggleSelection} selectedIds={selectedIds} />
-                        ))}
-                    </div>
-                </div>
-            ) : null}
-
-            {/* Floating Bulk Action Bar */}
-            <AnimatePresence>
-                {selectedIds.size > 0 && (
-                    <motion.div
-                        initial={{ y: 100, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 100, opacity: 0 }}
-                        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
-                    >
-                        <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
-                            <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
-                            Selected
-                        </div>
-
-                        {selectedIds.size === 1 && (
-                            <button
-                                onClick={() => {
-                                    const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                    if (sale) { setEditingSale(sale); setIsModalOpen(true); }
-                                }}
-                                className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
-                            >
-                                <Edit className="w-5 h-5 text-blue-400" />
-                                <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
-                            </button>
-                        )}
-
-                        <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                            <Copy className="w-5 h-5 text-green-400" />
-                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
-                        </button>
-
-                        <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                            <ArrowRight className="w-5 h-5 text-yellow-400" />
-                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
-                        </button>
-
-                        <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                            <Trash2 className="w-5 h-5 text-red-500" />
-                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
-                        </button>
-
-                        <div className="w-px h-8 bg-white/10 mx-1" />
-
-                        <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
-                            <X className="w-5 h-5" />
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </main>
-
-        {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
-        {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
-        {
-            showPasswordModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
-                    <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
-                        <div className="relative mb-6">
-                            <input
-                                type={isPasswordVisible ? 'text' : 'password'}
-                                className="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white outline-none focus:border-blue-500 transition-colors"
-                                placeholder="Password"
-                                value={passwordInput}
-                                onChange={e => setPasswordInput(e.target.value)}
-                                autoFocus
-                                onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
-                            />
-                            <button
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                            >
-                                {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
-                            <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">Submit</button>
-                        </div>
-                    </div>
-                </div>
-            )
+        } catch (e: any) {
+            console.error("Auto Sync Exception", e);
+            setSyncError(`Sync Exception: ${e.message} `);
         }
-        <AiAssistant data={sales} apiKey={apiKey} />
-    </div >
-);
+        finally { setIsSyncing(false); }
+    };
+
+    const handleAddSale = (sale: CarSale) => {
+        const newSales = editingSale
+            ? sales.map(s => s.id === sale.id ? { ...sale, lastEditedBy: userProfile || 'Unknown' } : s)
+            : [...sales, { ...sale, soldBy: userProfile || 'Unknown' }]; // Attributed to current user
+        updateSalesAndSave(newSales);
+        setIsModalOpen(false);
+        setEditingSale(null);
+    };
+
+    const saveSettings = async () => {
+        await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
+        await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
+        await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
+        await Preferences.set({ key: 'user_profile', value: (userProfile || '').trim() });
+        alert('Settings Saved!');
+    };
+
+    const handleDelete = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
+    };
+
+    const handleDeleteAll = async () => {
+        if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
+            if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
+                // Delete from Supabase immediately
+                if (supabaseUrl && supabaseKey) {
+                    try {
+                        const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                        // Delete all records
+                        const { data: allSales } = await client.from('sales').select('id');
+                        if (allSales && allSales.length > 0) {
+                            for (const sale of allSales) {
+                                await client.from('sales').delete().eq('id', sale.id);
+                            }
+                            console.log("Deleted all from Supabase:", allSales.length, "records");
+                        }
+                    } catch (e) {
+                        console.error("Supabase delete all error:", e);
+                    }
+                }
+
+                // Delete locally
+                updateSalesAndSave([]);
+                try {
+                    await Preferences.remove({ key: 'car_sales_data' });
+                    localStorage.removeItem('car_sales_data');
+                    alert('All data has been deleted from local and database.');
+                } catch (e) { console.error('Error clearing data', e); }
+            }
+        }
+    };
+
+    const openInvoice = (sale: CarSale, e: React.MouseEvent) => { e.stopPropagation(); setInvoiceSale(sale); };
+
+    const handleFullBackup = async () => {
+        const backupData = {
+            version: 1,
+            timestamp: new Date().toISOString(),
+            type: 'full_backup',
+            sales,
+            transactions,
+            settings: {
+                apiKey,
+                supabaseUrl,
+                supabaseKey,
+                userProfile
+            }
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rg_backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImport = async () => {
+        try {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json, .xlsx';
+            input.onchange = async (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                    setImportStatus('Reading file...');
+                    await new Promise(r => setTimeout(r, 100));
+
+                    if (file.name.endsWith('.json')) {
+                        const text = await file.text();
+                        try {
+                            const data = JSON.parse(text);
+
+                            // Check for Full Backup Structure
+                            if (data.type === 'full_backup' && data.sales) {
+                                if (confirm('Restoring Full Backup! This will OVERWRITE current data. Continue?')) {
+                                    // 1. Restore Operations
+                                    await updateSalesAndSave(data.sales || []);
+                                    await saveTransactions(data.transactions || []);
+
+                                    // 2. Restore Settings
+                                    if (data.settings) {
+                                        if (data.settings.apiKey) { setApiKey(data.settings.apiKey); await Preferences.set({ key: 'openai_api_key', value: data.settings.apiKey }); }
+                                        if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
+                                        if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
+                                        if (data.settings.userProfile) { setUserProfile(data.settings.userProfile); await Preferences.set({ key: 'user_profile', value: data.settings.userProfile }); }
+                                    }
+
+                                    setImportStatus('Full Backup Restored Successfully!');
+                                    setTimeout(() => window.location.reload(), 1500); // Reload to apply settings fresh
+                                }
+                                return;
+                            }
+
+                            // Fallback to legacy JSON array import
+                            if (Array.isArray(data)) {
+                                // Assume it's just sales list
+                                if (confirm(`Import ${data.length} sales ? `)) {
+                                    await updateSalesAndSave([...data, ...sales]); // Merge
+                                    setImportStatus('Imported JSON successfully');
+                                }
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            setImportStatus('Invalid JSON File');
+                        }
+                        return;
+                    }
+
+                    if (file.name.endsWith('.xlsx')) {
+                        try {
+                            const XLSX = await import('xlsx');
+                            const arrayBuffer = await file.arrayBuffer();
+                            const workbook = XLSX.read(arrayBuffer);
+                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                            const jsonData = XLSX.utils.sheet_to_json(sheet);
+                            setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
+
+                            // Helper for standard mapping
+                            const mapStandardImport = (data: any[]) => {
+                                const findVal = (row: any, keys: string[]) => {
+                                    const rowKeys = Object.keys(row);
+                                    for (const key of keys) {
+                                        if (row[key] !== undefined) return row[key];
+                                        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                        const foundKey = rowKeys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanKey));
+                                        if (foundKey && row[foundKey] !== undefined) return row[foundKey];
+                                    }
+                                    return undefined;
+                                };
+                                const parseNum = (val: any) => {
+                                    if (typeof val === 'number') return val;
+                                    if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
+                                    return 0;
+                                };
+                                const parseDate = (val: any) => {
+                                    if (!val) return undefined;
+                                    if (val instanceof Date) return val.toISOString().split('T')[0];
+                                    if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000)).toISOString().split('T')[0];
+                                    return String(val);
+                                };
+
+                                return data.map((row: any) => ({
+                                    id: findVal(row, ['id', 'ID', 'uuid']) || crypto.randomUUID(),
+                                    brand: findVal(row, ['brand', 'item', 'make', 'car model']) || 'Unknown',
+                                    model: findVal(row, ['model', 'car model', 'type']) || 'Unknown',
+                                    year: parseInt(findVal(row, ['year', 'yr']) || new Date().getFullYear()),
+                                    km: parseNum(findVal(row, ['km', 'mileage', 'odometer', 'kilometers'])),
+                                    vin: findVal(row, ['vin', 'vin number', 'chassis']) || 'N/A',
+                                    costToBuy: parseNum(findVal(row, ['costToBuy', 'cost', 'buyPrice', 'purchasePrice'])),
+                                    soldPrice: parseNum(findVal(row, ['soldPrice', 'sold', 'salePrice'])),
+                                    amountPaidCash: parseNum(findVal(row, ['amountPaidCash', 'cash', 'paid-cash'])),
+                                    amountPaidBank: parseNum(findVal(row, ['amountPaidBank', 'bank', 'paid-check', 'paid check'])),
+                                    deposit: parseNum(findVal(row, ['deposit', 'downPayment'])),
+                                    servicesCost: parseNum(findVal(row, ['services', 'serviceCost'])),
+                                    tax: parseNum(findVal(row, ['tax', 'taxes', 'vat', 'faturat'])),
+                                    color: findVal(row, ['color', 'paint']),
+                                    buyerName: findVal(row, ['buyerName', 'buyer name', 'client']),
+                                    sellerName: findVal(row, ['sellerName', 'seller name', 'seller']),
+                                    shippingName: findVal(row, ['shippingName', 'ship name', 'shipper']),
+                                    shippingDate: parseDate(findVal(row, ['shippingDate', 'ship date', 'date'])),
+                                    plateNumber: findVal(row, ['plateNumber', 'plate', 'registration']),
+                                    status: findVal(row, ['status', 'state']) || 'In Progress',
+                                    paymentMethod: findVal(row, ['paymentMethod', 'method']),
+                                    paidDateToKorea: parseDate(findVal(row, ['paidDateToKorea', 'paidKorea', 'date to korea'])),
+                                    paidDateFromClient: parseDate(findVal(row, ['paidDateFromClient', 'paidClient', 'date from client', 'paid date'])),
+                                    invoiceId: findVal(row, ['invoiceId', 'invoice']),
+                                    createdAt: new Date().toISOString()
+                                })) as CarSale[];
+                            };
+
+                            let importedSales = mapStandardImport(jsonData);
+                            if (apiKey && confirm('Use OpenAI for enhanced import?')) {
+                                try {
+                                    setImportStatus('AI Analysis...');
+                                    importedSales = await processImportedData(apiKey, jsonData, setImportStatus);
+                                } catch (e) { importedSales = mapStandardImport(jsonData); }
+                            }
+                            updateSalesAndSave([...sales, ...importedSales]);
+                            setImportStatus('');
+
+                        } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
+                    }
+                }
+            };
+            input.click();
+        } catch (e) { console.error(e); }
+    };
+
+    const filteredSales = sales.filter(s => {
+        // Visibility Rule: Non-Admins cannot see Admin's sales
+        if (userProfile !== 'Admin' && s.soldBy === 'Admin') return false;
+
+        // Category Filter
+        if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
+        if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
+        if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
+        if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+
+        const term = searchTerm.toLowerCase().trim();
+        if (!term) return true;
+        return JSON.stringify(s).toLowerCase().includes(term);
+    }).sort((a, b) => {
+        // Apply sorting
+        let aVal: any = a[sortBy as keyof CarSale];
+        let bVal: any = b[sortBy as keyof CarSale];
+
+        // Handle string sorting
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
+        }
+
+        // Handle undefined/null
+        if (aVal === undefined || aVal === null) aVal = '';
+        if (bVal === undefined || bVal === null) bVal = '';
+
+        if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Toggle sort column
+    const toggleSort = (column: string) => {
+        if (sortBy === column) {
+            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortDir(column === 'year' || column === 'createdAt' ? 'desc' : 'asc'); // Newest first for year/date
+        }
+    };
+
+    const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
+    const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
+    const totalPaid = filteredSales.reduce((acc, s) => acc + ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)), 0);
+    const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
+    const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
+    const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
+
+    const [groupBy, setGroupBy] = useState<'none' | 'status' | 'brand'>('none');
+
+    const groupedSales = React.useMemo(() => {
+        if (groupBy === 'none') return { 'All': filteredSales };
+        const groups: Record<string, CarSale[]> = {};
+        filteredSales.forEach(s => {
+            const key = groupBy === 'status' ? s.status : s.brand;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(s);
+        });
+        return groups;
+    }, [filteredSales, groupBy]);
+
+
+
+    if (isLoading) {
+        return (
+            <div className="h-screen bg-black flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400 animate-pulse">Loading...</p>
+            </div>
+        );
+    }
+
+    if (!userProfile) {
+        return <ProfileSelector
+            profiles={availableProfiles}
+            onSelect={(p) => {
+                setUserProfile(p);
+                setView('landing');
+                // Also trigger sync or anything needed
+            }}
+            onAdd={(name) => {
+                const updated = [...availableProfiles, name];
+                setAvailableProfiles(updated);
+                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                setUserProfile(name);
+            }}
+            onDelete={handleDeleteProfile}
+            onEdit={handleEditProfile}
+        />;
+    }
+
+    if (view === 'landing') {
+        return (
+            <div className="h-screen bg-black flex flex-col items-center justify-center gap-8 relative overflow-hidden text-white font-sans">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/10 via-black to-black animate-pulse" />
+
+                <div className="z-10 text-center mb-8">
+                    <h1 className="text-5xl font-bold mb-4 tracking-tight">Welcome, {userProfile}</h1>
+                    <p className="text-gray-400 text-lg">Select an operation to proceed</p>
+                </div>
+
+                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
+                    <button
+                        onClick={() => setView('add_sale')}
+                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-blue-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-blue-900/20"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                            <Plus className="w-12 h-12" />
+                        </div>
+                        <div className="text-center">
+                            <div className="text-3xl font-bold text-white mb-2">Add New Sale</div>
+                            <div className="text-gray-500">Record a new vehicle sale</div>
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setView('dashboard')}
+                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                            <Clipboard className="w-12 h-12" />
+                        </div>
+                        <div className="text-center">
+                            <div className="text-3xl font-bold text-white mb-2">View Sales</div>
+                            <div className="text-gray-500">Access dashboard & history</div>
+                        </div>
+                    </button>
+                </div>
+
+                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-gray-500 hover:text-white transition-colors bg-white/5 px-4 py-2 rounded-full text-sm font-bold">
+                    <LogOut className="w-4 h-4" /> Switch Profile
+                </button>
+            </div>
+        );
+    }
+
+
+    return (
+        <div className="h-screen flex flex-col bg-[#111111] text-gray-100 font-sans">
+            {importStatus && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center">
+                    <div className="bg-[#1a1a1a] border border-white/10 p-8 rounded-2xl flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <p>{importStatus}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Global Sync Error Toast */}
+            {syncError && (
+                <div className="fixed top-20 right-4 z-[90] bg-red-950/90 border border-red-500/50 text-white p-4 rounded-xl shadow-2xl max-w-md backdrop-blur-md">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            <strong className="text-red-200 text-sm">Sync Issues Detected</strong>
+                        </div>
+                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-white/10 rounded"><X className="w-4 h-4 text-red-200" /></button>
+                    </div>
+                    <p className="text-xs font-mono text-gray-300 break-words leading-relaxed">{syncError}</p>
+                </div>
+            )}
+
+            <header className="bg-[#111111]/80 backdrop-blur-xl border-b border-white/5 p-4 pt-[calc(env(safe-area-inset-top)+2rem)] sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(37,99,235,0.5)]" />
+                            <div>
+                                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">KORAUTO</h1>
+                            </div>
+                        </div>
+                        <div className="hidden md:flex bg-[#1a1a1a] p-1 rounded-xl border border-white/10">
+                            {['dashboard', 'invoices', 'settings'].map((tab) => (
+                                <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[#252525] text-white shadow-inner' : 'text-gray-500 hover:text-gray-300'} `}>
+                                    <span className="capitalize">{tab}</span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[1px] shadow-lg hover:shadow-cyan-500/50 transition-shadow">
+                                <div className="w-full h-full rounded-full bg-[#111111] flex items-center justify-center text-xs font-bold text-gray-300">
+                                    {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                                </div>
+                            </button>
+
+                            {showProfileMenu && (
+                                <div className="absolute right-0 top-12 bg-[#1a1a1a] border border-white/10 rounded-xl p-2 w-48 shadow-2xl z-[60] animate-in fade-in slide-in-from-top-2">
+                                    <div className="text-[10px] text-gray-500 uppercase font-bold px-2 py-1 mb-1">Switch Profile</div>
+                                    <div className="max-h-40 overflow-y-auto space-y-1">
+                                        {availableProfiles.map(p => (
+                                            <button key={p} onClick={() => {
+                                                if (p === 'Admin' && userProfile !== 'Admin') {
+                                                    setPendingProfile(p);
+                                                    setPasswordInput('');
+                                                    setIsPasswordVisible(false);
+                                                    setShowPasswordModal(true);
+                                                    return;
+                                                }
+                                                setUserProfile(p);
+                                                Preferences.set({ key: 'user_profile', value: p });
+                                                setShowProfileMenu(false);
+                                                performAutoSync(supabaseUrl, supabaseKey, p);
+                                            }}
+                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${userProfile === p ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/5'} `}>
+                                                <span>{p}</span>
+                                                {userProfile === p && <CheckSquare className="w-3 h-3" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="h-px bg-white/10 my-2" />
+                                    <button onClick={quickAddProfile} className="w-full text-left px-3 py-2 text-green-400 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                        <Plus className="w-4 h-4" /> Add Profile
+                                    </button>
+                                    <div className="h-px bg-white/10 my-2" />
+                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-500 hover:bg-white/5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                        <LogOut className="w-4 h-4" /> Log Out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+                        <div className="relative group w-full md:w-auto">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input placeholder="Search..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2 w-full md:w-auto justify-end items-center">
+                            {/* Grouping Dropdown */}
+                            <select
+                                value={groupBy}
+                                onChange={(e) => setGroupBy(e.target.value as any)}
+                                className="bg-[#1a1a1a] border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                            >
+                                <option value="none">No Grouping</option>
+                                <option value="status">Group by Status</option>
+                                <option value="brand">Group by Brand</option>
+                            </select>
+
+                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
+                                <Plus className="w-4 h-4" /> Add Sale
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main className="flex-1 overflow-hidden bg-[#0a0a0a] p-4 md:p-8 flex flex-col relative">
+                {view === 'add_sale' ? (
+                    <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center justify-between mb-6">
+                            <button onClick={() => setView('landing')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                                <ArrowRight className="w-5 h-5 rotate-180" /> Back to Menu
+                            </button>
+                            <h2 className="text-2xl font-bold text-white">New Sale Entry</h2>
+                            <div className="w-20" /> {/* Spacer */}
+                        </div>
+                        <div className="h-[calc(100%-4rem)] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                            <SaleModal
+                                isOpen={true}
+                                inline={true}
+                                onClose={() => setView('landing')}
+                                onSave={(sale) => {
+                                    handleAddSale(sale);
+                                    // Optionally stay on page or go back. User said "when filled... add to cars sold but hide table".
+                                    // Usually implies done.
+                                    setView('landing');
+                                }}
+                                existingSale={null}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Floating Action Button for Add Sale */}
+                        <button
+                            onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
+                            className="md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                        >
+                            <Plus className="w-6 h-6" />
+                        </button>
+
+                        {view === 'dashboard' ? (<>
+                            {/* Sub-Tabs for Dashboard Categories */}
+                            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setActiveCategory(cat)}
+                                        className={`px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all whitespace-nowrap ${activeCategory === cat
+                                            ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]'
+                                            : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
+                                            }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
+                                <div className="grid text-sm divide-y divide-white/5 min-w-max"
+                                    style={{
+                                        gridTemplateColumns: userProfile === 'Admin'
+                                            ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 160px 100px 100px"
+                                            : canViewPrices
+                                                ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 160px 100px 100px"
+                                                : "40px 250px 100px 100px 120px 150px 150px 150px 160px 100px 100px"
+                                    }}>
+                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : canViewPrices ? 'span 13' : 'span 11' }}>
+                                        <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
+                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
+                                        </div>
+                                        <div className="p-3 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        {userProfile === 'Admin' && <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                            Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>}
+                                        {canViewPrices && <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>}
+                                        {userProfile === 'Admin' && <div className="p-3 text-right">Paid</div>}
+                                        {userProfile === 'Admin' && <><div className="p-3 text-right">Bank Fee</div> <div className="p-3 text-right">Tax</div> <div className="p-3 text-right text-blue-400">Profit</div></>}
+                                        {canViewPrices && <div className="p-3 text-right">Balance</div>}
+                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        </div>
+                                        <div className="p-3"></div>
+                                    </div>
+                                    {/* Render Rows - Simple flat list */}
+                                    <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
+                                        setSales(prev => {
+                                            const next = [...prev];
+                                            newOrder.forEach((newItem, newIndex) => {
+                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                            });
+                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                        });
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : canViewPrices ? 'span 13' : 'span 11', display: 'grid' }}>
+                                        {filteredSales.map(s => (
+                                            <SortableSaleItem
+                                                key={s.id}
+                                                s={s}
+                                                userProfile={userProfile}
+                                                canViewPrices={canViewPrices}
+                                                toggleSelection={toggleSelection}
+                                                selectedIds={selectedIds}
+                                                openInvoice={openInvoice}
+                                                onClick={() => { setEditingSale(s); setIsModalOpen(true); }}
+                                                onDelete={handleDeleteSingle}
+                                            />
+                                        ))}
+                                    </Reorder.Group>
+
+                                    {/* Footer Totals */}
+                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: userProfile === 'Admin' ? 'span 18' : 'span 14' }}>
+                                        <div className="p-3 text-right col-span-8">Totals</div>
+                                        {userProfile === 'Admin' && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
+                                        <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
+                                        <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
+                                        {userProfile === 'Admin' && <>
+                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
+                                        </>}
+                                        <div className="p-3 col-span-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Mobile Card View */}
+                            <div className="md:hidden flex flex-col gap-4 overflow-auto flex-1 pb-20">
+                                {filteredSales.map(sale => (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        key={sale.id}
+                                        className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform"
+                                        onClick={() => { setEditingSale(sale); setIsModalOpen(true); }}
+                                    >
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-white text-lg">{sale.brand} {sale.model}</div>
+                                                <div className="text-sm text-gray-500">{sale.year} • {(sale.km || 0).toLocaleString()} km</div>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${sale.status === 'Completed' ? 'bg-green-500/20 text-green-400' :
+                                                sale.status === 'New' ? 'bg-blue-500/20 text-blue-400' :
+                                                    'bg-gray-700 text-gray-300'
+                                                } `}>{sale.status}</span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mt-2 bg-black/20 p-2 rounded-lg">
+                                            <div>VIN: <span className="text-gray-300 font-mono">{sale.vin.slice(-6)}...</span></div>
+                                            <div className="text-right">Buyer: <span className="text-gray-300">{sale.buyerName}</span></div>
+                                            <div className="col-span-2 flex justify-between pt-2 mt-2 border-t border-white/5">
+                                                <span>Sold By: <span className="text-blue-400">{sale.soldBy || 'Admin'}</span></span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pt-2 border-t border-white/5 h-12">
+                                            {userProfile === 'Admin' ? (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-gray-500 uppercase">Profit</span>
+                                                    <span className={`font-bold font-mono ${calculateProfit(sale) > 0 ? 'text-blue-400' : 'text-red-400'} `}>
+                                                        €{calculateProfit(sale).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            ) : <div />}
+
+                                            <div className="flex flex-col text-right">
+                                                <span className="text-[10px] text-gray-500 uppercase">Balance</span>
+                                                <span className={`font-bold font-mono ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-400'} `}>
+                                                    €{calculateBalance(sale).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </>) : view === 'settings' ? (
+                            <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
+                                <h2 className="text-xl font-bold mb-4">Settings</h2>
+                                <div className="space-y-4">
+                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm text-gray-400">User Profile</label>
+                                        <div className="flex gap-2">
+                                            <select value={userProfile} onChange={e => {
+                                                setUserProfile(e.target.value);
+                                                Preferences.set({ key: 'user_profile', value: e.target.value });
+                                            }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                                                <option value="">Select Profile</option>
+                                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                            </select>
+                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
+                                            <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
+                                        </div>
+                                    </div>
+
+                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+
+                                    <div className="h-px bg-white/10 my-4" />
+                                    <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
+                                    <div className="h-px bg-white/10 my-4" />
+                                    <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                                </div>
+                            </div>
+                        ) : view === 'invoices' ? (
+                            <div className="flex-1 overflow-auto p-6">
+                                <h2 className="text-2xl font-bold text-white mb-6">Invoices</h2>
+                                {filteredSales.length === 0 ? (
+                                    <div className="text-center text-gray-500 py-20">
+                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                        <p>No invoices to display</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredSales.map(s => (
+                                            <div
+                                                key={s.id}
+                                                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 hover:border-blue-500/30 transition-all cursor-pointer group"
+                                                onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
+                                            >
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <div className="font-bold text-white text-lg">{s.brand} {s.model}</div>
+                                                        <div className="text-xs text-gray-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
+                                                    </div>
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-blue-500/20 text-blue-400' :
+                                                        s.status === 'In Progress' ? 'bg-orange-500/20 text-orange-400' :
+                                                            s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
+                                                                'bg-gray-500/20 text-gray-400'
+                                                        }`}>{s.status}</span>
+                                                </div>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex justify-between text-gray-400">
+                                                        <span>Buyer</span>
+                                                        <span className="text-white truncate ml-2">{s.buyerName || '-'}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-gray-400">
+                                                        <span>VIN</span>
+                                                        <span className="font-mono text-xs text-gray-500">{(s.vin || '').slice(-8)}</span>
+                                                    </div>
+                                                    <div className="h-px bg-white/5 my-2" />
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-400">Sold Price</span>
+                                                        <span className="text-green-400 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-400">Balance</span>
+                                                        <span className={calculateBalance(s) > 0 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                                                            €{calculateBalance(s).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center">
+                                                    <span className="text-xs text-gray-600">
+                                                        {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
+                                                        className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-xs"
+                                                    >
+                                                        <FileText className="w-4 h-4" /> View Invoice
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : null}
+
+                        {/* Floating Bulk Action Bar */}
+                        <AnimatePresence>
+                            {selectedIds.size > 0 && (
+                                <motion.div
+                                    initial={{ y: 100, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 100, opacity: 0 }}
+                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
+                                >
+                                    <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
+                                        <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
+                                        Selected
+                                    </div>
+
+                                    {selectedIds.size === 1 && (
+                                        <button
+                                            onClick={() => {
+                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                                if (sale) { setEditingSale(sale); setIsModalOpen(true); }
+                                            }}
+                                            className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
+                                        >
+                                            <Edit className="w-5 h-5 text-blue-400" />
+                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
+                                        </button>
+                                    )}
+
+                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <Copy className="w-5 h-5 text-green-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
+                                    </button>
+
+                                    <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <ArrowRight className="w-5 h-5 text-yellow-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Ship</span>
+                                    </button>
+
+                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <CheckSquare className="w-5 h-5 text-blue-400" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Sold</span>
+                                    </button>
+
+                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                        <Trash2 className="w-5 h-5 text-red-500" />
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
+                                    </button>
+
+                                    <div className="w-px h-8 bg-white/10 mx-1" />
+
+                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </>
+                )}
+            </main>
+
+            {isModalOpen && <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddSale} existingSale={editingSale} />}
+            {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
+            {
+                showPasswordModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
+                        <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
+                            <div className="relative mb-6">
+                                <input
+                                    type={isPasswordVisible ? 'text' : 'password'}
+                                    className="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white outline-none focus:border-blue-500 transition-colors"
+                                    placeholder="Password"
+                                    value={passwordInput}
+                                    onChange={e => setPasswordInput(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
+                                />
+                                <button
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                >
+                                    {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
+                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            <AiAssistant data={sales} apiKey={apiKey} />
+        </div >
+    );
 }
