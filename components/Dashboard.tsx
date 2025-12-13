@@ -188,6 +188,8 @@ export default function Dashboard() {
     const dirtyIds = useRef<Set<string>>(new Set());
     const [isPending, startTransition] = useTransition();
     const [sales, setSales] = useState<CarSale[]>([]);
+    const salesRef = useRef(sales);
+    useEffect(() => { salesRef.current = sales; }, [sales]);
     const [view, setView] = useState('profile_select');
     const [userProfile, setUserProfile] = useState<string | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', 'Admin', 'User']);
@@ -423,7 +425,7 @@ export default function Dashboard() {
                 });
             }
             if (supabaseUrl && supabaseKey && userProfile) {
-                performAutoSync(supabaseUrl, supabaseKey, userProfile, newSales);
+                await performAutoSync(supabaseUrl, supabaseKey, userProfile, newSales);
             }
         } catch (e) { console.error("Save failed", e); }
     };
@@ -851,46 +853,40 @@ export default function Dashboard() {
         finally { setIsSyncing(false); }
     };
 
-    const handleAddSale = (sale: CarSale) => {
+    const handleAddSale = async (sale: CarSale) => {
         if (!sale.id) {
             console.error("Attempted to save sale without ID");
             return;
         }
-
+        setIsSyncing(true);
         dirtyIds.current.add(sale.id);
 
-        setSales(currentSales => {
+        try {
+            const currentSales = salesRef.current;
             const index = currentSales.findIndex(s => s.id === sale.id);
             let newSales;
 
             if (index >= 0) {
-                // UPDATE existing: Preserve original soldBy
+                // UPDATE
                 newSales = [...currentSales];
-                newSales[index] = {
-                    ...sale,
-                    soldBy: currentSales[index].soldBy
-                };
+                newSales[index] = { ...sale, soldBy: currentSales[index].soldBy };
             } else {
-                // CREATE new
+                // CREATE
                 newSales = [...currentSales, { ...sale, soldBy: userProfile || 'Unknown' }];
             }
 
-            // Persist changes
-            // We call the persistence helper. It accepts the new list.
-            // Note: updateSalesAndSave calls setSales internally, but since we are returning newSales here,
-            // the state will be updated consistent with this return. 
-            // The redundant setSales in updateSalesAndSave is harmless in React 18 batching.
-            // However, to be cleaner, we should ideally separate persistence from state setting.
-            // Given existing code, calling it here is the pragmatic fix for the "stale state" bug.
-            updateSalesAndSave(newSales);
+            await updateSalesAndSave(newSales);
 
-            return newSales;
-        });
-
-        alert(editingSale ? 'Sale updated successfully!' : 'Sale created successfully!');
-        setIsModalOpen(false);
-        setEditingSale(null);
-        setFormResetKey(prev => prev + 1);
+            alert(editingSale ? 'Sale updated successfully and saved to database!' : 'Sale created successfully and saved to database!');
+            setIsModalOpen(false);
+            setEditingSale(null);
+            setFormResetKey(prev => prev + 1);
+        } catch (e) {
+            console.error("Save Error", e);
+            alert("Error saving sale. Data is saved locally but might not be synced.");
+        } finally {
+            setIsSyncing(false);
+        }
     };
 
     const saveSettings = async () => {
