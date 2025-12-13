@@ -4,8 +4,8 @@ const config: CapacitorConfig = {
   appId: 'io.korauto.app',
   appName: 'KORAUTO',
   webDir: 'out',
+  backgroundColor: '#000000',
   ios: {
-    contentInset: 'always',
     limitsNavigationsToAppBoundDomains: false
   },
   server: {
