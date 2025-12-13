@@ -331,16 +331,33 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
                                 </div>
 
+                                {/* Korea/Supplier Payments */}
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Payments</h4>
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Supplier (Korea)</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Paid Date (KR)</label>
+                                            <input type="date" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Client Payments */}
+                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
+                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Client Payments</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                         <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
-                                        <div className="col-span-2 grid grid-cols-2 gap-3">
-                                            <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                                        <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Dep. Date</label>
+                                            <input type="date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
+                                        </div>
+                                        <div className="col-span-1 sm:col-span-2">
                                             <div className="flex flex-col gap-1">
-                                                <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Dep. Date</label>
-                                                <input type="date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full" />
+                                                <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Full Payment Date</label>
+                                                <input type="date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none w-full h-[46px]" />
                                             </div>
                                         </div>
                                     </div>
