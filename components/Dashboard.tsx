@@ -276,11 +276,52 @@ export default function Dashboard() {
                     amount_paid_cash: 0,
                     amount_paid_bank: 0,
                     deposit: 0,
-                    attachments: { avatars: updated }
+                    attachments: { avatars: updated, profiles: availableProfiles }
                 });
             } catch (e) { console.error("Avatar Upload Error", e); }
         }
     };
+
+    // Sync profiles to Supabase when they change
+    const syncProfilesToCloud = async (profiles: string[]) => {
+        if (!supabaseUrl || !supabaseKey) return;
+        try {
+            const client = createClient(supabaseUrl, supabaseKey);
+            await client.from('sales').upsert({
+                id: 'config_profile_avatars',
+                brand: 'CONFIG',
+                model: 'AVATARS',
+                status: 'Completed',
+                year: new Date().getFullYear(),
+                km: 0,
+                cost_to_buy: 0,
+                sold_price: 0,
+                amount_paid_cash: 0,
+                amount_paid_bank: 0,
+                deposit: 0,
+                attachments: { avatars: profileAvatars, profiles: profiles }
+            });
+        } catch (e) { console.error("Profile Sync Error", e); }
+    };
+
+    // Load profiles from cloud on startup
+    useEffect(() => {
+        const syncProfilesFromCloud = async () => {
+            if (!supabaseUrl || !supabaseKey) return;
+            try {
+                const client = createClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                if (data?.attachments?.profiles) {
+                    const cloudProfiles: string[] = data.attachments.profiles;
+                    const systemDefaults = ['Robert Gashi', 'Admin', 'User', 'Robert'];
+                    const merged = Array.from(new Set([...cloudProfiles, ...systemDefaults])).filter(p => p !== 'Ardian Gashi');
+                    setAvailableProfiles(merged);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
+                }
+            } catch (e) { console.error("Profile Cloud Sync Error", e); }
+        };
+        syncProfilesFromCloud();
+    }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -520,6 +561,7 @@ export default function Dashboard() {
         setNewProfileName('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
         await Preferences.set({ key: 'user_profile', value: newProfileName.trim() });
+        syncProfilesToCloud(updated);
     };
 
     const quickAddProfile = async () => {
@@ -531,6 +573,7 @@ export default function Dashboard() {
             await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
             await Preferences.set({ key: 'user_profile', value: name.trim() });
             setShowProfileMenu(false);
+            syncProfilesToCloud(updated);
         }
     };
 
@@ -539,6 +582,7 @@ export default function Dashboard() {
         setAvailableProfiles(updated);
         if (userProfile === name) setUserProfile('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+        syncProfilesToCloud(updated);
     };
 
     const handleEditProfile = async (oldName: string, newName: string) => {
@@ -550,6 +594,7 @@ export default function Dashboard() {
             await Preferences.set({ key: 'user_profile', value: newName });
         }
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+        syncProfilesToCloud(updated);
     };
 
 
@@ -1103,6 +1148,7 @@ export default function Dashboard() {
                 setAvailableProfiles(updated);
                 Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
                 setUserProfile(name);
+                syncProfilesToCloud(updated);
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
