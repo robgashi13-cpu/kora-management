@@ -1178,22 +1178,34 @@ export default function Dashboard() {
                             <Plus className="w-6 h-6" />
                         </button>
 
-                        {view === 'dashboard' ? (<>
-                            {/* Sub-Tabs for Dashboard Categories */}
+                        {/* Global Tabs (Visible on Dashboard and Invoices) */}
+                        {view !== 'settings' && (
                             <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setActiveCategory(cat)}
-                                        className={`px-6 py-3 rounded-xl font-bold text-sm tracking-wide transition-all whitespace-nowrap ${activeCategory === cat
-                                            ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]'
-                                            : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
-                                            }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                                {(['SALES', 'INVOICES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
+                                    const isActive = cat === 'INVOICES' ? view === 'invoices' : (view === 'dashboard' && activeCategory === cat);
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => {
+                                                if (cat === 'INVOICES') setView('invoices');
+                                                else {
+                                                    setView('dashboard');
+                                                    setActiveCategory(cat as any);
+                                                }
+                                            }}
+                                            className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
+                                                ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
+                                                : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
+                                                }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
                             </div>
+                        )}
+
+                        {view === 'dashboard' ? (<>
 
                             <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
                                 <div className="grid text-sm divide-y divide-white/5 min-w-max"
@@ -1300,6 +1312,7 @@ export default function Dashboard() {
                                         {/* Foreground Card */}
                                         <motion.div
                                             drag="x"
+                                            dragDirectionLock
                                             dragConstraints={{ left: -80, right: 0 }}
                                             dragElastic={0.1}
                                             onDragEnd={(e, { offset, velocity }) => {
