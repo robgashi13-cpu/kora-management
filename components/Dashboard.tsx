@@ -331,7 +331,18 @@ export default function Dashboard() {
         // Sync profiles every 30 seconds to catch deletions from other devices
         const interval = setInterval(syncProfilesFromCloud, 30000);
 
-        return () => clearInterval(interval);
+        // Also sync immediately when app comes to foreground
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncProfilesFromCloud();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
@@ -1505,91 +1516,78 @@ export default function Dashboard() {
                             {/* Mobile Card View */}
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                {(activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON') ? (
-                                    <div className="absolute inset-0 overflow-y-auto no-scrollbar">
-                                        <SaleModal
-                                            key={formResetKey}
-                                            isOpen={true}
-                                            onClose={() => { }}
-                                            onSave={handleAddSale}
-                                            existingSale={null}
-                                            inline={true}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
-                                        {filteredSales.map(sale => (
+                                <div className="flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
+                                    {filteredSales.map(sale => (
+                                        <motion.div
+                                            key={sale.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            className="relative border-b border-white/5"
+                                        >
+                                            {/* Background Action (Delete) */}
+                                            <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                <Trash2 className="text-white w-5 h-5" />
+                                            </div>
+
+                                            {/* Foreground Card */}
                                             <motion.div
-                                                key={sale.id}
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                className="relative border-b border-white/5"
-                                            >
-                                                {/* Background Action (Delete) */}
-                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                    <Trash2 className="text-white w-5 h-5" />
-                                                </div>
-
-                                                {/* Foreground Card */}
-                                                <motion.div
-                                                    layout
-                                                    drag="x"
-                                                    dragDirectionLock
-                                                    dragConstraints={{ left: -80, right: 0 }}
-                                                    dragElastic={0.1}
-                                                    onDragEnd={(e, { offset, velocity }) => {
-                                                        if (offset.x < -60) {
-                                                            if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
-                                                        }
-                                                    }}
-                                                    className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
-                                                    onClick={() => {
-                                                        if (selectedIds.size > 0) {
-                                                            toggleSelection(sale.id);
-                                                        } else {
-                                                            setEditingSale(sale);
-                                                            setIsModalOpen(true);
-                                                        }
-                                                    }}
-                                                    onContextMenu={(e) => {
-                                                        e.preventDefault();
+                                                layout
+                                                drag="x"
+                                                dragDirectionLock
+                                                dragConstraints={{ left: -80, right: 0 }}
+                                                dragElastic={0.1}
+                                                onDragEnd={(e, { offset, velocity }) => {
+                                                    if (offset.x < -60) {
+                                                        if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
+                                                    }
+                                                }}
+                                                className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
+                                                onClick={() => {
+                                                    if (selectedIds.size > 0) {
                                                         toggleSelection(sale.id);
-                                                    }}
-                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }}
-                                                >
-                                                    {selectedIds.size > 0 && (
-                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
-                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                        </div>
-                                                    )}
-
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
-                                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
-                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
-                                                                    sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                                        'bg-gray-800 text-gray-400'
-                                                                }`}>{sale.status}</span>
-                                                        </div>
-                                                        <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
-                                                                {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
-                                                            <span className="text-gray-600">Korea:</span>
-                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
-                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                            </span>
-                                                        </div>
+                                                    } else {
+                                                        setEditingSale(sale);
+                                                        setIsModalOpen(true);
+                                                    }
+                                                }}
+                                                onContextMenu={(e) => {
+                                                    e.preventDefault();
+                                                    toggleSelection(sale.id);
+                                                }}
+                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }}
+                                            >
+                                                {selectedIds.size > 0 && (
+                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
+                                                        {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                     </div>
-                                                </motion.div>
+                                                )}
+
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
+                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
+                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
+                                                                sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                                    'bg-gray-800 text-gray-400'
+                                                            }`}>{sale.status}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                        <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                                            {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
+                                                        <span className="text-gray-600">Korea:</span>
+                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
+                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </motion.div>
-                                        ))}
-                                    </div>
-                                )}
+                                        </motion.div>
+                                    ))}
+                                </div>
                             </div>
                         </>) : view === 'settings' ? (
                             <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">

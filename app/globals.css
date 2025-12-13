@@ -23,8 +23,17 @@ html {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: #000000;
+  /* Force black background to prevent white on pull */
+  background-color: #000000;
   font-family: Arial, Helvetica, sans-serif;
+  overscroll-behavior-y: none;
+  /* Prevent elastic bounce effect */
+}
+
+html {
+  background-color: #000000;
+  overscroll-behavior-y: none;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
