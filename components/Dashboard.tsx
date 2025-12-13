@@ -200,6 +200,7 @@ export default function Dashboard() {
     const [syncError, setSyncError] = useState<string>('');
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
+    const [showMoveMenu, setShowMoveMenu] = useState(false);
 
     // Initialize & Sync Avatars
     useEffect(() => {
@@ -1661,10 +1662,19 @@ export default function Dashboard() {
                                         <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
                                     </button>
 
-                                    <button onClick={() => handleBulkMove('Shipped')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <ArrowRight className="w-5 h-5 text-yellow-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Ship</span>
-                                    </button>
+                                    <div className="relative">
+                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                            <ArrowRight className="w-5 h-5 text-yellow-400" />
+                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
+                                        </button>
+                                        {showMoveMenu && (
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1a1a] border border-white/20 rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col gap-1 w-32 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
+                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Shipped</button>
+                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Inspections</button>
+                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Autosallon</button>
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
                                         <CheckSquare className="w-5 h-5 text-blue-400" />
