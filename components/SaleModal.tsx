@@ -280,11 +280,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     <AnimatePresence mode="wait">
                         {activeTab === 'Vehicle' && (
                             <motion.div key="vehicle" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
                                     <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div className="flex flex-col gap-1">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Year</label>
                                         <select name="year" value={formData.year} onChange={handleChange} className="bg-[#252628] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-blue-500">
@@ -326,14 +326,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
                         {activeTab === 'Financials' && (
                             <motion.div key="financials" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-5">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                                     <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
                                 </div>
 
                                 <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
                                     <h4 className="text-xs font-bold text-gray-400 uppercase">Payments</h4>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                         <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
                                         <div className="col-span-2 grid grid-cols-2 gap-3">
@@ -346,7 +346,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-1">
                                         <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">Status</label>
                                         <select name="status" value={formData.status} onChange={handleChange} className="bg-[#1a1a1a] border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none">

@@ -106,10 +106,10 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                 </div>
 
                 {/* Invoice Content */}
-                <div className="p-12 overflow-y-auto print:p-0 print:overflow-visible" id="invoice-content">
+                <div className="p-4 md:p-12 overflow-y-auto print:p-0 print:overflow-visible" id="invoice-content">
 
                     {/* Invoice Header */}
-                    <div className="flex justify-between items-start mb-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                         <div>
                             {/* Company Logo */}
                             <img src="/logo_new.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
@@ -128,7 +128,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     </div>
 
                     {/* Client Info & Dates */}
-                    <div className="flex justify-between mb-8 border-t border-b border-gray-100 py-6">
+                    <div className="flex flex-col md:flex-row justify-between mb-8 border-t border-b border-gray-100 py-6 gap-4">
                         <div>
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
                             <div className="font-bold text-lg text-gray-800">{sale.buyerName}</div>
@@ -162,7 +162,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     </table>
 
                     {/* Totals */}
-                    <div className="w-1/2 ml-auto">
+                    <div className="w-full md:w-1/2 ml-auto">
                         <div className="flex justify-between py-2 text-gray-600">
                             <span>Subtotal</span>
                             <span>€{((sale.soldPrice || 0) - 200).toLocaleString()}</span>
@@ -189,7 +189,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     {/* Footer */}
                     <div className="border-t border-gray-100 pt-8 bg-gray-50/50 -mx-12 px-12 pb-8 mb-[-48px]">
                         <h4 className="font-bold text-sm mb-4 text-gray-900 uppercase tracking-wider">Payment Details</h4>
-                        <div className="grid grid-cols-2 gap-8 text-sm text-gray-600">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-gray-600">
                             <div>
                                 <div className="font-bold text-gray-900 mb-1">Raiffeisen Bank</div>
                                 <div className="font-mono bg-white p-2 rounded border border-gray-200 inline-block">1501080002435404</div>
