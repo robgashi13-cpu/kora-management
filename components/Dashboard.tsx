@@ -120,7 +120,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 12,13,14. Fees/Tax/Profit */}
             <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-            <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.tax || 0).toLocaleString()}</div>
+            <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
             {userProfile === 'Admin' && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
 
             {/* 15. Balance */}
