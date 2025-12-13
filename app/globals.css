@@ -82,3 +82,19 @@ body {
   scrollbar-width: none;
   /* Firefox */
 }
+
+/* Dashboard Grid Layout Definitions */
+:root {
+  /* Default: Compact (iPad/Tablet) */
+  --cols-admin: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 50px 60px 70px 70px 90px 60px 40px;
+  --cols-user: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 70px 70px 90px 60px 40px;
+}
+
+@media (min-width: 1367px) {
+
+  /* Desktop: Spacious (Website) */
+  :root {
+    --cols-admin: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 80px 80px 100px 110px 110px 140px 100px 60px;
+    --cols-user: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 100px 100px 100px 160px 120px 60px;
+  }
+}
