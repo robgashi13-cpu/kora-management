@@ -59,7 +59,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 1. Checkbox Column - NO onClick propagation */}
-            <div className="p-3 h-full flex items-center justify-center relative border-r border-white/5 z-10">
+            <div className="p-1 px-1.5 h-full flex items-center justify-center relative border-r border-white/5 z-10">
                 <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
                     <GripVertical className="w-4 h-4 text-gray-500" />
                 </div>
@@ -77,83 +77,83 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 2. Car Info - Click to edit */}
-            <div onClick={onClick} className="px-3 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5 cursor-pointer hover:text-blue-400">
+            <div onClick={onClick} className="px-1.5 h-full flex items-center font-bold text-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-white/5 cursor-pointer hover:text-blue-400">
                 <span className="truncate">{s.brand} {s.model}</span>
             </div>
 
             {/* 3. Year */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
+            <div className="px-1.5 h-full flex items-center justify-center text-gray-400 border-r border-white/5">{s.year}</div>
 
             {/* 4. KM */}
-            <div className="px-3 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
+            <div className="px-1.5 h-full flex items-center justify-center text-gray-400 font-mono border-r border-white/5">{(s.km || 0).toLocaleString()}</div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-3 h-full flex flex-col justify-center text-xs border-r border-white/5">
+            <div className="px-1.5 h-full flex flex-col justify-center text-xs border-r border-white/5">
                 <div className="text-white font-mono">{s.plateNumber}</div>
                 <div className="text-gray-600 font-mono" title={s.vin}>{(s.vin || '').slice(-6)}</div>
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-3 h-full flex items-center text-gray-300 whitespace-normal break-words leading-tight border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
+            <div className="px-1.5 h-full flex items-center text-gray-300 whitespace-normal break-words leading-tight border-r border-white/5" title={s.buyerName}>{s.buyerName}</div>
 
             {/* 7. Seller */}
-            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
+            <div className="px-1.5 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.sellerName}>{s.sellerName}</div>
 
             {/* 8. Shipping */}
-            <div className="px-3 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
+            <div className="px-1.5 h-full flex items-center text-gray-300 truncate border-r border-white/5" title={s.shippingName}>{s.shippingName}</div>
 
             {/* 9. Cost (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) && (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-500 border-r border-white/5">€{(s.costToBuy || 0).toLocaleString()}</div>
             )}
             {!isAdmin && s.soldBy !== userProfile && (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-green-400 font-bold border-r border-white/5">€{(s.soldPrice || 0).toLocaleString()}</div>
             ) : (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-400 border-r border-white/5">
                     €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                 </div>
             ) : (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
-                    {isAdmin && <div className="px-3 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
+                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-xs text-gray-600 border-r border-white/5">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
+                    {isAdmin && <div className="px-1.5 h-full flex items-center justify-end font-mono font-bold text-blue-400 whitespace-nowrap border-r border-white/5">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
-                    <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                    <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-3 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
+                <div className="px-1.5 h-full flex items-center justify-end font-mono font-bold border-r border-white/5">
                     <span className={calculateBalance(s) > 0 ? 'text-red-400' : 'text-green-500'}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-3 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
+                <div className="px-1.5 h-full flex items-center justify-end font-mono text-gray-600 border-r border-white/5">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+                <div className="px-1.5 h-full flex items-center justify-center border-r border-white/5">
                     <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-400'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
@@ -161,7 +161,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             )}
 
             {/* 16. Status */}
-            <div className="px-3 h-full flex items-center justify-center border-r border-white/5">
+            <div className="px-1.5 h-full flex items-center justify-center border-r border-white/5">
                 <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${s.status === 'Completed' ? 'text-blue-400' :
                     (s.status === 'In Progress' || s.status === 'Autosallon') ? 'text-orange-400' :
                         s.status === 'New' ? 'text-green-400' :
@@ -172,10 +172,10 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-3 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
+            <div className="px-1.5 h-full flex items-center justify-center text-xs text-gray-500 border-r border-white/5">{s.soldBy}</div>
 
             {/* 18. Actions */}
-            <div className="px-3 h-full flex items-center justify-center">
+            <div className="px-1.5 h-full flex items-center justify-center">
                 <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg" title="View Invoice"><FileText className="w-5 h-5" /></button>
             </div>
         </Reorder.Item >
@@ -1454,58 +1454,58 @@ export default function Dashboard() {
                         {view === 'dashboard' ? (<>
 
                             <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
-                                <div className="grid text-sm divide-y divide-white/5 min-w-max"
+                                <div className="grid text-xs divide-y divide-white/5 min-w-max"
                                     style={{
                                         gridTemplateColumns: isAdmin
-                                            ? "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 110px 110px 100px 160px 100px 100px"
-                                            : "40px 250px 100px 100px 120px 150px 150px 150px 120px 120px 120px 120px 120px 120px 160px 100px 100px"
+                                            ? "35px 180px 60px 80px 90px 110px 110px 110px 90px 90px 90px 70px 70px 80px 90px 90px 120px 80px 50px"
+                                            : "35px 180px 60px 80px 90px 110px 110px 110px 90px 90px 90px 70px 90px 90px 120px 80px 50px"
                                     }}>
                                     <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-3 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
+                                        <div className="p-1.5 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
-                                        <div className="p-3 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                        <div className="p-1.5 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
                                             Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
                                             Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
                                             KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                        <div className="p-1.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
                                             Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                        <div className="p-1.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
                                             Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                        <div className="p-1.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
                                             Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                        <div className="p-1.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
                                             Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                        <div className="p-1.5 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
                                             Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        <div className="p-1.5 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-right">Paid</div>
-                                        <div className="p-3 text-right">Bank Fee</div>
-                                        <div className="p-3 text-right">Tax</div>
-                                        {isAdmin && <div className="p-3 text-right text-blue-400">Profit</div>}
-                                        <div className="p-3 text-right">Balance</div>
-                                        {isAdmin && <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                        <div className="p-1.5 text-right">Paid</div>
+                                        <div className="p-1.5 text-right">Bank Fee</div>
+                                        <div className="p-1.5 text-right">Tax</div>
+                                        {isAdmin && <div className="p-1.5 text-right text-blue-400">Profit</div>}
+                                        <div className="p-1.5 text-right">Balance</div>
+                                        {isAdmin && <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
                                             Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                        <div className="p-1.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
                                             Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-3"></div>
+                                        <div className="p-1.5"></div>
                                     </div>
                                     {/* Render Rows - Simple flat list */}
                                     <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
