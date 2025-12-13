@@ -1288,59 +1288,67 @@ export default function Dashboard() {
                                 </div>
                             </div>
                             {/* Mobile Card View */}
-                            {/* Mobile Compact List View */}
-                            <div className="md:hidden flex flex-col pb-20">
+                            {/* Mobile Compact List View - Swipeable */}
+                            <div className="md:hidden flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
                                 {filteredSales.map(sale => (
-                                    <motion.div
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        key={sale.id}
-                                        className={`p-3 border-b border-white/5 flex items-center gap-3 active:bg-white/5 transition-colors relative ${selectedIds.has(sale.id) ? 'bg-blue-900/20' : 'bg-[#1a1a1a]'
-                                            }`}
-                                        onClick={() => {
-                                            if (selectedIds.size > 0) {
-                                                toggleSelection(sale.id);
-                                            } else {
-                                                setEditingSale(sale);
-                                                setIsModalOpen(true);
-                                            }
-                                        }}
-                                        onContextMenu={(e) => {
-                                            e.preventDefault();
-                                            toggleSelection(sale.id);
-                                        }}
-                                    >
-                                        {/* Selection Indicator (only visible when selection mode is active) */}
-                                        {selectedIds.size > 0 && (
-                                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
-                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                            </div>
-                                        )}
+                                    <div key={sale.id} className="relative border-b border-white/5 bg-red-600/20">
+                                        {/* Background Action (Delete) */}
+                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                            <Trash2 className="text-white w-5 h-5" />
+                                        </div>
 
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
-                                                    sale.status === 'New' ? 'bg-blue-500/10 text-blue-400' :
-                                                        'bg-gray-800 text-gray-400'
-                                                    }`}>{sale.status}</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                {/* Show Balance if outstanding, else Sold Price */}
-                                                {calculateBalance(sale) > 0 ? (
-                                                    <span className="text-red-400 font-mono">Bal: €{calculateBalance(sale).toLocaleString()}</span>
-                                                ) : (
-                                                    <span className="text-green-500/70 font-mono">€{sale.soldPrice?.toLocaleString() || '0'}</span>
-                                                )}
-                                            </div>
-                                            {selectedIds.has(sale.id) === false && userProfile === 'Admin' && calculateProfit(sale) !== 0 && (
-                                                <div className="text-[10px] text-right text-gray-600 mt-0.5">
-                                                    Pr: <span className={calculateProfit(sale) > 0 ? 'text-blue-500' : 'text-red-500'}>€{calculateProfit(sale)}</span>
+                                        {/* Foreground Card */}
+                                        <motion.div
+                                            drag="x"
+                                            dragConstraints={{ left: -80, right: 0 }}
+                                            dragElastic={0.1}
+                                            onDragEnd={(e, { offset, velocity }) => {
+                                                if (offset.x < -60) {
+                                                    if (confirm('Delete this item?')) handleDeleteSingle(sale.id);
+                                                }
+                                            }}
+                                            className={`p-3 flex items-center gap-3 relative z-10 ${selectedIds.has(sale.id) ? 'bg-blue-900/40' : 'bg-[#1a1a1a]'
+                                                }`}
+                                            onClick={() => {
+                                                if (selectedIds.size > 0) {
+                                                    toggleSelection(sale.id);
+                                                } else {
+                                                    setEditingSale(sale);
+                                                    setIsModalOpen(true);
+                                                }
+                                            }}
+                                            onContextMenu={(e) => {
+                                                e.preventDefault();
+                                                toggleSelection(sale.id);
+                                            }}
+                                            style={{ backgroundColor: '#1a1a1a' }} // Ensure opaque background for swipe
+                                        >
+                                            {/* Selection Indicator */}
+                                            {selectedIds.size > 0 && (
+                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
+                                                    {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                 </div>
                                             )}
-                                        </div>
-                                    </motion.div>
+
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
+                                                        sale.status === 'New' ? 'bg-blue-500/10 text-blue-400' :
+                                                            'bg-gray-800 text-gray-400'
+                                                        }`}>{sale.status}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                    {/* Always Show Balance as requested */}
+                                                    <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                                        {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
+                                                    </span>
+                                                </div>
+                                                {/* Hidden Profit Debug Line */}
+                                            </div>
+                                        </motion.div>
+                                    </div>
                                 ))}
                             </div>
                         </>) : view === 'settings' ? (
