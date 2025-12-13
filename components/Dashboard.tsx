@@ -1562,6 +1562,10 @@ export default function Dashboard() {
                                                     if (selectedIds.size > 0) {
                                                         toggleSelection(sale.id);
                                                     } else {
+                                                        if (!isAdmin && sale.soldBy !== userProfile) {
+                                                            alert("You do not have permission to edit this sale.");
+                                                            return;
+                                                        }
                                                         setEditingSale(sale);
                                                         setIsModalOpen(true);
                                                     }
@@ -1589,16 +1593,22 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                        <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
-                                                            {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
-                                                        </span>
+                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                                                {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="font-mono text-gray-600">-</span>
+                                                        )}
                                                     </div>
-                                                    <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
-                                                        <span className="text-gray-600">Korea:</span>
-                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
-                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                        </span>
-                                                    </div>
+                                                    {isAdmin && (
+                                                        <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
+                                                            <span className="text-gray-600">Korea:</span>
+                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
+                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         </motion.div>
