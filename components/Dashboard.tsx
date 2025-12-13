@@ -852,11 +852,41 @@ export default function Dashboard() {
     };
 
     const handleAddSale = (sale: CarSale) => {
+        if (!sale.id) {
+            console.error("Attempted to save sale without ID");
+            return;
+        }
+
         dirtyIds.current.add(sale.id);
-        const newSales = editingSale
-            ? sales.map(s => s.id === sale.id ? { ...sale, lastEditedBy: userProfile || 'Unknown' } : s)
-            : [...sales, { ...sale, soldBy: userProfile || 'Unknown' }]; // Attributed to current user
-        updateSalesAndSave(newSales);
+
+        setSales(currentSales => {
+            const index = currentSales.findIndex(s => s.id === sale.id);
+            let newSales;
+
+            if (index >= 0) {
+                // UPDATE existing: Preserve original soldBy
+                newSales = [...currentSales];
+                newSales[index] = {
+                    ...sale,
+                    soldBy: currentSales[index].soldBy
+                };
+            } else {
+                // CREATE new
+                newSales = [...currentSales, { ...sale, soldBy: userProfile || 'Unknown' }];
+            }
+
+            // Persist changes
+            // We call the persistence helper. It accepts the new list.
+            // Note: updateSalesAndSave calls setSales internally, but since we are returning newSales here,
+            // the state will be updated consistent with this return. 
+            // The redundant setSales in updateSalesAndSave is harmless in React 18 batching.
+            // However, to be cleaner, we should ideally separate persistence from state setting.
+            // Given existing code, calling it here is the pragmatic fix for the "stale state" bug.
+            updateSalesAndSave(newSales);
+
+            return newSales;
+        });
+
         setIsModalOpen(false);
         setEditingSale(null);
         setFormResetKey(prev => prev + 1);
