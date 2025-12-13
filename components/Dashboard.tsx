@@ -158,6 +158,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 const INITIAL_SALES: CarSale[] = [];
 
 export default function Dashboard() {
+    const dirtyIds = useRef<Set<string>>(new Set());
     const [sales, setSales] = useState<CarSale[]>([]);
     const [view, setView] = useState('profile_select');
     const [userProfile, setUserProfile] = useState<string | null>(null);
@@ -273,8 +274,7 @@ export default function Dashboard() {
                 });
             }
             if (supabaseUrl && supabaseKey && userProfile) {
-                const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                await syncSalesWithSupabase(client, newSales, userProfile);
+                performAutoSync(supabaseUrl, supabaseKey, userProfile, newSales);
             }
         } catch (e) { console.error("Save failed", e); }
     };
@@ -350,7 +350,13 @@ export default function Dashboard() {
     };
 
     const handleBulkMove = async (status: SaleStatus) => {
-        const newSales = sales.map(s => selectedIds.has(s.id) ? { ...s, status } : s);
+        const newSales = sales.map(s => {
+            if (selectedIds.has(s.id)) {
+                dirtyIds.current.add(s.id);
+                return { ...s, status };
+            }
+            return s;
+        });
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
@@ -621,8 +627,19 @@ export default function Dashboard() {
 
             const client = createSupabaseClient(url.trim(), key.trim());
 
-            // Sync Sales - ONE-WAY PUSH ONLY (local to remote)
-            const salesRes = await syncSalesWithSupabase(client, localSalesToSync, profile.trim());
+            // 1. Identify Dirty Items to Push
+            const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
+            if (localSalesToSync.length > 0 && dirtyIds.current.size === 0) {
+                console.log("No local changes to push (Clean Sync)");
+            }
+
+            // 2. Sync (Upsert Dirty -> Fetch All)
+            const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim());
+
+            // 3. Clear Dirty IDs on success
+            if (salesRes.success) {
+                dirtyItems.forEach(s => dirtyIds.current.delete(s.id));
+            }
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
                 if (salesRes.data) {
@@ -658,6 +675,7 @@ export default function Dashboard() {
     };
 
     const handleAddSale = (sale: CarSale) => {
+        dirtyIds.current.add(sale.id);
         const newSales = editingSale
             ? sales.map(s => s.id === sale.id ? { ...sale, lastEditedBy: userProfile || 'Unknown' } : s)
             : [...sales, { ...sale, soldBy: userProfile || 'Unknown' }]; // Attributed to current user
@@ -1033,8 +1051,8 @@ export default function Dashboard() {
                 </div>
             )}
 
-            <header className="bg-[#111111]/80 backdrop-blur-xl border-b border-white/5 p-4 pt-[calc(env(safe-area-inset-top)+2rem)] sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto flex flex-col gap-4">
+            <header className="bg-[#111111]/80 backdrop-blur-xl border-b border-white/5 px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto flex flex-col gap-2">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-[0_0_15px_rgba(37,99,235,0.5)]" />
@@ -1049,7 +1067,14 @@ export default function Dashboard() {
                                 </button>
                             ))}
                         </div>
-                        <div className="relative">
+                        <div className="flex items-center gap-3 relative">
+                            <button
+                                onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
+                                className={`p-2 rounded-full hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-blue-400' : 'text-gray-400'}`}
+                                title="Force Sync"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                            </button>
                             <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[1px] shadow-lg hover:shadow-cyan-500/50 transition-shadow">
                                 <div className="w-full h-full rounded-full bg-[#111111] flex items-center justify-center text-xs font-bold text-gray-300">
                                     {userProfile ? userProfile[0].toUpperCase() : 'U'}
@@ -1148,7 +1173,7 @@ export default function Dashboard() {
                         {/* Floating Action Button for Add Sale */}
                         <button
                             onClick={() => { setEditingSale(null); setIsModalOpen(true); }}
-                            className="md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+                            className={`md:hidden fixed bottom-6 right-6 z-[60] bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all hover:scale-110 active:scale-95 flex items-center justify-center ${selectedIds.size > 0 ? 'hidden' : ''}`}
                         >
                             <Plus className="w-6 h-6" />
                         </button>
@@ -1269,9 +1294,27 @@ export default function Dashboard() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         key={sale.id}
-                                        className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform"
-                                        onClick={() => { setEditingSale(sale); setIsModalOpen(true); }}
+                                        className={`bg-[#1a1a1a] border rounded-xl p-4 flex flex-col gap-3 active:scale-[0.98] transition-all relative ${selectedIds.has(sale.id) ? 'border-blue-500 bg-blue-900/10 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-white/10'
+                                            }`}
+                                        onClick={() => {
+                                            if (selectedIds.size > 0) {
+                                                toggleSelection(sale.id);
+                                            } else {
+                                                setEditingSale(sale);
+                                                setIsModalOpen(true);
+                                            }
+                                        }}
+                                        onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            toggleSelection(sale.id);
+                                        }}
                                     >
+                                        {selectedIds.has(sale.id) && (
+                                            <div className="absolute top-2 right-2 bg-blue-600 text-white rounded-full p-1 z-10 shadow-lg animate-in zoom-in">
+                                                <CheckSquare className="w-4 h-4" />
+                                            </div>
+                                        )}
+
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <div className="font-bold text-white text-lg">{sale.brand} {sale.model}</div>
