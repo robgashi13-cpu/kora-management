@@ -17,7 +17,7 @@ const toRemote = (s: CarSale, userProfile: string) => ({
     vin: s.vin,
     seller_name: s.sellerName,
     buyer_name: s.buyerName,
-    // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB
+    // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB. Saved in attachments.
     shipping_name: s.shippingName,
     shipping_date: s.shippingDate,
     include_transport: s.includeTransport,
@@ -36,7 +36,17 @@ const toRemote = (s: CarSale, userProfile: string) => ({
     payment_method: s.paymentMethod,
     status: s.status,
     sort_order: s.sortOrder,
-    attachments: { bankReceipt: s.bankReceipt, bankReceipts: s.bankReceipts, bankInvoices: s.bankInvoices, depositInvoices: s.depositInvoices },
+    // Use attachments JSONB for flexible storage of missing columns
+    attachments: {
+        bankReceipt: s.bankReceipt,
+        bankReceipts: s.bankReceipts,
+        bankInvoice: s.bankInvoice,
+        bankInvoices: s.bankInvoices,
+        depositInvoices: s.depositInvoices,
+        notes: s.notes,
+        group: s.group,
+        buyerPersonalId: s.buyerPersonalId
+    },
     last_edited_by: userProfile,
     sold_by: s.soldBy
 });
@@ -53,7 +63,7 @@ const fromRemote = (r: any): CarSale => ({
     vin: r.vin,
     sellerName: r.seller_name,
     buyerName: r.buyer_name,
-    buyerPersonalId: r.buyer_personal_id,
+    buyerPersonalId: r.buyer_personal_id || r.attachments?.buyerPersonalId,
     shippingName: r.shipping_name,
     shippingDate: r.shipping_date,
     includeTransport: r.include_transport,
@@ -72,11 +82,17 @@ const fromRemote = (r: any): CarSale => ({
     paymentMethod: r.payment_method as any,
     status: r.status as any,
     sortOrder: r.sort_order,
-    // Extract attachments
+    // Extract attachments and extras
     bankReceipt: r.attachments?.bankReceipt,
     bankReceipts: r.attachments?.bankReceipts,
+    bankInvoice: r.attachments?.bankInvoice,
     bankInvoices: r.attachments?.bankInvoices,
     depositInvoices: r.attachments?.depositInvoices,
+
+    // Recover fields from attachments if not in columns
+    notes: r.notes || r.attachments?.notes,
+    group: r.group || r.attachments?.group,
+
     createdAt: r.created_at || new Date().toISOString(),
     soldBy: r.sold_by,
 });
