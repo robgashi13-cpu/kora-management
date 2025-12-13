@@ -1459,9 +1459,9 @@ export default function Dashboard() {
                                     exit={{ y: 100, opacity: 0 }}
                                     className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
                                 >
-                                    <div className="px-4 text-xs font-bold text-gray-400 border-r border-white/10 mr-2 flex items-center gap-2">
-                                        <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px]">{selectedIds.size}</span>
-                                        Selected
+                                    <div className="px-4 border-r border-white/10 mr-2 flex flex-col items-center justify-center min-w-[60px]">
+                                        <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Selected</span>
+                                        <span className="font-mono text-xl font-bold text-blue-400 leading-none">{selectedIds.size}</span>
                                     </div>
 
                                     {selectedIds.size === 1 && (
