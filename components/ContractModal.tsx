@@ -25,8 +25,12 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const opt = {
                 margin: 0,
                 filename: `Contract_${sale.brand}_${sale.model}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                image: { type: 'png' as const },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                },
                 jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
             };
 

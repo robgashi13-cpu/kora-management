@@ -35,9 +35,9 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             const opt = {
                 margin: 10,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
+                image: { type: 'png' as const },
                 html2canvas: {
-                    scale: 2,
+                    scale: 3,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff'
