@@ -19,7 +19,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = () => {
-        window.print();
+        handleDownload();
     };
 
     const handleDownload = async () => {

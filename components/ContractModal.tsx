@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { CarSale } from '@/app/types';
-import { X, Printer } from 'lucide-react';
+import { X, Printer, Loader2, Download } from 'lucide-react';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 interface Props {
     sale: CarSale;
@@ -11,76 +14,55 @@ interface Props {
 export default function ContractModal({ sale, type, onClose }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
 
-    const handlePrint = () => {
-        if (!printRef.current) return;
-        const content = printRef.current.innerHTML;
-        const win = window.open('', '', 'height=800,width=800');
-        if (win) {
-            win.document.write(`
-                <html>
-                    <head>
-                        <title>Contract_${sale.brand}_${sale.model}</title>
-                        <base href="${window.location.origin}/" />
-                        <style>
-                            @page { size: A4; margin: 2.54cm; }
-                            body { 
-                                font-family: "Times New Roman", Times, serif; 
-                                font-size: 12pt; 
-                                line-height: 1.5; 
-                                color: #000; 
-                                background: white; 
-                                margin: 0;
-                                padding: 0;
-                            }
-                            img { max-width: 100%; height: auto; }
-                            .contract-logo { height: 60px; display: block; margin: 0 auto 20px auto; }
-                            
-                            .page-container { width: 100%; max-width: 21cm; margin: 0 auto; }
-                            h1 { font-size: 18pt; font-weight: bold; text-align: center; margin-bottom: 24pt; text-transform: uppercase; }
-                            h2 { font-size: 14pt; font-weight: bold; margin-top: 18pt; margin-bottom: 12pt; }
-                            h3 { font-size: 12pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
-                            h4 { font-size: 12pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; text-decoration: underline; }
-                            p { margin-bottom: 12pt; text-align: justify; line-height: 1.6; }
-                            .header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 36pt; border-bottom: 2px solid #1e3a8a; padding-bottom: 12pt; }
-                            .deposit-title { font-size: 14pt; font-weight: bold; color: #1e3a8a; text-transform: uppercase; }
-                            .korauto-title { font-size: 24pt; font-weight: bold; color: #1e3a8a; text-transform: uppercase; letter-spacing: 2px; }
-                            
-                            .parties-container { display: flex; justify-content: space-between; gap: 24pt; margin-bottom: 24pt; }
-                            .party-box { flex: 1; padding: 10px; border: 1px solid transparent; }
-                            .party-title { font-weight: bold; margin-bottom: 8pt; color: #1e3a8a; text-decoration: underline; font-size: 13pt; }
-                            
-                            .blue-header { color: #1e3a8a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 13pt; border-bottom: 1px solid #1e3a8a; display: inline-block; padding-bottom: 2px; }
-                            
-                            .info-row { margin-bottom: 6pt; }
-                            .label { font-weight: bold; min-width: 100px; display: inline-block; }
-                            ul, ol { margin-bottom: 12pt; padding-left: 24pt; }
-                            li { margin-bottom: 6pt; text-align: justify; }
-                            .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
-                            .car-details div { display: flex; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
-                            .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
-                            .footer { margin-top: 60pt; display: flex; justify-content: space-between; page-break-inside: avoid; }
-                            .signature-box { width: 40%; position: relative; height: 100px; }
-                            .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }
-                            .highlight { font-weight: bold; color: #000; }
-                            table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
-                            th, td { text-align: left; padding: 6pt; border-bottom: 1px solid #eee; }
-                            
-                            /* Page Break Logic */
-                            .page-break { page-break-before: always; }
-                            .visual-break { display: none; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="page-container">
-                            ${content}
-                        </div>
-                    </body>
-                </html>
-            `);
-            win.document.close();
-            win.focus();
-            win.print();
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        const element = printRef.current;
+        if (!element) return;
+
+        try {
+            setIsDownloading(true);
+            const opt = {
+                margin: 0,
+                filename: `Contract_${sale.brand}_${sale.model}.pdf`,
+                image: { type: 'jpeg' as const, quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+            };
+
+            // @ts-ignore
+            const html2pdf = (await import('html2pdf.js')).default;
+
+            if (!Capacitor.isNativePlatform()) {
+                await html2pdf().set(opt).from(element).save();
+            } else {
+                const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+                const fileName = `Contract_${sale.brand}_${sale.model}_${Date.now()}.pdf`;
+                const base64Data = pdfBase64.split(',')[1];
+
+                const savedFile = await Filesystem.writeFile({
+                    path: fileName,
+                    data: base64Data,
+                    directory: Directory.Documents,
+                });
+
+                await Share.share({
+                    title: `Contract - ${sale.brand} ${sale.model}`,
+                    text: `Contract for ${sale.vin}`,
+                    url: savedFile.uri,
+                    dialogTitle: 'Download or Share Contract'
+                });
+            }
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('Could not download/share contract. Please try again.');
+        } finally {
+            setIsDownloading(false);
         }
+    };
+
+    const handlePrint = () => {
+        handleDownload();
     };
 
     const today = new Date().toLocaleDateString('en-GB');
@@ -96,8 +78,13 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                         {type === 'deposit' ? 'Deposit Agreement Preview' : 'Full Contract Preview'}
                     </h2>
                     <div className="flex gap-3">
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-900/20 active:scale-95">
-                            <Printer className="w-4 h-4" /> Print / Save PDF
+                        <button
+                            onClick={handleDownload}
+                            disabled={isDownloading}
+                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50"
+                        >
+                            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                            {isDownloading ? 'Generating PDF...' : 'Download PDF'}
                         </button>
                         <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
                             <X className="w-6 h-6" />
@@ -382,8 +369,25 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+
+            <style jsx>{`
+                .contract-logo { height: 60px; display: block; margin: 0 auto 20px auto; }
+                .party-title { font-weight: bold; margin-bottom: 8pt; color: #1e3a8a; text-decoration: underline; font-size: 13pt; }
+                .blue-header { color: #1e3a8a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 13pt; border-bottom: 1px solid #1e3a8a; display: inline-block; padding-bottom: 2px; }
+                .label { font-weight: bold; min-width: 100px; display: inline-block; }
+                .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
+                .car-details div { display: flex; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
+                .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
+                .signature-box { width: 40%; position: relative; height: 100px; }
+                .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }
+                
+                @media print {
+                    .page-break { page-break-before: always; }
+                    .visual-break { display: none; }
+                }
+            `}</style>
+        </div >
     );
 }
 
