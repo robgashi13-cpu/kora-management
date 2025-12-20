@@ -33,11 +33,11 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const opt = {
-                margin: 10,
+                margin: 5,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 image: { type: 'png' as const },
                 html2canvas: {
-                    scale: 3,
+                    scale: 4,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff'
@@ -116,7 +116,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto print:overflow-visible">
-                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef} style={{ backgroundColor: '#ffffff', color: '#000000', fontSize: '10pt' }}>
+                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef} style={{ backgroundColor: '#ffffff', color: '#000000', fontSize: '9pt' }}>
 
                         {/* Invoice Header */}
                         <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
@@ -127,11 +127,11 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                     alt="KORAUTO Logo"
                                     className="h-16 w-auto mb-4"
                                 />
-                                <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
+                                <h1 className="text-xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
                                 <p className="mt-1" style={{ color: '#6b7280' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-lg font-bold mb-1">RG SH.P.K</div>
+                                <div className="text-base font-bold mb-1">RG SH.P.K</div>
                                 <div className="text-sm leading-relaxed" style={{ color: '#6b7280' }}>
                                     Rr. Dardania 191<br />
                                     Owner: Robert Gashi<br />
@@ -145,7 +145,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         <div className="flex flex-col md:flex-row justify-between mb-8 border-t border-b border-gray-100 py-6 gap-4" style={{ borderColor: '#f3f4f6' }}>
                             <div>
                                 <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#9ca3af' }}>Bill To</h3>
-                                <div className="font-bold text-base" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
+                                <div className="font-bold text-sm" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
                             </div>
                             <div className="text-right">
                                 <div className="mb-2">

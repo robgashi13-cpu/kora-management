@@ -27,7 +27,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 filename: `Contract_${sale.brand}_${sale.model}.pdf`,
                 image: { type: 'png' as const },
                 html2canvas: {
-                    scale: 3,
+                    scale: 4,
                     useCORS: true,
                     backgroundColor: '#ffffff'
                 },
@@ -104,15 +104,15 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             <div
                                 ref={printRef}
                                 className="bg-white text-black w-[21cm] min-h-[29.7cm] p-[2.5cm] shadow-2xl"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '10.5pt', lineHeight: 1.5 }}
+                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '9pt', lineHeight: 1.5 }}
                             >
                                 {type === 'deposit' && (
                                     <>
                                         {/* Header */}
                                         <div className="text-center mb-8 pb-4 border-b-2" style={{ borderColor: '#000000' }}>
                                             <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
-                                            <h1 className="text-xl font-bold uppercase mb-1" style={{ color: '#000000' }}>KORAUTO</h1>
-                                            <div className="text-base font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
+                                            <h1 className="text-lg font-bold uppercase mb-1" style={{ color: '#000000' }}>KORAUTO</h1>
+                                            <div className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
                                         </div>
 
                                         {/* Reference and Date */}
@@ -207,10 +207,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'full' && (
                                     <div className="max-w-2xl mx-auto">
                                         <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-lg font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
+                                        <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
                                         <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
 
-                                        <h2 className="font-bold text-base mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
+                                        <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
                                         <div className="section mb-6">
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
@@ -242,7 +242,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         <hr className="mb-6 border-black" />
 
-                                        <h3 className="font-bold text-base mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+                                        <h3 className="font-bold text-sm mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
 
                                         <ol className="list-decimal ml-5 space-y-4 mb-8">
                                             <li>
@@ -271,7 +271,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 2 ---</div>
                                         <div className="page-break"></div>
 
-                                        <h3 className="font-bold text-base mb-4 text-center border-b-2 border-black pb-2">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h3>
+                                        <h3 className="font-bold text-sm mb-4 text-center border-b-2 border-black pb-2">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h3>
 
                                         <div className="mb-6">
                                             <h4 className="font-bold mb-2 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h4>
@@ -346,7 +346,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 3 ---</div>
                                         <div className="page-break"></div>
 
-                                        <h3 className="font-bold text-base mb-4 underline">Kushtet e Garancisë</h3>
+                                        <h3 className="font-bold text-sm mb-4 underline">Kushtet e Garancisë</h3>
                                         <ul className="list-disc ml-5 space-y-2 mb-8">
                                             <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
                                             <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
