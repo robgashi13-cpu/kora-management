@@ -261,8 +261,12 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     <li>Një shumë prej {sale.deposit} € do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
-
                                             <li>
+                                                <strong>Nisja dhe Dorëzimi i Automjetit</strong>
+                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <li>Automjeti dorëzohet ne driten e dates të planifikuar.</li>
+                                                </ul>
+                                            </li>                                            <li>
                                                 <strong>Gjendja Teknike e Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
                                                     <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
