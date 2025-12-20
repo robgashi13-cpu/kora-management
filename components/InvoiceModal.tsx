@@ -116,7 +116,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto print:overflow-visible">
-                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef} style={{ backgroundColor: '#ffffff', color: '#000000' }}>
+                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef} style={{ backgroundColor: '#ffffff', color: '#000000', fontSize: '10pt' }}>
 
                         {/* Invoice Header */}
                         <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
@@ -127,11 +127,11 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                     alt="KORAUTO Logo"
                                     className="h-16 w-auto mb-4"
                                 />
-                                <h1 className="text-4xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
-                                <p className="mt-2" style={{ color: '#6b7280' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
+                                <h1 className="text-2xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
+                                <p className="mt-1" style={{ color: '#6b7280' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-xl font-bold mb-1">RG SH.P.K</div>
+                                <div className="text-lg font-bold mb-1">RG SH.P.K</div>
                                 <div className="text-sm leading-relaxed" style={{ color: '#6b7280' }}>
                                     Rr. Dardania 191<br />
                                     Owner: Robert Gashi<br />
@@ -145,7 +145,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         <div className="flex flex-col md:flex-row justify-between mb-8 border-t border-b border-gray-100 py-6 gap-4" style={{ borderColor: '#f3f4f6' }}>
                             <div>
                                 <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#9ca3af' }}>Bill To</h3>
-                                <div className="font-bold text-lg" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
+                                <div className="font-bold text-base" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
                             </div>
                             <div className="text-right">
                                 <div className="mb-2">
@@ -196,8 +196,8 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                 <span>€30.51</span>
                             </div>
                             <div className="flex justify-between py-3 border-t-2" style={{ borderColor: '#111827' }}>
-                                <span className="font-bold text-lg" style={{ color: '#111827' }}>Grand Total</span>
-                                <span className="font-bold text-lg" style={{ color: '#111827' }}>€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="font-bold text-base" style={{ color: '#111827' }}>Grand Total</span>
+                                <span className="font-bold text-base" style={{ color: '#111827' }}>€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
