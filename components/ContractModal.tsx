@@ -241,7 +241,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 <div><span className="label">Numri i shasisë:</span> <span>{sale.vin}</span></div>
                                                 <div><span className="label">Viti I prodhimi:</span> <span>{sale.year}</span></div>
                                                 <div><span className="label">KM te kaluara:</span> <span>{(sale.km || 0).toLocaleString()}km</span></div>
-                                                <div><span className="label">Vendi aktual:</span> <span>Koreja e Jugut</span></div>
+                                                
                                             </div>
                                         </div>
 
