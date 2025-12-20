@@ -156,7 +156,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                     <div className="text-sm text-gray-500">VIN: {sale.vin} | Color: {sale.color}</div>
                                     <div className="text-sm text-gray-500 mt-1">Mileage: {(sale.km || 0).toLocaleString()} km</div>
                                 </td>
-                                <td className="py-4 text-right font-bold text-gray-900">€{((sale.amountPaidBank || 0) - 200).toLocaleString()}</td>
+                                <td className="py-4 text-right font-bold text-gray-900">€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                             </tr>
                             <tr className="border-b border-gray-100">
                                 <td className="py-3">
@@ -171,7 +171,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     <div className="w-full md:w-1/2 ml-auto">
                         <div className="flex justify-between py-2 text-gray-600">
                             <span>Subtotal</span>
-                            <span>€{((sale.amountPaidBank || 0) - 200).toLocaleString()}</span>
+                            <span>€{((sale.soldPrice || 0) - 200).toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between py-2 text-gray-600">
                             <span>Services</span>
@@ -183,7 +183,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         </div>
                         <div className="flex justify-between py-3 border-t-2 border-gray-900">
                             <span className="font-bold text-lg text-gray-900">Grand Total</span>
-                            <span className="font-bold text-lg text-gray-900">€{(sale.amountPaidBank || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="font-bold text-lg text-gray-900">€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                     </div>
 
