@@ -33,20 +33,27 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const opt = {
-                margin: 0,
+                margin: 10,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                },
                 jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
             };
 
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
 
+            const pdf = html2pdf().set(opt).from(element);
+
             if (!Capacitor.isNativePlatform()) {
-                await html2pdf().set(opt).from(element).save();
+                await pdf.save();
             } else {
-                const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+                const pdfBase64 = await pdf.outputPdf('datauristring');
                 const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
 
@@ -66,7 +73,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
 
         } catch (error: any) {
             console.error('Download failed:', error);
-            alert(`Download failed: ${error?.message || 'Unknown error'}. Please try again.`);
+            alert(`Download failed: ${error?.message || 'Check connection'}. Please try again.`);
         } finally {
             setIsDownloading(false);
         }
@@ -82,6 +89,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white text-black w-full max-w-3xl rounded-xl shadow-2xl relative flex flex-col max-h-[90vh] print:max-w-none print:max-h-none print:shadow-none print:rounded-none"
+                style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
                 {/* Toolbar - Hidden when printing */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl print:hidden">
@@ -91,11 +99,12 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                             onClick={handleDownload}
                             disabled={isDownloading}
                             className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition shadow-lg ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            style={{ backgroundColor: '#2563eb' }}
                         >
                             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             {isDownloading ? 'Saving...' : 'Download PDF'}
                         </button>
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition">
+                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition" style={{ backgroundColor: '#111827' }}>
                             <Printer className="w-4 h-4" /> Print
                         </button>
 
@@ -107,7 +116,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto print:overflow-visible">
-                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef}>
+                    <div className="p-4 md:p-12 print:p-0" id="invoice-content" ref={printRef} style={{ backgroundColor: '#ffffff', color: '#000000' }}>
 
                         {/* Invoice Header */}
                         <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
@@ -118,12 +127,12 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                     alt="KORAUTO Logo"
                                     className="h-16 w-auto mb-4"
                                 />
-                                <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
-                                <p className="text-gray-500 mt-2">#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
+                                <h1 className="text-4xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
+                                <p className="mt-2" style={{ color: '#6b7280' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                             </div>
                             <div className="text-right">
                                 <div className="text-xl font-bold mb-1">RG SH.P.K</div>
-                                <div className="text-gray-500 text-sm leading-relaxed">
+                                <div className="text-sm leading-relaxed" style={{ color: '#6b7280' }}>
                                     Rr. Dardania 191<br />
                                     Owner: Robert Gashi<br />
                                     Phone: +383 48 181 116<br />
@@ -133,15 +142,15 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         </div>
 
                         {/* Client Info & Dates */}
-                        <div className="flex flex-col md:flex-row justify-between mb-8 border-t border-b border-gray-100 py-6 gap-4">
+                        <div className="flex flex-col md:flex-row justify-between mb-8 border-t border-b border-gray-100 py-6 gap-4" style={{ borderColor: '#f3f4f6' }}>
                             <div>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
-                                <div className="font-bold text-lg text-gray-800">{sale.buyerName}</div>
+                                <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#9ca3af' }}>Bill To</h3>
+                                <div className="font-bold text-lg" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
                             </div>
                             <div className="text-right">
                                 <div className="mb-2">
-                                    <span className="text-gray-500 text-sm mr-4">Invoice Date:</span>
-                                    <span className="font-medium text-gray-800">{new Date().toLocaleDateString()}</span>
+                                    <span className="text-sm mr-4" style={{ color: '#6b7280' }}>Invoice Date:</span>
+                                    <span className="font-medium" style={{ color: '#1f2937' }}>{new Date().toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>
@@ -149,67 +158,62 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         {/* Line Items */}
                         <table className="w-full mb-8">
                             <thead>
-                                <tr className="border-b-2 border-gray-900">
-                                    <th className="text-left py-3 font-bold text-sm uppercase text-gray-600">Description</th>
-                                    <th className="text-right py-3 font-bold text-sm uppercase text-gray-600">Total</th>
+                                <tr className="border-b-2" style={{ borderColor: '#111827' }}>
+                                    <th className="text-left py-3 font-bold text-sm uppercase" style={{ color: '#4b5563' }}>Description</th>
+                                    <th className="text-right py-3 font-bold text-sm uppercase" style={{ color: '#4b5563' }}>Total</th>
                                 </tr>
                             </thead>
-                            <tbody className="text-gray-700">
-                                <tr className="border-b border-gray-100">
+                            <tbody style={{ color: '#374151' }}>
+                                <tr className="border-b" style={{ borderColor: '#f3f4f6' }}>
                                     <td className="py-4">
-                                        <div className="font-bold text-gray-900">{sale.year} {sale.brand} {sale.model}</div>
-                                        <div className="text-sm text-gray-500">VIN: {sale.vin} | Color: {sale.color}</div>
-                                        <div className="text-sm text-gray-500 mt-1">Mileage: {(sale.km || 0).toLocaleString()} km</div>
+                                        <div className="font-bold" style={{ color: '#111827' }}>{sale.year} {sale.brand} {sale.model}</div>
+                                        <div className="text-sm" style={{ color: '#6b7280' }}>VIN: {sale.vin} | Color: {sale.color}</div>
+                                        <div className="text-sm mt-1" style={{ color: '#6b7280' }}>Mileage: {(sale.km || 0).toLocaleString()} km</div>
                                     </td>
-                                    <td className="py-4 text-right font-bold text-gray-900">€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
+                                    <td className="py-4 text-right font-bold" style={{ color: '#111827' }}>€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                                 </tr>
-                                <tr className="border-b border-gray-100">
+                                <tr className="border-b" style={{ borderColor: '#f3f4f6' }}>
                                     <td className="py-4">
-                                        <div className="font-bold text-gray-900 uppercase">SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                                        <div className="font-bold uppercase" style={{ color: '#111827' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
                                     </td>
-                                    <td className="py-4 text-right font-bold text-gray-900"></td>
+                                    <td className="py-4 text-right font-bold" style={{ color: '#111827' }}></td>
                                 </tr>
                             </tbody>
                         </table>
 
                         {/* Totals */}
                         <div className="w-full md:w-1/2 ml-auto">
-                            <div className="flex justify-between py-2 text-gray-600">
+                            <div className="flex justify-between py-2" style={{ color: '#4b5563' }}>
                                 <span>Subtotal</span>
                                 <span>€{((sale.soldPrice || 0) - 200).toLocaleString()}</span>
                             </div>
-                            <div className="flex justify-between py-2 text-gray-600">
+                            <div className="flex justify-between py-2" style={{ color: '#4b5563' }}>
                                 <span>Services</span>
                                 <span>€169.49</span>
                             </div>
-                            <div className="flex justify-between py-2 text-gray-600 border-b border-gray-200 mb-2">
+                            <div className="flex justify-between py-2 border-b mb-2" style={{ color: '#4b5563', borderColor: '#e5e7eb' }}>
                                 <span>Tax (TVSH 18%)</span>
                                 <span>€30.51</span>
                             </div>
-                            <div className="flex justify-between py-3 border-t-2 border-gray-900">
-                                <span className="font-bold text-lg text-gray-900">Grand Total</span>
-                                <span className="font-bold text-lg text-gray-900">€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <div className="flex justify-between py-3 border-t-2" style={{ borderColor: '#111827' }}>
+                                <span className="font-bold text-lg" style={{ color: '#111827' }}>Grand Total</span>
+                                <span className="font-bold text-lg" style={{ color: '#111827' }}>€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
 
-
-                        {/* Payment Breakdown Removed */}
-
-
-
                         {/* Footer */}
-                        <div className="border-t border-gray-100 pt-8 bg-gray-50/50 -mx-12 px-12 pb-8 mb-[-48px]">
-                            <h4 className="font-bold text-sm mb-4 text-gray-900 uppercase tracking-wider">Payment Details</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-gray-600">
+                        <div className="border-t pt-8 -mx-12 px-12 pb-8 mb-[-48px]" style={{ borderColor: '#f3f4f6', backgroundColor: '#f9fafb' }}>
+                            <h4 className="font-bold text-sm mb-4 uppercase tracking-wider" style={{ color: '#111827' }}>Payment Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm" style={{ color: '#4b5563' }}>
                                 <div>
-                                    <div className="font-bold text-gray-900 mb-1">Raiffeisen Bank</div>
-                                    <div className="font-mono bg-white p-2 rounded border border-gray-200 inline-block">1501080002435404</div>
-                                    <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
+                                    <div className="font-bold mb-1" style={{ color: '#111827' }}>Raiffeisen Bank</div>
+                                    <div className="font-mono bg-white p-2 rounded border inline-block" style={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb' }}>1501080002435404</div>
+                                    <div className="mt-2 text-xs" style={{ color: '#6b7280' }}>Account Holder: RG SH.P.K.</div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="font-bold text-gray-900 mb-1">Contact</div>
+                                    <div className="font-bold mb-1" style={{ color: '#111827' }}>Contact</div>
                                     <div>+383 48 181 116</div>
-                                    <div className="mt-4 text-xs text-gray-400">Thank you for your business!</div>
+                                    <div className="mt-4 text-xs" style={{ color: '#9ca3af' }}>Thank you for your business!</div>
                                 </div>
                             </div>
                         </div>

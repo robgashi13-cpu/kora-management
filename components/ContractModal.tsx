@@ -105,10 +105,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'deposit' && (
                                     <>
                                         {/* Header */}
-                                        <div className="text-center mb-8 pb-4 border-b-2 border-black">
+                                        <div className="text-center mb-8 pb-4 border-b-2" style={{ borderColor: '#000000' }}>
                                             <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
-                                            <h1 className="text-xl font-bold uppercase mb-1">KORAUTO</h1>
-                                            <div className="text-base font-bold uppercase">KONTRATË PËR KAPAR</div>
+                                            <h1 className="text-xl font-bold uppercase mb-1" style={{ color: '#000000' }}>KORAUTO</h1>
+                                            <div className="text-base font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
                                         </div>
 
                                         {/* Reference and Date */}
@@ -203,10 +203,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'full' && (
                                     <div className="max-w-2xl mx-auto">
                                         <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-lg font-bold uppercase mb-4 text-center">KONTRATË SHITBLERJE</h1>
-                                        <div className="font-bold mb-4">Data: {today}</div>
+                                        <h1 className="text-lg font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
+                                        <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
 
-                                        <h2 className="font-bold text-base mb-4 underline">Marrëveshje për Blerjen e Automjetit</h2>
+                                        <h2 className="font-bold text-base mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
                                         <div className="section mb-6">
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
