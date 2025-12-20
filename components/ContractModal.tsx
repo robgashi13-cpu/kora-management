@@ -257,7 +257,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Pagesa</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Shuma totale prej {sale.soldPrice}€ do të transferohet në llogarinë bankare të RG SH.P.K.</li>
+                                                    <li>Shuma totale prej {sale.amountPaidBank}€ do të transferohet në llogarinë bankare të RG SH.P.K.</li>
                                                     <li>Një shumë prej {sale.deposit} € do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
