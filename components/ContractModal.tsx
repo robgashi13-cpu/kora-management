@@ -264,7 +264,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Nisja dhe Dorëzimi i Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Automjeti dorëzohet on 20/12/2025.</li>
+                                                    <li>AUTOMJETI DORËZOHET NË DATËN: 20.12.2025</li>
                                                 </ul>
                                             </li>                                            <li>
                                                 <strong>Gjendja Teknike e Automjetit</strong>
