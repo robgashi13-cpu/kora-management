@@ -29,30 +29,23 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
         try {
             setIsDownloading(true);
 
-            // Dynamically import html2pdf.js
-            // @ts-ignore
-            const html2pdfModule = await import('html2pdf.js');
-            const html2pdf = html2pdfModule.default || html2pdfModule;
+            // Wait for any UI updates to settle
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const opt = {
-                margin: [10, 10] as [number, number],
+                margin: 0,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    letterRendering: true,
-                    allowTaint: false
-                },
+                html2canvas: { scale: 2, useCORS: true },
                 jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
             };
 
+            // @ts-ignore
+            const html2pdf = (await import('html2pdf.js')).default;
+
             if (!Capacitor.isNativePlatform()) {
-                // Web: Download directly
                 await html2pdf().set(opt).from(element).save();
             } else {
-                // Native: Save to filesystem and share
                 const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
                 const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
@@ -71,9 +64,9 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                 });
             }
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Download failed:', error);
-            alert('Error generating PDF. Please try again.');
+            alert(`Download failed: ${error?.message || 'Unknown error'}. Please try again.`);
         } finally {
             setIsDownloading(false);
         }
@@ -121,10 +114,9 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                             <div>
                                 {/* Company Logo */}
                                 <img
-                                    src="/logo_new.jpg"
+                                    src="/logo.jpg"
                                     alt="KORAUTO Logo"
                                     className="h-16 w-auto mb-4"
-                                    crossOrigin="anonymous"
                                 />
                                 <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
                                 <p className="text-gray-500 mt-2">#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
