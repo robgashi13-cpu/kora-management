@@ -29,17 +29,24 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
         try {
             setIsDownloading(true);
 
-            const opt = {
-                margin: 0,
-                filename: `Invoice_${sale.vin}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
-                jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-            };
-
+            // Dynamically import html2pdf.js
             // @ts-ignore
             const html2pdfModule = await import('html2pdf.js');
             const html2pdf = html2pdfModule.default || html2pdfModule;
+
+            const opt = {
+                margin: [10, 10] as [number, number],
+                filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
+                image: { type: 'jpeg' as const, quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    letterRendering: true,
+                    allowTaint: false
+                },
+                jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+            };
 
             if (!Capacitor.isNativePlatform()) {
                 // Web: Download directly
@@ -47,7 +54,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             } else {
                 // Native: Save to filesystem and share
                 const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
-                const fileName = `Invoice_${sale.vin}_${Date.now()}.pdf`;
+                const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
 
                 const savedFile = await Filesystem.writeFile({
@@ -66,7 +73,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
 
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Could not download/share invoice. Please try again.');
+            alert('Error generating PDF. Please try again.');
         } finally {
             setIsDownloading(false);
         }
@@ -113,7 +120,12 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                         <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                             <div>
                                 {/* Company Logo */}
-                                <img src="/logo_new.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
+                                <img
+                                    src="/logo_new.jpg"
+                                    alt="KORAUTO Logo"
+                                    className="h-16 w-auto mb-4"
+                                    crossOrigin="anonymous"
+                                />
                                 <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
                                 <p className="text-gray-500 mt-2">#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                             </div>
