@@ -158,6 +158,12 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                 </td>
                                 <td className="py-4 text-right font-bold text-gray-900">€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                             </tr>
+                            <tr className="border-b border-gray-100">
+                                <td className="py-3">
+                                    <div className="text-gray-700 uppercase text-sm">SHËRBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                                </td>
+                                <td className="py-3 text-right text-gray-400">—</td>
+                            </tr>
                         </tbody>
                     </table>
 

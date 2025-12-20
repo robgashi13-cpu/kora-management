@@ -265,13 +265,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 <strong>Nisja dhe Dorëzimi i Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
                                                     <li>Automjeti do të niset nga Koreja e Jugut më datë {sale.shippingDate || '___________'}.</li>
-                                                    <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <strong>Vonesa në Dorëzim</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, shitësi, Z. {seller.name}, angazhohet të rimbursojë tërësisht shumën prej {sale.soldPrice}€ brenda 7 ditëve kalendarike.</li>
+                                                    <li>Automjeti dorëzohet në datën 17 Dhjetor.</li>
                                                 </ul>
                                             </li>
                                             <li>
