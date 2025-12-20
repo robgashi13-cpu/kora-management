@@ -241,7 +241,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 <div><span className="label">Numri i shasisë:</span> <span>{sale.vin}</span></div>
                                                 <div><span className="label">Viti I prodhimi:</span> <span>{sale.year}</span></div>
                                                 <div><span className="label">KM te kaluara:</span> <span>{(sale.km || 0).toLocaleString()}km</span></div>
-                                                
+
                                             </div>
                                         </div>
 
@@ -261,13 +261,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     <li>Një shumë prej {sale.deposit} € do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
-                                            <li>
-                                                <strong>Nisja dhe Dorëzimi i Automjetit</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Automjeti do të niset nga Koreja e Jugut më datë {sale.shippingDate || '___________'}.</li>
-                                                    <li>Automjeti dorëzohet në datën 17 Dhjetor.</li>
-                                                </ul>
-                                            </li>
+
                                             <li>
                                                 <strong>Gjendja Teknike e Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
