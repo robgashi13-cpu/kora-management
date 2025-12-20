@@ -100,15 +100,15 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             <div
                                 ref={printRef}
                                 className="bg-white text-black w-[21cm] min-h-[29.7cm] p-[2.5cm] shadow-2xl"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '12pt', lineHeight: 1.5 }}
+                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '10.5pt', lineHeight: 1.5 }}
                             >
                                 {type === 'deposit' && (
                                     <>
                                         {/* Header */}
                                         <div className="text-center mb-8 pb-4 border-b-2 border-black">
                                             <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
-                                            <h1 className="text-2xl font-bold uppercase mb-1">KORAUTO</h1>
-                                            <div className="text-lg font-bold uppercase">KONTRATË PËR KAPAR</div>
+                                            <h1 className="text-xl font-bold uppercase mb-1">KORAUTO</h1>
+                                            <div className="text-base font-bold uppercase">KONTRATË PËR KAPAR</div>
                                         </div>
 
                                         {/* Reference and Date */}
@@ -203,10 +203,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'full' && (
                                     <div className="max-w-2xl mx-auto">
                                         <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-xl font-bold uppercase mb-4 text-center">KONTRATË SHITBLERJE</h1>
+                                        <h1 className="text-lg font-bold uppercase mb-4 text-center">KONTRATË SHITBLERJE</h1>
                                         <div className="font-bold mb-4">Data: {today}</div>
 
-                                        <h2 className="font-bold text-lg mb-4 underline">Marrëveshje për Blerjen e Automjetit</h2>
+                                        <h2 className="font-bold text-base mb-4 underline">Marrëveshje për Blerjen e Automjetit</h2>
 
                                         <div className="section mb-6">
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
@@ -238,7 +238,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         <hr className="mb-6 border-black" />
 
-                                        <h3 className="font-bold text-lg mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+                                        <h3 className="font-bold text-base mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
 
                                         <ol className="list-decimal ml-5 space-y-4 mb-8">
                                             <li>
@@ -267,7 +267,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 2 ---</div>
                                         <div className="page-break"></div>
 
-                                        <h3 className="font-bold text-lg mb-4 text-center border-b-2 border-black pb-2">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h3>
+                                        <h3 className="font-bold text-base mb-4 text-center border-b-2 border-black pb-2">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h3>
 
                                         <div className="mb-6">
                                             <h4 className="font-bold mb-2 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h4>
@@ -342,7 +342,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 3 ---</div>
                                         <div className="page-break"></div>
 
-                                        <h3 className="font-bold text-lg mb-4 underline">Kushtet e Garancisë</h3>
+                                        <h3 className="font-bold text-base mb-4 underline">Kushtet e Garancisë</h3>
                                         <ul className="list-disc ml-5 space-y-2 mb-8">
                                             <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
                                             <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
@@ -373,8 +373,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
             <style jsx>{`
                 .contract-logo { height: 60px; display: block; margin: 0 auto 20px auto; }
-                .party-title { font-weight: bold; margin-bottom: 8pt; color: #1e3a8a; text-decoration: underline; font-size: 13pt; }
-                .blue-header { color: #1e3a8a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 13pt; border-bottom: 1px solid #1e3a8a; display: inline-block; padding-bottom: 2px; }
+                .party-title { font-weight: bold; margin-bottom: 8pt; color: #1e3a8a; text-decoration: underline; font-size: 11pt; }
+                .blue-header { color: #1e3a8a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #1e3a8a; display: inline-block; padding-bottom: 2px; }
                 .label { font-weight: bold; min-width: 100px; display: inline-block; }
                 .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
                 .car-details div { display: flex; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
