@@ -216,7 +216,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'full' && (
                                     <div className="max-w-2xl mx-auto">
                                         <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-xl font-bold uppercase mb-4 text-center">MARRËVESHJE INTERNE</h1>
+                                        <h1 className="text-xl font-bold uppercase mb-4 text-center">KONTRATË SHITBLERJE</h1>
                                         <div className="font-bold mb-4">Data: {today}</div>
 
                                         <h2 className="font-bold text-lg mb-4 underline">Marrëveshje për Blerjen e Automjetit</h2>
@@ -225,7 +225,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
                                             <ul className="list-disc ml-5 space-y-2">
                                                 <li>
-                                                    <strong>Z. {seller.name}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Ndërmjetësit</strong>
+                                                    <strong>Z. {seller.name}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
                                                     <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
@@ -246,7 +246,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         <p className="font-bold mt-4 mb-4">
-                                            Z. {seller.name} vepron si ndërmjetës, ndërsa {sale.buyerName} si blerës.
+                                            Z. {seller.name} vepron si shitës, ndërsa {sale.buyerName} si blerës.
                                         </p>
 
                                         <hr className="mb-6 border-black" />
@@ -271,7 +271,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Vonesa në Dorëzim</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. {seller.name}, angazhohet të rimbursojë tërësisht shumën prej {sale.soldPrice}€ brenda 7 ditëve kalendarike.</li>
+                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, shitësi, Z. {seller.name}, angazhohet të rimbursojë tërësisht shumën prej {sale.soldPrice}€ brenda 7 ditëve kalendarike.</li>
                                                 </ul>
                                             </li>
                                             <li>
@@ -376,7 +376,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         <div className="footer mt-16 pt-8 flex justify-between">
                                             <div className="signature-box w-1/3 text-left">
-                                                <div className="mb-8 font-bold">Ndërmjetësi: {seller.name}</div>
+                                                <div className="mb-8 font-bold">Shitësi: {seller.name}</div>
                                                 <div className="border-b border-black w-full h-1"></div>
                                             </div>
                                             <div className="signature-box w-1/3 text-right">
