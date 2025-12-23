@@ -79,14 +79,14 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 {/* Header Actions */}
                 <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
                     <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-black"></span>
                         {type === 'deposit' ? 'Deposit Agreement Preview' : 'Full Contract Preview'}
                     </h2>
                     <div className="flex gap-3">
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
-                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-50"
+                            className="flex items-center gap-2 px-6 py-2 bg-black text-white rounded-lg hover:bg-slate-900 transition-all font-bold shadow-lg shadow-black/20 active:scale-95 disabled:opacity-50"
                         >
                             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                             {isDownloading ? 'Generating PDF...' : 'Download PDF'}
@@ -217,7 +217,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
                                             <ul className="list-disc ml-5 space-y-2">
                                                 <li>
-                                                    <strong>Z. {fullSellerName}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                                    <strong>{fullSellerName}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
                                                     <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
@@ -238,7 +238,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         <p className="font-bold mt-4 mb-4">
-                                            Z. {fullSellerName} vepron si shitës, ndërsa {sale.buyerName} si blerës.
+                                            {fullSellerName} vepron si shitës, ndërsa {sale.buyerName} si blerës.
                                         </p>
 
                                         <hr className="mb-6 border-black" />
