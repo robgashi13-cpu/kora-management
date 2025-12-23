@@ -38,195 +38,195 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
     };
 
     return (
-        <Reorder.Item value={s} id={s.id} className="contents group hover:bg-[hsl(var(--primary)/0.03)]">
+        <Reorder.Item value={s} id={s.id} className="contents group table-row-hover">
             {/* Hidden Card View */}
-            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-5 relative shadow-sm hover:border-[hsl(var(--primary)/0.3)] transition-colors hidden">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-blue-400 transition-colors hidden">
                 <div className="flex justify-between mb-4">
-                    <div className="font-bold text-lg text-[hsl(var(--foreground))]">{s.brand} {s.model}</div>
-                    <button onClick={(e) => openInvoice(s, e)} className="text-[hsl(var(--primary))] hover:opacity-80"><FileText className="w-5 h-5" /></button>
+                    <div className="font-bold text-lg text-slate-800">{s.brand} {s.model}</div>
+                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-600 hover:text-blue-700"><FileText className="w-5 h-5" /></button>
                 </div>
-                <div className="text-sm text-[hsl(var(--muted-foreground))] space-y-2">
-                    <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs">{s.vin}</span></div>
-                    <div className="flex justify-between"><span>Buyer</span><span>{s.buyerName}</span></div>
-                    {canViewPrices && <div className="flex justify-between pt-2 border-t border-[hsl(var(--border))] mt-2">
+                <div className="text-sm text-slate-500 space-y-2">
+                    <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs text-slate-700">{s.vin}</span></div>
+                    <div className="flex justify-between"><span>Buyer</span><span className="text-slate-700">{s.buyerName}</span></div>
+                    {canViewPrices && <div className="flex justify-between pt-2 border-t border-slate-100 mt-2">
                         <span>Sold For</span>
-                        <span className="text-[hsl(var(--foreground))] font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
+                        <span className="text-emerald-600 font-bold text-lg">€{(s.soldPrice || 0).toLocaleString()}</span>
                     </div>}
                 </div>
                 {canViewPrices && <div className="mt-4 flex justify-end">
-                    <span className={`text-xs font-bold px-2 py-1 rounded-md ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                         Bal: €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>}
                 <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-white' : 'border-[hsl(var(--border))] text-transparent hover:border-[hsl(var(--muted-foreground))]'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}>
                         <CheckSquare className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </div>
 
             {/* 1. Checkbox Column */}
-            <div className="p-1 xl:p-2 px-1.5 h-full flex items-center justify-center relative border-r border-[hsl(var(--border))] z-10 bg-[hsl(var(--card))]">
+            <div className="p-1 xl:p-2 px-1.5 h-full flex items-center justify-center relative border-r border-slate-100 z-10 bg-white">
                 <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-1" onPointerDown={(e) => controls.start(e)}>
-                    <GripVertical className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                    <GripVertical className="w-4 h-4 text-slate-400" />
                 </div>
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleSelection(s.id); }}
-                    className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${selectedIds.has(s.id) ? 'bg-[hsl(var(--primary))] border-[hsl(var(--primary))] text-white' : 'border-[hsl(var(--muted-foreground))] bg-transparent hover:border-[hsl(var(--primary))]'}`}
+                    className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-transparent hover:border-blue-500 hover:bg-blue-50'}`}
                 >
                     {selectedIds.has(s.id) && <CheckSquare className="w-3.5 h-3.5" />}
                 </button>
             </div>
 
-            {/* 2. Car Info - Click to open modal OR edit inline */}
-            <div className="px-1 xl:px-2 h-full flex items-center font-semibold text-[hsl(var(--foreground))] whitespace-nowrap overflow-hidden text-ellipsis border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            {/* 2. Car Info */}
+            <div className="px-1 xl:px-2 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white">
                 {canEdit ? (
                     <div className="flex flex-col">
-                        <InlineEditableCell value={s.brand} onSave={(v) => handleFieldUpdate('brand', v)} className="font-semibold" />
-                        <InlineEditableCell value={s.model} onSave={(v) => handleFieldUpdate('model', v)} className="text-sm text-[hsl(var(--muted-foreground))]" />
+                        <InlineEditableCell value={s.brand} onSave={(v) => handleFieldUpdate('brand', v)} className="font-semibold text-slate-800" />
+                        <InlineEditableCell value={s.model} onSave={(v) => handleFieldUpdate('model', v)} className="text-sm text-slate-500" />
                     </div>
                 ) : (
-                    <span onClick={onClick} className="truncate cursor-pointer hover:text-[hsl(var(--primary))]">{s.brand} {s.model}</span>
+                    <span onClick={onClick} className="truncate cursor-pointer hover:text-blue-600 transition-colors">{s.brand} {s.model}</span>
                 )}
             </div>
 
             {/* 3. Year */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-slate-600 border-r border-slate-100 bg-white">
                 {canEdit ? (
-                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" />
+                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-600" />
                 ) : s.year}
             </div>
 
             {/* 4. KM */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-[hsl(var(--muted-foreground))] font-mono text-sm border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-slate-500 font-mono text-sm border-r border-slate-100 bg-white">
                 {canEdit ? (
-                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} />
+                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-500" />
                 ) : (s.km || 0).toLocaleString()}
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 xl:px-2 h-full flex flex-col justify-center text-xs border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <div className="px-1 xl:px-2 h-full flex flex-col justify-center text-xs border-r border-slate-100 bg-white">
                 {canEdit ? (
                     <>
-                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-[hsl(var(--foreground))]" />
-                        <InlineEditableCell value={(s.vin || '').slice(-6)} onSave={(v) => handleFieldUpdate('vin', v)} className="text-[hsl(var(--muted-foreground))] font-mono" placeholder="VIN" />
+                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium" />
+                        <InlineEditableCell value={(s.vin || '').slice(-6)} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono" placeholder="VIN" />
                     </>
                 ) : (
                     <>
-                        <div className="text-[hsl(var(--foreground))] font-mono">{s.plateNumber}</div>
-                        <div className="text-[hsl(var(--muted-foreground))] font-mono" title={s.vin}>{(s.vin || '').slice(-6)}</div>
+                        <div className="text-slate-700 font-mono font-medium">{s.plateNumber}</div>
+                        <div className="text-slate-400 font-mono" title={s.vin}>{(s.vin || '').slice(-6)}</div>
                     </>
                 )}
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 xl:px-2 h-full flex items-center text-[hsl(var(--foreground))] whitespace-normal break-words leading-tight border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]" title={s.buyerName}>
+            <div className="px-1 xl:px-2 h-full flex items-center text-slate-700 whitespace-normal break-words leading-tight border-r border-slate-100 bg-white" title={s.buyerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" />
+                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 xl:px-2 h-full flex items-center text-[hsl(var(--foreground))] truncate border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]" title={s.sellerName}>
+            <div className="px-1 xl:px-2 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white" title={s.sellerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" />
+                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 xl:px-2 h-full flex items-center text-[hsl(var(--foreground))] truncate border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]" title={s.shippingName}>
+            <div className="px-1 xl:px-2 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white" title={s.shippingName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" />
+                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
                 ) : s.shippingName}
             </div>
 
             {/* 9. Cost (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" />
+                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-500" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-1 xl:p-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
+                <div className="px-1 xl:p-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-green-600 font-bold border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-emerald-600 font-bold border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-green-600 font-bold" />
+                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-600 font-bold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-sky-600 font-medium border-r border-slate-100 bg-white">
                     €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                 </div>
             ) : (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
-                    {isAdmin && <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono font-bold text-[hsl(var(--primary))] whitespace-nowrap border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">€{calculateProfit(s).toLocaleString()}</div>}
+                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-slate-400 border-r border-slate-100 bg-white">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
+                    {isAdmin && <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono font-bold text-violet-600 whitespace-nowrap border-r border-slate-100 bg-white">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
-                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
+                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
+                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono font-bold border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-                    <span className={calculateBalance(s) > 0 ? 'text-red-500' : 'text-green-600'}>
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono font-bold border-r border-slate-100 bg-white">
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">-</div>
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-                    <span className={`text-[10px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'text-orange-500' : 'text-green-600'}`}>
+                <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white">
+                    <span className={`text-[10px] uppercase font-semibold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
             )}
 
             {/* 16. Status */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white">
                 <span className={`status-badge ${
                     s.status === 'Completed' ? 'status-completed' :
                     (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
                     s.status === 'New' ? 'status-new' :
                     s.status === 'Shipped' ? 'status-shipped' :
                     s.status === 'Inspection' ? 'status-inspection' :
-                    'bg-gray-100 text-gray-500'
+                    'bg-slate-100 text-slate-500'
                 }`}>{s.status}</span>
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-xs text-[hsl(var(--muted-foreground))] border-r border-[hsl(var(--border))] bg-[hsl(var(--card))]">{s.soldBy}</div>
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-xs text-slate-500 border-r border-slate-100 bg-white">{s.soldBy}</div>
 
             {/* 18. Actions */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center gap-1 bg-[hsl(var(--card))]">
-                <button onClick={onClick} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--primary))] transition-colors p-1.5 hover:bg-[hsl(var(--primary)/0.1)] rounded-lg" title="Edit Sale">
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center gap-1 bg-white">
+                <button onClick={onClick} className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 rounded-lg" title="Edit Sale">
                     <Edit className="w-4 h-4" />
                 </button>
-                <button onClick={(e) => openInvoice(s, e)} className="text-[hsl(var(--primary))] hover:opacity-80 transition-colors p-1.5 hover:bg-[hsl(var(--primary)/0.1)] rounded-lg" title="View Invoice">
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-1.5 hover:bg-blue-50 rounded-lg" title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
             </div>
@@ -1228,9 +1228,9 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="h-screen bg-[hsl(var(--background))] flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin" />
-                <p className="text-[hsl(var(--muted-foreground))] animate-pulse">Loading...</p>
+            <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col items-center justify-center gap-4">
+                <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
             </div>
         );
     }
@@ -1258,45 +1258,46 @@ export default function Dashboard() {
 
     if (view === 'landing') {
         return (
-            <div className="h-screen bg-[hsl(var(--background))] flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_hsl(var(--primary)/0.05),_transparent_70%)]" />
+            <div className="h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(59,130,246,0.08),_transparent_50%)]" />
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-violet-100/40 to-transparent rounded-full blur-3xl" />
 
                 <div className="z-10 text-center mb-8">
-                    <h1 className="text-2xl font-bold mb-4 mt-8 tracking-tight text-[hsl(var(--foreground))]">Welcome, {userProfile}</h1>
-                    <p className="text-[hsl(var(--muted-foreground))] text-lg">Select an operation to proceed</p>
+                    <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
+                    <p className="text-slate-500 text-lg">Select an operation to proceed</p>
                 </div>
 
                 <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
                     <button
                         id="btn-add-sale"
                         onClick={() => setView('add_sale')}
-                        className="flex-1 bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-[hsl(var(--primary))] hover:shadow-lg p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-md"
+                        className="flex-1 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-[hsl(var(--primary)/0.1)] border border-[hsl(var(--primary)/0.3)] flex items-center justify-center text-[hsl(var(--primary))] group-hover:scale-110 group-hover:bg-[hsl(var(--primary))] group-hover:text-white transition-all duration-300">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:from-blue-600 group-hover:to-blue-500 group-hover:text-white group-hover:border-blue-500 transition-all duration-300 shadow-inner">
                             <Plus className="w-12 h-12" />
                         </div>
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-[hsl(var(--foreground))] mb-2">Add New Sale</div>
-                            <div className="text-[hsl(var(--muted-foreground))]">Record a new vehicle sale</div>
+                            <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
+                            <div className="text-slate-500">Record a new vehicle sale</div>
                         </div>
                     </button>
 
                     <button
                         id="btn-view-sales"
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
-                        className="flex-1 bg-[hsl(var(--card))] border border-[hsl(var(--border))] hover:border-purple-500 hover:shadow-lg p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-md"
+                        className="flex-1 bg-white border border-slate-200 hover:border-violet-400 hover:shadow-xl hover:shadow-violet-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-50 to-violet-100 border border-violet-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:from-violet-600 group-hover:to-violet-500 group-hover:text-white group-hover:border-violet-500 transition-all duration-300 shadow-inner">
                             <Clipboard className="w-12 h-12" />
                         </div>
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-[hsl(var(--foreground))] mb-2">View Sales</div>
-                            <div className="text-[hsl(var(--muted-foreground))]">Access dashboard & history</div>
+                            <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
+                            <div className="text-slate-500">Access dashboard & history</div>
                         </div>
                     </button>
                 </div>
 
-                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors bg-[hsl(var(--secondary))] px-4 py-2 rounded-full text-sm font-bold">
+                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </button>
             </div>
@@ -1305,12 +1306,12 @@ export default function Dashboard() {
 
 
     return (
-        <div className="h-screen flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))] font-sans">
+        <div className="h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
             {importStatus && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center">
-                    <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-8 rounded-2xl flex flex-col items-center gap-4 shadow-xl">
-                        <div className="w-12 h-12 border-4 border-[hsl(var(--primary))] border-t-transparent rounded-full animate-spin" />
-                        <p className="text-[hsl(var(--foreground))]">{importStatus}</p>
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
+                    <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-slate-700 font-medium">{importStatus}</p>
                     </div>
                 </div>
             )}
@@ -1321,26 +1322,26 @@ export default function Dashboard() {
                     <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <strong className="text-red-700 text-sm">Sync Issues Detected</strong>
+                            <strong className="text-red-700 text-sm font-semibold">Sync Issues Detected</strong>
                         </div>
-                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded"><X className="w-4 h-4 text-red-500" /></button>
+                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors"><X className="w-4 h-4 text-red-500" /></button>
                     </div>
                     <p className="text-xs font-mono text-red-600 break-words leading-relaxed">{syncError}</p>
                 </div>
             )}
 
-            <header className="bg-[hsl(var(--card))] backdrop-blur-xl border-b border-[hsl(var(--border))] px-3 py-2 pt-[calc(env(safe-area-inset-top)+0.5rem)] sticky top-0 z-50 shadow-sm">
-                <div className="max-w-7xl mx-auto flex flex-col gap-2">
+            <header className="bg-white border-b border-slate-200 px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50 shadow-sm">
+                <div className="max-w-7xl mx-auto flex flex-col gap-3">
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md" />
+                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md border border-slate-100" />
                             <div>
-                                <h1 className="text-xl font-bold text-[hsl(var(--foreground))]">KORAUTO</h1>
+                                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">KORAUTO</h1>
                             </div>
                         </div>
-                        <div className="hidden md:flex bg-[hsl(var(--secondary))] p-1 rounded-xl border border-[hsl(var(--border))]">
+                        <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
                             {['dashboard', 'invoices', ...(isAdmin ? ['settings'] : [])].map((tab) => (
-                                <button key={tab} onClick={() => setView(tab as any)} className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${view === tab ? 'bg-[hsl(var(--card))] text-[hsl(var(--foreground))] shadow-sm' : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'}`}>
+                                <button key={tab} onClick={() => setView(tab as any)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${view === tab ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                                     <span className="capitalize">{tab}</span>
                                 </button>
                             ))}
@@ -1348,20 +1349,20 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3 relative">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2 rounded-full hover:bg-[hsl(var(--secondary))] transition-all ${isSyncing ? 'animate-spin text-[hsl(var(--primary))]' : 'text-[hsl(var(--muted-foreground))]'}`}
+                                className={`p-2 rounded-full hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
                                 title="Force Sync"
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-8 h-8 rounded-full bg-gradient-to-r from-[hsl(var(--primary))] to-purple-500 p-[2px] shadow-md hover:shadow-lg transition-shadow">
-                                <div className="w-full h-full rounded-full bg-[hsl(var(--card))] flex items-center justify-center text-xs font-bold text-[hsl(var(--foreground))]">
+                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
+                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-blue-600">
                                     {userProfile ? userProfile[0].toUpperCase() : 'U'}
                                 </div>
                             </button>
 
                             {showProfileMenu && (
-                                <div className="absolute right-0 top-12 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-2 w-48 shadow-xl z-[60]">
-                                    <div className="text-[10px] text-[hsl(var(--muted-foreground))] uppercase font-bold px-2 py-1 mb-1">Switch Profile</div>
+                                <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl p-2 w-52 shadow-xl z-[60]">
+                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                                     <div className="max-h-40 overflow-y-auto space-y-1">
                                         {availableProfiles.map(p => (
                                             <button key={p} onClick={() => {
@@ -1377,18 +1378,18 @@ export default function Dashboard() {
                                                 Preferences.set({ key: 'user_profile', value: p });
                                                 setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                             }}
-                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between ${userProfile === p ? 'bg-[hsl(var(--primary))] text-white' : 'text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]'}`}>
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-blue-600 text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
                                                 <span>{p}</span>
-                                                {userProfile === p && <CheckSquare className="w-3 h-3" />}
+                                                {userProfile === p && <CheckSquare className="w-4 h-4" />}
                                             </button>
                                         ))}
                                     </div>
-                                    <div className="h-px bg-[hsl(var(--border))] my-2" />
-                                    <button onClick={quickAddProfile} className="w-full text-left px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                    <div className="h-px bg-slate-100 my-2" />
+                                    <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
                                         <Plus className="w-4 h-4" /> Add Profile
                                     </button>
-                                    <div className="h-px bg-[hsl(var(--border))] my-2" />
-                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors">
+                                    <div className="h-px bg-slate-100 my-2" />
+                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
                                         <LogOut className="w-4 h-4" /> Log Out
                                     </button>
                                 </div>
@@ -1398,14 +1399,14 @@ export default function Dashboard() {
 
                     <div className="flex gap-3 justify-between items-center">
                         <div className="relative group flex-1 md:flex-none">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))]" />
-                            <input placeholder="Search cars..." className="bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 focus:outline-none focus:border-[hsl(var(--primary))] text-[hsl(var(--foreground))]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input placeholder="Search cars..." className="bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2 items-center">
                             <div className="relative">
-                                <ArrowUpDown className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-[hsl(var(--muted-foreground))] pointer-events-none" />
+                                <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                 <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                    className="bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-xs md:text-sm rounded-xl pl-8 pr-4 py-2 outline-none focus:border-[hsl(var(--primary))] appearance-none cursor-pointer w-[120px] md:w-auto truncate">
+                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm rounded-xl pl-8 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all">
                                     <option value="createdAt">Date Added</option>
                                     <option value="nameAlphabetic">Name (A-Z)</option>
                                     <option value="dueBalance">Balance (Client)</option>
@@ -1414,12 +1415,12 @@ export default function Dashboard() {
                                 </select>
                             </div>
                             <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}
-                                className="hidden md:block bg-[hsl(var(--secondary))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] text-sm rounded-xl px-3 py-2 outline-none focus:border-[hsl(var(--primary))] appearance-none cursor-pointer">
+                                className="hidden md:block bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 appearance-none cursor-pointer transition-all">
                                 <option value="none">No Grouping</option>
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
-                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="hidden md:flex bg-[hsl(var(--primary))] hover:opacity-90 text-white px-4 py-2 rounded-xl text-sm font-medium items-center gap-2 transition-all shadow-md active:scale-95">
+                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="hidden md:flex bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
                         </div>
@@ -1427,7 +1428,7 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden bg-[hsl(var(--background))] p-4 md:p-6 flex flex-col relative">
+            <main className="flex-1 overflow-hidden bg-slate-50 p-4 md:p-6 flex flex-col relative">
                 {view === 'add_sale' ? (
                     <div className="flex-1 overflow-hidden">
                         <div className="flex items-center justify-between mb-6">
