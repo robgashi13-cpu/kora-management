@@ -5,17 +5,12 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  /* Disable scrolling on the root elements */
   position: fixed;
-  /* Lock value to viewport */
-  background-color: #000000;
-  /* Force black background */
+  background-color: hsl(var(--background));
   overscroll-behavior: none;
-  /* Disable elastic bounce */
   -webkit-overflow-scrolling: touch;
 }
 
-/* Ensure #__next or root div also fills screen */
 #__next,
 #root {
   height: 100%;
@@ -28,19 +23,57 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Clean White Admin Theme */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 0 0% 98%;
+  --foreground: 220 13% 18%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 13% 18%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 13% 18%;
+  --primary: 217 91% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 220 13% 18%;
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 9% 46%;
+  --accent: 220 14% 96%;
+  --accent-foreground: 220 13% 18%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 217 91% 50%;
+  --radius: 0.5rem;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 20%;
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
   }
 }
-
-
 
 /* Safe Area Variables */
 :root {
@@ -51,24 +84,19 @@ html {
 }
 
 body {
-  color: var(--foreground);
-  background: #000000;
-  background-color: #000000;
-  /* Force */
-  font-family: Arial, Helvetica, sans-serif;
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   overscroll-behavior-y: none;
-  /* Ensure full height coverage */
   min-height: 100vh;
   min-height: -webkit-fill-available;
 }
 
-/* Ensure no white background leaks */
 #root,
 #__next {
-  background-color: #000000;
+  background-color: hsl(var(--background));
   min-height: 100%;
 }
-
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
@@ -78,9 +106,7 @@ body {
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
   -ms-overflow-style: none;
-  /* IE and Edge */
   scrollbar-width: none;
-  /* Firefox */
 }
 
 /* Dashboard Grid Layout Definitions */
@@ -91,10 +117,50 @@ body {
 }
 
 @media (min-width: 1367px) {
-
-  /* Desktop: Spacious (Website) */
   :root {
     --cols-admin: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 80px 80px 100px 110px 110px 140px 100px 60px;
     --cols-user: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 100px 100px 100px 160px 120px 60px;
   }
 }
+
+/* Inline Editable Cell Styling */
+.inline-editable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.inline-editable:hover {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+.inline-editable-input {
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--primary));
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.2);
+}
+
+/* Status Badge Styles */
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status-completed { background: hsl(var(--success) / 0.15); color: hsl(142 71% 40%); }
+.status-new { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); }
+.status-in-progress { background: hsl(var(--warning) / 0.15); color: hsl(38 92% 40%); }
+.status-shipped { background: hsl(270 60% 50% / 0.15); color: hsl(270 60% 50%); }
+.status-inspection { background: hsl(48 100% 50% / 0.15); color: hsl(48 100% 35%); }
+.status-autosallon { background: hsl(var(--warning) / 0.15); color: hsl(38 92% 40%); }
