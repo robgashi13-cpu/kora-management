@@ -71,39 +71,6 @@ export const analyzeBankStatement = async (apiKey: string, base64Pdf: string): P
     }
 };
 
-export const chatWithData = async (apiKey: string, question: string, contextData: any) => {
-    const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
-
-    const prompt = `
-        You are KORAUTO AI, a helpful assistant for a car sales application.
-        Here is the current sales data from the user's dashboard:
-        ${JSON.stringify(contextData)}
-
-        User Question: ${question}
-
-        Answer helpful and concisely. You can analyze the data to provide summaries, find specific sales, or calculate totals.
-    `;
-
-
-    try {
-        const completion = await openai.chat.completions.create({
-            messages: [
-                { role: "system", content: "You are a helpful assistant analyzing car sales data." },
-                { role: "user", content: prompt }
-            ],
-            model: "gpt-4o",
-        });
-
-        return completion.choices[0].message.content || "Sorry, I couldn't generate a response.";
-    } catch (e: any) {
-        console.error("OpenAI Chat Error", e);
-        if (e?.status === 429) {
-            throw new Error("You exceeded your OpenAI current quota. Please check billing at platform.openai.com.");
-        }
-        throw e;
-    }
-};
-
 export const processImportedData = async (apiKey: string, rawData: any[], onProgress?: (msg: string) => void): Promise<any[]> => {
     const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
