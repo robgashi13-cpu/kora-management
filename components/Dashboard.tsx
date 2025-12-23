@@ -1259,8 +1259,8 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col items-center justify-center gap-4">
-                <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
+                <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
                 <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
             </div>
         );
@@ -1289,9 +1289,9 @@ export default function Dashboard() {
 
     if (view === 'landing') {
         return (
-            <div className="h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(59,130,246,0.08),_transparent_50%)]" />
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-violet-100/40 to-transparent rounded-full blur-3xl" />
+            <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
 
                 <div className="z-10 text-center mb-8">
                     <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
@@ -1302,9 +1302,9 @@ export default function Dashboard() {
                     <button
                         id="btn-add-sale"
                         onClick={() => openSaleForm(null, 'landing')}
-                        className="flex-1 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:from-blue-600 group-hover:to-blue-500 group-hover:text-white group-hover:border-blue-500 transition-all duration-300 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
                             <Plus className="w-12 h-12" />
                         </div>
                         <div className="text-center">
@@ -1316,9 +1316,9 @@ export default function Dashboard() {
                     <button
                         id="btn-view-sales"
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
-                        className="flex-1 bg-white border border-slate-200 hover:border-violet-400 hover:shadow-xl hover:shadow-violet-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-50 to-violet-100 border border-violet-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:from-violet-600 group-hover:to-violet-500 group-hover:text-white group-hover:border-violet-500 transition-all duration-300 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
                             <Clipboard className="w-12 h-12" />
                         </div>
                         <div className="text-center">
@@ -1337,11 +1337,11 @@ export default function Dashboard() {
 
 
     return (
-        <div className="h-screen flex flex-col bg-slate-50 text-slate-800 font-sans">
+        <div className="h-screen flex flex-col bg-white text-slate-800 font-sans">
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
-                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-12 h-12 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
                         <p className="text-slate-700 font-medium">{importStatus}</p>
                     </div>
                 </div>
@@ -1361,10 +1361,10 @@ export default function Dashboard() {
                 </div>
             )}
 
-            <header className="bg-white border-b border-slate-200 px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50 shadow-sm">
-                <div className="max-w-7xl mx-auto flex flex-col gap-3">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
+            <header className="bg-white border-b border-slate-200 px-3 py-2 md:px-4 md:py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50 shadow-sm">
+                <div className="max-w-7xl mx-auto flex flex-col gap-2 md:gap-3">
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md border border-slate-100" />
                             <div>
                                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">KORAUTO</h1>
@@ -1389,7 +1389,7 @@ export default function Dashboard() {
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
+                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-black p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
                                 <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-blue-600">
                                     {userProfile ? userProfile[0].toUpperCase() : 'U'}
                                 </div>
@@ -1413,7 +1413,7 @@ export default function Dashboard() {
                                                 Preferences.set({ key: 'user_profile', value: p });
                                                 setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                             }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-blue-600 text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
                                                 <span>{p}</span>
                                                 {userProfile === p && <CheckSquare className="w-4 h-4" />}
                                             </button>
@@ -1432,7 +1432,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="flex md:hidden bg-slate-100 p-1 rounded-xl gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <div className="flex md:hidden bg-slate-100 p-1 rounded-xl gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                         {[
                             { key: 'dashboard', label: 'Home' },
                             { key: 'invoices', label: 'Invoice' },
@@ -1441,7 +1441,7 @@ export default function Dashboard() {
                             <button
                                 key={tab.key}
                                 onClick={() => setView(tab.key)}
-                                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${view === tab.key
+                                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${view === tab.key
                                     ? 'bg-white text-slate-800 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
@@ -1451,16 +1451,16 @@ export default function Dashboard() {
                         ))}
                     </div>
 
-                    <div className="flex gap-3 justify-between items-center">
+                    <div className="flex gap-2 md:gap-3 justify-between items-center">
                         <div className="relative group flex-1 md:flex-none">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input placeholder="Search cars..." className="bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 text-slate-700 placeholder:text-slate-400 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input placeholder="Search cars..." className="bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 text-slate-700 placeholder:text-slate-400 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2 items-center">
                             <div className="relative">
                                 <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                 <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm rounded-xl pl-8 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all">
+                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm rounded-xl pl-8 pr-4 py-2 outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all md:py-2.5">
                                     <option value="createdAt">Date Added</option>
                                     <option value="nameAlphabetic">Name (A-Z)</option>
                                     <option value="dueBalance">Balance (Client)</option>
@@ -1469,12 +1469,12 @@ export default function Dashboard() {
                                 </select>
                             </div>
                             <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}
-                                className="hidden md:block bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 appearance-none cursor-pointer transition-all">
+                                className="hidden md:block bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 appearance-none cursor-pointer transition-all">
                                 <option value="none">No Grouping</option>
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
-                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
+                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
                         </div>
@@ -1482,10 +1482,10 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden bg-slate-50 p-4 md:p-6 flex flex-col relative">
+            <main className="flex-1 overflow-hidden bg-white md:bg-slate-50 p-3 md:p-6 flex flex-col relative">
                 {view === 'sale_form' ? (
                     <div className="flex-1 overflow-hidden flex flex-col">
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center justify-between mb-4 md:mb-6">
                             <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
                                 <ArrowRight className="w-5 h-5 rotate-180" />
                                 {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
@@ -1510,7 +1510,7 @@ export default function Dashboard() {
 
                         {/* Global Tabs (Visible on Dashboard and Invoices) */}
                         {view !== 'settings' && (
-                            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                            <div className="flex gap-1.5 md:gap-2 mb-2 md:mb-4 overflow-x-auto pb-1 md:pb-2 no-scrollbar">
                                 {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
                                     const isActive = (view === 'dashboard' && activeCategory === cat);
                                     return (
@@ -1520,9 +1520,9 @@ export default function Dashboard() {
                                                 setView('dashboard');
                                                 setActiveCategory(cat as any);
                                             }}
-                                            className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
-                                                ? 'bg-blue-600 text-white shadow-sm'
-                                                : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-blue-200'
+                                            className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg font-bold text-[11px] md:text-xs tracking-wide transition-all whitespace-nowrap ${isActive
+                                                ? 'bg-black text-white shadow-sm'
+                                                : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300'
                                                 }`}
                                         >
                                             {cat}
@@ -1637,7 +1637,7 @@ export default function Dashboard() {
                             {/* Mobile Card View */}
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                <div className="flex flex-col flex-1 overflow-y-auto pb-20 no-scrollbar">
+                                <div className="flex flex-col flex-1 overflow-y-auto pb-16 no-scrollbar">
                                     {filteredSales.map(sale => (
                                         <motion.div
                                             key={sale.id}
@@ -1666,7 +1666,7 @@ export default function Dashboard() {
                                                         }
                                                     }
                                                 }}
-                                                className={`p-3 flex items-center gap-3 relative z-10 transition-colors`}
+                                                className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors`}
                                                 onClick={() => {
                                                     if (selectedIds.size > 0) {
                                                         toggleSelection(sale.id);
@@ -1682,7 +1682,7 @@ export default function Dashboard() {
                                                     e.preventDefault();
                                                     toggleSelection(sale.id);
                                                 }}
-                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#e0f2fe' : '#ffffff' }}
+                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
                                             >
                                                 {selectedIds.size > 0 && (
                                                     <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
@@ -1692,14 +1692,14 @@ export default function Dashboard() {
 
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start">
-                                                        <div className="font-bold text-slate-800 text-base truncate pr-2">{sale.brand} {sale.model}</div>
-                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-50 text-blue-600' :
+                                                        <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
+                                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-blue-600' :
                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                     'bg-slate-100 text-slate-500'
                                                             }`}>{sale.status}</span>
                                                     </div>
-                                                    <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
+                                                    <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                         {(isAdmin || sale.soldBy === userProfile) ? (
                                                             <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
@@ -1710,7 +1710,7 @@ export default function Dashboard() {
                                                         )}
                                                     </div>
                                                     {isAdmin && (
-                                                        <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
+                                                        <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
                                                             <span className="text-slate-400">Korea:</span>
                                                             <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                                 {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
@@ -1724,10 +1724,10 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </>) : view === 'settings' ? (
-                            <div className="max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
                                 <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
-                                <div className="space-y-4">
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <div className="space-y-3 md:space-y-4">
+                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
 
                                     <div className="space-y-2">
                                         <label className="text-sm text-slate-500">User Profile</label>
@@ -1735,44 +1735,44 @@ export default function Dashboard() {
                                             <select value={userProfile} onChange={e => {
                                                 setUserProfile(e.target.value);
                                                 Preferences.set({ key: 'user_profile', value: e.target.value });
-                                            }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                                            }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
                                                 <option value="">Select Profile</option>
                                                 {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
                                             </select>
-                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
                                         </div>
                                         <div className="flex gap-2">
-                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
                                             <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors"><Plus className="w-5 h-5" /></button>
                                         </div>
                                     </div>
 
-                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
 
-                                    <div className="h-px bg-slate-200 my-4" />
-                                    <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
-                                    <div className="h-px bg-slate-200 my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
+                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                    <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
+                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                    <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
                                 </div>
                             </div>
                         ) : view === 'invoices' ? (
-                            <div className="flex-1 overflow-auto p-6">
-                                <h2 className="text-2xl font-bold text-slate-900 mb-6">Invoices</h2>
+                            <div className="flex-1 overflow-auto p-3 md:p-6">
+                                <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
                                 {filteredSales.length === 0 ? (
                                     <div className="text-center text-slate-500 py-20">
                                         <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
                                         <p>No invoices to display</p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
                                         {filteredSales.map(s => (
                                             <div
                                                 key={s.id}
-                                                className="bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-all cursor-pointer group shadow-sm"
+                                                className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 hover:border-slate-300 transition-all cursor-pointer group shadow-sm"
                                                 onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
                                             >
-                                                <div className="flex justify-between items-start mb-3">
+                                                <div className="flex justify-between items-start mb-2 md:mb-3">
                                                     <div>
                                                         <button
                                                             type="button"
@@ -1789,7 +1789,7 @@ export default function Dashboard() {
                                                                 'bg-slate-100 text-slate-500'
                                                         }`}>{s.status}</span>
                                                 </div>
-                                                <div className="space-y-2 text-sm">
+                                                <div className="space-y-1.5 md:space-y-2 text-sm">
                                                     <div className="flex justify-between text-slate-500">
                                                         <span>Buyer</span>
                                                         <span className="text-slate-800 truncate ml-2">{s.buyerName || '-'}</span>
@@ -1798,7 +1798,7 @@ export default function Dashboard() {
                                                         <span>VIN</span>
                                                         <span className="font-mono text-xs text-slate-500">{(s.vin || '').slice(-8)}</span>
                                                     </div>
-                                                    <div className="h-px bg-slate-200 my-2" />
+                                                    <div className="h-px bg-slate-200 my-1.5 md:my-2" />
                                                     <div className="flex justify-between">
                                                         <span className="text-slate-500">Sold Price</span>
                                                         <span className="text-emerald-600 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
@@ -1810,28 +1810,28 @@ export default function Dashboard() {
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 pt-3 border-t border-slate-200 block">
-                                                    <div className="flex justify-between items-center mb-3">
+                                                <div className="mt-3 md:mt-4 pt-2.5 md:pt-3 border-t border-slate-200 block">
+                                                    <div className="flex justify-between items-center mb-2 md:mb-3">
                                                         <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
                                                     </div>
-                                                    <div className="grid grid-cols-3 gap-2">
+                                                    <div className="grid grid-cols-3 gap-1.5 md:gap-2">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-amber-500" />
                                                             View Deposit
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-blue-500" />
                                                             View Contract
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-emerald-600" />
                                                             View Invoice
