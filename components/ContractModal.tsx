@@ -70,7 +70,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     };
 
     const today = new Date().toLocaleDateString('en-GB');
-    const seller = { name: "ROBERT GASHI", id: "1232189645", phone: "048181116" };
+    const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>

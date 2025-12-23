@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
-import { CarSale, SaleStatus, PaymentMethod, Attachment } from '@/app/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CarSale, SaleStatus, Attachment } from '@/app/types';
+import { motion } from 'framer-motion';
 
 interface Props {
     isOpen: boolean;
@@ -38,41 +38,7 @@ import ContractModal from './ContractModal';
 export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState('Vehicle');
     const [contractType, setContractType] = useState<'deposit' | 'full' | null>(null);
-
-    // Swipe Logic
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchEnd, setTouchEnd] = useState<number | null>(null);
-    const tabs = ['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'];
-
-    const minSwipeDistance = 50;
-
-    const onSwipeLeft = () => {
-        const currIdx = tabs.indexOf(activeTab);
-        if (currIdx < tabs.length - 1) setActiveTab(tabs[currIdx + 1]);
-    };
-
-    const onSwipeRight = () => {
-        const currIdx = tabs.indexOf(activeTab);
-        if (currIdx > 0) setActiveTab(tabs[currIdx - 1]);
-    };
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
-
-    const handleTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > minSwipeDistance;
-        const isRightSwipe = distance < -minSwipeDistance;
-        if (isLeftSwipe) onSwipeLeft();
-        if (isRightSwipe) onSwipeRight();
-    };
 
     useEffect(() => {
         if (existingSale) {
@@ -256,18 +222,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 )}
             </div>
 
-            <div className="flex bg-slate-100 border border-slate-200 mx-4 md:mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
-                {['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'].map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`flex-1 min-w-[80px] py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap px-2 ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-white'}`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
-
             <div
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2"
             >
@@ -276,141 +230,124 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                     className="p-4 md:p-6 flex flex-col gap-6"
                 >
-                    <AnimatePresence mode="wait">
-                        {activeTab === 'Vehicle' && (
-                            <motion.div key="vehicle" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
-                                    <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
+                    <Section title="Vehicle Details" description="Core vehicle information for this sale.">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
+                            <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
+                                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                            </Select>
+                            <Select label="Color" name="color" value={formData.color} onChange={handleChange}>
+                                <option value="">Select</option>
+                                {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
+                            </Select>
+                            <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
+                            <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
+                        </div>
+                    </Section>
+
+                    <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
+                            <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
+                        </div>
+                        <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
+                            <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
+                        </div>
+                    </Section>
+
+                    <Section title="Financials" description="Costs, payments, and status for this sale.">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
+                            <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
+                        </div>
+
+                        {isAdmin && (
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase">Supplier (Korea)</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
+                                    <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
-                                        {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                                    </Select>
-                                    <Select label="Color" name="color" value={formData.color} onChange={handleChange}>
-                                        <option value="">Select</option>
-                                        {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </Select>
-                                    <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
-                                    <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
-                                </div>
-                            </motion.div>
+                            </div>
                         )}
 
-                        {activeTab === 'Logistics' && (
-                            <motion.div key="logistics" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
-                                    <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
+                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase">Client Payments</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
+                                <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
+                                <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                                <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
+                                <div className="col-span-1 sm:col-span-2">
+                                    <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
-                                <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
-                                    <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
+                                <option value="New">New</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </Select>
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[10px] uppercase text-slate-500 font-bold ml-1 opacity-0">Transport</label>
+                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
+                                    <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
+                                    <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                            <span className="text-sm text-slate-500 font-bold uppercase">Balance Due</span>
+                            <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
+                            </span>
+                        </div>
+                    </Section>
+
+                    <Section title="Documents" description="Attach receipts and invoices for this sale.">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
+                            <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
+                            <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />
+                        </div>
+                    </Section>
+
+                    <Section title="Contracts" description="Generate printable contracts using the sale details.">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                            <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-blue-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
+                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                                    <FileText className="w-8 h-8" />
                                 </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'Financials' && (
-                            <motion.div key="financials" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-5">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
-                                    <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
+                                <div className="text-center">
+                                    <div className="font-bold text-lg text-slate-900">Deposit Agreement</div>
+                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje për Kapar</div>
                                 </div>
+                            </button>
 
-                                {/* Korea/Supplier Payments (Admin Only) */}
-                                {isAdmin && (
-                                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                        <h4 className="text-xs font-bold text-slate-500 uppercase">Supplier (Korea)</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
-                                            <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Client Payments */}
-                                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <h4 className="text-xs font-bold text-slate-500 uppercase">Client Payments</h4>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
-                                        <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
-                                        <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
-                                        <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
-                                        <div className="col-span-1 sm:col-span-2">
-                                            <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
-                                        </div>
-                                    </div>
+                            <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
+                                <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                                    <FileText className="w-8 h-8" />
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
-                                        <option value="New">New</option>
-                                        <option value="In Progress">In Progress</option>
-                                        <option value="Shipped">Shipped</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                    </Select>
-                                    <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1 opacity-0">Transport</label>
-                                        <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
-                                            <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
-                                            <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
-                                        </label>
-                                    </div>
+                                <div className="text-center">
+                                    <div className="font-bold text-lg text-slate-900">Full Contract</div>
+                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje Interne</div>
                                 </div>
-
-                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-                                    <span className="text-sm text-slate-500 font-bold uppercase">Balance Due</span>
-                                    <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                        €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {activeTab === 'Docs' && (
-                            <motion.div key="docs" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-4 h-full">
-                                <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
-                                <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
-                                <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />
-                            </motion.div>
-                        )}
-
-
-                        {activeTab === 'Contracts' && (
-                            <motion.div key="contracts" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-6 h-full justify-center items-center p-8">
-                                <div className="text-center space-y-2 mb-4">
-                                    <h3 className="text-xl font-bold text-slate-900">Generate Documents</h3>
-                                    <p className="text-slate-500 text-sm">Create printable contracts automatically filled with sale details.</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                                    <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-blue-300 hover:bg-slate-50 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="font-bold text-lg text-slate-900">Deposit Agreement</div>
-                                            <div className="text-xs text-slate-500 mt-1">Marrëveshje për Kapar</div>
-                                        </div>
-                                    </button>
-
-                                    <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="font-bold text-lg text-slate-900">Full Contract</div>
-                                            <div className="text-xs text-slate-500 mt-1">Marrëveshje Interne</div>
-                                        </div>
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            </button>
+                        </div>
+                    </Section>
 
                     {/* Footer Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
@@ -453,6 +390,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         </div>
     );
 }
+
+const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm space-y-4 transition-shadow hover:shadow-md">
+        <div className="space-y-1">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">{title}</h3>
+            {description && <p className="text-xs text-slate-500">{description}</p>}
+        </div>
+        {children}
+    </div>
+);
 
 const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
