@@ -42,8 +42,7 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                     logging: false,
                     backgroundColor: '#ffffff'
                 },
-                jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+                jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
             };
 
             // @ts-ignore
@@ -241,9 +240,6 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
             }
             .no-print {
                 display: none !important;
-            }
-            tr, p, div, li {
-                break-inside: avoid;
             }
         }
       `}</style>

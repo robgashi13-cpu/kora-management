@@ -2,9 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home, Sparkles } from 'lucide-react';
+import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import { DashboardSkeleton } from './ui/Skeleton';
 
 // ... (props interface etc)
 
@@ -31,7 +30,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
     const controls = useDragControls();
     const isAdmin = userProfile === 'Admin';
     return (
-        <Reorder.Item value={s} id={s.id} className="contents group table-row-hover">
+        <Reorder.Item value={s} id={s.id} className="contents group hover:bg-white/5">
             {/* Hidden Card View */}
             <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 relative shadow-lg hover:border-blue-500/30 transition-colors hidden">
                 <div className="flex justify-between mb-4">
@@ -177,15 +176,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 18. Actions */}
             <div className="px-1 xl:px-2 h-full flex items-center justify-center">
-                <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => openInvoice(s, e)} 
-                    className="text-blue-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg" 
-                    title="View Invoice"
-                >
-                    <FileText className="w-5 h-5" />
-                </motion.button>
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg" title="View Invoice"><FileText className="w-5 h-5" /></button>
             </div>
         </Reorder.Item >
     );
@@ -1184,7 +1175,12 @@ export default function Dashboard() {
 
 
     if (isLoading) {
-        return <DashboardSkeleton />;
+        return (
+            <div className="h-screen bg-black flex flex-col items-center justify-center gap-4">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400 animate-pulse">Loading...</p>
+            </div>
+        );
     }
 
     if (!userProfile) {
@@ -1223,16 +1219,11 @@ export default function Dashboard() {
                     <button
                         id="btn-add-sale"
                         onClick={() => setView('add_sale')}
-                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-blue-500 hover:bg-white/5 p-12 rounded-3xl transition-all duration-300 group flex flex-col items-center gap-6 shadow-2xl hover:shadow-blue-900/20 interactive-card"
+                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-blue-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-blue-900/20"
                     >
-                        <motion.div 
-                            whileHover={{ scale: 1.1, rotate: 90 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                            className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:bg-blue-600 group-hover:text-white"
-                        >
+                        <div className="w-24 h-24 rounded-full bg-blue-600/10 border border-blue-500/30 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                             <Plus className="w-12 h-12" />
-                        </motion.div>
+                        </div>
                         <div className="text-center">
                             <div className="text-3xl font-bold text-white mb-2">Add New Sale</div>
                             <div className="text-gray-500">Record a new vehicle sale</div>
@@ -1242,16 +1233,11 @@ export default function Dashboard() {
                     <button
                         id="btn-view-sales"
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
-                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all duration-300 group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20 interactive-card"
+                        className="flex-1 bg-[#1a1a1a] border border-white/10 hover:border-purple-500 hover:bg-white/5 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-2xl hover:shadow-purple-900/20"
                     >
-                        <motion.div 
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                            className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:bg-purple-600 group-hover:text-white"
-                        >
+                        <div className="w-24 h-24 rounded-full bg-purple-600/10 border border-purple-500/30 flex items-center justify-center text-purple-500 group-hover:scale-110 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
                             <Clipboard className="w-12 h-12" />
-                        </motion.div>
+                        </div>
                         <div className="text-center">
                             <div className="text-3xl font-bold text-white mb-2">View Sales</div>
                             <div className="text-gray-500">Access dashboard & history</div>
@@ -1363,21 +1349,8 @@ export default function Dashboard() {
 
                     <div className="flex gap-3 justify-between items-center">
                         <div className="relative group flex-1 md:flex-none">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 transition-colors group-focus-within:text-blue-400" />
-                            <input 
-                                placeholder="Search by name, VIN, plate, buyer..." 
-                                className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full md:w-96 shadow-inner focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 placeholder:text-gray-600" 
-                                value={searchTerm} 
-                                onChange={(e) => setSearchTerm(e.target.value)} 
-                            />
-                            {searchTerm && (
-                                <button 
-                                    onClick={() => setSearchTerm('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            )}
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input placeholder="Search cars..." className="bg-[#1a1a1a] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 shadow-inner focus:outline-none focus:border-blue-500" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2 items-center">
                             {/* Grouping Dropdown - Hidden on Mobile */}
@@ -1413,14 +1386,9 @@ export default function Dashboard() {
                                 <option value="brand">Group by Brand</option>
                             </select>
 
-                            <motion.button 
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => { setEditingSale(null); setIsModalOpen(true); }} 
-                                className="hidden md:flex bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-medium items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)]"
-                            >
+                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="hidden md:flex bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium items-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
-                            </motion.button>
+                            </button>
                         </div>
                     </div>
                 </div>
