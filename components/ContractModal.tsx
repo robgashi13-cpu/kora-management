@@ -73,10 +73,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const seller = { name: "ROBERT GASHI", id: "1232189645", phone: "048181116" };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-black/90 backdrop-blur-md" onClick={onClose}>
-            <div className="bg-[#1a1a1a] text-white w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>
+            <div className="bg-white text-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200" onClick={e => e.stopPropagation()}>
                 {/* Header Actions */}
-                <div className="flex justify-between items-center p-4 border-b border-white/10 bg-[#111]">
+                <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
                     <h2 className="text-lg font-bold flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                         {type === 'deposit' ? 'Deposit Agreement Preview' : 'Full Contract Preview'}
@@ -90,14 +90,14 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                             {isDownloading ? 'Generating PDF...' : 'Download PDF'}
                         </button>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700">
                             <X className="w-6 h-6" />
                         </button>
                     </div>
                 </div>
 
                 {/* Document Preview Area */}
-                <div className="flex-1 overflow-auto bg-[#525659] p-4 md:p-8 flex justify-center">
+                <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center">
                     {/* The "Paper" Scaled for Mobile */}
                     <div className="w-full flex justify-center">
                         <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto">
@@ -394,4 +394,3 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         </div >
     );
 }
-
