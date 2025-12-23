@@ -110,7 +110,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 {canEdit ? (
                     <>
                         <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium" />
-                        <InlineEditableCell value={(s.vin || '').slice(-6)} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono" placeholder="VIN" />
+                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
                     </>
                 ) : (
                     <>
@@ -480,6 +480,34 @@ export default function Dashboard() {
                 await performAutoSync(supabaseUrl, supabaseKey, userProfile, newSales);
             }
         } catch (e) { console.error("Save failed", e); }
+    };
+
+    const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
+    const inlineNumericFields = new Set<keyof CarSale>(['year', 'km', 'costToBuy', 'soldPrice']);
+
+    const handleInlineUpdate = async (id: string, field: keyof CarSale, value: string | number) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex(s => s.id === id);
+        if (index === -1) return;
+
+        let normalized: string | number = value;
+        if (inlineNumericFields.has(field)) {
+            const numericValue = typeof value === 'string' ? Number(value) : value;
+            normalized = Number.isNaN(numericValue) ? 0 : numericValue;
+        }
+        if (typeof normalized === 'string') {
+            normalized = normalized.trim();
+        }
+        if (inlineRequiredFields.has(field) && (normalized === '' || normalized === null || normalized === undefined)) {
+            alert('This field is required.');
+            return;
+        }
+
+        const updatedSale = { ...currentSales[index], [field]: normalized };
+        const newSales = [...currentSales];
+        newSales[index] = updatedSale;
+        dirtyIds.current.add(id);
+        await updateSalesAndSave(newSales);
     };
 
     useEffect(() => {
@@ -1397,6 +1425,21 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {['dashboard', 'invoices', ...(isAdmin ? ['settings'] : [])].map((tab) => (
+                            <button
+                                key={tab}
+                                onClick={() => setView(tab as any)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${view === tab
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200'
+                                    }`}
+                            >
+                                <span className="capitalize">{tab}</span>
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex gap-3 justify-between items-center">
                         <div className="relative group flex-1 md:flex-none">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -1432,13 +1475,13 @@ export default function Dashboard() {
                 {view === 'add_sale' ? (
                     <div className="flex-1 overflow-hidden">
                         <div className="flex items-center justify-between mb-6">
-                            <button onClick={() => setView('landing')} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+                            <button onClick={() => setView('landing')} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
                                 <ArrowRight className="w-5 h-5 rotate-180" /> Back to Menu
                             </button>
-                            <h2 className="text-2xl font-bold text-white">New Sale Entry</h2>
+                            <h2 className="text-2xl font-bold text-slate-900">New Sale Entry</h2>
                             <div className="w-20" /> {/* Spacer */}
                         </div>
-                        <div className="h-[calc(100%-4rem)] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                        <div className="h-[calc(100%-4rem)] rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-white">
                             <SaleModal
                                 isOpen={true}
                                 inline={true}
@@ -1468,8 +1511,8 @@ export default function Dashboard() {
                                                 setActiveCategory(cat as any);
                                             }}
                                             className={`px-3 py-1.5 rounded-lg font-bold text-xs tracking-wide transition-all whitespace-nowrap ${isActive
-                                                ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]'
-                                                : 'bg-[#1a1a1a] text-gray-400 hover:bg-white/5 border border-white/5'
+                                                ? 'bg-blue-600 text-white shadow-sm'
+                                                : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-blue-200'
                                                 }`}
                                         >
                                             {cat}
@@ -1481,54 +1524,54 @@ export default function Dashboard() {
 
                         {view === 'dashboard' ? (<>
 
-                            <div className="border border-white/5 rounded-xl bg-[#161616] shadow-2xl relative hidden md:block overflow-auto flex-1">
-                                <div className="grid text-[10px] xl:text-xs divide-y divide-white/5 min-w-max"
+                            <div className="border border-slate-200 rounded-xl bg-white shadow-sm relative hidden md:block overflow-auto flex-1">
+                                <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                     style={{
                                         gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
                                     }}>
-                                    <div className="bg-[#1f2023] font-medium text-gray-400 grid grid-cols-subgrid sticky top-0 z-30 shadow-md" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-white" onClick={() => toggleAll(filteredSales)}>
+                                    <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                        <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
-                                        <div className="p-1 xl:p-2 pl-2 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                        <div className="p-1 xl:p-2 pl-2 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('brand')}>
                                             Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
                                             Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
                                             KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
                                             Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
                                             Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
                                             Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-white flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
                                             Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
                                             Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-white flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
                                         <div className="p-1 xl:p-2.5 text-right">Paid</div>
                                         <div className="p-1 xl:p-2.5 text-right">Bank Fee</div>
                                         <div className="p-1 xl:p-2.5 text-right">Tax</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-blue-400">Profit</div>}
+                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-blue-600">Profit</div>}
                                         <div className="p-1 xl:p-2.5 text-right">Balance</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                        {isAdmin && <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
                                             Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-white flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
                                             Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
                                         <div className="p-1 xl:p-2.5"></div>
@@ -1553,6 +1596,7 @@ export default function Dashboard() {
                                                 toggleSelection={toggleSelection}
                                                 selectedIds={selectedIds}
                                                 openInvoice={openInvoice}
+                                                onInlineUpdate={handleInlineUpdate}
                                                 onClick={() => {
                                                     if (!isAdmin && s.soldBy !== userProfile) {
                                                         alert("You do not have permission to edit this sale.");
@@ -1567,15 +1611,15 @@ export default function Dashboard() {
                                     </Reorder.Group>
 
                                     {/* Footer Totals */}
-                                    <div className="bg-[#1a1a1a] font-bold border-t border-white/10 sticky bottom-0 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.5)] grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
-                                        <div className="p-3 text-right col-span-8">Totals</div>
-                                        {isAdmin && <div className="p-3 text-right font-mono text-white">€{totalCost.toLocaleString()}</div>}
-                                        <div className="p-3 text-right font-mono text-green-400">€{totalSold.toLocaleString()}</div>
-                                        <div className="p-3 text-right font-mono text-gray-300">€{totalPaid.toLocaleString()}</div>
+                                    <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                        <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
+                                        {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
+                                        <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
+                                        <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
                                         {isAdmin && <>
-                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-gray-500 text-xs">€{totalServices.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-blue-400">€{totalProfit.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-blue-600">€{totalProfit.toLocaleString()}</div>
                                         </>}
                                         <div className="p-3 col-span-3"></div>
                                     </div>
@@ -1590,7 +1634,7 @@ export default function Dashboard() {
                                             key={sale.id}
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className="relative border-b border-white/5"
+                                            className="relative border-b border-slate-200"
                                         >
                                             {/* Background Action (Delete) */}
                                             <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
@@ -1630,37 +1674,37 @@ export default function Dashboard() {
                                                     e.preventDefault();
                                                     toggleSelection(sale.id);
                                                 }}
-                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#1e3a8a' : '#1a1a1a' }}
+                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#e0f2fe' : '#ffffff' }}
                                             >
                                                 {selectedIds.size > 0 && (
-                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-white/20'}`}>
+                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
                                                         {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                     </div>
                                                 )}
 
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-start">
-                                                        <div className="font-bold text-white text-base truncate pr-2">{sale.brand} {sale.model}</div>
-                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-green-500/10 text-green-400' :
-                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-500/10 text-blue-400' :
-                                                                sale.status === 'Inspection' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                                    'bg-gray-800 text-gray-400'
+                                                        <div className="font-bold text-slate-800 text-base truncate pr-2">{sale.brand} {sale.model}</div>
+                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-blue-50 text-blue-600' :
+                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                    'bg-slate-100 text-slate-500'
                                                             }`}>{sale.status}</span>
                                                     </div>
-                                                    <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
+                                                    <div className="flex justify-between items-center text-xs text-slate-500 mt-1">
                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                         {(isAdmin || sale.soldBy === userProfile) ? (
-                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                                                                 {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
                                                             </span>
                                                         ) : (
-                                                            <span className="font-mono text-gray-600">-</span>
+                                                            <span className="font-mono text-slate-400">-</span>
                                                         )}
                                                     </div>
                                                     {isAdmin && (
                                                         <div className="flex justify-end items-center text-[10px] mt-1 gap-1">
-                                                            <span className="text-gray-600">Korea:</span>
-                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-orange-400' : 'text-green-500'}`}>
+                                                            <span className="text-slate-400">Korea:</span>
+                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                                 {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                                                             </span>
                                                         </div>
@@ -1672,43 +1716,43 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </>) : view === 'settings' ? (
-                            <div className="max-w-xl mx-auto bg-[#1a1a1a] p-6 rounded-2xl border border-white/10">
-                                <h2 className="text-xl font-bold mb-4">Settings</h2>
+                            <div className="max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
                                 <div className="space-y-4">
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
 
                                     <div className="space-y-2">
-                                        <label className="text-sm text-gray-400">User Profile</label>
+                                        <label className="text-sm text-slate-500">User Profile</label>
                                         <div className="flex gap-2">
                                             <select value={userProfile} onChange={e => {
                                                 setUserProfile(e.target.value);
                                                 Preferences.set({ key: 'user_profile', value: e.target.value });
-                                            }} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-white appearance-none">
+                                            }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
                                                 <option value="">Select Profile</option>
                                                 {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
                                             </select>
-                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-500/20 text-red-400 rounded-xl disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
                                         </div>
                                         <div className="flex gap-2">
-                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-black border border-white/10 rounded-xl p-3" />
-                                            <button onClick={handleAddProfile} className="bg-green-600 text-white font-bold px-4 rounded-xl"><Plus className="w-5 h-5" /></button>
+                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                            <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors"><Plus className="w-5 h-5" /></button>
                                         </div>
                                     </div>
 
-                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-black border border-white/10 rounded-xl p-3" />
-                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-black border border-white/10 rounded-xl p-3" />
+                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
 
-                                    <div className="h-px bg-white/10 my-4" />
+                                    <div className="h-px bg-slate-200 my-4" />
                                     <button onClick={saveSettings} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
-                                    <div className="h-px bg-white/10 my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-red-500/30 text-red-500 py-3 rounded-xl">Delete All Data</button>
+                                    <div className="h-px bg-slate-200 my-4" />
+                                    <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
                                 </div>
                             </div>
                         ) : view === 'invoices' ? (
                             <div className="flex-1 overflow-auto p-6">
-                                <h2 className="text-2xl font-bold text-white mb-6">Invoices</h2>
+                                <h2 className="text-2xl font-bold text-slate-900 mb-6">Invoices</h2>
                                 {filteredSales.length === 0 ? (
-                                    <div className="text-center text-gray-500 py-20">
+                                    <div className="text-center text-slate-500 py-20">
                                         <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
                                         <p>No invoices to display</p>
                                     </div>
@@ -1717,65 +1761,65 @@ export default function Dashboard() {
                                         {filteredSales.map(s => (
                                             <div
                                                 key={s.id}
-                                                className="bg-[#1a1a1a] border border-white/10 rounded-xl p-5 hover:border-blue-500/30 transition-all cursor-pointer group"
+                                                className="bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-300 transition-all cursor-pointer group shadow-sm"
                                                 onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
                                             >
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
-                                                        <div className="font-bold text-white text-lg">{s.brand} {s.model}</div>
-                                                        <div className="text-xs text-gray-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
+                                                        <div className="font-bold text-slate-900 text-lg">{s.brand} {s.model}</div>
+                                                        <div className="text-xs text-slate-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
                                                     </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-blue-500/20 text-blue-400' :
-                                                        s.status === 'In Progress' ? 'bg-orange-500/20 text-orange-400' :
-                                                            s.status === 'Shipped' ? 'bg-purple-500/20 text-purple-400' :
-                                                                'bg-gray-500/20 text-gray-400'
+                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                        s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
+                                                            s.status === 'Shipped' ? 'bg-purple-50 text-purple-700' :
+                                                                'bg-slate-100 text-slate-500'
                                                         }`}>{s.status}</span>
                                                 </div>
                                                 <div className="space-y-2 text-sm">
-                                                    <div className="flex justify-between text-gray-400">
+                                                    <div className="flex justify-between text-slate-500">
                                                         <span>Buyer</span>
-                                                        <span className="text-white truncate ml-2">{s.buyerName || '-'}</span>
+                                                        <span className="text-slate-800 truncate ml-2">{s.buyerName || '-'}</span>
                                                     </div>
-                                                    <div className="flex justify-between text-gray-400">
+                                                    <div className="flex justify-between text-slate-500">
                                                         <span>VIN</span>
-                                                        <span className="font-mono text-xs text-gray-500">{(s.vin || '').slice(-8)}</span>
+                                                        <span className="font-mono text-xs text-slate-500">{(s.vin || '').slice(-8)}</span>
                                                     </div>
-                                                    <div className="h-px bg-white/5 my-2" />
+                                                    <div className="h-px bg-slate-200 my-2" />
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-400">Sold Price</span>
-                                                        <span className="text-green-400 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                        <span className="text-slate-500">Sold Price</span>
+                                                        <span className="text-emerald-600 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span className="text-gray-400">Balance</span>
-                                                        <span className={calculateBalance(s) > 0 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
+                                                        <span className="text-slate-500">Balance</span>
+                                                        <span className={calculateBalance(s) > 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold'}>
                                                             €{calculateBalance(s).toLocaleString()}
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <div className="mt-4 pt-3 border-t border-white/5 block">
+                                                <div className="mt-4 pt-3 border-t border-slate-200 block">
                                                     <div className="flex justify-between items-center mb-3">
-                                                        <span className="text-xs text-gray-600">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
+                                                        <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-2">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
-                                                            <FileText className="w-4 h-4 text-orange-400" />
+                                                            <FileText className="w-4 h-4 text-amber-500" />
                                                             View Deposit
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
-                                                            <FileText className="w-4 h-4 text-blue-400" />
+                                                            <FileText className="w-4 h-4 text-blue-500" />
                                                             View Contract
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                            className="flex flex-col items-center justify-center p-2 rounded bg-white/5 hover:bg-white/10 text-[10px] text-gray-400 gap-1 transition-colors"
+                                                            className="flex flex-col items-center justify-center p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
-                                                            <FileText className="w-4 h-4 text-green-400" />
+                                                            <FileText className="w-4 h-4 text-emerald-600" />
                                                             View Invoice
                                                         </button>
                                                     </div>
@@ -1794,11 +1838,11 @@ export default function Dashboard() {
                                     initial={{ y: 100, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     exit={{ y: 100, opacity: 0 }}
-                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-2 flex items-center gap-2 z-50 backdrop-blur-xl"
+                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
                                 >
-                                    <div className="px-4 border-r border-white/10 mr-2 flex flex-col items-center justify-center min-w-[60px]">
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Selected</span>
-                                        <span className="font-mono text-xl font-bold text-blue-400 leading-none">{selectedIds.size}</span>
+                                    <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
+                                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
+                                        <span className="font-mono text-xl font-bold text-blue-600 leading-none">{selectedIds.size}</span>
                                     </div>
 
                                     {selectedIds.size === 1 && (
@@ -1807,46 +1851,46 @@ export default function Dashboard() {
                                                 const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
                                                 if (sale) { setEditingSale(sale); setIsModalOpen(true); }
                                             }}
-                                            className="p-3 hover:bg-white/10 rounded-xl text-white tooltip flex flex-col items-center gap-1 group relative"
+                                            className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
                                         >
                                             <Edit className="w-5 h-5 text-blue-400" />
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Edit</span>
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-blue-500">Edit</span>
                                         </button>
                                     )}
 
-                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <Copy className="w-5 h-5 text-green-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-green-300">Copy</span>
+                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                        <Copy className="w-5 h-5 text-emerald-500" />
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
                                     </button>
 
                                     <div className="relative">
-                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                            <ArrowRight className="w-5 h-5 text-yellow-400" />
-                                            <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-yellow-300">Move</span>
+                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <ArrowRight className="w-5 h-5 text-amber-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
                                         </button>
                                         {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-[#1a1a1a] border border-white/20 rounded-xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex flex-col gap-1 w-32 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
-                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Sales</button>
-                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Shipped</button>
-                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Inspections</button>
-                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors">Autosallon</button>
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
+                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
+                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
+                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
                                             </div>
                                         )}
                                     </div>
 
-                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
-                                        <CheckSquare className="w-5 h-5 text-blue-400" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-blue-300">Sold</span>
+                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                        <CheckSquare className="w-5 h-5 text-blue-500" />
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-blue-500">Sold</span>
                                     </button>
 
-                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-white/10 rounded-xl text-white flex flex-col items-center gap-1 group">
+                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
                                         <Trash2 className="w-5 h-5 text-red-500" />
-                                        <span className="text-[9px] uppercase font-bold text-gray-500 group-hover:text-red-300">Delete</span>
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
                                     </button>
 
-                                    <div className="w-px h-8 bg-white/10 mx-1" />
+                                    <div className="w-px h-8 bg-slate-200 mx-1" />
 
-                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-white/10 rounded-xl text-gray-500">
+                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-slate-100 rounded-xl text-slate-500">
                                         <X className="w-5 h-5" />
                                     </button>
                                 </motion.div>
@@ -1874,13 +1918,13 @@ export default function Dashboard() {
             {contractSale && <ContractModal sale={contractSale} type={contractType} onClose={() => setContractSale(null)} />}
             {
                 showPasswordModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
-                        <div className="bg-[#1a1a1a] border border-white/10 p-6 rounded-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold text-white mb-4">Enter Admin Password</h3>
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
+                        <div className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter Admin Password</h3>
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
-                                    className="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 pr-12 text-white outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                     placeholder="Password"
                                     value={passwordInput}
                                     onChange={e => setPasswordInput(e.target.value)}
@@ -1888,15 +1932,15 @@ export default function Dashboard() {
                                     onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
                                 />
                                 <button
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                                     onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                                 >
                                     {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
                             <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">Cancel</button>
-                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">Submit</button>
+                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-sm">Submit</button>
                             </div>
                         </div>
                     </div>

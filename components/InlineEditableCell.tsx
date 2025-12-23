@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, Loader2, X } from 'lucide-react';
 
 interface InlineEditableCellProps {
   value: string | number | undefined;
@@ -93,7 +93,13 @@ export default function InlineEditableCell({
           className="inline-editable-input text-sm min-w-[60px] max-w-[120px]"
           disabled={isSaving}
         />
-        <button 
+        {isSaving && (
+          <span className="inline-flex items-center text-[10px] text-slate-500 gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Saving
+          </span>
+        )}
+        <button
           onClick={handleSave} 
           className="p-0.5 rounded text-green-600 hover:bg-green-100 transition-colors"
           disabled={isSaving}

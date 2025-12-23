@@ -207,9 +207,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     // Helper component for file list
     const FileList = ({ files, field, label }: { files: Attachment[] | undefined, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices', label: string }) => (
-        <div className="bg-[#252628]/50 p-3 rounded-xl border border-white/10 border-dashed hover:border-white/20 transition-colors h-full flex flex-col">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 border-dashed hover:border-blue-200 transition-colors h-full flex flex-col">
             <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] uppercase text-gray-500 font-bold block">{label}</label>
+                <label className="text-[10px] uppercase text-slate-500 font-bold block">{label}</label>
                 <label className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1">
                     <Paperclip className="w-3 h-3" /> Add
                     <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(e) => handleFileChange(e, field)} />
@@ -219,16 +219,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             <div className="flex-1 flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
                 {files && files.length > 0 ? (
                     files.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-[#1a1a1a] p-2 rounded-lg border border-white/5 group cursor-pointer hover:bg-white/5 transition-all" onClick={() => viewFile(file)}>
+                        <div key={idx} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 group cursor-pointer hover:bg-slate-50 transition-all" onClick={() => viewFile(file)}>
                             <div className="flex items-center gap-2 overflow-hidden">
-                                <FileText className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-colors flex-shrink-0" />
-                                <span className="text-xs text-gray-300 truncate group-hover:text-white transition-colors">{file.name}</span>
+                                <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                                <span className="text-xs text-slate-600 truncate group-hover:text-slate-900 transition-colors">{file.name}</span>
                             </div>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(field, idx); }} className="text-gray-600 hover:text-red-400 p-1 rounded transition-colors ml-1"><X className="w-3 h-3" /></button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(field, idx); }} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors ml-1"><X className="w-3 h-3" /></button>
                         </div>
                     ))
                 ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-gray-600 gap-1 min-h-[60px]">
+                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-1 min-h-[60px]">
                         <span className="text-xs italic">No files attached</span>
                     </div>
                 )}
@@ -245,23 +245,23 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className={`${inline ? 'w-full h-full flex flex-col bg-[#1a1a1a]' : 'bg-[#1a1a1a] border border-white/10 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]'}`}
+            className={`${inline ? 'w-full h-full flex flex-col bg-white' : 'bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]'}`}
         >
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/10">
-                <h2 className="text-xl font-bold text-white">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
+                <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                 {!inline && (
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
                         <X className="w-5 h-5" />
                     </button>
                 )}
             </div>
 
-            <div className="flex bg-[#111] border-b border-white/5 mx-4 md:mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
+            <div className="flex bg-slate-100 border border-slate-200 mx-4 md:mx-6 mt-4 p-1 rounded-lg overflow-x-auto no-scrollbar shrink-0">
                 {['Vehicle', 'Logistics', 'Financials', 'Docs', 'Contracts'].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        className={`flex-1 min-w-[80px] py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap px-2 ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                        className={`flex-1 min-w-[80px] py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all whitespace-nowrap px-2 ${activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700 hover:bg-white'}`}
                     >
                         {tab}
                     </button>
@@ -318,13 +318,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             <motion.div key="financials" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-5">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
-                                    <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="bg-[#252628] font-bold text-green-400 border-green-500/30" />
+                                    <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
                                 </div>
 
                                 {/* Korea/Supplier Payments (Admin Only) */}
                                 {isAdmin && (
-                                    <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                        <h4 className="text-xs font-bold text-gray-400 uppercase">Supplier (Korea)</h4>
+                                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <h4 className="text-xs font-bold text-slate-500 uppercase">Supplier (Korea)</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
                                             <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
@@ -333,8 +333,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 )}
 
                                 {/* Client Payments */}
-                                <div className="space-y-3 bg-white/5 p-4 rounded-xl border border-white/5">
-                                    <h4 className="text-xs font-bold text-gray-400 uppercase">Client Payments</h4>
+                                <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase">Client Payments</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                         <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
@@ -355,17 +355,17 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                         <option value="Cancelled">Cancelled</option>
                                     </Select>
                                     <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1 opacity-0">Transport</label>
-                                        <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-[#1a1a1a] border-white/10 text-gray-400'}`}>
+                                        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1 opacity-0">Transport</label>
+                                        <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
                                             <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
                                             <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
                                         </label>
                                     </div>
                                 </div>
 
-                                <div className="p-4 rounded-xl bg-black/40 border border-white/10 flex justify-between items-center">
-                                    <span className="text-sm text-gray-400 font-bold uppercase">Balance Due</span>
-                                    <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-400' : 'text-green-500'}`}>
+                                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                                    <span className="text-sm text-slate-500 font-bold uppercase">Balance Due</span>
+                                    <span className={`text-xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                                         €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
                                     </span>
                                 </div>
@@ -384,27 +384,27 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         {activeTab === 'Contracts' && (
                             <motion.div key="contracts" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="flex flex-col gap-6 h-full justify-center items-center p-8">
                                 <div className="text-center space-y-2 mb-4">
-                                    <h3 className="text-xl font-bold text-white">Generate Documents</h3>
-                                    <p className="text-gray-400 text-sm">Create printable contracts automatically filled with sale details.</p>
+                                    <h3 className="text-xl font-bold text-slate-900">Generate Documents</h3>
+                                    <p className="text-slate-500 text-sm">Create printable contracts automatically filled with sale details.</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
-                                    <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-blue-500 hover:bg-white/5 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                                    <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-blue-300 hover:bg-slate-50 rounded-2xl transition-all group">
+                                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                                             <FileText className="w-8 h-8" />
                                         </div>
                                         <div className="text-center">
-                                            <div className="font-bold text-lg text-white">Deposit Agreement</div>
-                                            <div className="text-xs text-gray-500 mt-1">Marrëveshje për Kapar</div>
+                                            <div className="font-bold text-lg text-slate-900">Deposit Agreement</div>
+                                            <div className="text-xs text-slate-500 mt-1">Marrëveshje për Kapar</div>
                                         </div>
                                     </button>
 
-                                    <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-[#252628] border border-white/10 hover:border-purple-500 hover:bg-white/5 rounded-2xl transition-all group">
-                                        <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+                                    <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group">
+                                        <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
                                             <FileText className="w-8 h-8" />
                                         </div>
                                         <div className="text-center">
-                                            <div className="font-bold text-lg text-white">Full Contract</div>
-                                            <div className="text-xs text-gray-500 mt-1">Marrëveshje Interne</div>
+                                            <div className="font-bold text-lg text-slate-900">Full Contract</div>
+                                            <div className="text-xs text-slate-500 mt-1">Marrëveshje Interne</div>
                                         </div>
                                     </button>
                                 </div>
@@ -413,9 +413,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </AnimatePresence>
 
                     {/* Footer Actions */}
-                    <div className="flex justify-end gap-3 pt-4 border-t border-white/5 mt-auto">
-                        <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/5 font-bold transition-all">Cancel</button>
-                        <button type="submit" className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-xl shadow-blue-900/20 active:scale-95 transition-all w-full md:w-auto">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
+                        <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
+                        <button type="submit" className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto">
                             {existingSale ? 'Update Sale' : 'Create Sale'}
                         </button>
                     </div>
@@ -425,9 +425,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     );
 
     const previewOverlay = previewImage && (
-        <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4" onClick={closePreview}>
+        <div className="fixed inset-0 z-[60] bg-slate-900/70 flex items-center justify-center p-4" onClick={closePreview}>
             <img src={previewImage} alt="Preview" className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain" />
-            <button onClick={closePreview} className="absolute top-6 right-6 text-white hover:text-gray-300 bg-black/50 p-2 rounded-full"><X className="w-8 h-8" /></button>
+            <button onClick={closePreview} className="absolute top-6 right-6 text-white hover:text-slate-100 bg-slate-900/60 p-2 rounded-full"><X className="w-8 h-8" /></button>
         </div>
     );
 
@@ -446,7 +446,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(3rem,env(safe-area-inset-top))]"
             onClick={handleBackdropClick}
         >
-            <div className="absolute inset-0 bg-black/80" />
+            <div className="absolute inset-0 bg-slate-900/60" />
             {previewOverlay}
             {Content}
             {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
@@ -456,9 +456,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
 const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
-        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
+        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
         <input
-            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[46px]"
             {...props}
         />
     </div>
@@ -466,15 +466,15 @@ const Input = ({ label, className = "", ...props }: any) => (
 
 const Select = ({ label, children, ...props }: any) => (
     <div className="flex flex-col gap-1 text-left w-full">
-        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
+        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all w-full h-[46px]"
+                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[46px]"
                 {...props}
             >
                 {children}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
                 <ChevronDown className="h-4 w-4" />
             </div>
         </div>
@@ -483,10 +483,10 @@ const Select = ({ label, children, ...props }: any) => (
 
 const DateInput = ({ label, ...props }: any) => (
     <div className="flex flex-col gap-1 w-full">
-        <label className="text-[10px] uppercase text-gray-500 font-bold ml-1">{label}</label>
+        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
         <input
             type="date"
-            className="bg-[#252628] border border-white/10 hover:border-white/20 rounded-lg px-3 text-sm text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-700 w-full h-[46px]"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[46px]"
             {...props}
         />
     </div>
