@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, Settings, Upload, Download, RefreshCw, Smartphone, Trash2, Copy, Scissors, ArrowRight, CheckSquare, Square, Edit, Move, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Users, Home } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, Edit, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -238,7 +238,7 @@ const INITIAL_SALES: CarSale[] = [];
 
 export default function Dashboard() {
     const dirtyIds = useRef<Set<string>>(new Set());
-    const [isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
     const [sales, setSales] = useState<CarSale[]>([]);
     const salesRef = useRef(sales);
     useEffect(() => { salesRef.current = sales; }, [sales]);
@@ -257,9 +257,8 @@ export default function Dashboard() {
     const isAdmin = userProfile === 'Admin';
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formResetKey, setFormResetKey] = useState(0);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
+    const [formReturnView, setFormReturnView] = useState('dashboard');
     const [expandedGroups, setExpandedGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [customGroups, setCustomGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
@@ -280,6 +279,21 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
+    const isFormOpen = view === 'sale_form';
+    const isFormOpenRef = React.useRef(isFormOpen);
+
+    const openSaleForm = (sale: CarSale | null, returnView = view) => {
+        setEditingSale(sale);
+        setFormReturnView(returnView);
+        setView('sale_form');
+    };
+
+    const closeSaleForm = (returnView = formReturnView) => {
+        setEditingSale(null);
+        setView(returnView);
+    };
+
+    useEffect(() => { isFormOpenRef.current = isFormOpen; }, [isFormOpen]);
 
     // Initialize & Sync Avatars
     useEffect(() => {
@@ -721,26 +735,7 @@ export default function Dashboard() {
         return () => {
             client.removeChannel(channel);
         };
-    }, [supabaseUrl, supabaseKey, userProfile, sales.length]); // Dep on sales.length to update closure if needed? Actually performAutoSync uses args.
-    // Better: use a ref for current sales if we want to avoid re-subscribing constantly?
-    // Actually, recreating subscription on sales change is bad.
-    // performAutoSync arg 'currentLocalSales' should be fresh. 
-    // BUT 'sales' in the closure is stale if not in dep array.
-    // If we put 'sales' in dep array, we re-sub on every edit. 
-    // SOLUTION: Use a Ref for sales, or just rely on 'performAutoSync' reading from Preferences/Local?
-    // performAutoSync takes 'currentLocalSales' as ARG. 
-    // Let's modify performAutoSync to accept optional sales, or read from state. 
-    // For now, let's just re-subscribe. It's not too expensive if infrequent.
-    // actually, let's NOT include sales in dep array and inside on(...) read from a ref?
-    // Or just pass empty array? performAutoSync fetches remote. Merging might need local.
-    // Let's stick to simple re-sub for now or...
-    // WAIT. performAutoSync merges. It needs local data.
-    // We can use `useRef` to hold latest sales.
-
-
-    const isModalOpenRef = React.useRef(isModalOpen);
-    useEffect(() => { isModalOpenRef.current = isModalOpen; }, [isModalOpen]);
-
+    }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
             // Hardcoded Credentials (as fallback/default)
@@ -828,7 +823,7 @@ export default function Dashboard() {
         // Auto-sync on focus
         const onFocus = async () => {
             // Prevent sync if user is editing
-            if (isModalOpenRef.current) return;
+            if (isFormOpenRef.current) return;
 
             const { value: url } = await Preferences.get({ key: 'supabase_url' });
             const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
@@ -843,6 +838,16 @@ export default function Dashboard() {
         window.addEventListener('focus', onFocus);
         return () => window.removeEventListener('focus', onFocus);
     }, []);
+
+    useEffect(() => {
+        if (!userProfile || !supabaseUrl || !supabaseKey) return;
+        const syncOnLogin = async () => {
+            const { value } = await Preferences.get({ key: 'car_sales_data' });
+            const localSales = value ? JSON.parse(value) : salesRef.current;
+            performAutoSync(supabaseUrl, supabaseKey, userProfile, localSales);
+        };
+        syncOnLogin();
+    }, [userProfile, supabaseUrl, supabaseKey]);
 
     const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
         setIsSyncing(true);
@@ -958,9 +963,8 @@ export default function Dashboard() {
             await updateSalesAndSave(newSales);
 
             alert(editingSale ? 'Sale updated successfully and saved to database!' : 'Sale created successfully and saved to database!');
-            setIsModalOpen(false);
-            setEditingSale(null);
-            setFormResetKey(prev => prev + 1);
+            const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
+            closeSaleForm(nextView);
         } catch (e) {
             console.error("Save Error", e);
             alert("Error saving sale. Data is saved locally but might not be synced.");
@@ -1298,7 +1302,7 @@ export default function Dashboard() {
                 <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
                     <button
                         id="btn-add-sale"
-                        onClick={() => setView('add_sale')}
+                        onClick={() => openSaleForm(null, 'landing')}
                         className="flex-1 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-xl hover:shadow-blue-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:from-blue-600 group-hover:to-blue-500 group-hover:text-white group-hover:border-blue-500 transition-all duration-300 shadow-inner">
@@ -1312,7 +1316,7 @@ export default function Dashboard() {
 
                     <button
                         id="btn-view-sales"
-                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); setIsModalOpen(false); }}
+                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
                         className="flex-1 bg-white border border-slate-200 hover:border-violet-400 hover:shadow-xl hover:shadow-violet-500/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-50 to-violet-100 border border-violet-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:from-violet-600 group-hover:to-violet-500 group-hover:text-white group-hover:border-violet-500 transition-all duration-300 shadow-inner">
@@ -1368,9 +1372,13 @@ export default function Dashboard() {
                             </div>
                         </div>
                         <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
-                            {['dashboard', 'invoices', ...(isAdmin ? ['settings'] : [])].map((tab) => (
-                                <button key={tab} onClick={() => setView(tab as any)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${view === tab ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    <span className="capitalize">{tab}</span>
+                            {[
+                                { key: 'dashboard', label: 'Home' },
+                                { key: 'invoices', label: 'Invoice' },
+                                ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
+                            ].map((tab) => (
+                                <button key={tab.key} onClick={() => setView(tab.key)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${view === tab.key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                                    <span>{tab.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -1425,17 +1433,21 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar pb-1">
-                        {['dashboard', 'invoices', ...(isAdmin ? ['settings'] : [])].map((tab) => (
+                    <div className="flex md:hidden bg-slate-100 p-1 rounded-xl gap-2 overflow-x-auto no-scrollbar pb-1">
+                        {[
+                            { key: 'dashboard', label: 'Home' },
+                            { key: 'invoices', label: 'Invoice' },
+                            ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
+                        ].map((tab) => (
                             <button
-                                key={tab}
-                                onClick={() => setView(tab as any)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap border ${view === tab
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200'
+                                key={tab.key}
+                                onClick={() => setView(tab.key)}
+                                className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${view === tab.key
+                                    ? 'bg-white text-slate-800 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                <span className="capitalize">{tab}</span>
+                                <span>{tab.label}</span>
                             </button>
                         ))}
                     </div>
@@ -1463,7 +1475,7 @@ export default function Dashboard() {
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
-                            <button onClick={() => { setEditingSale(null); setIsModalOpen(true); }} className="hidden md:flex bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
+                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-blue-500/25 hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
                         </div>
@@ -1472,25 +1484,24 @@ export default function Dashboard() {
             </header>
 
             <main className="flex-1 overflow-hidden bg-slate-50 p-4 md:p-6 flex flex-col relative">
-                {view === 'add_sale' ? (
-                    <div className="flex-1 overflow-hidden">
+                {view === 'sale_form' ? (
+                    <div className="flex-1 overflow-hidden flex flex-col">
                         <div className="flex items-center justify-between mb-6">
-                            <button onClick={() => setView('landing')} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
-                                <ArrowRight className="w-5 h-5 rotate-180" /> Back to Menu
+                            <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
+                                <ArrowRight className="w-5 h-5 rotate-180" />
+                                {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
                             </button>
-                            <h2 className="text-2xl font-bold text-slate-900">New Sale Entry</h2>
-                            <div className="w-20" /> {/* Spacer */}
+                            <h2 className="text-2xl font-bold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
+                            <div className="w-20" />
                         </div>
-                        <div className="h-[calc(100%-4rem)] rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-white">
+                        <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-white">
                             <SaleModal
                                 isOpen={true}
                                 inline={true}
-                                onClose={() => setView('landing')}
-                                onSave={(sale) => {
-                                    handleAddSale(sale);
-                                    setView('dashboard');
-                                }}
-                                existingSale={null}
+                                onClose={() => closeSaleForm()}
+                                onSave={handleAddSale}
+                                existingSale={editingSale}
+                                defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
                                 isAdmin={isAdmin}
                             />
                         </div>
@@ -1602,8 +1613,7 @@ export default function Dashboard() {
                                                         alert("You do not have permission to edit this sale.");
                                                         return;
                                                     }
-                                                    setEditingSale(s);
-                                                    setIsModalOpen(true);
+                                                    openSaleForm(s);
                                                 }}
                                                 onDelete={handleDeleteSingle}
                                             />
@@ -1666,8 +1676,7 @@ export default function Dashboard() {
                                                             alert("You do not have permission to edit this sale.");
                                                             return;
                                                         }
-                                                        setEditingSale(sale);
-                                                        setIsModalOpen(true);
+                                                        openSaleForm(sale);
                                                     }
                                                 }}
                                                 onContextMenu={(e) => {
@@ -1766,7 +1775,13 @@ export default function Dashboard() {
                                             >
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
-                                                        <div className="font-bold text-slate-900 text-lg">{s.brand} {s.model}</div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); openSaleForm(s, 'invoices'); }}
+                                                            className="font-bold text-slate-900 text-lg text-left hover:text-blue-600 transition-colors"
+                                                        >
+                                                            {s.brand} {s.model}
+                                                        </button>
                                                         <div className="text-xs text-slate-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
                                                     </div>
                                                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
@@ -1849,7 +1864,7 @@ export default function Dashboard() {
                                         <button
                                             onClick={() => {
                                                 const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                                if (sale) { setEditingSale(sale); setIsModalOpen(true); }
+                                                if (sale) { openSaleForm(sale); }
                                             }}
                                             className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
                                         >
@@ -1902,18 +1917,6 @@ export default function Dashboard() {
             </main>
 
             {/* Contextual FAB for Inspections/Autosallon */}
-
-
-            {isModalOpen && (
-                <SaleModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onSave={handleAddSale}
-                    existingSale={editingSale}
-                    defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
-                    isAdmin={isAdmin}
-                />
-            )}
             {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
             {contractSale && <ContractModal sale={contractSale} type={contractType} onClose={() => setContractSale(null)} />}
             {
