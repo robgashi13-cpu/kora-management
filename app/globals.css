@@ -23,39 +23,49 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Clean White Admin Theme */
+/* Clean White Admin Theme - Enhanced Colors */
 :root {
-  --background: 0 0% 98%;
-  --foreground: 220 13% 18%;
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 220 13% 18%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 13% 18%;
-  --primary: 217 91% 50%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 220 13% 18%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 9% 46%;
-  --accent: 220 14% 96%;
-  --accent-foreground: 220 13% 18%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 262 83% 58%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 217 91% 50%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
   --radius: 0.5rem;
+  
+  /* Semantic Colors */
   --success: 142 71% 45%;
+  --success-light: 142 76% 94%;
   --warning: 38 92% 50%;
+  --warning-light: 48 96% 89%;
+  --info: 199 89% 48%;
+  --info-light: 199 95% 93%;
+  --profit: 221 83% 53%;
+  --loss: 0 84% 60%;
+  --balance-due: 0 72% 51%;
+  --balance-paid: 142 71% 45%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 8%;
+    --card: 222 47% 9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 8%;
+    --popover: 222 47% 9%;
     --popover-foreground: 210 40% 98%;
     --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
@@ -63,7 +73,7 @@ html {
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 217 91% 60%;
+    --accent: 262 83% 58%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 50%;
     --destructive-foreground: 210 40% 98%;
@@ -71,7 +81,11 @@ html {
     --input: 217 33% 17%;
     --ring: 217 91% 60%;
     --success: 142 71% 45%;
+    --success-light: 142 40% 15%;
     --warning: 38 92% 50%;
+    --warning-light: 38 40% 15%;
+    --info: 199 89% 48%;
+    --info-light: 199 40% 15%;
   }
 }
 
@@ -98,20 +112,12 @@ body {
   min-height: 100%;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Dashboard Grid Layout Definitions */
+/* Dashboard Grid Layout */
 :root {
-  /* Default: Compact (iPad/Tablet) */
   --cols-admin: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 50px 60px 70px 70px 90px 60px 40px;
   --cols-user: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 70px 70px 90px 60px 40px;
 }
@@ -123,44 +129,102 @@ body {
   }
 }
 
-/* Inline Editable Cell Styling */
+/* Inline Editable Cell */
 .inline-editable {
   cursor: pointer;
   transition: all 0.15s ease;
   border-radius: 4px;
-  padding: 2px 4px;
-  margin: -2px -4px;
+  padding: 2px 6px;
+  margin: -2px -6px;
 }
 
 .inline-editable:hover {
-  background-color: hsl(var(--primary) / 0.1);
+  background-color: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
 }
 
 .inline-editable-input {
   background: hsl(var(--card));
   border: 2px solid hsl(var(--primary));
-  border-radius: 4px;
-  padding: 2px 6px;
+  border-radius: 6px;
+  padding: 4px 8px;
   outline: none;
   font: inherit;
-  color: inherit;
+  color: hsl(var(--foreground));
   width: 100%;
-  box-shadow: 0 2px 8px hsl(var(--primary) / 0.2);
+  box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
 }
 
-/* Status Badge Styles */
+/* Status Badge Styles - More Vibrant */
 .status-badge {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  padding: 2px 8px;
+  letter-spacing: 0.025em;
+  padding: 4px 10px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
-.status-completed { background: hsl(var(--success) / 0.15); color: hsl(142 71% 40%); }
-.status-new { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); }
-.status-in-progress { background: hsl(var(--warning) / 0.15); color: hsl(38 92% 40%); }
-.status-shipped { background: hsl(270 60% 50% / 0.15); color: hsl(270 60% 50%); }
-.status-inspection { background: hsl(48 100% 50% / 0.15); color: hsl(48 100% 35%); }
-.status-autosallon { background: hsl(var(--warning) / 0.15); color: hsl(38 92% 40%); }
+.status-completed { 
+  background: linear-gradient(135deg, hsl(142 76% 94%), hsl(142 70% 90%)); 
+  color: hsl(142 64% 32%);
+  border: 1px solid hsl(142 60% 80%);
+}
+
+.status-new { 
+  background: linear-gradient(135deg, hsl(221 91% 95%), hsl(221 85% 90%)); 
+  color: hsl(221 83% 45%);
+  border: 1px solid hsl(221 80% 85%);
+}
+
+.status-in-progress { 
+  background: linear-gradient(135deg, hsl(38 100% 94%), hsl(38 95% 88%)); 
+  color: hsl(32 95% 40%);
+  border: 1px solid hsl(38 90% 78%);
+}
+
+.status-shipped { 
+  background: linear-gradient(135deg, hsl(262 83% 95%), hsl(262 75% 90%)); 
+  color: hsl(262 83% 48%);
+  border: 1px solid hsl(262 70% 85%);
+}
+
+.status-inspection { 
+  background: linear-gradient(135deg, hsl(199 95% 93%), hsl(199 90% 88%)); 
+  color: hsl(199 89% 38%);
+  border: 1px solid hsl(199 85% 80%);
+}
+
+.status-autosallon { 
+  background: linear-gradient(135deg, hsl(38 100% 94%), hsl(38 95% 88%)); 
+  color: hsl(32 95% 40%);
+  border: 1px solid hsl(38 90% 78%);
+}
+
+/* Money Colors */
+.money-positive { color: hsl(142 71% 35%); font-weight: 600; }
+.money-negative { color: hsl(0 84% 50%); font-weight: 600; }
+.money-neutral { color: hsl(var(--foreground)); }
+.money-muted { color: hsl(var(--muted-foreground)); }
+
+/* Table Row Hover */
+.table-row-hover:hover {
+  background-color: hsl(var(--primary) / 0.04);
+}
+
+/* Attractive Gradients */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
+}
+
+.gradient-success {
+  background: linear-gradient(135deg, hsl(142 71% 45%), hsl(158 64% 52%));
+}
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
