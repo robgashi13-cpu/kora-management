@@ -211,7 +211,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className={`${inline ? 'w-full h-full flex flex-col bg-white' : 'bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]'}`}
+            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
         >
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
@@ -223,12 +223,12 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             </div>
 
             <div
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2 min-h-0"
             >
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-4 md:p-6 flex flex-col gap-6"
+                    className="p-4 md:p-6 pb-8 md:pb-10 flex flex-col gap-6"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

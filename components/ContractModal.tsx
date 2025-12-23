@@ -71,6 +71,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
     const today = new Date().toLocaleDateString('en-GB');
     const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
+    const fullSellerName = "RG SH.P.K";
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>
@@ -216,7 +217,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
                                             <ul className="list-disc ml-5 space-y-2">
                                                 <li>
-                                                    <strong>Z. {seller.name}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                                    <strong>Z. {fullSellerName}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
                                                     <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
@@ -237,7 +238,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         <p className="font-bold mt-4 mb-4">
-                                            Z. {seller.name} vepron si shitës, ndërsa {sale.buyerName} si blerës.
+                                            Z. {fullSellerName} vepron si shitës, ndërsa {sale.buyerName} si blerës.
                                         </p>
 
                                         <hr className="mb-6 border-black" />
@@ -248,7 +249,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Pagesa</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Shuma totale prej € {(sale.amountPaidBank || 0).toLocaleString()} do të transferohet në llogarinë bankare të RG SH.P.K.</li>
+                                                    <li>Shuma totale prej € {(sale.amountPaidBank || 0).toLocaleString()} do të transferohet në llogarinë bankare të RG SH.P.K</li>
                                                     <li>Një shumë prej € {(sale.deposit || 0).toLocaleString()} do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
@@ -359,7 +360,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         <div className="footer mt-16 pt-8 flex justify-between">
                                             <div className="signature-box w-1/3 text-left">
-                                                <div className="mb-8 font-bold">Shitësi: {seller.name}</div>
+                                                <div className="mb-8 font-bold">Shitësi: {fullSellerName}</div>
                                                 <div className="border-b border-black w-full h-1"></div>
                                             </div>
                                             <div className="signature-box w-1/3 text-right">
