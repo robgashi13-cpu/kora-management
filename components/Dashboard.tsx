@@ -12,9 +12,8 @@ import SaleModal from './SaleModal';
 import InvoiceModal from './InvoiceModal';
 import ContractModal from './ContractModal';
 import ProfileSelector from './ProfileSelector';
-import AiAssistant from './AiAssistant';
 import InlineEditableCell from './InlineEditableCell';
-import { chatWithData, processImportedData } from '@/services/openaiService';
+import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
@@ -1483,29 +1482,7 @@ export default function Dashboard() {
             </header>
 
             <main className="flex-1 overflow-hidden bg-white md:bg-slate-50 p-3 md:p-6 flex flex-col relative">
-                {view === 'sale_form' ? (
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        <div className="flex items-center justify-between mb-4 md:mb-6">
-                            <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
-                                <ArrowRight className="w-5 h-5 rotate-180" />
-                                {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
-                            </button>
-                            <h2 className="text-2xl font-bold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                            <div className="w-20" />
-                        </div>
-                        <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-white">
-                            <SaleModal
-                                isOpen={true}
-                                inline={true}
-                                onClose={() => closeSaleForm()}
-                                onSave={handleAddSale}
-                                existingSale={editingSale}
-                                defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
-                                isAdmin={isAdmin}
-                            />
-                        </div>
-                    </div>
-                ) : (
+                {view !== 'sale_form' && (
                     <>
 
                         {/* Global Tabs (Visible on Dashboard and Invoices) */}
@@ -1914,6 +1891,55 @@ export default function Dashboard() {
                 )}
 
             </main>
+            <AnimatePresence>
+                {view === 'sale_form' && (
+                    <motion.div
+                        className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <motion.div
+                            className="absolute inset-0 bg-white flex flex-col"
+                            initial={{ opacity: 0, y: 24 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 24 }}
+                            transition={{ duration: 0.25 }}
+                        >
+                            <button
+                                onClick={() => closeSaleForm()}
+                                className="absolute top-4 right-4 md:top-6 md:right-6 z-10 h-10 w-10 rounded-full bg-white/90 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                                aria-label="Close sale form"
+                                type="button"
+                            >
+                                <X className="w-5 h-5 mx-auto" />
+                            </button>
+                            <div className="flex-1 overflow-hidden flex flex-col px-4 md:px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                                <div className="flex items-center justify-between mb-4 md:mb-6">
+                                    <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
+                                        <ArrowRight className="w-5 h-5 rotate-180" />
+                                        {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
+                                    </button>
+                                    <h2 className="text-2xl font-bold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
+                                    <div className="w-20" />
+                                </div>
+                                <div className="flex-1 overflow-hidden bg-white">
+                                    <SaleModal
+                                        isOpen={true}
+                                        inline={true}
+                                        onClose={() => closeSaleForm()}
+                                        onSave={handleAddSale}
+                                        existingSale={editingSale}
+                                        defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                                        isAdmin={isAdmin}
+                                    />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Contextual FAB for Inspections/Autosallon */}
             {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
@@ -1948,7 +1974,16 @@ export default function Dashboard() {
                     </div>
                 )
             }
-            <AiAssistant data={sales} apiKey={apiKey} />
+            {view !== 'sale_form' && (
+                <button
+                    onClick={() => openSaleForm(null)}
+                    className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-[60] h-12 w-12 rounded-full border border-slate-200 bg-white/90 text-slate-900 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                    aria-label="Add sale"
+                    type="button"
+                >
+                    <Plus className="w-5 h-5 mx-auto" />
+                </button>
+            )}
         </div >
     );
 }
