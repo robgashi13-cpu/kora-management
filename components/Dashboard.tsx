@@ -81,14 +81,13 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 2. Car Info */}
             <div className="px-1 xl:px-2 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white">
-                {canEdit ? (
-                    <div className="flex flex-col">
-                        <InlineEditableCell value={s.brand} onSave={(v) => handleFieldUpdate('brand', v)} className="font-semibold text-slate-800" />
-                        <InlineEditableCell value={s.model} onSave={(v) => handleFieldUpdate('model', v)} className="text-sm text-slate-500" />
-                    </div>
-                ) : (
-                    <span onClick={onClick} className="truncate cursor-pointer hover:text-blue-600 transition-colors">{s.brand} {s.model}</span>
-                )}
+                <button
+                    type="button"
+                    onClick={onClick}
+                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-none hover:text-blue-600 transition-colors"
+                >
+                    {s.brand} {s.model}
+                </button>
             </div>
 
             {/* 3. Year */}
