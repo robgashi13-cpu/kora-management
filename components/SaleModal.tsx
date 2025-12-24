@@ -228,14 +228,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-5 md:p-7 pb-10 md:pb-12 flex flex-col gap-8"
+                    className="p-5 md:p-7 pb-10 md:pb-12 flex flex-col gap-10"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
                             <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                             <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
                                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                             </Select>
@@ -245,43 +245,43 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </Select>
                             <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
                             <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
                         </div>
                     </Section>
 
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
                         </div>
                         <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
                             <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
                         </div>
                     </Section>
 
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                             <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
                         </div>
 
                         {isAdmin && (
-                            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase">Supplier (Korea)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
                                     <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
                             </div>
                         )}
 
-                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <h4 className="text-xs font-bold text-slate-500 uppercase">Client Payments</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                 <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
                                 <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
@@ -292,7 +292,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
                                 <option value="New">New</option>
                                 <option value="In Progress">In Progress</option>
@@ -392,10 +392,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:p-6 shadow-sm space-y-5 transition-shadow hover:shadow-md">
-        <div className="space-y-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">{title}</h3>
-            {description && <p className="text-sm text-slate-500">{description}</p>}
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-6 transition-shadow hover:shadow-md">
+        <div className="space-y-2">
+            <h3 className="text-base font-semibold uppercase tracking-wider text-slate-800">{title}</h3>
+            {description && <p className="text-sm text-slate-500 leading-relaxed">{description}</p>}
         </div>
         {children}
     </div>
@@ -403,9 +403,9 @@ const Section = ({ title, description, children }: { title: string; description?
 
 const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
-        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
+        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
         <input
-            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] shadow-sm"
             {...props}
         />
     </div>
@@ -413,10 +413,10 @@ const Input = ({ label, className = "", ...props }: any) => (
 
 const Select = ({ label, children, ...props }: any) => (
     <div className="flex flex-col gap-1 text-left w-full">
-        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
+        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[50px] shadow-sm"
+                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[52px] shadow-sm"
                 {...props}
             >
                 {children}
@@ -430,10 +430,10 @@ const Select = ({ label, children, ...props }: any) => (
 
 const DateInput = ({ label, ...props }: any) => (
     <div className="flex flex-col gap-1 w-full">
-        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
+        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] shadow-sm"
             {...props}
         />
     </div>

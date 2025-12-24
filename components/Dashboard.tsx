@@ -289,6 +289,12 @@ export default function Dashboard() {
     const canViewPrices = userProfile === 'Admin';
     const isAdmin = userProfile === 'Admin';
 
+    useEffect(() => {
+        if (!isAdmin && sortBy === 'koreaBalance') {
+            setSortBy('createdAt');
+        }
+    }, [isAdmin, sortBy]);
+
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [formReturnView, setFormReturnView] = useState('dashboard');
@@ -1534,7 +1540,7 @@ export default function Dashboard() {
                                     <option value="createdAt">Date Added</option>
                                     <option value="nameAlphabetic">Name (A-Z)</option>
                                     <option value="dueBalance">Balance (Client)</option>
-                                    <option value="koreaBalance">Balance (Korea)</option>
+                                    {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
                                     <option value="year">Year</option>
                                 </select>
                             </div>
@@ -2037,6 +2043,15 @@ export default function Dashboard() {
                                     {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+                            <label className="mb-5 flex items-center justify-center gap-3 text-sm text-slate-600 font-semibold">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberProfile}
+                                    onChange={(e) => setRememberProfile(e.target.checked)}
+                                    className="h-4 w-4 accent-blue-600"
+                                />
+                                Remember me on this device
+                            </label>
                             <div className="flex justify-end gap-3">
                                 <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
                                 <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-sm">Submit</button>

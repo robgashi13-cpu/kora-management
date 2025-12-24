@@ -29,7 +29,16 @@ export default function InlineEditableCell({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value ?? ''));
   const [isSaving, setIsSaving] = useState(false);
+  const [saveState, setSaveState] = useState<'idle' | 'success' | 'error'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearSaveTimer = () => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -42,9 +51,12 @@ export default function InlineEditableCell({
     setEditValue(String(value ?? ''));
   }, [value]);
 
+  useEffect(() => () => clearSaveTimer(), []);
+
   const handleStartEdit = () => {
     if (disabled) return;
     setEditValue(String(value ?? ''));
+    setSaveState('idle');
     setIsEditing(true);
   };
 
@@ -54,10 +66,14 @@ export default function InlineEditableCell({
       const newValue = type === 'number' ? parseFloat(editValue) || 0 : editValue;
       await onSave(newValue);
       setIsEditing(false);
+      setSaveState('success');
     } catch (e) {
       console.error('Save failed:', e);
+      setSaveState('error');
     } finally {
       setIsSaving(false);
+      clearSaveTimer();
+      saveTimerRef.current = setTimeout(() => setSaveState('idle'), 1600);
     }
   };
 
@@ -118,12 +134,22 @@ export default function InlineEditableCell({
   }
 
   return (
-    <span
-      onClick={handleStartEdit}
-      className={`inline-editable ${disabled ? 'cursor-default opacity-60' : ''} ${className}`}
-      title={disabled ? 'View only' : 'Click to edit'}
-    >
-      {displayValue}
+    <span className="inline-flex items-center gap-1">
+      <span
+        onClick={handleStartEdit}
+        className={`inline-editable ${disabled ? 'cursor-default opacity-60' : ''} ${className}`}
+        title={disabled ? 'View only' : 'Click to edit'}
+      >
+        {displayValue}
+      </span>
+      {saveState !== 'idle' && (
+        <span
+          className={`text-[10px] font-semibold ${saveState === 'success' ? 'text-emerald-600' : 'text-red-500'}`}
+          aria-live="polite"
+        >
+          {saveState === 'success' ? 'Saved' : 'Failed'}
+        </span>
+      )}
     </span>
   );
 }
