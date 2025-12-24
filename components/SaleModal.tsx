@@ -228,7 +228,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-4 md:p-6 pb-8 md:pb-10 flex flex-col gap-6"
+                    className="p-5 md:p-7 pb-10 md:pb-12 flex flex-col gap-8"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,7 +321,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
                             <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
-                            <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />
+                            {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
 
@@ -392,10 +392,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm space-y-4 transition-shadow hover:shadow-md">
+    <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:p-6 shadow-sm space-y-5 transition-shadow hover:shadow-md">
         <div className="space-y-1">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-600">{title}</h3>
-            {description && <p className="text-xs text-slate-500">{description}</p>}
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-700">{title}</h3>
+            {description && <p className="text-sm text-slate-500">{description}</p>}
         </div>
         {children}
     </div>
@@ -403,9 +403,9 @@ const Section = ({ title, description, children }: { title: string; description?
 
 const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
-        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
+        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
         <input
-            className="bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[46px]"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
             {...props}
         />
     </div>
@@ -413,10 +413,10 @@ const Input = ({ label, className = "", ...props }: any) => (
 
 const Select = ({ label, children, ...props }: any) => (
     <div className="flex flex-col gap-1 text-left w-full">
-        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
+        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[46px]"
+                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[50px] shadow-sm"
                 {...props}
             >
                 {children}
@@ -430,10 +430,10 @@ const Select = ({ label, children, ...props }: any) => (
 
 const DateInput = ({ label, ...props }: any) => (
     <div className="flex flex-col gap-1 w-full">
-        <label className="text-[10px] uppercase text-slate-500 font-bold ml-1">{label}</label>
+        <label className="text-xs uppercase text-slate-600 font-semibold ml-1 tracking-wide">{label}</label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-blue-200 rounded-lg px-3 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[46px]"
+            className="bg-white border border-slate-200 hover:border-blue-200 rounded-xl px-3.5 text-base text-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
             {...props}
         />
     </div>

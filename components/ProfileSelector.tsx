@@ -4,20 +4,22 @@ import { motion } from 'framer-motion';
 
 interface ProfileSelectorProps {
     profiles: string[];
-    onSelect: (profile: string) => void;
-    onAdd: (name: string) => void;
+    onSelect: (profile: string, remember: boolean) => void;
+    onAdd: (name: string, remember: boolean) => void;
     onDelete: (name: string) => void;
     onEdit: (oldName: string, newName: string) => void;
     avatars: Record<string, string>;
     onEditAvatar: (name: string, base64: string) => void;
+    rememberDefault?: boolean;
 }
 
-export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar }: ProfileSelectorProps) {
+export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [isManaging, setIsManaging] = useState(false);
+    const [rememberMe, setRememberMe] = useState(rememberDefault);
 
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [password, setPassword] = useState('');
@@ -59,13 +61,13 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             setPassword('');
             setShowPassword(false);
         } else {
-            onSelect(p);
+            onSelect(p, rememberMe);
         }
     };
 
     const confirmPassword = () => {
         if (password === 'Robertoo1396$' && pendingProfile) {
-            onSelect(pendingProfile);
+            onSelect(pendingProfile, rememberMe);
             setShowPasswordModal(false);
             setPendingProfile(null);
         } else {
@@ -80,10 +82,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             alert('Profile already exists!');
             return;
         }
-        onAdd(trimmed);
-        setNewName('');
-        setIsAdding(false);
-        onAdd(trimmed);
+        onAdd(trimmed, rememberMe);
         setNewName('');
         setIsAdding(false);
     };
@@ -201,6 +200,19 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     </div>
                 </div>
 
+                <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm text-slate-600 shadow-sm">
+                    <input
+                        id="remember-profile"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 accent-blue-600"
+                    />
+                    <label htmlFor="remember-profile" className="font-semibold cursor-pointer">
+                        Remember me on this device
+                    </label>
+                </div>
+
                 {/* Admin Password Modal */}
                 {showPasswordModal && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
@@ -224,6 +236,16 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                 </button>
                             </div>
+
+                            <label className="mb-5 flex items-center justify-center gap-3 text-sm text-slate-600 font-semibold">
+                                <input
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    className="h-4 w-4 accent-blue-600"
+                                />
+                                Remember me on this device
+                            </label>
 
                             <button onClick={confirmPassword} className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500">
                                 Login
