@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, Edit, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -29,6 +29,12 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
     const controls = useDragControls();
     const isAdmin = userProfile === 'Admin';
     const canEdit = isAdmin || s.soldBy === userProfile;
+    const statusClass = s.status === 'Completed' ? 'status-completed' :
+        (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
+        s.status === 'New' ? 'status-new' :
+        s.status === 'Shipped' ? 'status-shipped' :
+        s.status === 'Inspection' ? 'status-inspection' :
+        'bg-slate-100 text-slate-500';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -163,8 +169,27 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-sky-600 font-medium border-r border-slate-100 bg-white">
-                    €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+                <div className="px-1 xl:px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                    {canEdit ? (
+                        <div className="flex flex-col items-end gap-1 text-[10px] leading-tight">
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400">Bank</span>
+                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-600 font-medium" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400">Cash</span>
+                                <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="text-slate-600 font-medium" />
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400">Dep</span>
+                                <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-500 font-medium" />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="font-mono text-sky-600 font-medium">
+                            €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+                        </div>
+                    )}
                 </div>
             ) : (
                 <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
@@ -174,7 +199,13 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
                     <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-xs text-slate-400 border-r border-slate-100 bg-white">€{(s.servicesCost ?? 30.51).toLocaleString()}</div>
+                    <div className="px-1 xl:px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                        {canEdit ? (
+                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-xs" />
+                        ) : (
+                            <span className="font-mono text-xs text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
+                        )}
+                    </div>
                     {isAdmin && <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono font-bold text-violet-600 whitespace-nowrap border-r border-slate-100 bg-white">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
@@ -197,7 +228,10 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white">
+                <div className="px-1 xl:px-2 h-full flex flex-col items-center justify-center gap-1 border-r border-slate-100 bg-white">
+                    {canEdit && (
+                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] font-semibold text-slate-600" />
+                    )}
                     <span className={`text-[10px] uppercase font-semibold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `Due €${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
@@ -206,24 +240,24 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 16. Status */}
             <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white">
-                <span className={`status-badge ${
-                    s.status === 'Completed' ? 'status-completed' :
-                    (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
-                    s.status === 'New' ? 'status-new' :
-                    s.status === 'Shipped' ? 'status-shipped' :
-                    s.status === 'Inspection' ? 'status-inspection' :
-                    'bg-slate-100 text-slate-500'
-                }`}>{s.status}</span>
+                {canEdit ? (
+                    <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge ${statusClass}`} />
+                ) : (
+                    <span className={`status-badge ${statusClass}`}>{s.status}</span>
+                )}
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-xs text-slate-500 border-r border-slate-100 bg-white">{s.soldBy}</div>
+            <div className="px-1 xl:px-2 h-full flex items-center justify-center text-xs border-r border-slate-100 bg-white">
+                {isAdmin ? (
+                    <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
+                ) : (
+                    <span className="text-slate-500">{s.soldBy}</span>
+                )}
+            </div>
 
             {/* 18. Actions */}
             <div className="px-1 xl:px-2 h-full flex items-center justify-center gap-1 bg-white">
-                <button onClick={onClick} className="text-slate-400 hover:text-blue-600 transition-colors p-1.5 hover:bg-blue-50 rounded-lg" title="Edit Sale">
-                    <Edit className="w-4 h-4" />
-                </button>
                 <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-1.5 hover:bg-blue-50 rounded-lg" title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
@@ -250,6 +284,7 @@ export default function Dashboard() {
     const [newProfileName, setNewProfileName] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [rememberProfile, setRememberProfile] = useState(false);
 
     const canViewPrices = userProfile === 'Admin';
     const isAdmin = userProfile === 'Admin';
@@ -279,6 +314,16 @@ export default function Dashboard() {
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
+
+    const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
+        if (remember && profile) {
+            await Preferences.set({ key: 'user_profile', value: profile });
+            await Preferences.set({ key: 'remember_profile', value: 'true' });
+        } else {
+            await Preferences.remove({ key: 'user_profile' });
+            await Preferences.set({ key: 'remember_profile', value: 'false' });
+        }
+    };
 
     const openSaleForm = (sale: CarSale | null, returnView = view) => {
         setEditingSale(sale);
@@ -449,7 +494,7 @@ export default function Dashboard() {
     const handlePasswordSubmit = () => {
         if (passwordInput === 'Robertoo1396$') {
             setUserProfile(pendingProfile);
-            Preferences.set({ key: 'user_profile', value: pendingProfile });
+            persistUserProfile(pendingProfile);
             setShowProfileMenu(false);
             performAutoSync(supabaseUrl, supabaseKey, pendingProfile);
             setShowPasswordModal(false);
@@ -495,7 +540,17 @@ export default function Dashboard() {
     };
 
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
-    const inlineNumericFields = new Set<keyof CarSale>(['year', 'km', 'costToBuy', 'soldPrice']);
+    const inlineNumericFields = new Set<keyof CarSale>([
+        'year',
+        'km',
+        'costToBuy',
+        'soldPrice',
+        'amountPaidBank',
+        'amountPaidCash',
+        'deposit',
+        'servicesCost',
+        'amountPaidToKorea'
+    ]);
 
     const handleInlineUpdate = async (id: string, field: keyof CarSale, value: string | number) => {
         const currentSales = salesRef.current;
@@ -665,6 +720,8 @@ export default function Dashboard() {
     const handleLogout = async () => {
         setUserProfile('');
         await Preferences.remove({ key: 'user_profile' });
+        await Preferences.remove({ key: 'remember_profile' });
+        setRememberProfile(false);
         setShowProfileMenu(false);
     };
 
@@ -675,7 +732,7 @@ export default function Dashboard() {
         setUserProfile(newProfileName.trim());
         setNewProfileName('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        await Preferences.set({ key: 'user_profile', value: newProfileName.trim() });
+        await persistUserProfile(newProfileName.trim());
         syncProfilesToCloud(updated);
     };
 
@@ -686,7 +743,7 @@ export default function Dashboard() {
             setAvailableProfiles(updated);
             setUserProfile(name.trim());
             await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-            await Preferences.set({ key: 'user_profile', value: name.trim() });
+            await persistUserProfile(name.trim());
             setShowProfileMenu(false);
             syncProfilesToCloud(updated);
         }
@@ -706,7 +763,7 @@ export default function Dashboard() {
         setAvailableProfiles(updated);
         if (userProfile === oldName) {
             setUserProfile(newName);
-            await Preferences.set({ key: 'user_profile', value: newName });
+            await persistUserProfile(newName);
         }
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
         syncProfilesToCloud(updated);
@@ -757,10 +814,16 @@ export default function Dashboard() {
                 const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
                 if (apiKeyVal) setApiKey(apiKeyVal);
 
+                const { value: rememberVal } = await Preferences.get({ key: 'remember_profile' });
+                const shouldRemember = rememberVal === 'true';
+                setRememberProfile(shouldRemember);
+
                 let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
-                if (storedProfile) {
+                if (storedProfile && shouldRemember) {
                     setUserProfile(storedProfile);
                     setView('landing');
+                } else if (storedProfile && !shouldRemember) {
+                    await Preferences.remove({ key: 'user_profile' });
                 }
 
                 let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
@@ -975,7 +1038,7 @@ export default function Dashboard() {
         await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
         await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
         await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
-        await Preferences.set({ key: 'user_profile', value: (userProfile || '').trim() });
+        await persistUserProfile((userProfile || '').trim());
         alert('Settings Saved!');
     };
 
@@ -1070,7 +1133,10 @@ export default function Dashboard() {
                                         if (data.settings.apiKey) { setApiKey(data.settings.apiKey); await Preferences.set({ key: 'openai_api_key', value: data.settings.apiKey }); }
                                         if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
                                         if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
-                                        if (data.settings.userProfile) { setUserProfile(data.settings.userProfile); await Preferences.set({ key: 'user_profile', value: data.settings.userProfile }); }
+                                        if (data.settings.userProfile) {
+                                            setUserProfile(data.settings.userProfile);
+                                            await persistUserProfile(data.settings.userProfile);
+                                        }
                                     }
 
                                     setImportStatus('Full Backup Restored Successfully!');
@@ -1268,21 +1334,26 @@ export default function Dashboard() {
     if (!userProfile) {
         return <ProfileSelector
             profiles={availableProfiles}
-            onSelect={(p) => {
+            onSelect={(p, remember) => {
                 setUserProfile(p);
                 setView('landing');
+                setRememberProfile(remember);
+                persistUserProfile(p, remember);
             }}
-            onAdd={(name) => {
+            onAdd={(name, remember) => {
                 const updated = [...availableProfiles, name];
                 setAvailableProfiles(updated);
                 Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
                 setUserProfile(name);
+                setRememberProfile(remember);
+                persistUserProfile(name, remember);
                 syncProfilesToCloud(updated);
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
             avatars={profileAvatars}
             onEditAvatar={handleEditAvatar}
+            rememberDefault={rememberProfile}
         />;
     }
 
@@ -1409,7 +1480,7 @@ export default function Dashboard() {
                                                 }
                                                 setShowProfileMenu(false);
                                                 startTransition(() => { setUserProfile(p); });
-                                                Preferences.set({ key: 'user_profile', value: p });
+                                                persistUserProfile(p);
                                                 setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                             }}
                                                 className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
@@ -1711,7 +1782,7 @@ export default function Dashboard() {
                                         <div className="flex gap-2">
                                             <select value={userProfile} onChange={e => {
                                                 setUserProfile(e.target.value);
-                                                Preferences.set({ key: 'user_profile', value: e.target.value });
+                                                persistUserProfile(e.target.value);
                                             }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
                                                 <option value="">Select Profile</option>
                                                 {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
