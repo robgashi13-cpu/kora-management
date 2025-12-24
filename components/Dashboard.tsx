@@ -249,7 +249,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 17. Sold By */}
             <div className="px-1 xl:px-2 h-full flex items-center justify-center text-xs border-r border-slate-100 bg-white">
-                {isAdmin ? (
+                {canEdit ? (
                     <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
                 ) : (
                     <span className="text-slate-500">{s.soldBy}</span>
