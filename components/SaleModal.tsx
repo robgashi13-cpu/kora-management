@@ -318,7 +318,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     <Section title="Documents" description="Attach receipts and invoices for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
                             <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
@@ -392,48 +392,50 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-7 shadow-sm space-y-7 transition-shadow hover:shadow-md">
-        <div className="space-y-2">
-            <h3 className="text-lg font-semibold uppercase tracking-wider text-slate-800">{title}</h3>
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm space-y-6 transition-shadow hover:shadow-md">
+        <div className="space-y-1.5 border-b border-slate-100 pb-4">
+            <h3 className="text-base font-bold text-slate-900 tracking-wide">{title}</h3>
             {description && <p className="text-sm text-slate-500 leading-relaxed">{description}</p>}
         </div>
-        {children}
+        <div className="space-y-5">
+            {children}
+        </div>
     </div>
 );
 
 const Input = ({ label, className = "", ...props }: any) => (
-    <div className={`flex flex-col gap-2 w-full ${className}`}>
-        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
+    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
+        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <input
-            className="bg-slate-50 border border-slate-300 hover:border-blue-300 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] shadow-sm"
+            className="bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
             {...props}
         />
     </div>
 );
 
 const Select = ({ label, children, ...props }: any) => (
-    <div className="flex flex-col gap-2 text-left w-full">
-        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
+    <div className="flex flex-col gap-1.5 text-left w-full">
+        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-slate-50 border border-slate-300 hover:border-blue-300 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all w-full h-[52px] shadow-sm"
+                className="appearance-none bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all w-full h-[50px] shadow-sm cursor-pointer"
                 {...props}
             >
                 {children}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                <ChevronDown className="h-4 w-4" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                <ChevronDown className="h-5 w-5" />
             </div>
         </div>
     </div>
 );
 
 const DateInput = ({ label, ...props }: any) => (
-    <div className="flex flex-col gap-2 w-full">
-        <label className="text-sm text-slate-700 font-semibold ml-1 tracking-wide">{label}</label>
+    <div className="flex flex-col gap-1.5 w-full">
+        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <input
             type="date"
-            className="bg-slate-50 border border-slate-300 hover:border-blue-300 rounded-xl px-4 text-[15px] text-slate-900 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] shadow-sm"
+            className="bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm cursor-pointer"
             {...props}
         />
     </div>
