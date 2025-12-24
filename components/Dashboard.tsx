@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
 import { CarSale, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -289,6 +289,8 @@ export default function Dashboard() {
     const canViewPrices = userProfile === 'Admin';
     const isAdmin = userProfile === 'Admin';
 
+    const [sortBy, setSortBy] = useState<string>('createdAt');
+
     useEffect(() => {
         if (!isAdmin && sortBy === 'koreaBalance') {
             setSortBy('createdAt');
@@ -305,7 +307,6 @@ export default function Dashboard() {
     const [contractType, setContractType] = useState<'deposit' | 'full'>('full');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState<string>('createdAt');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [apiKey, setApiKey] = useState('');
     const [importStatus, setImportStatus] = useState<string>('');
