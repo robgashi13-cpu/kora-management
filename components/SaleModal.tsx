@@ -231,7 +231,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="p-4 sm:p-6 lg:p-8 pb-10 lg:pb-12 flex flex-col gap-7 md:gap-9"
+                    className="px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 flex flex-col gap-7 md:gap-9"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
@@ -454,7 +454,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-slate-100 bg-white/90 p-6 md:p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-6">
+    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-4 md:p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-6">
         <div className="space-y-1.5 border-b border-slate-100 pb-4">
             <h3 className="text-base font-bold text-slate-900 tracking-wide">{title}</h3>
             {description && <p className="text-sm text-slate-500 leading-relaxed">{description}</p>}
