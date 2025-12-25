@@ -2001,7 +2001,7 @@ export default function Dashboard() {
                             >
                                 <X className="w-5 h-5 mx-auto" />
                             </button>
-                            <div className="flex-1 overflow-hidden flex flex-col px-4 md:px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                            <div className="flex-1 overflow-hidden flex flex-col px-2 md:px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
                                 <div className="flex items-center justify-between mb-4 md:mb-6">
                                     <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
                                         <ArrowRight className="w-5 h-5 rotate-180" />
