@@ -106,14 +106,14 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     if (isAdding) {
         return (
             <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-md text-center shadow-xl">
+                <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
                     <h2 className="text-2xl font-bold mb-6 text-slate-900">Add Profile</h2>
                     <input
                         autoFocus
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Profile Name"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-700"
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700"
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                     />
                     <div className="flex gap-4">
@@ -126,7 +126,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     }
 
     return (
-        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto">
             <div className="min-h-full flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight text-slate-900">Who is working?</h1>
 
@@ -143,14 +143,14 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onMouseUp={handleTouchEnd}
                             onMouseLeave={handleTouchEnd}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer">
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center text-5xl font-bold shadow-lg border-2 transition-colors overflow-hidden ${(p === 'Admin' || p === 'Robert') ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-200 group-hover:border-red-300'
-                                : 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 group-hover:border-blue-300'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${(p === 'Admin' || p === 'Robert') ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
+                                : 'bg-white border-slate-200 group-hover:border-slate-300'
                                 }`}>
                                 {avatars[p] ? <img src={avatars[p]} alt={p} className="w-full h-full object-cover" /> :
                                     (p === 'Admin' || p === 'Robert') ? <Lock className="w-12 h-12 text-red-500" /> :
                                         <span className="text-slate-700">{p[0].toUpperCase()}</span>}
                             </div>
-                            <span className="text-xl text-slate-500 group-hover:text-slate-900 transition-colors">{p}</span>
+                            <span className="text-xl text-slate-600 group-hover:text-slate-900 transition-colors">{p}</span>
                             <div className={`absolute top-2 right-2 flex gap-2 transition-all ${isManaging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                 <button
                                     onClick={(e) => {
@@ -158,7 +158,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                         setEditingProfile(p);
                                         setEditName(p);
                                     }}
-                                    className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 hover:text-slate-700"
+                                    className="p-2 bg-white border border-slate-200 hover:border-slate-300 rounded-full text-slate-500 hover:text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
                                     title="Edit Profile"
                                 >
                                     <Pencil className="w-4 h-4" />
@@ -169,7 +169,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                             e.stopPropagation();
                                             if (confirm(`Delete profile "${p}"?`)) onDelete(p);
                                         }}
-                                        className="p-2 bg-slate-100 hover:bg-red-100 rounded-full text-slate-500 hover:text-red-500"
+                                        className="p-2 bg-white border border-slate-200 hover:border-red-200 rounded-full text-slate-500 hover:text-red-500 shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
                                         title="Delete Profile"
                                     >
                                         <Trash2 className="w-4 h-4" />
@@ -186,7 +186,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onClick={() => setIsAdding(true)}
                             className="group flex flex-col items-center gap-4"
                         >
-                            <div className="w-28 h-28 md:w-36 md:h-36 rounded-xl flex items-center justify-center border-2 border-slate-200 hover:bg-slate-50 transition-colors bg-white">
+                            <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center border border-slate-200 hover:border-slate-300 transition-colors bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
                                 <Plus className="w-12 h-12 text-slate-400 group-hover:text-slate-700" />
                             </div>
                             <span className="text-xl text-slate-500 group-hover:text-slate-900 transition-colors">Add Profile</span>
@@ -200,7 +200,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     </div>
                 </div>
 
-                <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm text-slate-600 shadow-sm">
+                    <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-100 bg-white/80 px-5 py-2.5 text-sm text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                     <input
                         id="remember-profile"
                         type="checkbox"
@@ -216,7 +216,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 {/* Admin Password Modal */}
                 {showPasswordModal && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
-                        <div className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-sm text-center relative shadow-xl">
+                        <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
                             <button onClick={() => setShowPasswordModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter Admin Password</h2>
 
@@ -226,7 +226,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     autoFocus
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-700 pr-12"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700 pr-12"
                                     onKeyDown={e => e.key === 'Enter' && confirmPassword()}
                                 />
                                 <button
@@ -256,13 +256,13 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
 
                 {editingProfile && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center p-4">
-                        <div className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-md text-center relative shadow-xl">
+                        <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
                             <button onClick={() => setEditingProfile(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Edit Profile</h2>
 
                             {/* Avatar Upload */}
                             <div className="relative w-24 h-24 mx-auto mb-6 group">
-                                <div className="w-full h-full rounded-full overflow-hidden border-2 border-slate-200 bg-slate-50 flex items-center justify-center">
+                                <div className="w-full h-full rounded-full overflow-hidden border border-slate-200 bg-white flex items-center justify-center shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
                                     {avatars[editingProfile] ? (
                                         <img src={avatars[editingProfile]} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
@@ -296,7 +296,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 value={editName}
                                 onChange={e => setEditName(e.target.value)}
                                 placeholder="Profile Name"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 outline-none text-slate-700"
+                                className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700"
                                 onKeyDown={e => e.key === 'Enter' && handleEditSave()}
                             />
 
