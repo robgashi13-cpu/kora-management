@@ -76,6 +76,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     };
 
     const today = new Date().toLocaleDateString('en-GB');
+    const shippingDate = sale.shippingDate ? new Date(sale.shippingDate).toLocaleDateString('en-GB') : "________________";
     const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
     const fullSellerName = "RG SH.P.K";
     const contractPreviewTitle = type === 'deposit'
@@ -219,7 +220,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 {type === 'full_marreveshje' && (
                                     <div className="max-w-2xl mx-auto">
                                         <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>MARRËVESHJE</h1>
+                                        <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
                                         <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
 
                                         <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
@@ -267,9 +268,17 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Nisja dhe Dorëzimi i Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>AUTOMJETI DORËZOHET NË DATËN: 20.12.2025</li>
+                                                    <li>Automjeti do të niset nga Koreja e Jugut më datë {shippingDate}.</li>
+                                                    <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
                                                 </ul>
-                                            </li>                                            <li>
+                                            </li>
+                                            <li>
+                                                <strong>Vonesa në Dorëzim</strong>
+                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {(sale.soldPrice || 0).toLocaleString()} brenda 7 ditëve kalendarike.</li>
+                                                </ul>
+                                            </li>
+                                            <li>
                                                 <strong>Gjendja Teknike e Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
                                                     <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
@@ -371,7 +380,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         <div className="footer mt-16 pt-8 flex justify-between">
                                             <div className="signature-box w-1/3 text-left">
-                                                <div className="mb-8 font-bold">Shitësi: {fullSellerName}</div>
+                                                <div className="mb-8 font-bold">Ndërmjetësuesi: {fullSellerName}</div>
                                                 <div className="border-b border-black w-full h-1"></div>
                                             </div>
                                             <div className="signature-box w-1/3 text-right">
