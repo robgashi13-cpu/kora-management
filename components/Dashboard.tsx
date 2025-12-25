@@ -145,15 +145,13 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 ) : s.shippingName}
             </div>
 
-            {/* 9. Cost (Admin OR own sale) */}
-            {(isAdmin || s.soldBy === userProfile) ? (
+            {/* 9. Cost (Admin Only) */}
+            {isAdmin && (
                 <div className="px-1 xl:px-2 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white">
                     {canEdit ? (
                         <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-500" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
                 </div>
-            ) : (
-                <div className="px-1 xl:p-2 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
@@ -292,7 +290,7 @@ export default function Dashboard() {
     const [sortBy, setSortBy] = useState<string>('createdAt');
 
     useEffect(() => {
-        if (!isAdmin && sortBy === 'koreaBalance') {
+        if (!isAdmin && (sortBy === 'koreaBalance' || sortBy === 'costToBuy')) {
             setSortBy('createdAt');
         }
     }, [isAdmin, sortBy]);
@@ -1438,7 +1436,7 @@ export default function Dashboard() {
                 </div>
             )}
 
-            <header className="bg-white border-b border-slate-200 px-3 py-2 md:px-4 md:py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50 shadow-sm">
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-3 py-2 md:px-4 md:py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex flex-col gap-2 md:gap-3">
                     <div className="flex justify-between items-center gap-2">
                         <div className="flex items-center gap-2 md:gap-3">
@@ -1509,7 +1507,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="flex md:hidden bg-slate-100 p-1 rounded-xl gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                    <div className="flex md:hidden bg-white/80 border border-slate-100 p-1 rounded-full gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                         {[
                             { key: 'dashboard', label: 'Home' },
                             { key: 'invoices', label: 'Invoice' },
@@ -1518,7 +1516,7 @@ export default function Dashboard() {
                             <button
                                 key={tab.key}
                                 onClick={() => setView(tab.key)}
-                                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all whitespace-nowrap ${view === tab.key
+                                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap ${view === tab.key
                                     ? 'bg-white text-slate-800 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
@@ -1531,13 +1529,13 @@ export default function Dashboard() {
                     <div className="flex gap-2 md:gap-3 justify-between items-center">
                         <div className="relative group flex-1 md:flex-none">
                             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input placeholder="Search cars..." className="bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm w-full md:w-80 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 text-slate-700 placeholder:text-slate-400 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                            <input placeholder="Search cars..." className="bg-white border border-slate-200 rounded-full pl-10 pr-4 py-2 text-sm w-full md:w-80 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 text-slate-700 placeholder:text-slate-400 transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                         </div>
                         <div className="flex gap-2 items-center">
                             <div className="relative">
                                 <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                 <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs md:text-sm rounded-xl pl-8 pr-4 py-2 outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all md:py-2.5">
+                                    className="bg-white border border-slate-200 text-slate-700 text-xs md:text-sm rounded-full pl-8 pr-4 py-2 outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all md:py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                                     <option value="createdAt">Date Added</option>
                                     <option value="nameAlphabetic">Name (A-Z)</option>
                                     <option value="dueBalance">Balance (Client)</option>
@@ -1546,12 +1544,12 @@ export default function Dashboard() {
                                 </select>
                             </div>
                             <select value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)}
-                                className="hidden md:block bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 appearance-none cursor-pointer transition-all">
+                                className="hidden md:block bg-white border border-slate-200 text-slate-700 text-sm rounded-full px-3 py-2.5 outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 appearance-none cursor-pointer transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                                 <option value="none">No Grouping</option>
                                 <option value="status">Group by Status</option>
                                 <option value="brand">Group by Brand</option>
                             </select>
-                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
+                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
                         </div>
@@ -1559,7 +1557,7 @@ export default function Dashboard() {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden bg-white md:bg-slate-50 p-3 md:p-6 flex flex-col relative">
+            <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
                 {view !== 'sale_form' && (
                     <>
 
@@ -1575,7 +1573,7 @@ export default function Dashboard() {
                                                 setView('dashboard');
                                                 setActiveCategory(cat as any);
                                             }}
-                                            className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-lg font-bold text-[11px] md:text-xs tracking-wide transition-all whitespace-nowrap ${isActive
+                                            className={`px-3 py-1 md:px-3.5 md:py-1.5 rounded-full font-semibold text-[11px] md:text-xs tracking-wide transition-all whitespace-nowrap ${isActive
                                                 ? 'bg-black text-white shadow-sm'
                                                 : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300'
                                                 }`}
@@ -1589,12 +1587,12 @@ export default function Dashboard() {
 
                         {view === 'dashboard' ? (<>
 
-                            <div className="border border-slate-200 rounded-xl bg-white shadow-sm relative hidden md:block overflow-auto flex-1">
+                            <div className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto flex-1">
                                 <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                     style={{
                                         gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
                                     }}>
-                                    <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                    <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                         <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
@@ -1619,9 +1617,11 @@ export default function Dashboard() {
                                         <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
                                             Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
-                                            Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                                        </div>
+                                        {isAdmin && (
+                                            <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                                Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                            </div>
+                                        )}
                                         <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
@@ -1651,7 +1651,7 @@ export default function Dashboard() {
                                             });
                                             return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                         });
-                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17', display: 'grid' }}>
+                                    }} className="grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}>
                                         {filteredSales.map(s => (
                                             <SortableSaleItem
                                                 key={s.id}
@@ -1675,7 +1675,7 @@ export default function Dashboard() {
                                     </Reorder.Group>
 
                                     {/* Footer Totals */}
-                                    <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 17' }}>
+                                    <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                         <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
                                         {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
                                         <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
@@ -1779,7 +1779,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         </>) : view === 'settings' ? (
-                            <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
                                 <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
                                 <div className="space-y-3 md:space-y-4">
                                     <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
@@ -1824,7 +1824,7 @@ export default function Dashboard() {
                                         {filteredSales.map(s => (
                                             <div
                                                 key={s.id}
-                                                className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 hover:border-slate-300 transition-all cursor-pointer group shadow-sm"
+                                                className="bg-white border border-slate-100 rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
                                                 onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
                                             >
                                                 <div className="flex justify-between items-start mb-2 md:mb-3">

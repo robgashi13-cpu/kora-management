@@ -264,8 +264,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
+                            {isAdmin && (
+                                <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
+                            )}
                             <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
                         </div>
 
@@ -392,7 +394,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm space-y-6 transition-shadow hover:shadow-md">
+    <div className="rounded-2xl border border-slate-100 bg-white/90 p-6 md:p-8 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-6">
         <div className="space-y-1.5 border-b border-slate-100 pb-4">
             <h3 className="text-base font-bold text-slate-900 tracking-wide">{title}</h3>
             {description && <p className="text-sm text-slate-500 leading-relaxed">{description}</p>}
@@ -407,7 +409,7 @@ const Input = ({ label, className = "", ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
         <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <input
-            className="bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm"
+            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px]"
             {...props}
         />
     </div>
@@ -418,7 +420,7 @@ const Select = ({ label, children, ...props }: any) => (
         <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all w-full h-[50px] shadow-sm cursor-pointer"
+                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all w-full h-[50px] cursor-pointer"
                 {...props}
             >
                 {children}
@@ -435,7 +437,7 @@ const DateInput = ({ label, ...props }: any) => (
         <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
         <input
             type="date"
-            className="bg-white border-2 border-slate-200 hover:border-blue-300 focus:border-blue-500 rounded-xl px-4 text-base text-slate-900 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] shadow-sm cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] cursor-pointer"
             {...props}
         />
     </div>
