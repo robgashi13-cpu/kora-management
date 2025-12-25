@@ -371,6 +371,18 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             </li>
                                         </ol>
 
+                                        <div className="mt-10 pt-6 flex justify-between">
+                                            <div className="w-1/2 text-left pr-6">
+                                                <div className="font-bold mb-2">RG SH.P.K.</div>
+                                                <div className="mb-10">Owner: Robert Gashi</div>
+                                                <div className="border-b border-black w-4/5"></div>
+                                            </div>
+                                            <div className="w-1/2 text-right pl-6">
+                                                <div className="font-bold mb-2">Blerësi</div>
+                                                <div className="mb-10">{sale.buyerName}</div>
+                                                <div className="border-b border-black w-4/5 ml-auto"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
