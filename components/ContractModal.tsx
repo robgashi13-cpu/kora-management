@@ -78,6 +78,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const today = new Date().toLocaleDateString('en-GB');
     const shippingDate = sale.shippingDate ? new Date(sale.shippingDate).toLocaleDateString('en-GB') : "________________";
     const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
+    const sellerBusinessId = "NR.Biznesit 810062092";
     const fullSellerName = "RG SH.P.K";
     const contractPreviewTitle = type === 'deposit'
         ? 'Deposit Agreement Preview'
@@ -229,7 +230,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
                                             <ul className="list-disc ml-5 space-y-2">
                                                 <li>
-                                                    <strong>{fullSellerName}</strong>, me numër personal {seller.id}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                                    <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
                                                     <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
@@ -455,105 +456,6 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             </li>
                                         </ol>
 
-                                        <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 2 ---</div>
-                                        <div className="page-break"></div>
-
-                                        <h3 className="font-bold text-sm mb-4 text-center border-b-2 border-black pb-2">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h3>
-
-                                        <div className="mb-6">
-                                            <h4 className="font-bold mb-2 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h4>
-                                            <p className="mb-2 italic">Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal dhe përfshin pjesët jo të konsumueshme si më poshtë:</p>
-                                            <ul className="list-disc ml-5 space-y-1">
-                                                <li>Motori (blloku, koka e cilindrit, pistonët, boshtet)</li>
-                                                <li>Transmisioni (manual ose automatik, përjashtuar clutch dhe flywheel)</li>
-                                                <li>Diferenciali dhe boshtet e fuqisë</li>
-                                                <li>ECU, alternatori, starteri</li>
-                                                <li>Kompresori i AC, kondensatori, avulluesi</li>
-                                                <li>Airbagët, rripat e sigurimit</li>
-                                                <li>Struktura e shasisë</li>
-                                            </ul>
-                                        </div>
-
-                                        <div className="mb-6">
-                                            <h4 className="font-bold mb-2 underline">Pjesët Konsumueshme të Përjashtuara nga Garancia</h4>
-                                            <p className="mb-2 italic">Të gjitha pjesët e mëposhtme konsiderohen konsumueshme dhe përjashtohen nga garancia:</p>
-
-                                            <ul className="list-disc ml-5 space-y-4">
-                                                <li>
-                                                    <strong>Debrisi dhe pjesët përreth:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Disku i debrisit</li>
-                                                        <li>Pllaka e presionit</li>
-                                                        <li>Rulllia e lirimit (release bearing)</li>
-                                                        <li>Flywheel (rrota e masës, DMF)</li>
-                                                        <li>Damper pulley / torsional dampers</li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <strong>Sistemi i Frenimit:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Diskat e frenave, blloget (pads), këpucët e frenimit</li>
-                                                        <li>Lëngu i frenave</li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <strong>Filtrat & Lëngjet:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Filtri i vajit, ajrit, kabinës, karburantit</li>
-                                                        <li>Vaji i motorit, antifrizi, vaji i transmisionit</li>
-                                                        <li>Lëngu i larjes së xhamave</li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <strong>Suspensioni & Drejtimi:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Amortizatorët (vaj, vula, konsumim)</li>
-                                                        <li>Bushingët, nyjet e topit, lidhëset stabilizuese</li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <strong>Rrotat & Energjia:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Velgiat (fellnet), gomat, balancimi, rregullimi i dreitimit</li>
-                                                        <li>Bateria 12V, llambat, siguresat</li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <strong>Të tjera Konsumueshme:</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                        <li>Eshirëset e xhamave, spërkatësit</li>
-                                                        <li>Spark plugs, glow plugs</li>
-                                                        <li>Rripat (serpentine, timing sipas intervalit të prodhuesit)</li>
-                                                        <li>Tubat gome, vulat, garniturat</li>
-                                                    </ul>
-                                                </li>
-                                            </ul>
-                                        </div>
-
-                                        <div className="visual-break" style={{ borderBottom: '1px dashed #ccc', margin: '2rem 0', textAlign: 'center', color: '#888', fontSize: '12px' }}>--- PAGE 3 ---</div>
-                                        <div className="page-break"></div>
-
-                                        <h3 className="font-bold text-sm mb-4 underline">Kushtet e Garancisë</h3>
-                                        <ul className="list-disc ml-5 space-y-2 mb-8">
-                                            <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
-                                            <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
-                                            <li>Mirëmbajtja e rregullt është përgjegjësi e klientit.</li>
-                                        </ul>
-
-                                        <p className="font-bold text-center mb-12 uppercase">
-                                            Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
-                                        </p>
-
-                                        <div className="footer mt-16 pt-8 flex justify-between">
-                                            <div className="signature-box w-1/3 text-left">
-                                                <div className="mb-8 font-bold">Shitësi: {fullSellerName}</div>
-                                                <div className="border-b border-black w-full h-1"></div>
-                                            </div>
-                                            <div className="signature-box w-1/3 text-right">
-                                                <div className="mb-8 font-bold">Blerësi: {sale.buyerName}</div>
-                                                <div className="border-b border-black w-full h-1"></div>
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
                             </div>
