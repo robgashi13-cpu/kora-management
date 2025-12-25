@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
-import { CarSale, SaleStatus, Attachment } from '@/app/types';
+import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 
 interface Props {
@@ -38,7 +38,7 @@ import ContractModal from './ContractModal';
 export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [contractType, setContractType] = useState<'deposit' | 'full' | null>(null);
+    const [contractType, setContractType] = useState<ContractType | null>(null);
 
     useEffect(() => {
         if (existingSale) {
@@ -328,7 +328,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     <Section title="Contracts" description="Generate printable contracts using the sale details.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
                             <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-blue-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
                                 <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                                     <FileText className="w-8 h-8" />
@@ -339,13 +339,23 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 </div>
                             </button>
 
-                            <button type="button" onClick={() => setContractType('full')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
+                            <button type="button" onClick={() => setContractType('full_marreveshje')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
                                 <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
                                     <FileText className="w-8 h-8" />
                                 </div>
                                 <div className="text-center">
                                     <div className="font-bold text-lg text-slate-900">Full Contract</div>
-                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje Interne</div>
+                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje</div>
+                                </div>
+                            </button>
+
+                            <button type="button" onClick={() => setContractType('full_shitblerje')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
+                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
+                                    <FileText className="w-8 h-8" />
+                                </div>
+                                <div className="text-center">
+                                    <div className="font-bold text-lg text-slate-900">Full Contract</div>
+                                    <div className="text-xs text-slate-500 mt-1">Shitblerje</div>
                                 </div>
                             </button>
                         </div>

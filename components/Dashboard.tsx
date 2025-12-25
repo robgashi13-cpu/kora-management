@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
-import { CarSale, SaleStatus } from '@/app/types';
+import { CarSale, ContractType, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -302,7 +302,7 @@ export default function Dashboard() {
     const [customGroups, setCustomGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
     const [contractSale, setContractSale] = useState<CarSale | null>(null);
-    const [contractType, setContractType] = useState<'deposit' | 'full'>('full');
+    const [contractType, setContractType] = useState<ContractType>('full_shitblerje');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -1249,7 +1249,8 @@ export default function Dashboard() {
         // Filter out system config rows
         if (s.id === 'config_profile_avatars') return false;
 
-        // Allow all cars to be seen, masked info handled in render
+        // Restrict visibility for non-admin users to their own sales
+        if (!isAdmin && s.soldBy !== userProfile) return false;
 
 
         // Category Filter
@@ -1869,7 +1870,7 @@ export default function Dashboard() {
                                                     <div className="flex justify-between items-center mb-2 md:mb-3">
                                                         <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
                                                     </div>
-                                                    <div className="grid grid-cols-3 gap-1.5 md:gap-2">
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
@@ -1878,11 +1879,18 @@ export default function Dashboard() {
                                                             View Deposit
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full'); }}
+                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full_marreveshje'); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-blue-500" />
-                                                            View Contract
+                                                            Marrëveshje
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full_shitblerje'); }}
+                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-indigo-500" />
+                                                            Shitblerje
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
