@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
+import InvoiceModal from './InvoiceModal';
 
 interface Props {
     isOpen: boolean;
@@ -39,6 +40,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
+    const [showDocumentMenu, setShowDocumentMenu] = useState(false);
+    const [showInvoice, setShowInvoice] = useState(false);
 
     useEffect(() => {
         if (existingSale) {
@@ -211,7 +214,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
+            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-full max-w-6xl rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
         >
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
@@ -231,11 +234,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     className="p-6 md:p-8 pb-12 md:pb-14 flex flex-col gap-8 md:gap-10"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
                             <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
                                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                             </Select>
@@ -243,28 +244,28 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <option value="">Select</option>
                                 {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
                             </Select>
-                            <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                            <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
                             <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
                             <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
                         </div>
                     </Section>
 
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
+                            <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
                         </div>
-                        <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
                             <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
                         </div>
                     </Section>
 
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
-                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
                             {isAdmin && (
                                 <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                             )}
@@ -272,29 +273,29 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         </div>
 
                         {isAdmin && (
-                            <div className="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                            <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
                                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Supplier (Korea)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                                     <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
                                     <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
                             </div>
                         )}
 
-                        <div className="space-y-5 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                        <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
                             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Client Payments</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
                                 <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                 <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
                                 <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
                                 <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
-                                <div className="col-span-1 sm:col-span-2">
+                                <div className="col-span-1 sm:col-span-2 xl:col-span-3">
                                     <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
                                 <option value="New">New</option>
                                 <option value="In Progress">In Progress</option>
@@ -319,44 +320,27 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         </div>
                     </Section>
 
-                    <Section title="Documents" description="Attach receipts and invoices for this sale.">
-                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
+                    <Section title="Attachments" description="Attach receipts and invoices for this sale.">
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
                             <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
 
-                    <Section title="Contracts" description="Generate printable contracts using the sale details.">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
-                            <button type="button" onClick={() => setContractType('deposit')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-blue-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                                    <FileText className="w-8 h-8" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-bold text-lg text-slate-900">Deposit Agreement</div>
-                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje për Kapar</div>
-                                </div>
-                            </button>
-
-                            <button type="button" onClick={() => setContractType('full_marreveshje')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-purple-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
-                                <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
-                                    <FileText className="w-8 h-8" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-bold text-lg text-slate-900">Full Contract</div>
-                                    <div className="text-xs text-slate-500 mt-1">Marrëveshje</div>
-                                </div>
-                            </button>
-
-                            <button type="button" onClick={() => setContractType('full_shitblerje')} className="flex flex-col items-center gap-4 p-6 bg-white border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 rounded-2xl transition-all group shadow-sm">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                                    <FileText className="w-8 h-8" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-bold text-lg text-slate-900">Full Contract</div>
-                                    <div className="text-xs text-slate-500 mt-1">Shitblerje</div>
-                                </div>
+                    <Section title="Documents" description="Generate contracts and invoices from this sale.">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div>
+                                <div className="text-sm font-semibold text-slate-700">Documents</div>
+                                <p className="text-sm text-slate-500">Deposit, Shitblerje, Marrëveshje, or Invoice.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowDocumentMenu(true)}
+                                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all w-full sm:w-auto justify-center"
+                            >
+                                <FileText className="w-4 h-4" />
+                                Documents
                             </button>
                         </div>
                     </Section>
@@ -380,11 +364,75 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         </div>
     );
 
+    const documentMenu = showDocumentMenu && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDocumentMenu(false)}>
+            <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 className="text-base font-bold text-slate-900">Which document do you want?</h4>
+                        <p className="text-sm text-slate-500">Select a document to generate.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowDocumentMenu(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                    <button
+                        type="button"
+                        onClick={() => { setContractType('deposit'); setShowDocumentMenu(false); }}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-blue-300 hover:bg-blue-50/40 transition"
+                    >
+                        <div>
+                            <div className="text-sm font-semibold text-slate-900">Deposit Contract</div>
+                            <div className="text-xs text-slate-500">Marrëveshje për Kapar</div>
+                        </div>
+                        <FileText className="w-4 h-4 text-blue-500" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setContractType('full_shitblerje'); setShowDocumentMenu(false); }}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/40 transition"
+                    >
+                        <div>
+                            <div className="text-sm font-semibold text-slate-900">Shitblerje Contract</div>
+                            <div className="text-xs text-slate-500">Full Contract</div>
+                        </div>
+                        <FileText className="w-4 h-4 text-indigo-500" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setContractType('full_marreveshje'); setShowDocumentMenu(false); }}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-purple-300 hover:bg-purple-50/40 transition"
+                    >
+                        <div>
+                            <div className="text-sm font-semibold text-slate-900">Marrëveshje Contract</div>
+                            <div className="text-xs text-slate-500">Full Contract</div>
+                        </div>
+                        <FileText className="w-4 h-4 text-purple-500" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setShowInvoice(true); setShowDocumentMenu(false); }}
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
+                    >
+                        <div>
+                            <div className="text-sm font-semibold text-slate-900">Invoice</div>
+                            <div className="text-xs text-slate-500">Preview & download invoice</div>
+                        </div>
+                        <FileText className="w-4 h-4 text-emerald-500" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     if (inline) {
         return (
             <div className="w-full h-full relative p-0 overflow-hidden flex flex-col">
                 {previewOverlay}
                 {Content}
+                {documentMenu}
+                {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} />}
                 {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
             </div>
         );
@@ -398,6 +446,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             <div className="absolute inset-0 bg-slate-900/60" />
             {previewOverlay}
             {Content}
+            {documentMenu}
+            {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} />}
             {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
         </div>
     );
