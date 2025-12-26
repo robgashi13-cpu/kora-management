@@ -215,6 +215,8 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                                     <div className="font-bold mb-1" style={{ color: '#111827' }}>Raiffeisen Bank</div>
                                     <div className="font-mono bg-white p-2 rounded border inline-block" style={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb' }}>1501080002435404</div>
                                     <div className="mt-2 text-xs" style={{ color: '#6b7280' }}>Account Holder: RG SH.P.K.</div>
+                                    <div className="mt-3 text-xs uppercase tracking-wide" style={{ color: '#9ca3af' }}>Paid in Bank</div>
+                                    <div className="font-bold text-sm" style={{ color: '#111827' }}>€{(sale.amountPaidBank || 0).toLocaleString()}</div>
                                 </div>
                                 <div className="text-right">
                                     <div className="font-bold mb-1" style={{ color: '#111827' }}>Contact</div>

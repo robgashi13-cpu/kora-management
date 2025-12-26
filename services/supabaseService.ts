@@ -72,6 +72,7 @@ const fromRemote = (r: any): CarSale => ({
     amountPaidToKorea: r.amount_paid_to_korea || r.attachments?.amountPaidToKorea,
     paidDateToKorea: r.paid_date_to_korea || r.attachments?.paidDateToKorea,
     paidDateFromClient: r.paid_date_from_client || r.attachments?.paidDateFromClient,
+    isPaid: r.attachments?.isPaid,
     paymentMethod: (r.payment_method || r.attachments?.paymentMethod) as any,
     status: (r.status || r.attachments?.status) as any,
     sortOrder: r.sort_order || r.attachments?.sortOrder,

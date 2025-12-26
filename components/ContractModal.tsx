@@ -212,6 +212,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         : type === 'full_marreveshje'
             ? 'Full Contract Preview - Marrëveshje'
             : 'Full Contract Preview - Shitblerje';
+    const isDeposit = type === 'deposit';
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>
@@ -256,26 +257,26 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                         <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto">
                             <div
                                 ref={printRef}
-                                className="bg-white text-black w-[21cm] min-h-[29.7cm] p-[2.5cm] shadow-2xl"
-                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '9pt', lineHeight: 1.5 }}
+                                className={`bg-white text-black w-[21cm] min-h-[29.7cm] shadow-2xl ${isDeposit ? 'p-[1.6cm]' : 'p-[2.5cm]'}`}
+                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: isDeposit ? '8.5pt' : '9pt', lineHeight: isDeposit ? 1.35 : 1.5 }}
                             >
                                 {type === 'deposit' && (
                                     <>
                                         {/* Header */}
-                                        <div className="text-center mb-8 pb-4 border-b-2" style={{ borderColor: '#000000' }}>
+                                        <div className="text-center mb-5 pb-2 border-b-2" style={{ borderColor: '#000000' }}>
                                             <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
                                             <h1 className="text-lg font-bold uppercase mb-1" style={{ color: '#000000' }}>KORAUTO</h1>
                                             <div className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
                                         </div>
 
                                         {/* Reference and Date */}
-                                        <div className="flex justify-between mb-6 text-sm">
+                                        <div className="flex justify-between mb-4 text-sm">
                                             <div>Nr. Ref: <strong>{saleRefId}</strong></div>
                                             <div>Data: <strong>{today}</strong></div>
                                         </div>
 
                                         {/* Parties Section */}
-                                        <div className="grid grid-cols-2 gap-8 mb-6">
+                                        <div className="grid grid-cols-2 gap-8 mb-4">
                                             <div>
                                                 <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">1. Shitësi:</div>
                                                 <div className="space-y-1 text-sm">
@@ -294,7 +295,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 1 */}
-                                        <div className="mb-4">
+                                        <div className="mb-3">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 1 – Objekti i Kontratës</div>
                                             <p className="text-sm mb-2">
                                                 Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
@@ -307,7 +308,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 2 */}
-                                        <div className="mb-4">
+                                        <div className="mb-3">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 2 – Shuma e Kaparit</div>
                                             <p className="text-sm">
                                                 Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(sale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{formatCurrency(sale.soldPrice)}€</strong>. Deri ne Prishtine
@@ -315,7 +316,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 3 */}
-                                        <div className="mb-4">
+                                        <div className="mb-3">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 3 – Detyrimet e Palëve</div>
                                             <ul className="list-none text-sm">
                                                 <li className="mb-1">- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
@@ -324,7 +325,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 4 */}
-                                        <div className="mb-4">
+                                        <div className="mb-3">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 4 – Anulimi i Marrëveshjes</div>
                                             <ul className="list-none text-sm">
                                                 <li className="mb-1">- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
@@ -333,7 +334,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 5 */}
-                                        <div className="mb-8">
+                                        <div className="mb-5">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 5 – Dispozita të Përgjithshme</div>
                                             <ul className="list-none text-sm">
                                                 <li className="mb-1">- Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</li>
@@ -342,14 +343,14 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Signatures */}
-                                        <div className="grid grid-cols-2 gap-12 mt-16 pt-8 border-t border-black">
+                                        <div className="grid grid-cols-2 gap-12 mt-10 pt-6 border-t border-black">
                                             <div className="text-center">
-                                                <div className="text-sm mb-20">Shitësi (Nënshkrimi)</div>
+                                                <div className="text-sm mb-16">Shitësi (Nënshkrimi)</div>
                                                 <div className="border-b border-black mx-4"></div>
                                                 <div className="mt-2 font-bold text-sm">{seller.name}</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-sm mb-20">Blerësi (Nënshkrimi)</div>
+                                                <div className="text-sm mb-16">Blerësi (Nënshkrimi)</div>
                                                 <div className="border-b border-black mx-4"></div>
                                                 <div className="mt-2 font-bold text-sm">{safeString(sale.buyerName)}</div>
                                             </div>
