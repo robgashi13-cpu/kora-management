@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { CarSale, ContractType } from '@/app/types';
-import { X, Printer, Loader2, Download } from 'lucide-react';
+import { X, Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
@@ -11,25 +11,85 @@ interface Props {
     onClose: () => void;
 }
 
+// Helper function to safely format values with fallbacks
+const safeString = (value: string | undefined | null, fallback = '________________'): string => {
+    if (value === undefined || value === null || value === '') return fallback;
+    return String(value);
+};
+
+const safeNumber = (value: number | undefined | null, fallback = 0): number => {
+    if (value === undefined || value === null || isNaN(Number(value))) return fallback;
+    return Number(value);
+};
+
+const formatCurrency = (value: number | undefined | null): string => {
+    return safeNumber(value).toLocaleString();
+};
+
+const formatDate = (dateString: string | undefined | null): string => {
+    if (!dateString) return '________________';
+    try {
+        return new Date(dateString).toLocaleDateString('en-GB');
+    } catch {
+        return '________________';
+    }
+};
+
+// Validate required fields for deposit contract
+const validateDepositContract = (sale: CarSale): { valid: boolean; missingFields: string[] } => {
+    const missingFields: string[] = [];
+    
+    if (!sale.brand) missingFields.push('Brand');
+    if (!sale.model) missingFields.push('Model');
+    if (!sale.buyerName) missingFields.push('Buyer Name');
+    
+    return {
+        valid: missingFields.length === 0,
+        missingFields
+    };
+};
+
 export default function ContractModal({ sale, type, onClose }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
-
     const [isDownloading, setIsDownloading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleDownload = async () => {
+    // Validate contract data
+    const validation = type === 'deposit' ? validateDepositContract(sale) : { valid: true, missingFields: [] };
+
+    const handleDownload = useCallback(async () => {
+        // Prevent double-click
+        if (isDownloading) return;
+        
         const element = printRef.current;
-        if (!element) return;
+        if (!element) {
+            setError('Document preview not ready. Please try again.');
+            return;
+        }
+
+        // Validate before generating
+        if (!validation.valid) {
+            setError(`Missing required fields: ${validation.missingFields.join(', ')}`);
+            return;
+        }
 
         try {
             setIsDownloading(true);
+            setError(null);
+            
+            const safeBrand = safeString(sale.brand, 'Unknown');
+            const safeModel = safeString(sale.model, 'Car');
+            const safeVin = safeString(sale.vin, 'N/A');
+            
             const opt = {
                 margin: 0,
-                filename: `Contract_${sale.brand}_${sale.model}.pdf`,
+                filename: `Contract_${safeBrand}_${safeModel}.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: {
                     scale: 4,
                     useCORS: true,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    logging: false
                 },
                 jsPDF: {
                     unit: 'mm' as const,
@@ -44,11 +104,17 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const html2pdf = (await import('html2pdf.js')).default;
 
             if (!Capacitor.isNativePlatform()) {
+                // Desktop/Web browser - direct save
                 await html2pdf().set(opt).from(element).save();
             } else {
+                // Native mobile (iOS/Android) - use Capacitor filesystem
                 const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
-                const fileName = `Contract_${sale.brand}_${sale.model}_${Date.now()}.pdf`;
+                const fileName = `Contract_${safeBrand}_${safeModel}_${Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
+
+                if (!base64Data) {
+                    throw new Error('Failed to generate PDF data');
+                }
 
                 const savedFile = await Filesystem.writeFile({
                     path: fileName,
@@ -57,29 +123,35 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 });
 
                 await Share.share({
-                    title: `Contract - ${sale.brand} ${sale.model}`,
-                    text: `Contract for ${sale.vin}`,
+                    title: `Contract - ${safeBrand} ${safeModel}`,
+                    text: `Contract for ${safeVin}`,
                     url: savedFile.uri,
                     dialogTitle: 'Download or Share Contract'
                 });
             }
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Could not download/share contract. Please try again.');
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setError(`Could not generate PDF: ${errorMessage}. Please try again.`);
         } finally {
             setIsDownloading(false);
         }
-    };
+    }, [isDownloading, sale, validation]);
 
     const handlePrint = () => {
         handleDownload();
     };
 
+    // Safe data extraction with fallbacks
     const today = new Date().toLocaleDateString('en-GB');
-    const shippingDate = sale.shippingDate ? new Date(sale.shippingDate).toLocaleDateString('en-GB') : "________________";
+    const shippingDate = formatDate(sale.shippingDate);
     const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
     const sellerBusinessId = "NR.Biznesit 810062092";
     const fullSellerName = "RG SH.P.K";
+    
+    // Safe ID for reference
+    const saleRefId = sale.id ? sale.id.slice(0, 8).toUpperCase() : crypto.randomUUID().slice(0, 8).toUpperCase();
+    
     const contractPreviewTitle = type === 'deposit'
         ? 'Deposit Agreement Preview'
         : type === 'full_marreveshje'
@@ -90,24 +162,36 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>
             <div className="bg-white text-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200" onClick={e => e.stopPropagation()}>
                 {/* Header Actions */}
-                <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-black"></span>
-                        {contractPreviewTitle}
-                    </h2>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleDownload}
-                            disabled={isDownloading}
-                            className="flex items-center gap-2 px-6 py-2 bg-black text-white rounded-lg hover:bg-slate-900 transition-all font-bold shadow-lg shadow-black/20 active:scale-95 disabled:opacity-50"
-                        >
-                            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
-                            {isDownloading ? 'Generating PDF...' : 'Download PDF'}
-                        </button>
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700">
-                            <X className="w-6 h-6" />
-                        </button>
+                <div className="flex flex-col border-b border-slate-200 bg-slate-50">
+                    <div className="flex justify-between items-center p-4">
+                        <h2 className="text-lg font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-black"></span>
+                            {contractPreviewTitle}
+                        </h2>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloading || !validation.valid}
+                                className="flex items-center gap-2 px-6 py-2 bg-black text-white rounded-lg hover:bg-slate-900 transition-all font-bold shadow-lg shadow-black/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                                {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+                            </button>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700">
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
+                    
+                    {/* Error/Warning Banner */}
+                    {(error || !validation.valid) && (
+                        <div className={`px-4 py-3 flex items-center gap-2 text-sm ${error ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <span>
+                                {error || `Missing required fields: ${validation.missingFields.join(', ')}. Please fill them in before generating.`}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Document Preview Area */}
@@ -131,7 +215,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         {/* Reference and Date */}
                                         <div className="flex justify-between mb-6 text-sm">
-                                            <div>Nr. Ref: <strong>{sale.id.slice(0, 8).toUpperCase()}</strong></div>
+                                            <div>Nr. Ref: <strong>{saleRefId}</strong></div>
                                             <div>Data: <strong>{today}</strong></div>
                                         </div>
 
@@ -148,8 +232,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div>
                                                 <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">2. Blerësi (Kaparidhënësi):</div>
                                                 <div className="space-y-1 text-sm">
-                                                    <div><span className="inline-block w-24">Emri:</span> <strong>{sale.buyerName}</strong></div>
-                                                    <div><span className="inline-block w-24">Nr. personal:</span> {sale.buyerPersonalId || "________________"}</div>
+                                                    <div><span className="inline-block w-24">Emri:</span> <strong>{safeString(sale.buyerName)}</strong></div>
+                                                    <div><span className="inline-block w-24">Nr. personal:</span> {safeString(sale.buyerPersonalId)}</div>
                                                 </div>
                                             </div>
                                         </div>
@@ -161,9 +245,9 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
                                             </p>
                                             <ul className="list-none text-sm font-bold mb-2">
-                                                <li>- Marka: {sale.brand}</li>
-                                                <li>- Modeli: {sale.model}</li>
-                                                <li>- Nr. shasie: {sale.vin}</li>
+                                                <li>- Marka: {safeString(sale.brand)}</li>
+                                                <li>- Modeli: {safeString(sale.model)}</li>
+                                                <li>- Nr. shasie: {safeString(sale.vin)}</li>
                                             </ul>
                                         </div>
 
@@ -171,7 +255,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         <div className="mb-4">
                                             <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 2 – Shuma e Kaparit</div>
                                             <p className="text-sm">
-                                                Blerësi i dorëzon shitësit shumën prej <strong>{sale.deposit}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{sale.soldPrice}€</strong>. Deri ne Prishtine
+                                                Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(sale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{formatCurrency(sale.soldPrice)}€</strong>. Deri ne Prishtine
                                             </p>
                                         </div>
 
@@ -212,7 +296,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="text-center">
                                                 <div className="text-sm mb-20">Blerësi (Nënshkrimi)</div>
                                                 <div className="border-b border-black mx-4"></div>
-                                                <div className="mt-2 font-bold text-sm">{sale.buyerName}</div>
+                                                <div className="mt-2 font-bold text-sm">{safeString(sale.buyerName)}</div>
                                             </div>
                                         </div>
                                     </>
@@ -233,7 +317,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
-                                                    <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
+                                                    <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
                                                 </li>
                                             </ul>
                                         </div>
@@ -242,16 +326,16 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
                                             <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                                             <div className="car-details">
-                                                <div><span className="label">Marka/Modeli:</span> <span>{sale.brand} {sale.model}</span></div>
-                                                <div><span className="label">Numri i shasisë:</span> <span>{sale.vin}</span></div>
-                                                <div><span className="label">Viti I prodhimi:</span> <span>{sale.year}</span></div>
-                                                <div><span className="label">KM te kaluara:</span> <span>{(sale.km || 0).toLocaleString()}km</span></div>
+                                                <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
+                                                <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
+                                                <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
+                                                <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
 
                                             </div>
                                         </div>
 
                                         <p className="font-bold mt-4 mb-4">
-                                            {fullSellerName} vepron si shitës, ndërsa {sale.buyerName} si blerës.
+                                            {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
                                         </p>
 
                                         <hr className="mb-6 border-black" />
@@ -262,8 +346,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Pagesa</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Shuma totale prej € {(sale.amountPaidBank || 0).toLocaleString()} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                                    <li>Një shumë prej € {(sale.deposit || 0).toLocaleString()} do të paguhet në dorë si kapar.</li>
+                                                    <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                                    <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
                                             <li>
@@ -276,7 +360,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Vonesa në Dorëzim</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {(sale.soldPrice || 0).toLocaleString()} brenda 7 ditëve kalendarike.</li>
+                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(sale.soldPrice)} brenda 7 ditëve kalendarike.</li>
                                                 </ul>
                                             </li>
                                             <li>
@@ -300,7 +384,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 <div className="border-b border-black w-full h-1"></div>
                                             </div>
                                             <div className="signature-box w-1/3 text-right">
-                                                <div className="mb-8 font-bold">Blerësi: {sale.buyerName}</div>
+                                                <div className="mb-8 font-bold">Blerësi: {safeString(sale.buyerName)}</div>
                                                 <div className="border-b border-black w-full h-1"></div>
                                             </div>
                                         </div>
@@ -322,7 +406,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
-                                                    <strong>Z. {sale.buyerName}</strong> ne cilesin e blersit me nr personal <strong>{sale.buyerPersonalId || "________________"}</strong>
+                                                    <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
                                                 </li>
                                             </ul>
                                         </div>
@@ -331,16 +415,16 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
                                             <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                                             <div className="car-details">
-                                                <div><span className="label">Marka/Modeli:</span> <span>{sale.brand} {sale.model}</span></div>
-                                                <div><span className="label">Numri i shasisë:</span> <span>{sale.vin}</span></div>
-                                                <div><span className="label">Viti I prodhimi:</span> <span>{sale.year}</span></div>
-                                                <div><span className="label">KM te kaluara:</span> <span>{(sale.km || 0).toLocaleString()}km</span></div>
+                                                <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
+                                                <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
+                                                <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
+                                                <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
 
                                             </div>
                                         </div>
 
                                         <p className="font-bold mt-4 mb-4">
-                                            {fullSellerName} vepron si shitës, ndërsa {sale.buyerName} si blerës.
+                                            {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
                                         </p>
 
                                         <hr className="mb-6 border-black" />
@@ -351,14 +435,14 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             <li>
                                                 <strong>Pagesa</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Shuma totale prej € {(sale.amountPaidBank || 0).toLocaleString()} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                                    <li>Një shumë prej € {(sale.deposit || 0).toLocaleString()} do të paguhet në dorë si kapar.</li>
+                                                    <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                                    <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
                                             <li>
                                                 <strong>Nisja dhe Dorëzimi i Automjetit</strong>
                                                 <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>AUTOMJETI DORËZOHET NË DATËN: 20.12.2025</li>
+                                                    <li>AUTOMJETI DORËZOHET NË DATËN: {shippingDate}</li>
                                                 </ul>
                                             </li>                                            <li>
                                                 <strong>Gjendja Teknike e Automjetit</strong>
@@ -379,7 +463,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             </div>
                                             <div className="w-1/2 text-right pl-6">
                                                 <div className="font-bold mb-2">Blerësi</div>
-                                                <div className="mb-10">{sale.buyerName}</div>
+                                                <div className="mb-10">{safeString(sale.buyerName)}</div>
                                                 <div className="border-b border-black w-4/5 ml-auto"></div>
                                             </div>
                                         </div>
