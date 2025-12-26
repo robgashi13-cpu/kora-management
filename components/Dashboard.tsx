@@ -238,11 +238,18 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 16. Status */}
             <div className="px-1 xl:px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white">
-                {canEdit ? (
-                    <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge ${statusClass}`} />
-                ) : (
-                    <span className={`status-badge ${statusClass}`}>{s.status}</span>
-                )}
+                <div className="flex flex-col items-center gap-1">
+                    {canEdit ? (
+                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge ${statusClass}`} />
+                    ) : (
+                        <span className={`status-badge ${statusClass}`}>{s.status}</span>
+                    )}
+                    {s.isPaid && (
+                        <span className="text-[9px] uppercase font-semibold whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            Paid by Client
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* 17. Sold By */}
@@ -1758,8 +1765,8 @@ export default function Dashboard() {
                                                     <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                         {(isAdmin || sale.soldBy === userProfile) ? (
-                                                            <span className={`font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                                                {calculateBalance(sale) > 0 ? `Due: €${calculateBalance(sale).toLocaleString()}` : 'Paid'}
+                                                            <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
                                                             </span>
                                                         ) : (
                                                             <span className="font-mono text-slate-400">-</span>
