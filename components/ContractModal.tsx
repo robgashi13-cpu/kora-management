@@ -38,15 +38,56 @@ const formatDate = (dateString: string | undefined | null): string => {
 // Validate required fields for deposit contract
 const validateDepositContract = (sale: CarSale): { valid: boolean; missingFields: string[] } => {
     const missingFields: string[] = [];
-    
+
     if (!sale.brand) missingFields.push('Brand');
     if (!sale.model) missingFields.push('Model');
+    if (!sale.vin) missingFields.push('VIN');
     if (!sale.buyerName) missingFields.push('Buyer Name');
-    
+    if (!sale.soldPrice) missingFields.push('Sold Price');
+    if (!sale.deposit) missingFields.push('Deposit Amount');
+
     return {
         valid: missingFields.length === 0,
         missingFields
     };
+};
+
+const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) return;
+
+    const loadPromises = images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise<void>((resolve, reject) => {
+            const onLoad = () => {
+                cleanup();
+                resolve();
+            };
+            const onError = () => {
+                cleanup();
+                reject(new Error('Image failed to load'));
+            };
+            const cleanup = () => {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
+            };
+            img.addEventListener('load', onLoad);
+            img.addEventListener('error', onError);
+        });
+    });
+
+    await Promise.race([
+        Promise.all(loadPromises),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
+    ]);
+};
+
+const isIosSafari = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const ua = window.navigator.userAgent;
+    const isIos = /iP(ad|od|hone)/.test(ua);
+    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+    return isIos && isSafari;
 };
 
 export default function ContractModal({ sale, type, onClose }: Props) {
@@ -104,8 +145,22 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const html2pdf = (await import('html2pdf.js')).default;
 
             if (!Capacitor.isNativePlatform()) {
-                // Desktop/Web browser - direct save
-                await html2pdf().set(opt).from(element).save();
+                if (type === 'deposit') {
+                    await waitForImages(element);
+                }
+
+                if (type === 'deposit' && isIosSafari()) {
+                    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const popup = window.open(blobUrl, '_blank');
+                    if (!popup) {
+                        window.location.href = blobUrl;
+                    }
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                } else {
+                    // Desktop/Web browser - direct save
+                    await html2pdf().set(opt).from(element).save();
+                }
             } else {
                 // Native mobile (iOS/Android) - use Capacitor filesystem
                 const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
