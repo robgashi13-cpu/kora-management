@@ -26,7 +26,8 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     servicesCost: 30.51, tax: 0,
     includeTransport: false,
     amountPaidToKorea: 0, paidDateToKorea: null, paidDateFromClient: null,
-    paymentMethod: 'Bank', status: 'New'
+    paymentMethod: 'Bank', status: 'New',
+    isPaid: false
 };
 
 const YEARS = Array.from({ length: 26 }, (_, i) => 2000 + i).reverse();
@@ -155,6 +156,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }));
     };
 
+    const handlePaidToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData(prev => ({
+            ...prev,
+            isPaid: e.target.checked
+        }));
+    };
+
     // Close preview handler
     const closePreview = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -270,6 +278,19 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                             )}
                             <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-semibold text-slate-700 ml-0.5">Paid?</label>
+                                <label className={`flex items-center justify-center gap-2 cursor-pointer h-[50px] rounded-xl border transition-all ${formData.isPaid ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-200'}`}>
+                                    <input
+                                        type="checkbox"
+                                        name="isPaid"
+                                        checked={formData.isPaid ?? false}
+                                        onChange={handlePaidToggle}
+                                        className="hidden"
+                                    />
+                                    <span className="text-sm font-bold uppercase">{formData.isPaid ? 'Paid' : 'Not Paid'}</span>
+                                </label>
+                            </div>
                         </div>
 
                         {isAdmin && (

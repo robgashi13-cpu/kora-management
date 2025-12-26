@@ -44,6 +44,7 @@ export interface CarSale {
     amountPaidToKorea?: number; // New field
     paidDateToKorea: string | null; // ISO date string
     paidDateFromClient?: string | null; // ISO date string
+    isPaid?: boolean;
 
     paymentMethod: PaymentMethod;
     status: SaleStatus;
