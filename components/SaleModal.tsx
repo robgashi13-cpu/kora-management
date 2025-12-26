@@ -186,7 +186,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const FileList = ({ files, field, label }: { files: Attachment[] | undefined, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices', label: string }) => (
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 border-dashed hover:border-blue-200 transition-colors h-full flex flex-col">
             <div className="flex justify-between items-center mb-2">
-                <label className="text-[10px] uppercase text-slate-500 font-bold block">{label}</label>
+                <label className="text-[11px] uppercase text-slate-500 font-bold block">
+                    {label}
+                    <span className="normal-case text-[10px] font-semibold text-slate-400 ml-1">(Optional)</span>
+                </label>
                 <label className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1">
                     <Paperclip className="w-3 h-3" /> Add
                     <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(e) => handleFileChange(e, field)} />
@@ -222,7 +225,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-[min(96vw,96rem)] max-w-[96rem] rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
+            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-[min(98vw,96rem)] max-w-[96rem] rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
         >
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
@@ -239,7 +242,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 flex flex-col gap-7 md:gap-9"
+                    className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 flex flex-col gap-8 md:gap-10"
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
@@ -278,9 +281,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                             )}
                             <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-semibold text-slate-700 ml-0.5">Paid?</label>
-                                <label className={`flex items-center justify-center gap-2 cursor-pointer h-[50px] rounded-xl border transition-all ${formData.isPaid ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-200'}`}>
+                                <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+                                    Paid?
+                                    <span className="text-xs font-medium text-slate-400">(Optional)</span>
+                                </label>
+                                <label className={`flex items-center justify-center gap-2 cursor-pointer h-[52px] rounded-xl border transition-all ${formData.isPaid ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-200'}`}>
                                     <input
                                         type="checkbox"
                                         name="isPaid"
@@ -289,6 +297,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                         className="hidden"
                                     />
                                     <span className="text-sm font-bold uppercase">{formData.isPaid ? 'Paid' : 'Not Paid'}</span>
+                                </label>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+                                    Transport
+                                    <span className="text-xs font-medium text-slate-400">(Optional)</span>
+                                </label>
+                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-xl border transition-all justify-center select-none h-[52px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
+                                    <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
+                                    <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
                                 </label>
                             </div>
                         </div>
@@ -316,7 +334,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div className="grid grid-cols-1 gap-4 md:gap-6">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
                                 <option value="New">New</option>
                                 <option value="In Progress">In Progress</option>
@@ -324,13 +342,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
                             </Select>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-[10px] uppercase text-slate-500 font-bold ml-1 opacity-0">Transport</label>
-                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-lg border transition-all justify-center select-none h-[46px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
-                                    <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
-                                    <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
-                                </label>
-                            </div>
                         </div>
 
                         <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
@@ -475,10 +486,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-4 md:p-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-6">
-        <div className="space-y-1.5 border-b border-slate-100 pb-4">
-            <h3 className="text-base font-bold text-slate-900 tracking-wide">{title}</h3>
-            {description && <p className="text-sm text-slate-500 leading-relaxed">{description}</p>}
+    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-5 md:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-7">
+        <div className="space-y-2 border-b border-slate-100 pb-5">
+            <h3 className="text-lg md:text-xl font-bold text-slate-900 tracking-wide">{title}</h3>
+            {description && <p className="text-sm md:text-[15px] text-slate-500 leading-relaxed">{description}</p>}
         </div>
         <div className="space-y-5">
             {children}
@@ -486,22 +497,30 @@ const Section = ({ title, description, children }: { title: string; description?
     </div>
 );
 
-const Input = ({ label, className = "", ...props }: any) => (
+const Input = ({ label, className = "", required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+            {label}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+        </label>
         <input
-            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px]"
+            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
+            required={required}
             {...props}
         />
     </div>
 );
 
-const Select = ({ label, children, ...props }: any) => (
+const Select = ({ label, children, required, ...props }: any) => (
     <div className="flex flex-col gap-1.5 text-left w-full">
-        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+            {label}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+        </label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all w-full h-[50px] cursor-pointer"
+                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all w-full h-[52px] cursor-pointer"
+                required={required}
                 {...props}
             >
                 {children}
@@ -513,12 +532,16 @@ const Select = ({ label, children, ...props }: any) => (
     </div>
 );
 
-const DateInput = ({ label, ...props }: any) => (
+const DateInput = ({ label, required, ...props }: any) => (
     <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-sm font-semibold text-slate-700 ml-0.5">{label}</label>
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+            {label}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+        </label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[50px] cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
+            required={required}
             {...props}
         />
     </div>
