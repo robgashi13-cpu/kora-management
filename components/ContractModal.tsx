@@ -434,50 +434,93 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                         {/* ===== PAGE 2 - Warranty Terms ===== */}
                                         <div className="page-2 page-break" style={{ minHeight: '29.7cm', paddingTop: '2cm', paddingBottom: '1cm' }}>
-                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>KUSHTET E GARANCISË</h2>
+                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
                                             
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët e Mbuluara nga Garancia:</h3>
-                                                <ul className="list-disc ml-5 space-y-2 text-sm">
-                                                    <li>Motori (blloku i motorit, kokat e cilindrave, pistona, segmentet)</li>
-                                                    <li>Kutia e shpejtësisë (ingranazhet, sinkronizuesit, kushineta)</li>
-                                                    <li>Sistemi i ftohjes (radiatori, pompa e ujit, termostati)</li>
-                                                    <li>Sistemi elektrik (alternatori, starteri, sensora kryesorë)</li>
-                                                    <li>Sistemi i frenave (disqet, kllapsat, cilindrat)</li>
-                                                    <li>Sistemi i drejtimit (pompa hidraulike, timoneria)</li>
+                                            <div className="mb-5">
+                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h3>
+                                                <p className="text-sm mb-3">Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal dhe përfshin pjesët jo të konsumueshme si më poshtë:</p>
+                                                <ul className="list-disc ml-5 space-y-1 text-sm">
+                                                    <li>Motori (blloku, koka e cilindrit, pistonët, boshtet)</li>
+                                                    <li>Transmisioni (manual ose automatik, përjashtuar clutch dhe flywheel)</li>
+                                                    <li>Diferenciali dhe boshtet e fuqisë</li>
+                                                    <li>ECU, alternatori, starteri</li>
+                                                    <li>Kompresori i AC, kondensatori, avulluesi</li>
+                                                    <li>Airbagët, rripat e sigurimit</li>
+                                                    <li>Struktura e shasisë</li>
                                                 </ul>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët që NUK Mbulohen nga Garancia:</h3>
-                                                <ul className="list-disc ml-5 space-y-2 text-sm">
-                                                    <li>Konsumatorët (llamba, siguresa, rrypa, filtra)</li>
-                                                    <li>Dëmtimet nga aksidentet ose përdorimi i gabuar</li>
-                                                    <li>Mirëmbajtja e rregullt (vaji, filtrat, antifrizi)</li>
-                                                    <li>Pjesët kozmetike (llamarina, xhama, tapiseri)</li>
-                                                    <li>Sistemi i klimatizimit (në raste të rrjedhjes së gazit)</li>
+                                            <div className="mb-5">
+                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët Konsumueshme të Përjashtuara nga Garancia</h3>
+                                                <p className="text-sm mb-2">Të gjitha pjesët e mëposhtme konsiderohen konsumueshme dhe përjashtohen nga garancia:</p>
+                                                
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Debrisi dhe pjesët përreth:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Disku i debrisit</li>
+                                                        <li>Pllaka e presionit</li>
+                                                        <li>Rulllja e lirimit (release bearing)</li>
+                                                        <li>Flywheel (rrota e masës, DMF)</li>
+                                                        <li>Damper pulley / torsional dampers</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Sistemi i Frenimit:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Diskat e frenave, blloqet (pads), këpucët e frenimit</li>
+                                                        <li>Lëngu i frenave</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Filtrat & Lëngjet:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Filtri i vajit, ajrit, kabinës, karburantit</li>
+                                                        <li>Vaji i motorit, antifrizi, vaji i transmisionit</li>
+                                                        <li>Lëngu i larjes së xhamave</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Suspensioni & Drejtimi:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Amortizatorët (vaj, vula, konsumim)</li>
+                                                        <li>Bushingët, nyjet e topit, lidhëset stabilizuese</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Rrotat & Energjia:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</li>
+                                                        <li>Bateria 12V, llambat, siguresat</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="mb-2">
+                                                    <p className="text-sm font-bold">Të tjera Konsumueshme:</p>
+                                                    <ul className="list-disc ml-5 text-sm">
+                                                        <li>Fshirëset e xhamave, spërkatësit</li>
+                                                        <li>Spark plugs, glow plugs</li>
+                                                        <li>Rripat (serpentine, timing sipas intervalit të prodhuesit)</li>
+                                                        <li>Tubat gome, vulat, garniturat</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <div className="mb-4">
+                                                <h3 className="font-bold text-sm mb-2 underline">Kushtet e Garancisë</h3>
+                                                <ul className="list-disc ml-5 text-sm space-y-1">
+                                                    <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
+                                                    <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
+                                                    <li>Mirëmbajtja e rregullt është përgjegjësi e klientit.</li>
                                                 </ul>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Kushtet për Aktivizimin e Garancisë:</h3>
-                                                <ol className="list-decimal ml-5 space-y-2 text-sm">
-                                                    <li>Automjeti duhet të inspektohet brenda 7 ditëve nga marrja</li>
-                                                    <li>Raportimi i defektit duhet bërë me shkrim brenda 48 orëve</li>
-                                                    <li>Diagnoza duhet të kryhet në servis të autorizuar</li>
-                                                    <li>Shitësi ka të drejtë të verifikojë defektin para riparimit</li>
-                                                    <li>Riparimi kryhet në servisin e përzgjedhur nga shitësi</li>
-                                                </ol>
-                                            </div>
-
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Kohëzgjatja e Garancisë:</h3>
-                                                <p className="text-sm">Garancia vlen për një periudhë prej <strong>3 (tre) muajsh</strong> ose <strong>5,000 km</strong> (cilido që vjen i pari) nga data e dorëzimit të automjetit.</p>
-                                            </div>
-
-                                            <div className="mt-8 p-4 border border-black">
-                                                <p className="text-sm font-bold text-center">VËREJTJE: Çdo riparim i kryer pa miratimin e shitësit e anulon garancin.</p>
-                                            </div>
+                                            <p className="text-sm font-bold text-center mt-6">
+                                                Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
+                                            </p>
                                         </div>
 
                                         {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
