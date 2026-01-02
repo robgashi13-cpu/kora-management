@@ -359,18 +359,18 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                 )}
 
                                 {type === 'full_marreveshje' && (
-                                    <div className="max-w-2xl mx-auto">
+                                    <div className="max-w-2xl mx-auto" style={{ fontSize: '8pt', lineHeight: 1.25 }}>
                                         {/* ===== PAGE 1 ===== */}
-                                        <div className="page-1" style={{ minHeight: '27.7cm', paddingBottom: '1cm' }}>
-                                            <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                            <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
-                                            <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
+                                        <div className="page-1 relative" style={{ minHeight: '27.7cm', paddingBottom: '1.5cm' }}>
+                                            <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
+                                            <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
+                                            <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
 
-                                            <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
+                                            <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
-                                            <div className="section mb-6">
-                                                <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
-                                                <ul className="list-disc ml-5 space-y-2">
+                                            <div className="section mb-3">
+                                                <div className="font-bold mb-1 underline">Palët Kontraktuese:</div>
+                                                <ul className="list-disc ml-5 space-y-1">
                                                     <li>
                                                         <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                     </li>
@@ -380,9 +380,9 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 </ul>
                                             </div>
 
-                                            <div className="section mb-6">
-                                                <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
-                                                <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                                            <div className="section mb-3">
+                                                <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
+                                                <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                                                 <div className="car-details">
                                                     <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
                                                     <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
@@ -391,38 +391,38 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 </div>
                                             </div>
 
-                                            <p className="font-bold mt-4 mb-4">
+                                            <p className="font-bold mt-2 mb-2">
                                                 {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
                                             </p>
 
-                                            <hr className="mb-6 border-black" />
+                                            <hr className="mb-3 border-black" />
 
-                                            <h3 className="font-bold text-sm mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+                                            <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
 
-                                            <ol className="list-decimal ml-5 space-y-4 mb-8">
+                                            <ol className="list-decimal ml-5 space-y-2 mb-4">
                                                 <li>
                                                     <strong>Pagesa</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <ul className="list-[circle] ml-5 mt-0.5">
                                                         <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
                                                         <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
                                                     </ul>
                                                 </li>
                                                 <li>
                                                     <strong>Nisja dhe Dorëzimi i Automjetit</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <ul className="list-[circle] ml-5 mt-0.5">
                                                         <li>Automjeti do të niset nga Koreja e Jugut më datë {shippingDate}.</li>
                                                         <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
                                                     </ul>
                                                 </li>
                                                 <li>
                                                     <strong>Vonesa në Dorëzim</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <ul className="list-[circle] ml-5 mt-0.5">
                                                         <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(sale.soldPrice)} brenda 7 ditëve kalendarike.</li>
                                                     </ul>
                                                 </li>
                                                 <li>
                                                     <strong>Gjendja Teknike e Automjetit</strong>
-                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                    <ul className="list-[circle] ml-5 mt-0.5">
                                                         <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
                                                     </ul>
                                                 </li>
@@ -430,16 +430,21 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
                                                 </li>
                                             </ol>
+                                            
+                                            {/* Page number */}
+                                            <div className="absolute bottom-4 left-0 right-0 text-center text-xs" style={{ color: '#666' }}>
+                                                Faqja 1 nga 3
+                                            </div>
                                         </div>
 
                                         {/* ===== PAGE 2 - Warranty Terms ===== */}
-                                        <div className="page-2 page-break" style={{ minHeight: '27.7cm', paddingTop: '1cm', paddingBottom: '0.5cm' }}>
-                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
+                                        <div className="page-2 page-break relative" style={{ minHeight: '27.7cm', paddingTop: '0.8cm', paddingBottom: '1.5cm' }}>
+                                            <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
                                             
-                                            <div className="mb-5">
-                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h3>
-                                                <p className="text-sm mb-3">Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal dhe përfshin pjesët jo të konsumueshme si më poshtë:</p>
-                                                <ul className="list-disc ml-5 space-y-1 text-sm">
+                                            <div className="mb-3">
+                                                <h3 className="font-bold text-xs mb-1 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h3>
+                                                <p className="mb-1">Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal dhe përfshin pjesët jo të konsumueshme si më poshtë:</p>
+                                                <ul className="list-disc ml-5 space-y-0.5">
                                                     <li>Motori (blloku, koka e cilindrit, pistonët, boshtet)</li>
                                                     <li>Transmisioni (manual ose automatik, përjashtuar clutch dhe flywheel)</li>
                                                     <li>Diferenciali dhe boshtet e fuqisë</li>
@@ -450,13 +455,13 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 </ul>
                                             </div>
 
-                                            <div className="mb-5">
-                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët Konsumueshme të Përjashtuara nga Garancia</h3>
-                                                <p className="text-sm mb-2">Të gjitha pjesët e mëposhtme konsiderohen konsumueshme dhe përjashtohen nga garancia:</p>
+                                            <div className="mb-3">
+                                                <h3 className="font-bold text-xs mb-1 underline">Pjesët Konsumueshme të Përjashtuara nga Garancia</h3>
+                                                <p className="mb-1">Të gjitha pjesët e mëposhtme konsiderohen konsumueshme dhe përjashtohen nga garancia:</p>
                                                 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Debrisi dhe pjesët përreth:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Debrisi dhe pjesët përreth:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Disku i debrisit</li>
                                                         <li>Pllaka e presionit</li>
                                                         <li>Rulllja e lirimit (release bearing)</li>
@@ -465,42 +470,42 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                     </ul>
                                                 </div>
 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Sistemi i Frenimit:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Sistemi i Frenimit:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Diskat e frenave, blloqet (pads), këpucët e frenimit</li>
                                                         <li>Lëngu i frenave</li>
                                                     </ul>
                                                 </div>
 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Filtrat & Lëngjet:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Filtrat & Lëngjet:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Filtri i vajit, ajrit, kabinës, karburantit</li>
                                                         <li>Vaji i motorit, antifrizi, vaji i transmisionit</li>
                                                         <li>Lëngu i larjes së xhamave</li>
                                                     </ul>
                                                 </div>
 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Suspensioni & Drejtimi:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Suspensioni & Drejtimi:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Amortizatorët (vaj, vula, konsumim)</li>
                                                         <li>Bushingët, nyjet e topit, lidhëset stabilizuese</li>
                                                     </ul>
                                                 </div>
 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Rrotat & Energjia:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Rrotat & Energjia:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</li>
                                                         <li>Bateria 12V, llambat, siguresat</li>
                                                     </ul>
                                                 </div>
 
-                                                <div className="mb-2">
-                                                    <p className="text-sm font-bold">Të tjera Konsumueshme:</p>
-                                                    <ul className="list-disc ml-5 text-sm">
+                                                <div className="mb-1">
+                                                    <p className="font-bold">Të tjera Konsumueshme:</p>
+                                                    <ul className="list-disc ml-5">
                                                         <li>Fshirëset e xhamave, spërkatësit</li>
                                                         <li>Spark plugs, glow plugs</li>
                                                         <li>Rripat (serpentine, timing sipas intervalit të prodhuesit)</li>
@@ -509,65 +514,75 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                                 </div>
                                             </div>
 
-                                            <div className="mb-4">
-                                                <h3 className="font-bold text-sm mb-2 underline">Kushtet e Garancisë</h3>
-                                                <ul className="list-disc ml-5 text-sm space-y-1">
+                                            <div className="mb-2">
+                                                <h3 className="font-bold text-xs mb-1 underline">Kushtet e Garancisë</h3>
+                                                <ul className="list-disc ml-5 space-y-0.5">
                                                     <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
                                                     <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
                                                     <li>Mirëmbajtja e rregullt është përgjegjësi e klientit.</li>
                                                 </ul>
                                             </div>
 
-                                            <p className="text-sm font-bold text-center mt-6">
+                                            <p className="font-bold text-center mt-3">
                                                 Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
                                             </p>
+                                            
+                                            {/* Page number */}
+                                            <div className="absolute bottom-4 left-0 right-0 text-center text-xs" style={{ color: '#666' }}>
+                                                Faqja 2 nga 3
+                                            </div>
                                         </div>
 
                                         {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
-                                        <div className="page-3 page-break" style={{ minHeight: '27.7cm', paddingTop: '1cm' }}>
-                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
+                                        <div className="page-3 page-break relative" style={{ minHeight: '27.7cm', paddingTop: '0.8cm', paddingBottom: '1.5cm' }}>
+                                            <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
 
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Zgjidhja e Mosmarrëveshjeve:</h3>
-                                                <p className="text-sm mb-2">Palët pajtohen që çdo mosmarrëveshje që mund të lindë nga kjo marrëveshje të zgjidhet fillimisht me negociata të drejtpërdrejta. Nëse nuk arrihet marrëveshje brenda 15 ditëve, mosmarrëveshja i nënshtrohet gjykatës kompetente në Prishtinë.</p>
+                                            <div className="mb-3">
+                                                <h3 className="font-bold text-xs mb-1 underline">Zgjidhja e Mosmarrëveshjeve:</h3>
+                                                <p className="mb-1">Palët pajtohen që çdo mosmarrëveshje që mund të lindë nga kjo marrëveshje të zgjidhet fillimisht me negociata të drejtpërdrejta. Nëse nuk arrihet marrëveshje brenda 15 ditëve, mosmarrëveshja i nënshtrohet gjykatës kompetente në Prishtinë.</p>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Modifikimet:</h3>
-                                                <p className="text-sm">Çdo ndryshim ose shtesë e kësaj marrëveshjeje duhet të bëhet me shkrim dhe të nënshkruhet nga të dy palët.</p>
+                                            <div className="mb-3">
+                                                <h3 className="font-bold text-xs mb-1 underline">Modifikimet:</h3>
+                                                <p>Çdo ndryshim ose shtesë e kësaj marrëveshjeje duhet të bëhet me shkrim dhe të nënshkruhet nga të dy palët.</p>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <h3 className="font-bold text-sm mb-3 underline">Ligji i Zbatueshëm:</h3>
-                                                <p className="text-sm">Kjo marrëveshje rregullohet dhe interpretohet sipas ligjeve të Republikës së Kosovës.</p>
+                                            <div className="mb-3">
+                                                <h3 className="font-bold text-xs mb-1 underline">Ligji i Zbatueshëm:</h3>
+                                                <p>Kjo marrëveshje rregullohet dhe interpretohet sipas ligjeve të Republikës së Kosovës.</p>
                                             </div>
 
-                                            <div className="mb-8">
-                                                <h3 className="font-bold text-sm mb-3 underline">Kopjet:</h3>
-                                                <p className="text-sm">Kjo marrëveshje është hartuar në dy kopje origjinale, nga një kopje për secilën palë, të cilat kanë fuqi të njëjtë juridike.</p>
+                                            <div className="mb-4">
+                                                <h3 className="font-bold text-xs mb-1 underline">Kopjet:</h3>
+                                                <p>Kjo marrëveshje është hartuar në dy kopje origjinale, nga një kopje për secilën palë, të cilat kanë fuqi të njëjtë juridike.</p>
                                             </div>
 
-                                            <p className="font-bold text-center mb-16 uppercase">
+                                            <p className="font-bold text-center mb-8 uppercase">
                                                 Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
                                             </p>
 
-                                            <div className="footer mt-20 pt-8 flex justify-between">
+                                            <div className="footer mt-10 pt-4 flex justify-between">
                                                 <div className="signature-box w-2/5 text-left">
-                                                    <div className="mb-2 font-bold">Ndërmjetësuesi:</div>
-                                                    <div className="mb-16">{fullSellerName}</div>
+                                                    <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
+                                                    <div className="mb-10">{fullSellerName}</div>
                                                     <div className="border-b border-black w-full"></div>
-                                                    <div className="mt-2 text-sm">(Nënshkrimi dhe Vula)</div>
+                                                    <div className="mt-1">(Nënshkrimi dhe Vula)</div>
                                                 </div>
                                                 <div className="signature-box w-2/5 text-right">
-                                                    <div className="mb-2 font-bold">Blerësi:</div>
-                                                    <div className="mb-16">{safeString(sale.buyerName)}</div>
+                                                    <div className="mb-1 font-bold">Blerësi:</div>
+                                                    <div className="mb-10">{safeString(sale.buyerName)}</div>
                                                     <div className="border-b border-black w-full"></div>
-                                                    <div className="mt-2 text-sm">(Nënshkrimi)</div>
+                                                    <div className="mt-1">(Nënshkrimi)</div>
                                                 </div>
                                             </div>
 
-                                            <div className="mt-16 text-center text-xs" style={{ color: '#666' }}>
+                                            <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
                                                 <p>Nr. Ref: {saleRefId} | Data: {today}</p>
+                                            </div>
+                                            
+                                            {/* Page number */}
+                                            <div className="absolute bottom-4 left-0 right-0 text-center text-xs" style={{ color: '#666' }}>
+                                                Faqja 3 nga 3
                                             </div>
                                         </div>
                                     </div>
