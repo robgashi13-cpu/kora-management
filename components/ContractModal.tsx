@@ -433,7 +433,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* ===== PAGE 2 - Warranty Terms ===== */}
-                                        <div className="page-2 page-break" style={{ minHeight: '29.7cm', paddingTop: '2cm', paddingBottom: '1cm' }}>
+                                        <div className="page-2 page-break" style={{ minHeight: '27.7cm', paddingTop: '1cm', paddingBottom: '0.5cm' }}>
                                             <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
                                             
                                             <div className="mb-5">
@@ -524,7 +524,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
-                                        <div className="page-3 page-break" style={{ minHeight: '29.7cm', paddingTop: '2cm' }}>
+                                        <div className="page-3 page-break" style={{ minHeight: '27.7cm', paddingTop: '1cm' }}>
                                             <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
 
                                             <div className="mb-6">
