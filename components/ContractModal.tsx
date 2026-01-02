@@ -257,50 +257,50 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                         <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto">
                             <div
                                 ref={printRef}
-                                className={`bg-white text-black w-[21cm] min-h-[29.7cm] shadow-2xl ${isDeposit ? 'p-[1.6cm]' : 'p-[2.5cm]'}`}
-                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: isDeposit ? '8.5pt' : '9pt', lineHeight: isDeposit ? 1.35 : 1.5 }}
+                                className={`bg-white text-black w-[21cm] shadow-2xl ${type === 'deposit' ? 'h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
+                                style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt', lineHeight: type === 'deposit' ? 1.25 : type === 'full_shitblerje' ? 1.3 : 1.4, overflow: 'hidden' }}
                             >
                                 {type === 'deposit' && (
                                     <>
-                                        {/* Header */}
-                                        <div className="text-center mb-5 pb-2 border-b-2" style={{ borderColor: '#000000' }}>
-                                            <img src="/logo.jpg" className="mx-auto h-16 mb-4" alt="Logo" />
-                                            <h1 className="text-lg font-bold uppercase mb-1" style={{ color: '#000000' }}>KORAUTO</h1>
-                                            <div className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
+                                        {/* Header - Compact */}
+                                        <div className="text-center mb-2 pb-1 border-b" style={{ borderColor: '#000000' }}>
+                                            <img src="/logo.jpg" className="mx-auto h-10 mb-1" alt="Logo" />
+                                            <h1 className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KORAUTO</h1>
+                                            <div className="text-xs font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
                                         </div>
 
                                         {/* Reference and Date */}
-                                        <div className="flex justify-between mb-4 text-sm">
+                                        <div className="flex justify-between mb-2 text-xs">
                                             <div>Nr. Ref: <strong>{saleRefId}</strong></div>
                                             <div>Data: <strong>{today}</strong></div>
                                         </div>
 
-                                        {/* Parties Section */}
-                                        <div className="grid grid-cols-2 gap-8 mb-4">
+                                        {/* Parties Section - Compact */}
+                                        <div className="grid grid-cols-2 gap-4 mb-2">
                                             <div>
-                                                <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">1. Shitësi:</div>
-                                                <div className="space-y-1 text-sm">
-                                                    <div><span className="inline-block w-24">Emri:</span> <strong>{seller.name}</strong></div>
-                                                    <div><span className="inline-block w-24">Nr. personal:</span> {seller.id}</div>
-                                                    <div><span className="inline-block w-24">Tel:</span> {seller.phone}</div>
+                                                <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">1. Shitësi:</div>
+                                                <div className="text-xs" style={{ lineHeight: 1.3 }}>
+                                                    <div><span className="inline-block w-16">Emri:</span> <strong>{seller.name}</strong></div>
+                                                    <div><span className="inline-block w-16">Nr. personal:</span> {seller.id}</div>
+                                                    <div><span className="inline-block w-16">Tel:</span> {seller.phone}</div>
                                                 </div>
                                             </div>
                                             <div>
-                                                <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">2. Blerësi (Kaparidhënësi):</div>
-                                                <div className="space-y-1 text-sm">
-                                                    <div><span className="inline-block w-24">Emri:</span> <strong>{safeString(sale.buyerName)}</strong></div>
-                                                    <div><span className="inline-block w-24">Nr. personal:</span> {safeString(sale.buyerPersonalId)}</div>
+                                                <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">2. Blerësi (Kaparidhënësi):</div>
+                                                <div className="text-xs" style={{ lineHeight: 1.3 }}>
+                                                    <div><span className="inline-block w-16">Emri:</span> <strong>{safeString(sale.buyerName)}</strong></div>
+                                                    <div><span className="inline-block w-16">Nr. personal:</span> {safeString(sale.buyerPersonalId)}</div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Article 1 */}
-                                        <div className="mb-3">
-                                            <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 1 – Objekti i Kontratës</div>
-                                            <p className="text-sm mb-2">
+                                        <div className="mb-2">
+                                            <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 1 – Objekti i Kontratës</div>
+                                            <p className="text-xs mb-1">
                                                 Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
                                             </p>
-                                            <ul className="list-none text-sm font-bold mb-2">
+                                            <ul className="list-none text-xs font-bold" style={{ lineHeight: 1.4 }}>
                                                 <li>- Marka: {safeString(sale.brand)}</li>
                                                 <li>- Modeli: {safeString(sale.model)}</li>
                                                 <li>- Nr. shasie: {safeString(sale.vin)}</li>
@@ -308,51 +308,51 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                         </div>
 
                                         {/* Article 2 */}
-                                        <div className="mb-3">
-                                            <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 2 – Shuma e Kaparit</div>
-                                            <p className="text-sm">
+                                        <div className="mb-2">
+                                            <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
+                                            <p className="text-xs">
                                                 Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(sale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>{formatCurrency(sale.soldPrice)}€</strong>. Deri ne Prishtine
                                             </p>
                                         </div>
 
                                         {/* Article 3 */}
-                                        <div className="mb-3">
-                                            <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 3 – Detyrimet e Palëve</div>
-                                            <ul className="list-none text-sm">
-                                                <li className="mb-1">- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
+                                        <div className="mb-2">
+                                            <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 3 – Detyrimet e Palëve</div>
+                                            <ul className="list-none text-xs" style={{ lineHeight: 1.4 }}>
+                                                <li>- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
                                                 <li>- Blerësi angazhohet ta përfundojë pagesën dhe ta marrë veturën brenda afatit të caktuar</li>
                                             </ul>
                                         </div>
 
                                         {/* Article 4 */}
-                                        <div className="mb-3">
-                                            <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 4 – Anulimi i Marrëveshjes</div>
-                                            <ul className="list-none text-sm">
-                                                <li className="mb-1">- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
+                                        <div className="mb-2">
+                                            <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 4 – Anulimi i Marrëveshjes</div>
+                                            <ul className="list-none text-xs" style={{ lineHeight: 1.4 }}>
+                                                <li>- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
                                                 <li>- Nëse shitësi heq dorë ose nuk e përmbush marrëveshjen, është i obliguar të kthejë shumën e kaparit.</li>
                                             </ul>
                                         </div>
 
                                         {/* Article 5 */}
-                                        <div className="mb-5">
-                                            <div className="font-bold text-sm uppercase mb-2 border-b border-black pb-1">Neni 5 – Dispozita të Përgjithshme</div>
-                                            <ul className="list-none text-sm">
-                                                <li className="mb-1">- Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</li>
+                                        <div className="mb-3">
+                                            <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 5 – Dispozita të Përgjithshme</div>
+                                            <ul className="list-none text-xs" style={{ lineHeight: 1.4 }}>
+                                                <li>- Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</li>
                                                 <li>- Për çdo kontest eventual, palët pajtohen që të zgjidhet me marrëveshje ose në Gjykatën kompetente në Prishtine.</li>
                                             </ul>
                                         </div>
 
-                                        {/* Signatures */}
-                                        <div className="grid grid-cols-2 gap-12 mt-10 pt-6 border-t border-black">
+                                        {/* Signatures - Compact */}
+                                        <div className="grid grid-cols-2 gap-8 mt-4 pt-3 border-t border-black">
                                             <div className="text-center">
-                                                <div className="text-sm mb-16">Shitësi (Nënshkrimi)</div>
+                                                <div className="text-xs mb-8">Shitësi (Nënshkrimi)</div>
                                                 <div className="border-b border-black mx-4"></div>
-                                                <div className="mt-2 font-bold text-sm">{seller.name}</div>
+                                                <div className="mt-1 font-bold text-xs">{seller.name}</div>
                                             </div>
                                             <div className="text-center">
-                                                <div className="text-sm mb-16">Blerësi (Nënshkrimi)</div>
+                                                <div className="text-xs mb-8">Blerësi (Nënshkrimi)</div>
                                                 <div className="border-b border-black mx-4"></div>
-                                                <div className="mt-2 font-bold text-sm">{safeString(sale.buyerName)}</div>
+                                                <div className="mt-1 font-bold text-xs">{safeString(sale.buyerName)}</div>
                                             </div>
                                         </div>
                                     </>
@@ -360,105 +360,188 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
                                 {type === 'full_marreveshje' && (
                                     <div className="max-w-2xl mx-auto">
-                                        <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
-                                        <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
+                                        {/* ===== PAGE 1 ===== */}
+                                        <div className="page-1" style={{ minHeight: '27.7cm', paddingBottom: '1cm' }}>
+                                            <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
+                                            <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
+                                            <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
 
-                                        <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
+                                            <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
-                                        <div className="section mb-6">
-                                            <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
-                                            <ul className="list-disc ml-5 space-y-2">
+                                            <div className="section mb-6">
+                                                <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
+                                                <ul className="list-disc ml-5 space-y-2">
+                                                    <li>
+                                                        <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                                    </li>
+                                                    <li>
+                                                        <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
+                                                    </li>
+                                                </ul>
+                                            </div>
+
+                                            <div className="section mb-6">
+                                                <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
+                                                <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                                                <div className="car-details">
+                                                    <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
+                                                    <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
+                                                    <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
+                                                    <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
+                                                </div>
+                                            </div>
+
+                                            <p className="font-bold mt-4 mb-4">
+                                                {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
+                                            </p>
+
+                                            <hr className="mb-6 border-black" />
+
+                                            <h3 className="font-bold text-sm mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+
+                                            <ol className="list-decimal ml-5 space-y-4 mb-8">
                                                 <li>
-                                                    <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                                    <strong>Pagesa</strong>
+                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                        <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                                        <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
+                                                    </ul>
                                                 </li>
                                                 <li>
-                                                    <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
+                                                    <strong>Nisja dhe Dorëzimi i Automjetit</strong>
+                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                        <li>Automjeti do të niset nga Koreja e Jugut më datë {shippingDate}.</li>
+                                                        <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
+                                                    </ul>
                                                 </li>
-                                            </ul>
+                                                <li>
+                                                    <strong>Vonesa në Dorëzim</strong>
+                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                        <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(sale.soldPrice)} brenda 7 ditëve kalendarike.</li>
+                                                    </ul>
+                                                </li>
+                                                <li>
+                                                    <strong>Gjendja Teknike e Automjetit</strong>
+                                                    <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                        <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
+                                                    </ul>
+                                                </li>
+                                                <li>
+                                                    Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
+                                                </li>
+                                            </ol>
                                         </div>
 
-                                        <div className="section mb-6">
-                                            <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
-                                            <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
-                                            <div className="car-details">
-                                                <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
-                                                <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
-                                                <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
-                                                <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
+                                        {/* ===== PAGE 2 - Warranty Terms ===== */}
+                                        <div className="page-2 page-break" style={{ minHeight: '29.7cm', paddingTop: '2cm', paddingBottom: '1cm' }}>
+                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>KUSHTET E GARANCISË</h2>
+                                            
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët e Mbuluara nga Garancia:</h3>
+                                                <ul className="list-disc ml-5 space-y-2 text-sm">
+                                                    <li>Motori (blloku i motorit, kokat e cilindrave, pistona, segmentet)</li>
+                                                    <li>Kutia e shpejtësisë (ingranazhet, sinkronizuesit, kushineta)</li>
+                                                    <li>Sistemi i ftohjes (radiatori, pompa e ujit, termostati)</li>
+                                                    <li>Sistemi elektrik (alternatori, starteri, sensora kryesorë)</li>
+                                                    <li>Sistemi i frenave (disqet, kllapsat, cilindrat)</li>
+                                                    <li>Sistemi i drejtimit (pompa hidraulike, timoneria)</li>
+                                                </ul>
+                                            </div>
 
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Pjesët që NUK Mbulohen nga Garancia:</h3>
+                                                <ul className="list-disc ml-5 space-y-2 text-sm">
+                                                    <li>Konsumatorët (llamba, siguresa, rrypa, filtra)</li>
+                                                    <li>Dëmtimet nga aksidentet ose përdorimi i gabuar</li>
+                                                    <li>Mirëmbajtja e rregullt (vaji, filtrat, antifrizi)</li>
+                                                    <li>Pjesët kozmetike (llamarina, xhama, tapiseri)</li>
+                                                    <li>Sistemi i klimatizimit (në raste të rrjedhjes së gazit)</li>
+                                                </ul>
+                                            </div>
+
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Kushtet për Aktivizimin e Garancisë:</h3>
+                                                <ol className="list-decimal ml-5 space-y-2 text-sm">
+                                                    <li>Automjeti duhet të inspektohet brenda 7 ditëve nga marrja</li>
+                                                    <li>Raportimi i defektit duhet bërë me shkrim brenda 48 orëve</li>
+                                                    <li>Diagnoza duhet të kryhet në servis të autorizuar</li>
+                                                    <li>Shitësi ka të drejtë të verifikojë defektin para riparimit</li>
+                                                    <li>Riparimi kryhet në servisin e përzgjedhur nga shitësi</li>
+                                                </ol>
+                                            </div>
+
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Kohëzgjatja e Garancisë:</h3>
+                                                <p className="text-sm">Garancia vlen për një periudhë prej <strong>3 (tre) muajsh</strong> ose <strong>5,000 km</strong> (cilido që vjen i pari) nga data e dorëzimit të automjetit.</p>
+                                            </div>
+
+                                            <div className="mt-8 p-4 border border-black">
+                                                <p className="text-sm font-bold text-center">VËREJTJE: Çdo riparim i kryer pa miratimin e shitësit e anulon garancin.</p>
                                             </div>
                                         </div>
 
-                                        <p className="font-bold mt-4 mb-4">
-                                            {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
-                                        </p>
+                                        {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
+                                        <div className="page-3 page-break" style={{ minHeight: '29.7cm', paddingTop: '2cm' }}>
+                                            <h2 className="font-bold text-base mb-6 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
 
-                                        <hr className="mb-6 border-black" />
-
-                                        <h3 className="font-bold text-sm mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
-
-                                        <ol className="list-decimal ml-5 space-y-4 mb-8">
-                                            <li>
-                                                <strong>Pagesa</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                                    <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <strong>Nisja dhe Dorëzimi i Automjetit</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Automjeti do të niset nga Koreja e Jugut më datë {shippingDate}.</li>
-                                                    <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <strong>Vonesa në Dorëzim</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(sale.soldPrice)} brenda 7 ditëve kalendarike.</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <strong>Gjendja Teknike e Automjetit</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
-                                                    <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
-                                            </li>
-                                        </ol>
-
-                                        <p className="font-bold text-center mb-12 uppercase">
-                                            Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
-                                        </p>
-
-                                        <div className="footer mt-16 pt-8 flex justify-between">
-                                            <div className="signature-box w-1/3 text-left">
-                                                <div className="mb-8 font-bold">Ndërmjetësuesi: {fullSellerName}</div>
-                                                <div className="border-b border-black w-full h-1"></div>
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Zgjidhja e Mosmarrëveshjeve:</h3>
+                                                <p className="text-sm mb-2">Palët pajtohen që çdo mosmarrëveshje që mund të lindë nga kjo marrëveshje të zgjidhet fillimisht me negociata të drejtpërdrejta. Nëse nuk arrihet marrëveshje brenda 15 ditëve, mosmarrëveshja i nënshtrohet gjykatës kompetente në Prishtinë.</p>
                                             </div>
-                                            <div className="signature-box w-1/3 text-right">
-                                                <div className="mb-8 font-bold">Blerësi: {safeString(sale.buyerName)}</div>
-                                                <div className="border-b border-black w-full h-1"></div>
+
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Modifikimet:</h3>
+                                                <p className="text-sm">Çdo ndryshim ose shtesë e kësaj marrëveshjeje duhet të bëhet me shkrim dhe të nënshkruhet nga të dy palët.</p>
+                                            </div>
+
+                                            <div className="mb-6">
+                                                <h3 className="font-bold text-sm mb-3 underline">Ligji i Zbatueshëm:</h3>
+                                                <p className="text-sm">Kjo marrëveshje rregullohet dhe interpretohet sipas ligjeve të Republikës së Kosovës.</p>
+                                            </div>
+
+                                            <div className="mb-8">
+                                                <h3 className="font-bold text-sm mb-3 underline">Kopjet:</h3>
+                                                <p className="text-sm">Kjo marrëveshje është hartuar në dy kopje origjinale, nga një kopje për secilën palë, të cilat kanë fuqi të njëjtë juridike.</p>
+                                            </div>
+
+                                            <p className="font-bold text-center mb-16 uppercase">
+                                                Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
+                                            </p>
+
+                                            <div className="footer mt-20 pt-8 flex justify-between">
+                                                <div className="signature-box w-2/5 text-left">
+                                                    <div className="mb-2 font-bold">Ndërmjetësuesi:</div>
+                                                    <div className="mb-16">{fullSellerName}</div>
+                                                    <div className="border-b border-black w-full"></div>
+                                                    <div className="mt-2 text-sm">(Nënshkrimi dhe Vula)</div>
+                                                </div>
+                                                <div className="signature-box w-2/5 text-right">
+                                                    <div className="mb-2 font-bold">Blerësi:</div>
+                                                    <div className="mb-16">{safeString(sale.buyerName)}</div>
+                                                    <div className="border-b border-black w-full"></div>
+                                                    <div className="mt-2 text-sm">(Nënshkrimi)</div>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-16 text-center text-xs" style={{ color: '#666' }}>
+                                                <p>Nr. Ref: {saleRefId} | Data: {today}</p>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
                                 {type === 'full_shitblerje' && (
-                                    <div className="max-w-2xl mx-auto">
-                                        <img src="/logo.jpg" className="contract-logo mx-auto h-16 mb-4" alt="Logo" />
-                                        <h1 className="text-base font-bold uppercase mb-4 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
-                                        <div className="font-bold mb-4" style={{ color: '#000000' }}>Data: {today}</div>
+                                    <div className="max-w-2xl mx-auto" style={{ fontSize: '8.5pt', lineHeight: 1.3 }}>
+                                        <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
+                                        <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
+                                        <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Data: {today}</div>
 
-                                        <h2 className="font-bold text-sm mb-4 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
+                                        <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
-                                        <div className="section mb-6">
-                                            <div className="font-bold mb-2 underline">Palët Kontraktuese:</div>
-                                            <ul className="list-disc ml-5 space-y-2">
-                                                <li>
+                                        <div className="section mb-3">
+                                            <div className="font-bold mb-1 underline text-xs">Palët Kontraktuese:</div>
+                                            <ul className="list-disc ml-4 text-xs" style={{ lineHeight: 1.4 }}>
+                                                <li className="mb-1">
                                                     <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                                 </li>
                                                 <li>
@@ -467,42 +550,42 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             </ul>
                                         </div>
 
-                                        <div className="section mb-6">
-                                            <div className="font-bold mb-2 underline">Objekti i Marrëveshjes:</div>
-                                            <p className="mb-2">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
-                                            <div className="car-details">
+                                        <div className="section mb-3">
+                                            <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
+                                            <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                                            <div className="car-details text-xs" style={{ padding: '8pt', margin: '6pt 0' }}>
                                                 <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
                                                 <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
                                                 <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
                                                 <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
-
                                             </div>
                                         </div>
 
-                                        <p className="font-bold mt-4 mb-4">
+                                        <p className="font-bold mt-2 mb-2 text-xs">
                                             {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
                                         </p>
 
-                                        <hr className="mb-6 border-black" />
+                                        <hr className="mb-3 border-black" />
 
-                                        <h3 className="font-bold text-sm mb-4 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+                                        <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
 
-                                        <ol className="list-decimal ml-5 space-y-4 mb-8">
-                                            <li>
+                                        <ol className="list-decimal ml-4 text-xs mb-4" style={{ lineHeight: 1.4 }}>
+                                            <li className="mb-2">
                                                 <strong>Pagesa</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                <ul className="list-[circle] ml-4 mt-0.5">
                                                     <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
                                                     <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
                                                 </ul>
                                             </li>
-                                            <li>
+                                            <li className="mb-2">
                                                 <strong>Nisja dhe Dorëzimi i Automjetit</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                <ul className="list-[circle] ml-4 mt-0.5">
                                                     <li>AUTOMJETI DORËZOHET NË DATËN: {shippingDate}</li>
                                                 </ul>
-                                            </li>                                            <li>
+                                            </li>
+                                            <li className="mb-2">
                                                 <strong>Gjendja Teknike e Automjetit</strong>
-                                                <ul className="list-[circle] ml-5 mt-1 text-sm">
+                                                <ul className="list-[circle] ml-4 mt-0.5">
                                                     <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
                                                 </ul>
                                             </li>
@@ -511,15 +594,15 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                                             </li>
                                         </ol>
 
-                                        <div className="mt-10 pt-6 flex justify-between">
-                                            <div className="w-1/2 text-left pr-6">
-                                                <div className="font-bold mb-2">RG SH.P.K.</div>
-                                                <div className="mb-10">Owner: Robert Gashi</div>
+                                        <div className="mt-6 pt-4 flex justify-between">
+                                            <div className="w-1/2 text-left pr-4">
+                                                <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
+                                                <div className="text-xs mb-6">Owner: Robert Gashi</div>
                                                 <div className="border-b border-black w-4/5"></div>
                                             </div>
-                                            <div className="w-1/2 text-right pl-6">
-                                                <div className="font-bold mb-2">Blerësi</div>
-                                                <div className="mb-10">{safeString(sale.buyerName)}</div>
+                                            <div className="w-1/2 text-right pl-4">
+                                                <div className="font-bold text-xs mb-1">Blerësi</div>
+                                                <div className="text-xs mb-6">{safeString(sale.buyerName)}</div>
                                                 <div className="border-b border-black w-4/5 ml-auto"></div>
                                             </div>
                                         </div>
