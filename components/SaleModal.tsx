@@ -43,6 +43,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [contractType, setContractType] = useState<ContractType | null>(null);
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
     const [showInvoice, setShowInvoice] = useState(false);
+    const [showDoganeSelection, setShowDoganeSelection] = useState(false);
+    const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
 
     useEffect(() => {
         if (existingSale) {
@@ -444,7 +446,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setShowInvoice(true); setShowDocumentMenu(false); }}
+                        onClick={() => { setShowDoganeSelection(true); setShowDocumentMenu(false); }}
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                     >
                         <div>
@@ -458,13 +460,48 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         </div>
     );
 
+    const doganeSelectionModal = showDoganeSelection && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
+            <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 className="text-base font-bold text-slate-900">Fatura</h4>
+                        <p className="text-sm text-slate-500">Me Doganë apo pa Doganë?</p>
+                    </div>
+                    <button type="button" onClick={() => setShowDoganeSelection(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        onClick={() => { setInvoiceWithDogane(false); setShowInvoice(true); setShowDoganeSelection(false); }}
+                        className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-4 text-center hover:border-slate-400 hover:bg-slate-50 transition"
+                    >
+                        <div className="text-sm font-bold text-slate-900">Pa Doganë</div>
+                        <div className="text-xs text-slate-500">Default</div>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setInvoiceWithDogane(true); setShowInvoice(true); setShowDoganeSelection(false); }}
+                        className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-200 px-4 py-4 text-center hover:border-emerald-400 hover:bg-emerald-50 transition"
+                    >
+                        <div className="text-sm font-bold text-emerald-700">Me Doganë</div>
+                        <div className="text-xs text-emerald-600">Përfshirë doganën</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     if (inline) {
         return (
             <div className="w-full h-full relative p-0 overflow-hidden flex flex-col">
                 {previewOverlay}
                 {Content}
                 {documentMenu}
-                {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} />}
+                {doganeSelectionModal}
+                {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} withDogane={invoiceWithDogane} />}
                 {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
             </div>
         );
@@ -479,7 +516,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             {previewOverlay}
             {Content}
             {documentMenu}
-            {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} />}
+            {doganeSelectionModal}
+            {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} withDogane={invoiceWithDogane} />}
             {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
         </div>
     );

@@ -12,9 +12,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     sale: CarSale;
+    withDogane?: boolean;
 }
 
-export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
+export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -172,18 +173,22 @@ export default function InvoiceModal({ isOpen, onClose, sale }: Props) {
                             <tbody style={{ color: '#374151' }}>
                                 <tr className="border-b" style={{ borderColor: '#f3f4f6' }}>
                                     <td className="py-3">
-                                        <div className="font-bold" style={{ color: '#111827' }}>{sale.year} {sale.brand} {sale.model}</div>
+                                        <div className="font-bold" style={{ color: '#111827' }}>
+                                            {sale.year} {sale.brand} {sale.model}{withDogane ? ' ME DOGANË' : ''}
+                                        </div>
                                         <div className="text-sm" style={{ color: '#6b7280' }}>VIN: {sale.vin} | Color: {sale.color}</div>
                                         <div className="text-sm mt-1" style={{ color: '#6b7280' }}>Mileage: {(sale.km || 0).toLocaleString()} km</div>
                                     </td>
                                     <td className="py-3 text-right font-bold" style={{ color: '#111827' }}>€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                                 </tr>
-                                <tr className="border-b" style={{ borderColor: '#f3f4f6' }}>
-                                    <td className="py-3">
-                                        <div className="font-bold uppercase" style={{ color: '#111827' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
-                                    </td>
-                                    <td className="py-3 text-right font-bold" style={{ color: '#111827' }}></td>
-                                </tr>
+                                {!withDogane && (
+                                    <tr className="border-b" style={{ borderColor: '#f3f4f6' }}>
+                                        <td className="py-3">
+                                            <div className="font-bold uppercase" style={{ color: '#111827' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                                        </td>
+                                        <td className="py-3 text-right font-bold" style={{ color: '#111827' }}></td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
 
