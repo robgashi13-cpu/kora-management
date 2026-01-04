@@ -116,16 +116,34 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Dashboard Grid Layout */
+/* Dashboard Grid Layout - Compact */
 :root {
-  --cols-admin: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 70px 50px 50px 60px 70px 70px 90px 60px 40px;
-  --cols-user: 30px 140px 45px 60px 70px 90px 90px 90px 70px 70px 50px 70px 70px 90px 60px 40px;
+  --cols-admin: 28px 130px 42px 55px 65px 85px 85px 85px 65px 65px 65px 48px 48px 55px 65px 65px 85px 55px 36px;
+  --cols-user: 28px 130px 42px 55px 65px 85px 85px 85px 65px 65px 48px 65px 65px 85px 55px 36px;
+  --row-height-compact: 36px;
 }
 
 @media (min-width: 1367px) {
   :root {
-    --cols-admin: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 80px 80px 100px 110px 110px 140px 100px 60px;
-    --cols-user: 40px 220px 80px 100px 120px 140px 140px 140px 100px 100px 100px 100px 100px 160px 120px 60px;
+    --cols-admin: 32px 180px 60px 80px 100px 120px 120px 120px 85px 85px 85px 65px 65px 80px 90px 90px 120px 80px 48px;
+    --cols-user: 32px 180px 60px 80px 100px 120px 120px 120px 85px 85px 85px 85px 85px 140px 100px 48px;
+    --row-height-compact: 40px;
+  }
+}
+
+/* Compact table row styles */
+.table-row-compact > div {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+}
+
+@media (min-width: 1024px) {
+  .table-row-compact > div {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.8125rem;
   }
 }
 
