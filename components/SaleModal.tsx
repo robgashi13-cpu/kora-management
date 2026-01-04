@@ -14,6 +14,7 @@ interface Props {
     inline?: boolean;
     defaultStatus?: SaleStatus;
     isAdmin?: boolean;
+    availableProfiles?: string[];
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -37,7 +38,7 @@ const COLORS = [
 
 import ContractModal from './ContractModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [] }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -269,7 +270,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
-                            <Input label="Seller Name" name="sellerName" value={formData.sellerName} onChange={handleChange} />
+                            <Select label="Seller Name" name="sellerName" value={formData.sellerName || ''} onChange={handleChange}>
+                                <option value="">Select Seller</option>
+                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                            </Select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                             <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
