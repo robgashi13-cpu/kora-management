@@ -71,83 +71,83 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 1. Checkbox Column */}
-            <div className="px-1 h-full flex items-center justify-center relative border-r border-slate-100 z-10 bg-white">
-                <div className="absolute left-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-0.5" onPointerDown={(e) => controls.start(e)}>
-                    <GripVertical className="w-3 h-3 text-slate-400" />
+            <div className="flex items-center justify-center relative border-r border-slate-100 bg-inherit">
+                <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing" onPointerDown={(e) => controls.start(e)}>
+                    <GripVertical className="w-3.5 h-3.5 text-slate-400" />
                 </div>
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleSelection(s.id); }}
-                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-transparent hover:border-blue-500 hover:bg-blue-50'}`}
+                    className={`w-5 h-5 border-2 rounded flex items-center justify-center transition-all cursor-pointer hover:scale-110 ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-white hover:border-blue-500'}`}
                 >
-                    {selectedIds.has(s.id) && <CheckSquare className="w-3 h-3" />}
+                    {selectedIds.has(s.id) && <CheckSquare className="w-3.5 h-3.5" />}
                 </button>
             </div>
 
             {/* 2. Car Info */}
-            <div className="px-1 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white">
+            <div className="flex items-center font-semibold text-slate-800 border-r border-slate-100 bg-inherit">
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-blue-600 transition-colors text-xs xl:text-sm"
+                    className="truncate text-left hover:text-blue-600 transition-colors text-[13px]"
                 >
                     {s.brand} {s.model}
                 </button>
             </div>
 
             {/* 3. Year */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-600 border-r border-slate-100 bg-white text-xs">
+            <div className="flex items-center justify-center text-slate-600 border-r border-slate-100 bg-inherit text-[13px]">
                 {canEdit ? (
                     <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-600" />
                 ) : s.year}
             </div>
 
             {/* 4. KM */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-500 font-mono text-xs border-r border-slate-100 bg-white">
+            <div className="flex items-center justify-center text-slate-500 font-mono text-[12px] border-r border-slate-100 bg-inherit">
                 {canEdit ? (
                     <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-500" />
                 ) : (s.km || 0).toLocaleString()}
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 h-full flex flex-col justify-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight">
+            <div className="flex flex-col justify-center text-[11px] border-r border-slate-100 bg-inherit leading-relaxed">
                 {canEdit ? (
                     <>
                         <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium" />
-                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono text-[9px]" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
+                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono text-[10px]" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
                     </>
                 ) : (
                     <>
                         <div className="text-slate-700 font-mono font-medium">{s.plateNumber}</div>
-                        <div className="text-slate-400 font-mono text-[9px]" title={s.vin}>{(s.vin || '').slice(-6)}</div>
+                        <div className="text-slate-400 font-mono text-[10px]" title={s.vin}>{(s.vin || '').slice(-6)}</div>
                     </>
                 )}
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 h-full flex items-center text-slate-700 whitespace-normal break-words leading-tight border-r border-slate-100 bg-white text-xs" title={s.buyerName}>
+            <div className="flex items-center text-slate-700 border-r border-slate-100 bg-inherit text-[13px]" title={s.buyerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
-                ) : s.buyerName}
+                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700 truncate" />
+                ) : <span className="truncate">{s.buyerName}</span>}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white text-xs" title={s.sellerName}>
+            <div className="flex items-center text-slate-600 border-r border-slate-100 bg-inherit text-[13px]" title={s.sellerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
-                ) : s.sellerName}
+                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600 truncate" />
+                ) : <span className="truncate">{s.sellerName}</span>}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white text-xs" title={s.shippingName}>
+            <div className="flex items-center text-slate-600 border-r border-slate-100 bg-inherit text-[13px]" title={s.shippingName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
-                ) : s.shippingName}
+                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600 truncate" />
+                ) : <span className="truncate">{s.shippingName}</span>}
             </div>
 
             {/* 9. Cost (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white text-xs">
+                <div className="flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-inherit text-[13px]">
                     {canEdit ? (
                         <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-500" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
@@ -156,96 +156,96 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-emerald-600 font-semibold border-r border-slate-100 bg-white text-xs">
+                <div className="flex items-center justify-end font-mono text-emerald-600 font-semibold border-r border-slate-100 bg-inherit text-[13px]">
                     {canEdit ? (
                         <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-600 font-semibold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-inherit text-[13px]">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                <div className="flex items-center justify-end border-r border-slate-100 bg-inherit">
                     {canEdit ? (
-                        <div className="flex flex-col items-end gap-0.5 text-[9px] xl:text-[10px] leading-tight">
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Bk</span>
+                        <div className="flex flex-col items-end gap-1 text-[11px] leading-relaxed">
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400 font-medium">Bk</span>
                                 <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-600 font-medium" />
                             </div>
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Ca</span>
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400 font-medium">Ca</span>
                                 <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="text-slate-600 font-medium" />
                             </div>
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Dp</span>
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[9px] text-slate-400 font-medium">Dp</span>
                                 <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-500 font-medium" />
                             </div>
                         </div>
                     ) : (
-                        <div className="font-mono text-sky-600 font-medium text-xs">
+                        <div className="font-mono text-sky-600 font-medium text-[13px]">
                             €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-inherit text-[13px]">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-[10px] xl:text-xs text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                    <div className="flex items-center justify-end font-mono text-[12px] text-slate-400 border-r border-slate-100 bg-inherit">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="flex items-center justify-end border-r border-slate-100 bg-inherit">
                         {canEdit ? (
-                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-[10px] xl:text-xs" />
+                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-[12px]" />
                         ) : (
-                            <span className="font-mono text-[10px] xl:text-xs text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
+                            <span className="font-mono text-[12px] text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-violet-600 whitespace-nowrap border-r border-slate-100 bg-white text-xs">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="flex items-center justify-end font-mono font-semibold text-violet-600 border-r border-slate-100 bg-inherit text-[13px]">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                    <div className="flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-inherit text-[13px]">-</div>
+                    <div className="flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-inherit text-[13px]">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end font-mono font-semibold border-r border-slate-100 bg-white">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] xl:text-xs ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                <div className="flex items-center justify-end font-mono font-semibold border-r border-slate-100 bg-inherit">
+                    <span className={`px-2 py-1 rounded-full text-[12px] ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-inherit text-[13px]">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 h-full flex flex-col items-center justify-center gap-0.5 border-r border-slate-100 bg-white">
+                <div className="flex flex-col items-center justify-center gap-1 border-r border-slate-100 bg-inherit">
                     {canEdit && (
-                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[9px] xl:text-[10px] font-semibold text-slate-600" />
+                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[11px] font-semibold text-slate-600" />
                     )}
-                    <span className={`text-[9px] xl:text-[10px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                    <span className={`text-[10px] uppercase font-semibold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
             )}
 
             {/* 16. Status */}
-            <div className="px-1 h-full flex items-center justify-center border-r border-slate-100 bg-white">
-                <div className="flex flex-col items-center gap-0.5">
+            <div className="flex items-center justify-center border-r border-slate-100 bg-inherit">
+                <div className="flex flex-col items-center gap-1">
                     {canEdit ? (
-                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[9px] xl:text-[10px] ${statusClass}`} />
+                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[10px] ${statusClass}`} />
                     ) : (
-                        <span className={`status-badge text-[9px] xl:text-[10px] ${statusClass}`}>{s.status}</span>
+                        <span className={`status-badge text-[10px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="text-[8px] xl:text-[9px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                        <span className="text-[9px] uppercase font-semibold whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
                             Paid
                         </span>
                     )}
@@ -253,7 +253,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1 h-full flex items-center justify-center text-[10px] xl:text-xs border-r border-slate-100 bg-white">
+            <div className="flex items-center justify-center text-[12px] border-r border-slate-100 bg-inherit">
                 {canEdit ? (
                     <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
                 ) : (
@@ -262,9 +262,9 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
 
             {/* 18. Actions */}
-            <div className="px-1 h-full flex items-center justify-center gap-0.5 bg-white">
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-1 hover:bg-blue-50 rounded" title="View Invoice">
-                    <FileText className="w-3.5 h-3.5" />
+            <div className="flex items-center justify-center bg-inherit">
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-2 hover:bg-blue-50 rounded-lg" title="View Invoice">
+                    <FileText className="w-4 h-4" />
                 </button>
             </div>
         </Reorder.Item>
@@ -1600,54 +1600,54 @@ export default function Dashboard() {
                                     style={{
                                         gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
                                     }}>
-                                    <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
+                                    <div className="bg-slate-50/80 font-semibold text-slate-500 text-[11px] uppercase tracking-wide grid grid-cols-subgrid sticky top-0 z-30 border-b-2 border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                        <div className="px-2 py-3 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
                                         </div>
-                                        <div className="p-1 xl:p-2 pl-2 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('brand')}>
-                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="px-3 py-3 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                            Car {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        <div className="px-3 py-3 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
                                             Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        <div className="px-3 py-3 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
                                             KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
-                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="px-3 py-3 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                            Plate {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                        <div className="px-3 py-3 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
                                             Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                        <div className="px-3 py-3 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
                                             Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
-                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="px-3 py-3 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                            Ship {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
                                         {isAdmin && (
-                                            <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                            <div className="px-3 py-3 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
                                                 Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                             </div>
                                         )}
-                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        <div className="px-3 py-3 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-right">Paid</div>
-                                        <div className="p-1 xl:p-2.5 text-right">Bank Fee</div>
-                                        <div className="p-1 xl:p-2.5 text-right">Tax</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-blue-600">Profit</div>}
-                                        <div className="p-1 xl:p-2.5 text-right">Balance</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                        <div className="px-3 py-3 text-right">Paid</div>
+                                        <div className="px-3 py-3 text-right">Fee</div>
+                                        <div className="px-3 py-3 text-right">Tax</div>
+                                        {isAdmin && <div className="px-3 py-3 text-right text-blue-600">Profit</div>}
+                                        <div className="px-3 py-3 text-right">Balance</div>
+                                        {isAdmin && <div className="px-3 py-3 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>}
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                        <div className="px-3 py-3 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
                                             Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
-                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="px-3 py-3 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                            By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5"></div>
+                                        <div className="px-2 py-3"></div>
                                     </div>
                                     {/* Render Rows - Simple flat list */}
                                     <Reorder.Group axis="y" values={filteredSales} onReorder={(newOrder) => {
