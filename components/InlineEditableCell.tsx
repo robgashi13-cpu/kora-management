@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Check, Loader2, X } from 'lucide-react';
 
 interface InlineEditableCellProps {
   value: string | number | undefined;
-  onSave: (newValue: string | number) => void;
+  onSave: (newValue: string | number) => Promise<void> | void;
   type?: 'text' | 'number' | 'date';
   prefix?: string;
   suffix?: string;
@@ -15,7 +15,7 @@ interface InlineEditableCellProps {
   formatDisplay?: (value: string | number | undefined) => string;
 }
 
-export default function InlineEditableCell({
+const InlineEditableCell = memo(function InlineEditableCell({
   value,
   onSave,
   type = 'text',
@@ -32,13 +32,15 @@ export default function InlineEditableCell({
   const [saveState, setSaveState] = useState<'idle' | 'success' | 'error'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isSavingRef = useRef(false);
+  const containerRef = useRef<HTMLSpanElement>(null);
 
-  const clearSaveTimer = () => {
+  const clearSaveTimer = useCallback(() => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       saveTimerRef.current = null;
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -48,20 +50,25 @@ export default function InlineEditableCell({
   }, [isEditing]);
 
   useEffect(() => {
-    setEditValue(String(value ?? ''));
-  }, [value]);
+    if (!isEditing) {
+      setEditValue(String(value ?? ''));
+    }
+  }, [value, isEditing]);
 
-  useEffect(() => () => clearSaveTimer(), []);
+  useEffect(() => () => clearSaveTimer(), [clearSaveTimer]);
 
-  const handleStartEdit = () => {
-    if (disabled) return;
+  const handleStartEdit = useCallback(() => {
+    if (disabled || isSaving) return;
     setEditValue(String(value ?? ''));
     setSaveState('idle');
     setIsEditing(true);
-  };
+  }, [disabled, isSaving, value]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
     setIsSaving(true);
+    
     try {
       const newValue = type === 'number' ? parseFloat(editValue) || 0 : editValue;
       await onSave(newValue);
@@ -72,23 +79,34 @@ export default function InlineEditableCell({
       setSaveState('error');
     } finally {
       setIsSaving(false);
+      isSavingRef.current = false;
       clearSaveTimer();
-      saveTimerRef.current = setTimeout(() => setSaveState('idle'), 1600);
+      saveTimerRef.current = setTimeout(() => setSaveState('idle'), 1200);
     }
-  };
+  }, [editValue, onSave, type, clearSaveTimer]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setEditValue(String(value ?? ''));
     setIsEditing(false);
-  };
+  }, [value]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleSave();
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       handleCancel();
+    } else if (e.key === 'Tab') {
+      handleSave();
     }
-  };
+  }, [handleSave, handleCancel]);
+
+  const handleBlur = useCallback(() => {
+    if (!isSavingRef.current) {
+      handleSave();
+    }
+  }, [handleSave]);
 
   const displayValue = formatDisplay 
     ? formatDisplay(value) 
@@ -96,60 +114,68 @@ export default function InlineEditableCell({
       ? `${prefix}${type === 'number' ? Number(value).toLocaleString() : value}${suffix}` 
       : placeholder;
 
-  if (isEditing) {
-    return (
-      <div className="flex items-center gap-1">
-        <input
-          ref={inputRef}
-          type={type === 'number' ? 'number' : 'text'}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={() => setTimeout(handleSave, 150)}
-          className="inline-editable-input text-sm min-w-[60px] max-w-[120px]"
-          disabled={isSaving}
-        />
-        {isSaving && (
-          <span className="inline-flex items-center text-[10px] text-slate-500 gap-1">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            Saving
-          </span>
-        )}
-        <button
-          onClick={handleSave} 
-          className="p-0.5 rounded text-green-600 hover:bg-green-100 transition-colors"
-          disabled={isSaving}
-        >
-          <Check className="w-3 h-3" />
-        </button>
-        <button 
-          onClick={handleCancel} 
-          className="p-0.5 rounded text-red-500 hover:bg-red-100 transition-colors"
-          disabled={isSaving}
-        >
-          <X className="w-3 h-3" />
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <span className="inline-flex items-center gap-1">
-      <span
-        onClick={handleStartEdit}
-        className={`inline-editable ${disabled ? 'cursor-default opacity-60' : ''} ${className}`}
-        title={disabled ? 'View only' : 'Click to edit'}
-      >
-        {displayValue}
-      </span>
-      {saveState !== 'idle' && (
-        <span
-          className={`text-[10px] font-semibold ${saveState === 'success' ? 'text-emerald-600' : 'text-red-500'}`}
-          aria-live="polite"
-        >
-          {saveState === 'success' ? 'Saved' : 'Failed'}
+    <span 
+      ref={containerRef}
+      className="inline-cell-wrapper"
+      style={{ minWidth: isEditing ? '70px' : undefined }}
+    >
+      {isEditing ? (
+        <span className="inline-cell-edit-container">
+          <input
+            ref={inputRef}
+            type={type === 'number' ? 'number' : 'text'}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            className="inline-cell-input"
+            disabled={isSaving}
+            step={type === 'number' ? 'any' : undefined}
+          />
+          {isSaving && (
+            <span className="inline-cell-saving">
+              <Loader2 className="w-3 h-3 animate-spin" />
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSave} 
+            className="inline-cell-btn inline-cell-btn-save"
+            disabled={isSaving}
+          >
+            <Check className="w-3 h-3" />
+          </button>
+          <button 
+            type="button"
+            onClick={handleCancel} 
+            className="inline-cell-btn inline-cell-btn-cancel"
+            disabled={isSaving}
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ) : (
+        <span className="inline-cell-display-wrapper">
+          <span
+            onClick={handleStartEdit}
+            className={`inline-cell-display ${disabled ? 'inline-cell-disabled' : ''} ${className}`}
+            title={disabled ? 'View only' : 'Click to edit'}
+          >
+            {displayValue}
+          </span>
+          {saveState === 'success' && (
+            <span className="inline-cell-feedback inline-cell-feedback-success">
+              <Check className="w-2.5 h-2.5" />
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span className="inline-cell-feedback inline-cell-feedback-error">!</span>
+          )}
         </span>
       )}
     </span>
   );
-}
+});
+
+export default InlineEditableCell;

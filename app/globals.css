@@ -147,41 +147,157 @@ body {
   }
 }
 
-/* Inline Editable Cell */
-.inline-editable {
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin: -2px -6px;
+/* Inline Editable Cell - Stable Layout */
+.inline-cell-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  min-height: 24px;
+  vertical-align: middle;
 }
 
-.inline-editable:hover {
-  background-color: hsl(var(--primary) / 0.08);
+.inline-cell-display-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inline-cell-display {
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin: -2px -4px;
+  border-bottom: 1px dashed transparent;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inline-cell-display:hover {
+  background-color: hsl(var(--primary) / 0.06);
+  border-bottom-color: hsl(var(--primary) / 0.3);
   color: hsl(var(--primary));
 }
 
-.inline-editable-input {
-  background: hsl(var(--card));
-  border: 2px solid hsl(var(--primary));
-  border-radius: 6px;
-  padding: 4px 8px;
-  outline: none;
-  font: inherit;
-  color: hsl(var(--foreground));
-  width: 100%;
-  box-shadow: 0 4px 12px hsl(var(--primary) / 0.15);
+.inline-cell-disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.inline-cell-disabled:hover {
+  background-color: transparent;
+  border-bottom-color: transparent;
+  color: inherit;
 }
 
-/* Status Badge Styles - More Vibrant */
+.inline-cell-edit-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  animation: inlineEditFadeIn 0.12s ease-out;
+}
+
+@keyframes inlineEditFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.inline-cell-input {
+  background: hsl(var(--card));
+  border: 1.5px solid hsl(var(--primary));
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+  font: inherit;
+  font-size: inherit;
+  color: hsl(var(--foreground));
+  min-width: 50px;
+  max-width: 100px;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.12);
+  transition: box-shadow 0.12s ease;
+}
+
+.inline-cell-input:focus {
+  box-shadow: 0 2px 12px hsl(var(--primary) / 0.18);
+}
+
+.inline-cell-saving {
+  display: inline-flex;
+  align-items: center;
+  color: hsl(var(--muted-foreground));
+}
+
+.inline-cell-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+}
+
+.inline-cell-btn:active {
+  transform: scale(0.92);
+}
+
+.inline-cell-btn-save {
+  background-color: hsl(142 71% 94%);
+  color: hsl(142 71% 35%);
+}
+.inline-cell-btn-save:hover {
+  background-color: hsl(142 71% 88%);
+}
+
+.inline-cell-btn-cancel {
+  background-color: hsl(0 84% 95%);
+  color: hsl(0 84% 50%);
+}
+.inline-cell-btn-cancel:hover {
+  background-color: hsl(0 84% 90%);
+}
+
+.inline-cell-feedback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  animation: feedbackPop 0.2s ease-out;
+}
+
+@keyframes feedbackPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.inline-cell-feedback-success {
+  background-color: hsl(142 71% 90%);
+  color: hsl(142 71% 35%);
+  box-shadow: 0 0 6px hsl(142 71% 50% / 0.3);
+}
+
+.inline-cell-feedback-error {
+  background-color: hsl(0 84% 92%);
+  color: hsl(0 84% 50%);
+}
+
+/* Status Badge Styles - Compact */
 .status-badge {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
-  padding: 4px 10px;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
   border-radius: 999px;
   white-space: nowrap;
+  transition: transform 0.1s ease;
 }
 
 .status-completed { 
@@ -226,9 +342,15 @@ body {
 .money-neutral { color: hsl(var(--foreground)); }
 .money-muted { color: hsl(var(--muted-foreground)); }
 
-/* Table Row Hover */
+/* Table Row Hover - Subtle */
+.table-row-hover {
+  transition: background-color 0.1s ease;
+}
 .table-row-hover:hover {
-  background-color: hsl(var(--primary) / 0.04);
+  background-color: hsl(var(--primary) / 0.03);
+}
+.table-row-hover:hover > div {
+  background-color: hsl(var(--primary) / 0.03);
 }
 
 /* Attractive Gradients */
