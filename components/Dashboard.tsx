@@ -135,29 +135,12 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <div className="pro-table-cell cell-right mono-text text-slate-300">-</div>
             )}
 
-            {/* 11. Paid */}
+            {/* 11. Paid - Single total with tooltip for breakdown */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="pro-table-cell cell-right">
-                    {canEdit ? (
-                        <div className="paid-stack">
-                            <div className="paid-stack-row">
-                                <span className="paid-stack-label">Bk</span>
-                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-600 mono-text font-medium" />
-                            </div>
-                            <div className="paid-stack-row">
-                                <span className="paid-stack-label">Ca</span>
-                                <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="mono-text font-medium" />
-                            </div>
-                            <div className="paid-stack-row">
-                                <span className="paid-stack-label">Dp</span>
-                                <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-500 mono-text font-medium" />
-                            </div>
-                        </div>
-                    ) : (
-                        <span className="mono-text text-sky-600 font-medium">
-                            €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
-                        </span>
-                    )}
+                <div className="pro-table-cell cell-right" title={`Bank: €${(s.amountPaidBank || 0).toLocaleString()}\nCash: €${(s.amountPaidCash || 0).toLocaleString()}\nDeposit: €${(s.deposit || 0).toLocaleString()}`}>
+                    <span className="mono-text text-sky-600 font-medium">
+                        €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
+                    </span>
                 </div>
             ) : (
                 <div className="pro-table-cell cell-right mono-text text-slate-300">-</div>
@@ -196,41 +179,27 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="pro-table-cell cell-center" style={{ flexDirection: 'column', gap: '2px' }}>
-                    {canEdit && (
-                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="mono-text font-semibold text-[9px]" />
-                    )}
-                    <span className={`mini-badge ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                        {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                <div className="pro-table-cell cell-center">
+                    <span className={`mini-badge ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`} title={`Paid: €${(s.amountPaidToKorea || 0).toLocaleString()}`}>
+                        {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : '✓'}
                     </span>
                 </div>
             )}
 
             {/* 16. Status */}
-            <div className="pro-table-cell cell-center" style={{ flexDirection: 'column', gap: '2px' }}>
-                {canEdit ? (
-                    <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge ${statusClass}`} />
-                ) : (
-                    <span className={`status-badge ${statusClass}`}>{s.status}</span>
-                )}
-                {s.isPaid && (
-                    <span className="mini-badge bg-emerald-50 text-emerald-600 border border-emerald-200">Paid</span>
-                )}
+            <div className="pro-table-cell cell-center">
+                <span className={`status-badge ${statusClass}`} title={s.status}>{s.status?.slice(0, 4)}</span>
             </div>
 
             {/* 17. Sold By */}
-            <div className="pro-table-cell cell-center">
-                {canEdit ? (
-                    <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
-                ) : (
-                    <span className="text-slate-500 truncate">{s.soldBy}</span>
-                )}
+            <div className="pro-table-cell cell-center" title={s.soldBy}>
+                <span className="text-slate-500 text-[9px]">{s.soldBy?.split(' ').map((n: string) => n[0]).join('') || '-'}</span>
             </div>
 
             {/* 18. Actions */}
             <div className="pro-table-cell cell-center">
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-1 hover:bg-blue-50 rounded" title="View Invoice">
-                    <FileText className="w-3.5 h-3.5" />
+                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 p-0.5 hover:bg-blue-50 rounded" title="Invoice">
+                    <FileText className="w-3 h-3" />
                 </button>
             </div>
         </Reorder.Item>
