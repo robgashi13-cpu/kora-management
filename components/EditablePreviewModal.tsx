@@ -1,0 +1,523 @@
+'use client';
+
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check } from 'lucide-react';
+import { CarSale } from '@/app/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
+
+interface EditableField {
+  key: string;
+  label: string;
+  type: 'text' | 'number' | 'currency';
+  value: string | number;
+}
+
+interface EditablePreviewModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sale: CarSale;
+  documentType: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
+  onSaveToSale?: (updatedFields: Partial<CarSale>) => void;
+  withDogane?: boolean;
+}
+
+export default function EditablePreviewModal({
+  isOpen,
+  onClose,
+  sale,
+  documentType,
+  onSaveToSale,
+  withDogane = false
+}: EditablePreviewModalProps) {
+  const printRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [editedFields, setEditedFields] = useState<Record<string, string | number>>({});
+  const [activeEdit, setActiveEdit] = useState<string | null>(null);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Initialize editable fields from sale
+  useEffect(() => {
+    if (isOpen) {
+      setEditedFields({
+        buyerName: sale.buyerName || '',
+        buyerPersonalId: sale.buyerPersonalId || '',
+        brand: sale.brand || '',
+        model: sale.model || '',
+        year: sale.year || new Date().getFullYear(),
+        vin: sale.vin || '',
+        plateNumber: sale.plateNumber || '',
+        km: sale.km || 0,
+        color: sale.color || '',
+        soldPrice: sale.soldPrice || 0,
+        deposit: sale.deposit || 0,
+        amountPaidBank: sale.amountPaidBank || 0,
+        amountPaidCash: sale.amountPaidCash || 0,
+        sellerName: sale.sellerName || '',
+        shippingName: sale.shippingName || '',
+      });
+      setError(null);
+    }
+  }, [isOpen, sale]);
+
+  const getValue = useCallback((key: string) => {
+    return editedFields[key] !== undefined ? editedFields[key] : (sale as any)[key];
+  }, [editedFields, sale]);
+
+  const handleFieldChange = useCallback((key: string, value: string | number) => {
+    setEditedFields(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setEditedFields({
+      buyerName: sale.buyerName || '',
+      buyerPersonalId: sale.buyerPersonalId || '',
+      brand: sale.brand || '',
+      model: sale.model || '',
+      year: sale.year || new Date().getFullYear(),
+      vin: sale.vin || '',
+      plateNumber: sale.plateNumber || '',
+      km: sale.km || 0,
+      color: sale.color || '',
+      soldPrice: sale.soldPrice || 0,
+      deposit: sale.deposit || 0,
+      amountPaidBank: sale.amountPaidBank || 0,
+      amountPaidCash: sale.amountPaidCash || 0,
+      sellerName: sale.sellerName || '',
+      shippingName: sale.shippingName || '',
+    });
+  }, [sale]);
+
+  const handleSaveToSale = useCallback(() => {
+    if (onSaveToSale) {
+      const updates: Partial<CarSale> = {};
+      Object.entries(editedFields).forEach(([key, value]) => {
+        if ((sale as any)[key] !== value) {
+          (updates as any)[key] = value;
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        onSaveToSale(updates);
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 2000);
+      }
+    }
+  }, [editedFields, sale, onSaveToSale]);
+
+  const handleDownload = async () => {
+    const element = printRef.current;
+    if (!element) return;
+
+    try {
+      setIsDownloading(true);
+      setError(null);
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const opt = {
+        margin: documentType === 'invoice' ? 5 : 0,
+        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 4,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        },
+        jsPDF: {
+          unit: 'mm' as const,
+          format: 'a4' as const,
+          orientation: 'portrait' as const,
+          compress: true,
+          putOnlyUsedFonts: true
+        }
+      };
+
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      if (!Capacitor.isNativePlatform()) {
+        await html2pdf().set(opt).from(element).save();
+      } else {
+        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
+        const base64Data = pdfBase64.split(',')[1];
+
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+
+        await Share.share({
+          title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
+          text: `Document for ${getValue('vin')}`,
+          url: savedFile.uri,
+          dialogTitle: 'Download or Share Document'
+        });
+      }
+    } catch (err: any) {
+      console.error('Download failed:', err);
+      setError(`Download failed: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const formatCurrency = (val: string | number) => {
+    const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
+    return num.toLocaleString();
+  };
+
+  // Editable inline field component
+  const EditableField = ({ 
+    fieldKey, 
+    className = '', 
+    prefix = '', 
+    suffix = '',
+    type = 'text'
+  }: { 
+    fieldKey: string; 
+    className?: string; 
+    prefix?: string;
+    suffix?: string;
+    type?: 'text' | 'number' | 'currency';
+  }) => {
+    const value = getValue(fieldKey);
+    const isActive = activeEdit === fieldKey;
+    
+    const displayValue = type === 'currency' 
+      ? `${prefix}${formatCurrency(value)}${suffix}`
+      : `${prefix}${value}${suffix}`;
+
+    if (isActive) {
+      return (
+        <input
+          type={type === 'currency' || type === 'number' ? 'number' : 'text'}
+          value={value}
+          onChange={(e) => handleFieldChange(fieldKey, type === 'currency' || type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
+          onBlur={() => setActiveEdit(null)}
+          onKeyDown={(e) => e.key === 'Enter' && setActiveEdit(null)}
+          autoFocus
+          className={`editable-preview-input ${className}`}
+          style={{ 
+            background: 'rgba(59, 130, 246, 0.1)', 
+            border: '1px solid #3b82f6',
+            borderRadius: '3px',
+            padding: '1px 4px',
+            outline: 'none',
+            font: 'inherit',
+            minWidth: '60px',
+            maxWidth: '150px'
+          }}
+        />
+      );
+    }
+
+    return (
+      <span
+        onClick={() => setActiveEdit(fieldKey)}
+        className={`editable-preview-field ${className}`}
+        style={{
+          cursor: 'pointer',
+          borderBottom: '1px dashed #94a3b8',
+          transition: 'all 0.15s ease',
+        }}
+        title="Click to edit"
+      >
+        {displayValue || '-'}
+      </span>
+    );
+  };
+
+  if (!isOpen) return null;
+
+  const today = new Date().toLocaleDateString('en-GB');
+  const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
+  const saleRefId = sale.id ? sale.id.slice(0, 8).toUpperCase() : crypto.randomUUID().slice(0, 8).toUpperCase();
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <div className="flex justify-between items-center p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <h2 className="text-lg font-bold text-slate-800">
+                Preview & Edit {documentType === 'invoice' ? 'Invoice' : 'Contract'}
+              </h2>
+              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">
+                Click any value to edit
+              </span>
+            </div>
+            <div className="flex gap-2">
+              {onSaveToSale && (
+                <button
+                  onClick={handleSaveToSale}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-all font-medium text-sm shadow-sm"
+                >
+                  {showSaveSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                  {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
+                </button>
+              )}
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-medium text-sm"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50"
+              >
+                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {isDownloading ? 'Generating...' : 'Download PDF'}
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="px-4 py-2 bg-red-50 text-red-700 text-sm flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+        </div>
+
+        {/* Document Preview */}
+        <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8">
+          <div className="flex justify-center">
+            <div className="transform scale-[0.5] sm:scale-75 md:scale-90 lg:scale-100 origin-top">
+              <div
+                ref={printRef}
+                className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8"
+                style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5 }}
+              >
+                {documentType === 'invoice' ? (
+                  /* Invoice Template */
+                  <>
+                    <div className="grid grid-cols-2 gap-6 items-start mb-6">
+                      <div>
+                        <img src="/logo.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
+                        <h1 className="text-xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
+                        <p className="mt-1 text-gray-500">#{String(getValue('vin')).slice(-6).toUpperCase() || 'N/A'}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-base font-bold mb-1">RG SH.P.K</div>
+                        <div className="text-sm leading-relaxed text-gray-500">
+                          Rr. Dardania 191<br />
+                          Owner: Robert Gashi<br />
+                          Phone: +383 48 181 116<br />
+                          Nr Biznesit: 810062092
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6 mb-6 border-t border-b border-gray-100 py-4">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-400">Bill To</h3>
+                        <div className="font-bold text-sm">
+                          <EditableField fieldKey="buyerName" />
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm mr-4 text-gray-500">Invoice Date:</span>
+                        <span className="font-medium">{today}</span>
+                      </div>
+                    </div>
+
+                    <table className="w-full mb-6">
+                      <thead>
+                        <tr className="border-b-2 border-gray-900">
+                          <th className="text-left py-2 font-bold text-sm uppercase text-gray-600">Description</th>
+                          <th className="text-right py-2 font-bold text-sm uppercase text-gray-600">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-b border-gray-100">
+                          <td className="py-3">
+                            <div className="font-bold">
+                              <EditableField fieldKey="year" type="number" /> <EditableField fieldKey="brand" /> <EditableField fieldKey="model" />
+                              {withDogane ? ' ME DOGANË' : ''}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              VIN: <EditableField fieldKey="vin" className="font-mono" /> | Color: <EditableField fieldKey="color" />
+                            </div>
+                            <div className="text-sm mt-1 text-gray-500">
+                              Mileage: <EditableField fieldKey="km" type="number" /> km
+                            </div>
+                          </td>
+                          <td className="py-3 text-right font-bold">
+                            €{formatCurrency((Number(getValue('soldPrice')) || 0) - 200)}
+                          </td>
+                        </tr>
+                        {!withDogane && (
+                          <tr className="border-b border-gray-100">
+                            <td className="py-3">
+                              <div className="font-bold uppercase">SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                            </td>
+                            <td></td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+
+                    <div className="w-1/2 ml-auto">
+                      <div className="flex justify-between py-2 text-gray-600">
+                        <span>Subtotal</span>
+                        <span>€{formatCurrency((Number(getValue('soldPrice')) || 0) - 200)}</span>
+                      </div>
+                      <div className="flex justify-between py-2 text-gray-600">
+                        <span>Services</span>
+                        <span>€169.49</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b mb-2 text-gray-600">
+                        <span>Tax (TVSH 18%)</span>
+                        <span>€30.51</span>
+                      </div>
+                      <div className="flex justify-between py-3 border-t-2 border-gray-900">
+                        <span className="font-bold text-base">Grand Total</span>
+                        <span className="font-bold text-base">
+                          €<EditableField fieldKey="soldPrice" type="currency" />
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-6 mt-8 bg-gray-50 -mx-8 px-8 pb-4">
+                      <h4 className="font-bold text-sm mb-4 uppercase tracking-wider">Payment Details</h4>
+                      <div className="grid grid-cols-2 gap-8 text-sm text-gray-600">
+                        <div>
+                          <div className="font-bold mb-1 text-gray-900">Raiffeisen Bank</div>
+                          <div className="font-mono bg-white p-2 rounded border inline-block">1501080002435404</div>
+                          <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
+                          <div className="mt-3 text-xs uppercase tracking-wide text-gray-400">Paid in Bank</div>
+                          <div className="font-bold text-sm">
+                            €<EditableField fieldKey="amountPaidBank" type="currency" />
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold mb-1 text-gray-900">Contact</div>
+                          <div>+383 48 181 116</div>
+                          <div className="mt-4 text-xs text-gray-400">Thank you for your business!</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : documentType === 'deposit' ? (
+                  /* Deposit Contract Template */
+                  <>
+                    <div className="text-center mb-3 pb-2 border-b border-black">
+                      <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
+                      <h1 className="text-base font-bold uppercase">KORAUTO</h1>
+                      <div className="text-xs font-bold uppercase">KONTRATË PËR KAPAR</div>
+                    </div>
+
+                    <div className="flex justify-between mb-3 text-xs">
+                      <div>Nr. Ref: <strong>{saleRefId}</strong></div>
+                      <div>Data: <strong>{today}</strong></div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">1. Shitësi:</div>
+                        <div className="text-xs" style={{ lineHeight: 1.4 }}>
+                          <div><span className="inline-block w-16">Emri:</span> <strong>{seller.name}</strong></div>
+                          <div><span className="inline-block w-16">Nr. personal:</span> {seller.id}</div>
+                          <div><span className="inline-block w-16">Tel:</span> {seller.phone}</div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">2. Blerësi (Kaparidhënësi):</div>
+                        <div className="text-xs" style={{ lineHeight: 1.4 }}>
+                          <div><span className="inline-block w-16">Emri:</span> <strong><EditableField fieldKey="buyerName" /></strong></div>
+                          <div><span className="inline-block w-16">Nr. personal:</span> <EditableField fieldKey="buyerPersonalId" /></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 1 – Objekti i Kontratës</div>
+                      <p className="text-xs mb-1">
+                        Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
+                      </p>
+                      <ul className="list-none text-xs font-bold" style={{ lineHeight: 1.5 }}>
+                        <li>- Marka: <EditableField fieldKey="brand" /></li>
+                        <li>- Modeli: <EditableField fieldKey="model" /></li>
+                        <li>- Nr. shasie: <EditableField fieldKey="vin" /></li>
+                      </ul>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
+                      <p className="text-xs">
+                        Blerësi i dorëzon shitësit shumën prej <strong>€<EditableField fieldKey="deposit" type="currency" /></strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>€<EditableField fieldKey="soldPrice" type="currency" /></strong>. Deri ne Prishtine
+                      </p>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 3 – Detyrimet e Palëve</div>
+                      <ul className="list-none text-xs" style={{ lineHeight: 1.5 }}>
+                        <li>- Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</li>
+                        <li>- Blerësi angazhohet ta përfundojë pagesën dhe ta marrë veturën brenda afatit të caktuar</li>
+                      </ul>
+                    </div>
+
+                    <div className="mb-3">
+                      <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 4 – Anulimi i Marrëveshjes</div>
+                      <ul className="list-none text-xs" style={{ lineHeight: 1.5 }}>
+                        <li>- Nëse blerësi heq dorë, kapari nuk kthehet.</li>
+                        <li>- Nëse shitësi heq dorë ose nuk e përmbush marrëveshjen, është i obliguar të kthejë shumën e kaparit.</li>
+                      </ul>
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-2 gap-8">
+                      <div className="text-center">
+                        <div className="text-xs uppercase font-bold mb-8 text-gray-600">Shitësi</div>
+                        <div className="border-t border-black pt-2 text-sm">{seller.name}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs uppercase font-bold mb-8 text-gray-600">Blerësi</div>
+                        <div className="border-t border-black pt-2 text-sm">{getValue('buyerName') || '________________'}</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Full Contract Templates - Simplified */
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg font-medium">Full contract preview</p>
+                    <p className="text-sm mt-2">Edit fields in the preview above before downloading</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <style jsx global>{`
+        .editable-preview-field:hover {
+          background-color: rgba(59, 130, 246, 0.1);
+          border-bottom-color: #3b82f6;
+        }
+      `}</style>
+    </div>
+  );
+}
