@@ -12,6 +12,7 @@ import SaleModal from './SaleModal';
 import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
+import GroupManager from './GroupManager';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -809,10 +810,8 @@ export default function Dashboard() {
         );
     };
 
-    const handleCreateGroup = async () => {
-        if (selectedIds.size === 0) return;
-        const name = prompt('Enter group name:');
-        if (!name?.trim()) return;
+    const createGroupWithName = async (name: string, saleIds: string[]) => {
+        if (!name?.trim() || saleIds.length === 0) return;
         const trimmed = name.trim();
         if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
             alert('Group already exists.');
@@ -823,13 +822,20 @@ export default function Dashboard() {
         await persistGroupMeta(nextMeta);
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
-        const newSales = sales.map(s => selectedIds.has(s.id) ? { ...s, group: trimmed } : s);
+        const saleIdSet = new Set(saleIds);
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
 
-    const handleRenameGroup = async (groupName: string) => {
-        const newName = prompt('Rename group to:', groupName);
+    const handleCreateGroup = async () => {
+        if (selectedIds.size === 0) return;
+        const name = prompt('Enter group name:');
+        if (!name?.trim()) return;
+        await createGroupWithName(name, Array.from(selectedIds));
+    };
+
+    const renameGroupWithName = async (groupName: string, newName: string) => {
         if (!newName || !newName.trim()) return;
         const trimmed = newName.trim();
         if (trimmed === groupName) return;
@@ -843,6 +849,12 @@ export default function Dashboard() {
         const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
+    };
+
+    const handleRenameGroup = async (groupName: string) => {
+        const newName = prompt('Rename group to:', groupName);
+        if (!newName || !newName.trim()) return;
+        await renameGroupWithName(groupName, newName);
     };
 
     const handleArchiveGroup = async (groupName: string, archived: boolean) => {
@@ -872,6 +884,15 @@ export default function Dashboard() {
     const handleRemoveFromGroup = async (id: string) => {
         const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
         await updateSalesAndSave(newSales);
+    };
+
+    const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
+        if (saleIds.length === 0) return;
+        const saleIdSet = new Set(saleIds);
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
+        await updateSalesAndSave(newSales);
+        setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
+        setSelectedIds(new Set());
     };
 
     const handleBulkCopy = () => {
@@ -905,7 +926,7 @@ export default function Dashboard() {
 
     const handleAddProfile = async () => {
         if (!isAdmin) {
-            alert('Only Admin (Robert) can add users.');
+            alert(`Only ${ADMIN_PROFILE} can add users.`);
             return;
         }
         if (!newProfileName.trim()) return;
@@ -920,7 +941,7 @@ export default function Dashboard() {
 
     const quickAddProfile = async () => {
         if (!isAdmin) {
-            alert('Only Admin (Robert) can add users.');
+            alert(`Only ${ADMIN_PROFILE} can add users.`);
             return;
         }
         const name = prompt("Enter new profile name:");
@@ -1814,6 +1835,29 @@ export default function Dashboard() {
                         )}
 
                         {view === 'dashboard' ? (<>
+                            <div className="mb-3 md:mb-4 rounded-2xl border border-slate-100 bg-white p-4 md:p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+                                <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between mb-3">
+                                    <div>
+                                        <h2 className="text-sm font-semibold text-slate-800">Group Manager</h2>
+                                        <p className="text-xs text-slate-500">Create and organize car groups directly from the dashboard.</p>
+                                    </div>
+                                    <div className="text-[11px] text-slate-400">
+                                        Use group headers below to reorder or archive groups.
+                                    </div>
+                                </div>
+                                <GroupManager
+                                    sales={sales}
+                                    selectedIds={selectedIds}
+                                    groups={activeGroups.map(group => group.name)}
+                                    expandedGroups={expandedGroups}
+                                    onCreateGroup={createGroupWithName}
+                                    onRenameGroup={renameGroupWithName}
+                                    onRemoveFromGroup={handleRemoveFromGroup}
+                                    onToggleGroup={toggleGroup}
+                                    onAddToGroup={handleAddToGroup}
+                                    showDelete={false}
+                                />
+                            </div>
 
                             <div
                                 ref={scrollContainerRef}
@@ -2404,7 +2448,7 @@ export default function Dashboard() {
                                             <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
                                         </div>
                                         {!isAdmin && (
-                                            <p className="text-xs text-slate-400">Only Admin (Robert) can add users.</p>
+                                            <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
                                         )}
                                     </div>
 
@@ -2653,7 +2697,7 @@ export default function Dashboard() {
                 showPasswordModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
                         <div className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter Admin Password</h3>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
