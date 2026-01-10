@@ -31,7 +31,31 @@ const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costTo
 
 const ADMIN_PROFILE = 'Robert';
 const ADMIN_PASSWORD = 'Robertoo1396$';
+const LEGACY_ADMIN_PROFILE = 'Admin';
 const REQUIRED_PROFILES = [ADMIN_PROFILE, 'Leonit'];
+
+const normalizeProfileName = (name?: string | null) => {
+    if (!name) return '';
+    const trimmed = name.trim();
+    if (!trimmed) return '';
+    return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
+};
+
+const isLegacyAdminProfile = (name?: string | null) => {
+    if (!name) return false;
+    return name.trim().toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase();
+};
+
+const normalizeAvatarMap = (avatars: Record<string, string>) => {
+    const normalized: Record<string, string> = {};
+    Object.entries(avatars).forEach(([name, value]) => {
+        const normalizedName = normalizeProfileName(name);
+        if (!normalizedName) return;
+        if (normalized[normalizedName] && normalizedName === ADMIN_PROFILE && normalizedName !== name) return;
+        normalized[normalizedName] = value;
+    });
+    return normalized;
+};
 
 type GroupMeta = {
     name: string;
@@ -362,7 +386,7 @@ export default function Dashboard() {
     const isFormOpenRef = React.useRef(isFormOpen);
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
-        const normalized = profiles.map(p => (p === 'Admin' ? ADMIN_PROFILE : p).trim()).filter(Boolean);
+        const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
         const unique = new Set(normalized);
         REQUIRED_PROFILES.forEach(profile => unique.add(profile));
         const ordered: string[] = [];
@@ -377,8 +401,8 @@ export default function Dashboard() {
 
     const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
         ...sale,
-        sellerName: sale.sellerName === 'Admin' ? ADMIN_PROFILE : sale.sellerName,
-        soldBy: sale.soldBy === 'Admin' ? ADMIN_PROFILE : sale.soldBy
+        sellerName: normalizeProfileName(sale.sellerName),
+        soldBy: normalizeProfileName(sale.soldBy)
     }), []);
 
     const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
@@ -415,17 +439,20 @@ export default function Dashboard() {
                     const client = createClient(supabaseUrl, supabaseKey);
                     const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
                     if (data?.attachments?.avatars) {
-                        current = { ...current, ...data.attachments.avatars };
+                        current = normalizeAvatarMap({ ...current, ...data.attachments.avatars });
                         setProfileAvatars(current);
                         await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(current) });
                     } else {
+                        current = normalizeAvatarMap(current);
                         setProfileAvatars(current);
                     }
                 } catch (e) {
                     console.error("Avatar Sync Error", e);
+                    current = normalizeAvatarMap(current);
                     setProfileAvatars(current);
                 }
             } else {
+                current = normalizeAvatarMap(current);
                 setProfileAvatars(current);
             }
         };
@@ -433,7 +460,9 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey]);
 
     const handleEditAvatar = async (name: string, base64: string) => {
-        const updated = { ...profileAvatars, [name]: base64 };
+        const normalizedName = normalizeProfileName(name);
+        if (!normalizedName) return;
+        const updated = { ...profileAvatars, [normalizedName]: base64 };
         setProfileAvatars(updated);
         await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(updated) });
 
@@ -621,11 +650,11 @@ export default function Dashboard() {
     ]);
 
     const resolveSoldBy = (sale: Partial<CarSale>, fallback?: string) => {
-        const seller = sale.sellerName?.trim();
-        const soldBy = sale.soldBy?.trim();
+        const seller = sale.sellerName ? normalizeProfileName(sale.sellerName) : '';
+        const soldBy = sale.soldBy ? normalizeProfileName(sale.soldBy) : '';
         if (seller && availableProfiles.includes(seller)) return seller;
         if (soldBy && availableProfiles.includes(soldBy)) return soldBy;
-        return fallback || soldBy || seller || userProfile || 'Unknown';
+        return normalizeProfileName(fallback || soldBy || seller || userProfile || 'Unknown');
     };
 
     const handleInlineUpdate = async (id: string, field: keyof CarSale, value: string | number) => {
@@ -649,18 +678,23 @@ export default function Dashboard() {
             return;
         }
 
-        let updatedSale = { ...currentSales[index], [field]: normalized };
+        let normalizedValue = normalized;
+        if ((field === 'sellerName' || field === 'soldBy') && typeof normalized === 'string') {
+            normalizedValue = normalizeProfileName(normalized);
+        }
+
+        let updatedSale = { ...currentSales[index], [field]: normalizedValue };
         if (field === 'sellerName') {
             updatedSale = {
                 ...updatedSale,
-                soldBy: resolveSoldBy({ sellerName: String(normalized) }, currentSales[index].soldBy)
+                soldBy: resolveSoldBy({ sellerName: String(normalizedValue) }, currentSales[index].soldBy)
             };
         }
         if (field === 'soldBy') {
             updatedSale = {
                 ...updatedSale,
-                sellerName: String(normalized),
-                soldBy: resolveSoldBy({ soldBy: String(normalized) }, currentSales[index].soldBy)
+                sellerName: String(normalizedValue),
+                soldBy: resolveSoldBy({ soldBy: String(normalizedValue) }, currentSales[index].soldBy)
             };
         }
         const newSales = [...currentSales];
@@ -682,6 +716,12 @@ export default function Dashboard() {
         if (index === -1) return;
 
         let updatedSale = { ...currentSales[index], ...updates };
+        if (updates.sellerName) {
+            updatedSale.sellerName = normalizeProfileName(updates.sellerName);
+        }
+        if (updates.soldBy) {
+            updatedSale.soldBy = normalizeProfileName(updates.soldBy);
+        }
         if (updates.sellerName || updates.soldBy) {
             updatedSale = {
                 ...updatedSale,
@@ -813,6 +853,21 @@ export default function Dashboard() {
         if (sale.bankReceipts?.length) files.push(...sale.bankReceipts);
         if (sale.bankInvoices?.length) files.push(...sale.bankInvoices);
         if (sale.depositInvoices?.length) files.push(...sale.depositInvoices);
+        const contractCollections: Array<Attachment[] | undefined> = [
+            (sale as { contractFiles?: Attachment[] }).contractFiles,
+            (sale as { contractAttachments?: Attachment[] }).contractAttachments,
+            (sale as { contracts?: Attachment[] }).contracts
+        ];
+        contractCollections.forEach(collection => {
+            if (collection?.length) files.push(...collection);
+        });
+        const contractSingles: Array<Attachment | undefined> = [
+            (sale as { contractFile?: Attachment }).contractFile,
+            (sale as { contractAttachment?: Attachment }).contractAttachment
+        ];
+        contractSingles.forEach(file => {
+            if (file) files.push(file);
+        });
         return files.filter(file => file?.data);
     };
 
@@ -1130,13 +1185,18 @@ export default function Dashboard() {
             alert(`Only ${ADMIN_PROFILE} can add users.`);
             return;
         }
-        if (!newProfileName.trim()) return;
-        const updated = normalizeProfiles([...availableProfiles, newProfileName.trim()]);
+        const normalizedName = normalizeProfileName(newProfileName);
+        if (!normalizedName) return;
+        if (availableProfiles.includes(normalizedName)) {
+            alert('Profile already exists!');
+            return;
+        }
+        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
         setAvailableProfiles(updated);
-        setUserProfile(newProfileName.trim());
+        setUserProfile(normalizedName);
         setNewProfileName('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        await persistUserProfile(newProfileName.trim());
+        await persistUserProfile(normalizedName);
         syncProfilesToCloud(updated);
     };
 
@@ -1147,11 +1207,17 @@ export default function Dashboard() {
         }
         const name = prompt("Enter new profile name:");
         if (name && name.trim()) {
-            const updated = normalizeProfiles([...availableProfiles, name.trim()]);
+            const normalizedName = normalizeProfileName(name);
+            if (!normalizedName) return;
+            if (availableProfiles.includes(normalizedName)) {
+                alert('Profile already exists!');
+                return;
+            }
+            const updated = normalizeProfiles([...availableProfiles, normalizedName]);
             setAvailableProfiles(updated);
-            setUserProfile(name.trim());
+            setUserProfile(normalizedName);
             await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-            await persistUserProfile(name.trim());
+            await persistUserProfile(normalizedName);
             setShowProfileMenu(false);
             syncProfilesToCloud(updated);
         }
@@ -1167,12 +1233,13 @@ export default function Dashboard() {
     };
 
     const handleEditProfile = async (oldName: string, newName: string) => {
-        if (!newName.trim() || availableProfiles.includes(newName)) return;
-        const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? newName : p));
+        const normalizedName = normalizeProfileName(newName);
+        if (!normalizedName || (normalizedName !== oldName && availableProfiles.includes(normalizedName))) return;
+        const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? normalizedName : p));
         setAvailableProfiles(updated);
         if (userProfile === oldName) {
-            setUserProfile(newName);
-            await persistUserProfile(newName);
+            setUserProfile(normalizedName);
+            await persistUserProfile(normalizedName);
         }
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
         syncProfilesToCloud(updated);
@@ -1228,9 +1295,10 @@ export default function Dashboard() {
                 setRememberProfile(shouldRemember);
 
                 let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
-                if (storedProfile === 'Admin') {
-                    storedProfile = ADMIN_PROFILE;
-                    await Preferences.set({ key: 'user_profile', value: ADMIN_PROFILE });
+                const normalizedStoredProfile = normalizeProfileName(storedProfile);
+                if (normalizedStoredProfile && normalizedStoredProfile !== storedProfile) {
+                    storedProfile = normalizedStoredProfile;
+                    await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
                 }
                 if (storedProfile && shouldRemember) {
                     setUserProfile(storedProfile);
@@ -1286,10 +1354,10 @@ export default function Dashboard() {
 
                 // Just load the saved data - no auto-import
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
-                const hasAdminOwnership = currentSales.some((sale: CarSale) => sale.sellerName === 'Admin' || sale.soldBy === 'Admin');
+                const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
                 if (hasAdminOwnership) {
                     currentSales.forEach((sale: CarSale) => {
-                        if (sale.sellerName === 'Admin' || sale.soldBy === 'Admin') {
+                        if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                             dirtyIds.current.add(sale.id);
                         }
                     });
@@ -1405,10 +1473,10 @@ export default function Dashboard() {
                     });
 
                     const normalizedSales = uniqueSales.map(normalizeSaleProfiles);
-                    const hasAdminOwnership = uniqueSales.some(sale => sale.sellerName === 'Admin' || sale.soldBy === 'Admin');
+                    const hasAdminOwnership = uniqueSales.some(sale => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
                     if (hasAdminOwnership) {
                         uniqueSales.forEach(sale => {
-                            if (sale.sellerName === 'Admin' || sale.soldBy === 'Admin') {
+                            if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                                 dirtyIds.current.add(sale.id);
                             }
                         });
@@ -1818,18 +1886,22 @@ export default function Dashboard() {
         return <ProfileSelector
             profiles={availableProfiles}
             onSelect={(p, remember) => {
-                setUserProfile(p);
+                const normalizedProfile = normalizeProfileName(p);
+                if (!normalizedProfile) return;
+                setUserProfile(normalizedProfile);
                 setView('landing');
                 setRememberProfile(remember);
-                persistUserProfile(p, remember);
+                persistUserProfile(normalizedProfile, remember);
             }}
             onAdd={(name, remember) => {
-                const updated = normalizeProfiles([...availableProfiles, name]);
+                const normalizedName = normalizeProfileName(name);
+                if (!normalizedName) return;
+                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
                 setAvailableProfiles(updated);
                 Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-                setUserProfile(name);
+                setUserProfile(normalizedName);
                 setRememberProfile(remember);
-                persistUserProfile(name, remember);
+                persistUserProfile(normalizedName, remember);
                 syncProfilesToCloud(updated);
             }}
             onDelete={handleDeleteProfile}
