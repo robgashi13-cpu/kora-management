@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
-import InvoiceModal from './InvoiceModal';
 
 interface Props {
     isOpen: boolean;
@@ -36,7 +35,7 @@ const COLORS = [
     'Black', 'White', 'Silver', 'Grey', 'Blue', 'Red', 'Green', 'Brown', 'Beige', 'Gold', 'Yellow', 'Orange', 'Purple', 'Other'
 ];
 
-import ContractModal from './ContractModal';
+import EditablePreviewModal from './EditablePreviewModal';
 
 export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [] }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
@@ -163,6 +162,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         setFormData(prev => ({
             ...prev,
             isPaid: e.target.checked
+        }));
+    };
+
+    const handlePreviewSaveToSale = (updates: Partial<CarSale>) => {
+        setFormData(prev => ({
+            ...prev,
+            ...updates
         }));
     };
 
@@ -505,8 +511,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 {Content}
                 {documentMenu}
                 {doganeSelectionModal}
-                {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} withDogane={invoiceWithDogane} />}
-                {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
+                {showInvoice && (
+                    <EditablePreviewModal
+                        isOpen={showInvoice}
+                        onClose={() => setShowInvoice(false)}
+                        sale={formData as CarSale}
+                        documentType="invoice"
+                        withDogane={invoiceWithDogane}
+                        onSaveToSale={handlePreviewSaveToSale}
+                    />
+                )}
+                {contractType && (
+                    <EditablePreviewModal
+                        isOpen={!!contractType}
+                        onClose={() => setContractType(null)}
+                        sale={formData as CarSale}
+                        documentType={contractType}
+                        onSaveToSale={handlePreviewSaveToSale}
+                    />
+                )}
             </div>
         );
     }
@@ -521,8 +544,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             {Content}
             {documentMenu}
             {doganeSelectionModal}
-            {showInvoice && <InvoiceModal isOpen={showInvoice} onClose={() => setShowInvoice(false)} sale={formData as CarSale} withDogane={invoiceWithDogane} />}
-            {contractType && <ContractModal sale={formData as CarSale} type={contractType} onClose={() => setContractType(null)} />}
+            {showInvoice && (
+                <EditablePreviewModal
+                    isOpen={showInvoice}
+                    onClose={() => setShowInvoice(false)}
+                    sale={formData as CarSale}
+                    documentType="invoice"
+                    withDogane={invoiceWithDogane}
+                    onSaveToSale={handlePreviewSaveToSale}
+                />
+            )}
+            {contractType && (
+                <EditablePreviewModal
+                    isOpen={!!contractType}
+                    onClose={() => setContractType(null)}
+                    sale={formData as CarSale}
+                    documentType={contractType}
+                    onSaveToSale={handlePreviewSaveToSale}
+                />
+            )}
         </div>
     );
 }

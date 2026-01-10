@@ -36,6 +36,7 @@ const toRemote = (s: CarSale, userProfile: string) => ({
     payment_method: s.paymentMethod,
     status: s.status,
     sort_order: s.sortOrder,
+    sold_by: s.soldBy,
     // Use attachments JSONB for flexible storage of missing columns and full backup
     attachments: {
         ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
