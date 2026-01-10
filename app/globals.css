@@ -7,6 +7,7 @@ body {
   overflow: hidden;
   position: fixed;
   background-color: hsl(var(--background));
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
