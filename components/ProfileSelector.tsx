@@ -14,6 +14,8 @@ interface ProfileSelectorProps {
 }
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
+    const ADMIN_PROFILE = 'Robert';
+    const ADMIN_PASSWORD = 'Robertoo1396$';
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
@@ -24,6 +26,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [adminAction, setAdminAction] = useState<'select' | 'add' | null>(null);
 
     const [pendingProfile, setPendingProfile] = useState<string | null>(null);
 
@@ -55,8 +58,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const handleSelect = (p: string) => {
-        if (p === 'Admin' || p === 'Robert') {
+        if (p === ADMIN_PROFILE) {
             setPendingProfile(p);
+            setAdminAction('select');
             setShowPasswordModal(true);
             setPassword('');
             setShowPassword(false);
@@ -66,10 +70,18 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const confirmPassword = () => {
-        if (password === 'Robertoo1396$' && pendingProfile) {
-            onSelect(pendingProfile, rememberMe);
+        if (password === ADMIN_PASSWORD) {
+            if (adminAction === 'select' && pendingProfile) {
+                onSelect(pendingProfile, rememberMe);
+                setPendingProfile(null);
+            }
+            if (adminAction === 'add') {
+                setIsAdding(true);
+            }
             setShowPasswordModal(false);
-            setPendingProfile(null);
+            setAdminAction(null);
+            setPassword('');
+            setShowPassword(false);
         } else {
             alert("Incorrect Password!");
         }
@@ -143,11 +155,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onMouseUp={handleTouchEnd}
                             onMouseLeave={handleTouchEnd}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer">
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${(p === 'Admin' || p === 'Robert') ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${(p === ADMIN_PROFILE) ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
                                 : 'bg-white border-slate-200 group-hover:border-slate-300'
                                 }`}>
                                 {avatars[p] ? <img src={avatars[p]} alt={p} className="w-full h-full object-cover" /> :
-                                    (p === 'Admin' || p === 'Robert') ? <Lock className="w-12 h-12 text-red-500" /> :
+                                    (p === ADMIN_PROFILE) ? <Lock className="w-12 h-12 text-red-500" /> :
                                         <span className="text-slate-700">{p[0].toUpperCase()}</span>}
                             </div>
                             <span className="text-xl text-slate-600 group-hover:text-slate-900 transition-colors">{p}</span>
@@ -163,7 +175,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 >
                                     <Pencil className="w-4 h-4" />
                                 </button>
-                                {p !== 'Admin' && (
+                                {p !== ADMIN_PROFILE && (
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -183,7 +195,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsAdding(true)}
+                            onClick={() => {
+                                setAdminAction('add');
+                                setPassword('');
+                                setShowPassword(false);
+                                setShowPasswordModal(true);
+                            }}
                             className="group flex flex-col items-center gap-4"
                         >
                             <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center border border-slate-200 hover:border-slate-300 transition-colors bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
@@ -217,7 +234,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 {showPasswordModal && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
                         <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
-                            <button onClick={() => setShowPasswordModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
+                            <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter Admin Password</h2>
 
                             <div className="relative mb-6">
