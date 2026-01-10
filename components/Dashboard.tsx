@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback } from 'react';
-import { CarSale, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive } from 'lucide-react';
+import { Attachment, CarSale, SaleStatus } from '@/app/types';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
+import { createRoot } from 'react-dom/client';
+import { zip } from 'fflate';
 import SaleModal from './SaleModal';
 import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import GroupManager from './GroupManager';
+import InvoiceDocument from './InvoiceDocument';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -339,6 +343,8 @@ export default function Dashboard() {
         withDogane?: boolean;
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
+    const [invoiceDownloadStatus, setInvoiceDownloadStatus] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [apiKey, setApiKey] = useState('');
@@ -738,6 +744,201 @@ export default function Dashboard() {
         });
     }, []);
 
+    const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
+        const images = Array.from(container.querySelectorAll('img'));
+        if (images.length === 0) return;
+
+        const loadPromises = images.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise<void>((resolve, reject) => {
+                const onLoad = () => {
+                    cleanup();
+                    resolve();
+                };
+                const onError = () => {
+                    cleanup();
+                    reject(new Error('Image failed to load'));
+                };
+                const cleanup = () => {
+                    img.removeEventListener('load', onLoad);
+                    img.removeEventListener('error', onError);
+                };
+                img.addEventListener('load', onLoad);
+                img.addEventListener('error', onError);
+            });
+        });
+
+        await Promise.race([
+            Promise.all(loadPromises),
+            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
+        ]);
+    };
+
+    const sanitizeFolderName = (name: string) => {
+        const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim();
+        return cleaned || 'Invoice';
+    };
+
+    const extractBase64 = (data: string) => {
+        const base64Index = data.indexOf('base64,');
+        if (base64Index >= 0) {
+            return data.slice(base64Index + 'base64,'.length);
+        }
+        const parts = data.split(',');
+        return parts.length > 1 ? parts[1] : data;
+    };
+
+    const base64ToUint8Array = (base64: string) => {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    };
+
+    const uint8ToBase64 = (bytes: Uint8Array) => {
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+    };
+
+    const collectInvoiceAttachments = (sale: CarSale) => {
+        const files: Attachment[] = [];
+        if (sale.bankReceipt) files.push(sale.bankReceipt);
+        if (sale.bankInvoice) files.push(sale.bankInvoice);
+        if (sale.bankReceipts?.length) files.push(...sale.bankReceipts);
+        if (sale.bankInvoices?.length) files.push(...sale.bankInvoices);
+        if (sale.depositInvoices?.length) files.push(...sale.depositInvoices);
+        return files.filter(file => file?.data);
+    };
+
+    const generateInvoicePdfBase64 = async (sale: CarSale) => {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '1024px';
+        container.style.zIndex = '-1';
+        document.body.appendChild(container);
+
+        const root = createRoot(container);
+        root.render(<InvoiceDocument sale={sale} />);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
+        if (invoiceElement) {
+            await waitForImages(invoiceElement);
+        }
+
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
+        const opt = {
+            margin: 5,
+            filename: `Invoice_${sale.vin || sale.id}.pdf`,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: {
+                scale: 4,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            },
+            jsPDF: {
+                unit: 'mm' as const,
+                format: 'a4' as const,
+                orientation: 'portrait' as const,
+                compress: true,
+                putOnlyUsedFonts: true
+            }
+        };
+
+        const pdf = html2pdf().set(opt).from(invoiceElement || container);
+        const dataUri = await pdf.outputPdf('datauristring');
+
+        root.unmount();
+        container.remove();
+
+        return {
+            fileName: `Invoice_${sale.vin || sale.id}.pdf`,
+            base64: dataUri.split(',')[1]
+        };
+    };
+
+    const handleDownloadSelectedInvoices = async (selectedSales: CarSale[]) => {
+        if (selectedSales.length === 0 || isDownloadingInvoices) return;
+
+        setIsDownloadingInvoices(true);
+        setInvoiceDownloadStatus(`Preparing ${selectedSales.length} invoices...`);
+
+        try {
+            const dateStamp = new Date().toISOString().split('T')[0];
+            const fileMap: Record<string, Uint8Array> = {};
+
+            let index = 0;
+            for (const sale of selectedSales) {
+                index += 1;
+                setInvoiceDownloadStatus(`Packaging ${index}/${selectedSales.length}...`);
+
+                const folderName = sanitizeFolderName(`Invoice_${sale.vin || sale.id}`);
+                const invoicePdf = await generateInvoicePdfBase64(sale);
+                fileMap[`Invoices_${dateStamp}/${folderName}/${invoicePdf.fileName}`] = base64ToUint8Array(invoicePdf.base64);
+
+                collectInvoiceAttachments(sale).forEach(file => {
+                    const base64Data = extractBase64(file.data);
+                    fileMap[`Invoices_${dateStamp}/${folderName}/${file.name}`] = base64ToUint8Array(base64Data);
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            const zipData = await new Promise<Uint8Array>((resolve, reject) => {
+                zip(fileMap, { level: 0 }, (err, data) => {
+                    if (err) reject(err);
+                    else resolve(data);
+                });
+            });
+
+            const downloadName = `Invoices_${dateStamp}.zip`;
+            if (Capacitor.isNativePlatform()) {
+                const zipBase64 = uint8ToBase64(zipData);
+                const savedFile = await Filesystem.writeFile({
+                    path: downloadName,
+                    data: zipBase64,
+                    directory: Directory.Documents,
+                });
+
+                await Share.share({
+                    title: 'Invoices',
+                    text: `Invoices bundle (${selectedSales.length})`,
+                    url: savedFile.uri,
+                    dialogTitle: 'Download invoices'
+                });
+            } else {
+                const blob = new Blob([zipData], { type: 'application/zip' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = downloadName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+            }
+
+            setSelectedIds(new Set());
+        } catch (error: any) {
+            console.error('Invoice download failed:', error);
+            alert(`Download failed: ${error?.message || 'Unknown error'}`);
+        } finally {
+            setIsDownloadingInvoices(false);
+            setInvoiceDownloadStatus('');
+        }
+    };
+
     const handleBulkDelete = async () => {
         if (!confirm(`Delete ${selectedIds.size} items permanently?`)) return;
 
@@ -1085,6 +1286,16 @@ export default function Dashboard() {
 
                 // Just load the saved data - no auto-import
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
+                const hasAdminOwnership = currentSales.some((sale: CarSale) => sale.sellerName === 'Admin' || sale.soldBy === 'Admin');
+                if (hasAdminOwnership) {
+                    currentSales.forEach((sale: CarSale) => {
+                        if (sale.sellerName === 'Admin' || sale.soldBy === 'Admin') {
+                            dirtyIds.current.add(sale.id);
+                        }
+                    });
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+                }
                 setSales(normalizedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
@@ -1194,6 +1405,14 @@ export default function Dashboard() {
                     });
 
                     const normalizedSales = uniqueSales.map(normalizeSaleProfiles);
+                    const hasAdminOwnership = uniqueSales.some(sale => sale.sellerName === 'Admin' || sale.soldBy === 'Admin');
+                    if (hasAdminOwnership) {
+                        uniqueSales.forEach(sale => {
+                            if (sale.sellerName === 'Admin' || sale.soldBy === 'Admin') {
+                                dirtyIds.current.add(sale.id);
+                            }
+                        });
+                    }
                     setSales(normalizedSales);
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
                     localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
@@ -1520,6 +1739,10 @@ export default function Dashboard() {
         }
         return 0;
     }), [sales, userProfile, activeCategory, searchTerm, sortBy, sortDir]);
+    const selectedInvoices = React.useMemo(
+        () => filteredSales.filter(sale => selectedIds.has(sale.id)),
+        [filteredSales, selectedIds]
+    );
 
     // Toggle sort column
     const toggleSort = (column: string) => {
@@ -2464,6 +2687,38 @@ export default function Dashboard() {
                         ) : view === 'invoices' ? (
                             <div className="flex-1 overflow-auto p-3 md:p-6">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
+                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleAll(filteredSales)}
+                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                                        disabled={filteredSales.length === 0}
+                                    >
+                                        {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.length ? (
+                                            <CheckSquare className="w-4 h-4 text-blue-500" />
+                                        ) : (
+                                            <Square className="w-4 h-4" />
+                                        )}
+                                        Select all
+                                    </button>
+                                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                                        {selectedInvoices.length > 0 && (
+                                            <span>{selectedInvoices.length} selected</span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
+                                            disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
+                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                        >
+                                            {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                            {isDownloadingInvoices ? 'Preparing...' : 'Download Selected'}
+                                        </button>
+                                        {isDownloadingInvoices && invoiceDownloadStatus && (
+                                            <span className="text-xs text-slate-400">{invoiceDownloadStatus}</span>
+                                        )}
+                                    </div>
+                                </div>
                                 {filteredSales.length === 0 ? (
                                     <div className="text-center text-slate-500 py-20">
                                         <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
@@ -2474,9 +2729,18 @@ export default function Dashboard() {
                                         {filteredSales.map(s => (
                                             <div
                                                 key={s.id}
-                                                className="bg-white border border-slate-100 rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)]"
+                                                className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-blue-200 ring-2 ring-blue-100' : 'border-slate-100'}`}
                                                 onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
                                             >
+                                                <div className="absolute top-3 left-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}
+                                                    >
+                                                        <CheckSquare className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                                 <div className="flex justify-between items-start mb-2 md:mb-3">
                                                     <div>
                                                         <button
