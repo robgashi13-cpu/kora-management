@@ -24,10 +24,11 @@ interface GroupManagerProps {
   expandedGroups: string[];
   onCreateGroup: (name: string, saleIds: string[]) => Promise<void>;
   onRenameGroup: (oldName: string, newName: string) => Promise<void>;
-  onDeleteGroup: (name: string) => Promise<void>;
+  onDeleteGroup?: (name: string) => Promise<void>;
   onRemoveFromGroup: (saleId: string) => Promise<void>;
   onToggleGroup: (name: string) => void;
   onAddToGroup: (groupName: string, saleIds: string[]) => Promise<void>;
+  showDelete?: boolean;
 }
 
 const GroupManager = memo(function GroupManager({
@@ -40,7 +41,8 @@ const GroupManager = memo(function GroupManager({
   onDeleteGroup,
   onRemoveFromGroup,
   onToggleGroup,
-  onAddToGroup
+  onAddToGroup,
+  showDelete = true
 }: GroupManagerProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -96,6 +98,7 @@ const GroupManager = memo(function GroupManager({
   }, [editName, onRenameGroup]);
 
   const handleDelete = useCallback(async (name: string) => {
+    if (!onDeleteGroup) return;
     if (!confirm(`Delete group "${name}"? Cars will not be deleted.`)) return;
     
     setIsLoading(true);
@@ -287,15 +290,17 @@ const GroupManager = memo(function GroupManager({
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(groupName);
-                          }}
-                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {showDelete && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(groupName);
+                            }}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
