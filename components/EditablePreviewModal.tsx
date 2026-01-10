@@ -3,17 +3,10 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check } from 'lucide-react';
 import { CarSale } from '@/app/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
-
-interface EditableField {
-  key: string;
-  label: string;
-  type: 'text' | 'number' | 'currency';
-  value: string | number;
-}
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -58,6 +51,7 @@ export default function EditablePreviewModal({
         amountPaidCash: sale.amountPaidCash || 0,
         sellerName: sale.sellerName || '',
         shippingName: sale.shippingName || '',
+        shippingDate: sale.shippingDate || '',
       });
       setError(null);
     }
@@ -88,6 +82,7 @@ export default function EditablePreviewModal({
       amountPaidCash: sale.amountPaidCash || 0,
       sellerName: sale.sellerName || '',
       shippingName: sale.shippingName || '',
+      shippingDate: sale.shippingDate || '',
     });
   }, [sale]);
 
@@ -133,7 +128,8 @@ export default function EditablePreviewModal({
           orientation: 'portrait' as const,
           compress: true,
           putOnlyUsedFonts: true
-        }
+        },
+        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
       };
 
       // @ts-ignore
@@ -167,10 +163,15 @@ export default function EditablePreviewModal({
     }
   };
 
+  const handlePrint = () => {
+    handleDownload();
+  };
+
   const formatCurrency = (val: string | number) => {
     const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
     return num.toLocaleString();
   };
+
 
   // Editable inline field component
   const EditableField = ({ 
@@ -237,7 +238,16 @@ export default function EditablePreviewModal({
 
   const today = new Date().toLocaleDateString('en-GB');
   const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
+  const sellerBusinessId = "NR.Biznesit 810062092";
+  const fullSellerName = "RG SH.P.K";
   const saleRefId = sale.id ? sale.id.slice(0, 8).toUpperCase() : crypto.randomUUID().slice(0, 8).toUpperCase();
+  const documentTitle = documentType === 'invoice'
+    ? 'Invoice'
+    : documentType === 'deposit'
+      ? 'Deposit Contract'
+      : documentType === 'full_marreveshje'
+        ? 'Full Contract - Marrëveshje'
+        : 'Full Contract - Shitblerje';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
@@ -254,7 +264,7 @@ export default function EditablePreviewModal({
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
               <h2 className="text-lg font-bold text-slate-800">
-                Preview & Edit {documentType === 'invoice' ? 'Invoice' : 'Contract'}
+                Preview & Edit {documentTitle}
               </h2>
               <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">
                 Click any value to edit
@@ -286,6 +296,14 @@ export default function EditablePreviewModal({
                 {isDownloading ? 'Generating...' : 'Download PDF'}
               </button>
               <button
+                onClick={handlePrint}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-medium text-sm shadow-sm disabled:opacity-50"
+              >
+                <Printer className="w-4 h-4" />
+                Print
+              </button>
+              <button
                 onClick={onClose}
                 className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
               >
@@ -309,7 +327,7 @@ export default function EditablePreviewModal({
               <div
                 ref={printRef}
                 className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8"
-                style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5 }}
+                style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5, boxSizing: 'border-box' }}
               >
                 {documentType === 'invoice' ? (
                   /* Invoice Template */
@@ -500,11 +518,312 @@ export default function EditablePreviewModal({
                     </div>
                   </>
                 ) : (
-                  /* Full Contract Templates - Simplified */
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="text-lg font-medium">Full contract preview</p>
-                    <p className="text-sm mt-2">Edit fields in the preview above before downloading</p>
-                  </div>
+                  <>
+                    {documentType === 'full_marreveshje' && (
+                      <div className="max-w-2xl mx-auto text-[8pt] leading-[1.25]">
+                        <div className="pdf-page relative">
+                          <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
+                          <h1 className="text-sm font-bold uppercase mb-2 text-center">MARRËVESHJE INTERNE</h1>
+                          <div className="font-bold mb-2">Data: {today}</div>
+
+                          <h2 className="font-bold text-xs mb-2 underline">Marrëveshje për Blerjen e Automjetit</h2>
+
+                          <div className="section mb-3">
+                            <div className="font-bold mb-1 underline">Palët Kontraktuese:</div>
+                            <ul className="list-disc ml-5 space-y-1">
+                              <li>
+                                <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                              </li>
+                              <li>
+                                <strong>Z. <EditableField fieldKey="buyerName" /></strong> ne cilesin e blersit me nr personal <strong><EditableField fieldKey="buyerPersonalId" /></strong>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="section mb-3">
+                            <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
+                            <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                            <div className="car-details">
+                              <div><span className="label">Marka/Modeli:</span> <span><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
+                              <div><span className="label">Numri i shasisë:</span> <span><EditableField fieldKey="vin" /></span></div>
+                              <div><span className="label">Viti I prodhimi:</span> <span><EditableField fieldKey="year" type="number" /></span></div>
+                              <div><span className="label">KM te kaluara:</span> <span><EditableField fieldKey="km" type="number" /> km</span></div>
+                            </div>
+                          </div>
+
+                          <p className="font-bold mt-2 mb-2">
+                            {fullSellerName} vepron si shitës, ndërsa <EditableField fieldKey="buyerName" /> si blerës.
+                          </p>
+
+                          <hr className="mb-3 border-black" />
+
+                          <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+
+                          <ol className="list-decimal ml-5 space-y-2 mb-4">
+                            <li>
+                              <strong>Pagesa</strong>
+                              <ul className="list-[circle] ml-5 mt-0.5">
+                                <li>Shuma totale prej € <EditableField fieldKey="amountPaidBank" type="currency" /> do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                <li>Një shumë prej € <EditableField fieldKey="deposit" type="currency" /> do të paguhet në dorë si kapar.</li>
+                              </ul>
+                            </li>
+                            <li>
+                              <strong>Nisja dhe Dorëzimi i Automjetit</strong>
+                              <ul className="list-[circle] ml-5 mt-0.5">
+                                <li>Automjeti do të niset nga Koreja e Jugut më datë <EditableField fieldKey="shippingDate" />.</li>
+                                <li>Dorëzimi pritet të realizohet në Portin e Durrësit brenda 35 deri në 45 ditë nga data e nisjes.</li>
+                              </ul>
+                            </li>
+                            <li>
+                              <strong>Vonesa në Dorëzim</strong>
+                              <ul className="list-[circle] ml-5 mt-0.5">
+                                <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € <EditableField fieldKey="soldPrice" type="currency" /> brenda 7 ditëve kalendarike.</li>
+                              </ul>
+                            </li>
+                            <li>
+                              <strong>Gjendja Teknike e Automjetit</strong>
+                              <ul className="list-[circle] ml-5 mt-0.5">
+                                <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
+                              </ul>
+                            </li>
+                            <li>
+                              Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
+                            </li>
+                          </ol>
+
+                          <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-slate-500">
+                            Faqja 1 nga 3
+                          </div>
+                        </div>
+
+                        <div className="pdf-page page-break relative">
+                          <h2 className="font-bold text-sm mb-3 text-center uppercase">Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
+
+                          <div className="mb-3">
+                            <h3 className="font-bold text-xs mb-1 underline">Pjesët e Mbulueshme nga Garancia (Jo Konsumueshme)</h3>
+                            <p className="mb-1">Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal dhe përfshin pjesët jo të konsumueshme si më poshtë:</p>
+                            <ul className="list-disc ml-5 space-y-0.5">
+                              <li>Motori (blloku, koka e cilindrit, pistonët, boshtet)</li>
+                              <li>Transmisioni (manual ose automatik, përjashtuar clutch dhe flywheel)</li>
+                              <li>Diferenciali dhe boshtet e fuqisë</li>
+                              <li>ECU, alternatori, starteri</li>
+                              <li>Kompresori i AC, kondensatori, avulluesi</li>
+                              <li>Airbagët, rripat e sigurimit</li>
+                              <li>Struktura e shasisë</li>
+                            </ul>
+                          </div>
+
+                          <div className="mb-3">
+                            <h3 className="font-bold text-xs mb-1 underline">Pjesët Konsumueshme të Përjashtuara nga Garancia</h3>
+                            <p className="mb-1">Të gjitha pjesët e mëposhtme konsiderohen konsumueshme dhe përjashtohen nga garancia:</p>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Debrisi dhe pjesët përreth:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Disku i debrisit</li>
+                                <li>Pllaka e presionit</li>
+                                <li>Rulllja e lirimit (release bearing)</li>
+                                <li>Flywheel (rrota e masës, DMF)</li>
+                                <li>Damper pulley / torsional dampers</li>
+                              </ul>
+                            </div>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Sistemi i Frenimit:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Diskat e frenave, blloqet (pads), këpucët e frenimit</li>
+                                <li>Lëngu i frenave</li>
+                              </ul>
+                            </div>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Filtrat & Lëngjet:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Filtri i vajit, ajrit, kabinës, karburantit</li>
+                                <li>Vaji i motorit, antifrizi, vaji i transmisionit</li>
+                                <li>Lëngu i larjes së xhamave</li>
+                              </ul>
+                            </div>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Suspensioni & Drejtimi:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Amortizatorët (vaj, vula, konsumim)</li>
+                                <li>Bushingët, nyjet e topit, lidhëset stabilizuese</li>
+                              </ul>
+                            </div>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Rrotat & Energjia:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Velgjat (fellnet), gomat, balancimi, rregullimi i drejtimit</li>
+                                <li>Bateria 12V, llambat, siguresat</li>
+                              </ul>
+                            </div>
+
+                            <div className="mb-1">
+                              <p className="font-bold">Të tjera Konsumueshme:</p>
+                              <ul className="list-disc ml-5">
+                                <li>Fshirëset e xhamave, spërkatësit</li>
+                                <li>Spark plugs, glow plugs</li>
+                                <li>Rripat (serpentine, timing sipas intervalit të prodhuesit)</li>
+                                <li>Tubat gome, vulat, garniturat</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="mb-2">
+                            <h3 className="font-bold text-xs mb-1 underline">Kushtet e Garancisë</h3>
+                            <ul className="list-disc ml-5 space-y-0.5">
+                              <li>Garancia mbulon vetëm defekte teknike që nuk lidhen me konsumimin normal.</li>
+                              <li>Për automjetet e përdorura, të gjitha pjesët konsumueshme janë të përjashtuara pa përjashtim.</li>
+                              <li>Mirëmbajtja e rregullt është përgjegjësi e klientit.</li>
+                            </ul>
+                          </div>
+
+                          <p className="font-bold text-center mt-3">
+                            Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
+                          </p>
+
+                          <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-slate-500">
+                            Faqja 2 nga 3
+                          </div>
+                        </div>
+
+                        <div className="pdf-page page-break relative">
+                          <h2 className="font-bold text-sm mb-3 text-center uppercase">DISPOZITAT PËRFUNDIMTARE</h2>
+
+                          <div className="mb-3">
+                            <h3 className="font-bold text-xs mb-1 underline">Zgjidhja e Mosmarrëveshjeve:</h3>
+                            <p className="mb-1">Palët pajtohen që çdo mosmarrëveshje që mund të lindë nga kjo marrëveshje të zgjidhet fillimisht me negociata të drejtpërdrejta. Nëse nuk arrihet marrëveshje brenda 15 ditëve, mosmarrëveshja i nënshtrohet gjykatës kompetente në Prishtinë.</p>
+                          </div>
+
+                          <div className="mb-3">
+                            <h3 className="font-bold text-xs mb-1 underline">Modifikimet:</h3>
+                            <p>Çdo ndryshim ose shtesë e kësaj marrëveshjeje duhet të bëhet me shkrim dhe të nënshkruhet nga të dy palët.</p>
+                          </div>
+
+                          <div className="mb-3">
+                            <h3 className="font-bold text-xs mb-1 underline">Ligji i Zbatueshëm:</h3>
+                            <p>Kjo marrëveshje rregullohet dhe interpretohet sipas ligjeve të Republikës së Kosovës.</p>
+                          </div>
+
+                          <div className="mb-4">
+                            <h3 className="font-bold text-xs mb-1 underline">Kopjet:</h3>
+                            <p>Kjo marrëveshje është hartuar në dy kopje origjinale, nga një kopje për secilën palë, të cilat kanë fuqi të njëjtë juridike.</p>
+                          </div>
+
+                          <p className="font-bold text-center mb-8 uppercase">
+                            Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
+                          </p>
+
+                          <div className="footer mt-10 pt-4 flex justify-between">
+                            <div className="signature-box w-2/5 text-left">
+                              <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
+                              <div className="mb-10">{fullSellerName}</div>
+                              <div className="border-b border-black w-full"></div>
+                              <div className="mt-1">(Nënshkrimi dhe Vula)</div>
+                            </div>
+                            <div className="signature-box w-2/5 text-right">
+                              <div className="mb-1 font-bold">Blerësi:</div>
+                              <div className="mb-10"><EditableField fieldKey="buyerName" /></div>
+                              <div className="border-b border-black w-full"></div>
+                              <div className="mt-1">(Nënshkrimi)</div>
+                            </div>
+                          </div>
+
+                          <div className="mt-8 text-center text-xs text-slate-500">
+                            <p>Nr. Ref: {saleRefId} | Data: {today}</p>
+                          </div>
+
+                          <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-slate-500">
+                            Faqja 3 nga 3
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {documentType === 'full_shitblerje' && (
+                      <div className="max-w-2xl mx-auto text-[8.5pt] leading-[1.3]">
+                        <div className="pdf-page relative">
+                          <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
+                          <h1 className="text-sm font-bold uppercase mb-2 text-center">KONTRATË SHITBLERJE</h1>
+                          <div className="font-bold mb-2 text-xs">Data: {today}</div>
+
+                          <h2 className="font-bold text-xs mb-2 underline">Marrëveshje për Blerjen e Automjetit</h2>
+
+                          <div className="section mb-3">
+                            <div className="font-bold mb-1 underline text-xs">Palët Kontraktuese:</div>
+                            <ul className="list-disc ml-4 text-xs leading-[1.4]">
+                              <li className="mb-1">
+                                <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                              </li>
+                              <li>
+                                <strong>Z. <EditableField fieldKey="buyerName" /></strong> ne cilesin e blersit me nr personal <strong><EditableField fieldKey="buyerPersonalId" /></strong>
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="section mb-3">
+                            <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
+                            <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                            <div className="car-details text-xs">
+                              <div><span className="label">Marka/Modeli:</span> <span><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
+                              <div><span className="label">Numri i shasisë:</span> <span><EditableField fieldKey="vin" /></span></div>
+                              <div><span className="label">Viti I prodhimi:</span> <span><EditableField fieldKey="year" type="number" /></span></div>
+                              <div><span className="label">KM te kaluara:</span> <span><EditableField fieldKey="km" type="number" /> km</span></div>
+                            </div>
+                          </div>
+
+                          <p className="font-bold mt-2 mb-2 text-xs">
+                            {fullSellerName} vepron si shitës, ndërsa <EditableField fieldKey="buyerName" /> si blerës.
+                          </p>
+
+                          <hr className="mb-3 border-black" />
+
+                          <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+
+                          <ol className="list-decimal ml-4 text-xs mb-4 leading-[1.4]">
+                            <li className="mb-2">
+                              <strong>Pagesa</strong>
+                              <ul className="list-[circle] ml-4 mt-0.5">
+                                <li>Shuma totale prej € <EditableField fieldKey="amountPaidBank" type="currency" /> do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                <li>Një shumë prej € <EditableField fieldKey="deposit" type="currency" /> do të paguhet në dorë si kapar.</li>
+                              </ul>
+                            </li>
+                            <li className="mb-2">
+                              <strong>Nisja dhe Dorëzimi i Automjetit</strong>
+                              <ul className="list-[circle] ml-4 mt-0.5">
+                                <li>AUTOMJETI DORËZOHET NË DATËN: <EditableField fieldKey="shippingDate" /></li>
+                              </ul>
+                            </li>
+                            <li className="mb-2">
+                              <strong>Gjendja Teknike e Automjetit</strong>
+                              <ul className="list-[circle] ml-4 mt-0.5">
+                                <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
+                              </ul>
+                            </li>
+                            <li>
+                              Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
+                            </li>
+                          </ol>
+
+                          <div className="mt-6 pt-4 flex justify-between">
+                            <div className="w-1/2 text-left pr-4">
+                              <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
+                              <div className="text-xs mb-6">Owner: Robert Gashi</div>
+                              <div className="border-b border-black w-4/5"></div>
+                            </div>
+                            <div className="w-1/2 text-right pl-4">
+                              <div className="font-bold text-xs mb-1">Blerësi</div>
+                              <div className="text-xs mb-6"><EditableField fieldKey="buyerName" /></div>
+                              <div className="border-b border-black w-4/5 ml-auto"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -516,6 +835,49 @@ export default function EditablePreviewModal({
         .editable-preview-field:hover {
           background-color: rgba(59, 130, 246, 0.1);
           border-bottom-color: #3b82f6;
+        }
+        .pdf-page {
+          min-height: 27.7cm;
+          padding-bottom: 1.5cm;
+          position: relative;
+          box-sizing: border-box;
+        }
+        .page-break {
+          page-break-before: always;
+          break-before: page;
+        }
+        .car-details {
+          background-color: #f8f9fa;
+          border: 1px solid #e9ecef;
+          padding: 12pt;
+          margin: 10pt 0;
+          border-radius: 4pt;
+        }
+        .car-details div {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 6pt;
+          border-bottom: 1px dashed #ced4da;
+          padding-bottom: 4px;
+        }
+        .car-details div:last-child {
+          border-bottom: none;
+          margin-bottom: 0;
+        }
+        .label {
+          font-weight: bold;
+          min-width: 100px;
+          display: inline-block;
+        }
+        table, tr, td, th {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        @media print {
+          .page-break {
+            page-break-before: always;
+            break-before: page;
+          }
         }
       `}</style>
     </div>

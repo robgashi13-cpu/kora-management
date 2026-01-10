@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition } from 'react';
-import { CarSale, ContractType, SaleStatus } from '@/app/types';
+import { CarSale, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -9,8 +9,7 @@ import { Preferences } from '@capacitor/preferences';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import SaleModal from './SaleModal';
-import InvoiceModal from './InvoiceModal';
-import ContractModal from './ContractModal';
+import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import { processImportedData } from '@/services/openaiService';
@@ -25,7 +24,7 @@ const getBankFee = (price: number) => {
 const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate }: any) => {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === 'Admin';
     const canEdit = isAdmin || s.soldBy === userProfile;
@@ -64,7 +63,7 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                     </span>
                 </div>}
                 <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}>
                         <CheckSquare className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -78,9 +77,9 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleSelection(s.id); }}
-                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-transparent hover:border-blue-500 hover:bg-blue-50'}`}
+                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-transparent hover:border-blue-500 hover:bg-blue-50'}`}
                 >
-                    {selectedIds.has(s.id) && <CheckSquare className="w-3 h-3" />}
+                    {isSelected && <CheckSquare className="w-3 h-3" />}
                 </button>
             </div>
 
@@ -269,7 +268,12 @@ const SortableSaleItem = ({ s, openInvoice, toggleSelection, selectedIds, userPr
             </div>
         </Reorder.Item>
     );
-};
+}, (prev, next) => (
+    prev.s === next.s &&
+    prev.isSelected === next.isSelected &&
+    prev.userProfile === next.userProfile &&
+    prev.canViewPrices === next.canViewPrices
+));
 
 const INITIAL_SALES: CarSale[] = [];
 
@@ -307,9 +311,11 @@ export default function Dashboard() {
     const [formReturnView, setFormReturnView] = useState('dashboard');
     const [expandedGroups, setExpandedGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
     const [customGroups, setCustomGroups] = useState<string[]>(['ACTIVE', '5 december', '15 november SANG SHIN']);
-    const [invoiceSale, setInvoiceSale] = useState<CarSale | null>(null);
-    const [contractSale, setContractSale] = useState<CarSale | null>(null);
-    const [contractType, setContractType] = useState<ContractType>('full_shitblerje');
+    const [documentPreview, setDocumentPreview] = useState<{
+        sale: CarSale;
+        type: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
+        withDogane?: boolean;
+    } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -520,15 +526,14 @@ export default function Dashboard() {
 
 
 
-    // Invoice Auto-Sync
+    // Document Preview Auto-Sync
     useEffect(() => {
-        if (invoiceSale) {
-            const updated = sales.find(s => s.id === invoiceSale.id);
-            if (updated && JSON.stringify(updated) !== JSON.stringify(invoiceSale)) {
-                setInvoiceSale(updated);
-            }
+        if (!documentPreview) return;
+        const updated = sales.find(s => s.id === documentPreview.sale.id);
+        if (updated && JSON.stringify(updated) !== JSON.stringify(documentPreview.sale)) {
+            setDocumentPreview(prev => prev ? { ...prev, sale: updated } : prev);
         }
-    }, [sales, invoiceSale]);
+    }, [sales, documentPreview]);
 
 
     const updateSalesAndSave = async (newSales: CarSale[]) => {
@@ -564,10 +569,21 @@ export default function Dashboard() {
         'amountPaidToKorea'
     ]);
 
+    const resolveSoldBy = (sale: Partial<CarSale>, fallback?: string) => {
+        const seller = sale.sellerName?.trim();
+        const soldBy = sale.soldBy?.trim();
+        if (seller && availableProfiles.includes(seller)) return seller;
+        if (soldBy && availableProfiles.includes(soldBy)) return soldBy;
+        return fallback || soldBy || seller || userProfile || 'Unknown';
+    };
+
     const handleInlineUpdate = async (id: string, field: keyof CarSale, value: string | number) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex(s => s.id === id);
         if (index === -1) return;
+
+        const scrollTop = scrollContainerRef.current?.scrollTop ?? 0;
+        const scrollLeft = scrollContainerRef.current?.scrollLeft ?? 0;
 
         let normalized: string | number = value;
         if (inlineNumericFields.has(field)) {
@@ -582,10 +598,50 @@ export default function Dashboard() {
             return;
         }
 
-        const updatedSale = { ...currentSales[index], [field]: normalized };
+        let updatedSale = { ...currentSales[index], [field]: normalized };
+        if (field === 'sellerName') {
+            updatedSale = {
+                ...updatedSale,
+                soldBy: resolveSoldBy({ sellerName: String(normalized) }, currentSales[index].soldBy)
+            };
+        }
+        if (field === 'soldBy') {
+            updatedSale = {
+                ...updatedSale,
+                sellerName: String(normalized),
+                soldBy: resolveSoldBy({ soldBy: String(normalized) }, currentSales[index].soldBy)
+            };
+        }
         const newSales = [...currentSales];
         newSales[index] = updatedSale;
         dirtyIds.current.add(id);
+        await updateSalesAndSave(newSales);
+
+        requestAnimationFrame(() => {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = scrollTop;
+                scrollContainerRef.current.scrollLeft = scrollLeft;
+            }
+        });
+    };
+
+    const handlePreviewSaveToSale = async (saleId: string, updates: Partial<CarSale>) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex(s => s.id === saleId);
+        if (index === -1) return;
+
+        let updatedSale = { ...currentSales[index], ...updates };
+        if (updates.sellerName || updates.soldBy) {
+            updatedSale = {
+                ...updatedSale,
+                soldBy: resolveSoldBy(updatedSale, currentSales[index].soldBy),
+                sellerName: updatedSale.sellerName || currentSales[index].sellerName
+            };
+        }
+
+        const newSales = [...currentSales];
+        newSales[index] = updatedSale;
+        dirtyIds.current.add(saleId);
         await updateSalesAndSave(newSales);
     };
 
@@ -1026,11 +1082,12 @@ export default function Dashboard() {
 
             if (index >= 0) {
                 // UPDATE
+                const currentSoldBy = currentSales[index].soldBy;
                 newSales = [...currentSales];
-                newSales[index] = { ...sale, soldBy: currentSales[index].soldBy };
+                newSales[index] = { ...sale, soldBy: resolveSoldBy(sale, currentSoldBy) };
             } else {
                 // CREATE
-                newSales = [...currentSales, { ...sale, soldBy: userProfile || 'Unknown' }];
+                newSales = [...currentSales, { ...sale, soldBy: resolveSoldBy(sale, userProfile || 'Unknown') }];
             }
 
             await updateSalesAndSave(newSales);
@@ -1090,7 +1147,10 @@ export default function Dashboard() {
         }
     };
 
-    const openInvoice = (sale: CarSale, e: React.MouseEvent) => { e.stopPropagation(); setInvoiceSale(sale); };
+    const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false) => {
+        e.stopPropagation();
+        setDocumentPreview({ sale, type: 'invoice', withDogane });
+    };
 
     const handleFullBackup = async () => {
         const backupData = {
@@ -1595,7 +1655,10 @@ export default function Dashboard() {
 
                         {view === 'dashboard' ? (<>
 
-                            <div className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto flex-1">
+                            <div
+                                ref={scrollContainerRef}
+                                className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto flex-1"
+                            >
                                 <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                     style={{
                                         gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
@@ -1667,7 +1730,7 @@ export default function Dashboard() {
                                                 userProfile={userProfile}
                                                 canViewPrices={canViewPrices}
                                                 toggleSelection={toggleSelection}
-                                                selectedIds={selectedIds}
+                                                isSelected={selectedIds.has(s.id)}
                                                 openInvoice={openInvoice}
                                                 onInlineUpdate={handleInlineUpdate}
                                                 onClick={() => {
@@ -1879,21 +1942,21 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('deposit'); }}
+                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'deposit' }); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-amber-500" />
                                                             View Deposit
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full_marreveshje'); }}
+                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_marreveshje' }); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-blue-500" />
                                                             Marrëveshje
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); setContractSale(s); setContractType('full_shitblerje'); }}
+                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_shitblerje' }); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
                                                             <FileText className="w-4 h-4 text-indigo-500" />
@@ -2036,8 +2099,16 @@ export default function Dashboard() {
             </AnimatePresence>
 
             {/* Contextual FAB for Inspections/Autosallon */}
-            {invoiceSale && <InvoiceModal isOpen={!!invoiceSale} onClose={() => setInvoiceSale(null)} sale={invoiceSale} />}
-            {contractSale && <ContractModal sale={contractSale} type={contractType} onClose={() => setContractSale(null)} />}
+            {documentPreview && (
+                <EditablePreviewModal
+                    isOpen={!!documentPreview}
+                    onClose={() => setDocumentPreview(null)}
+                    sale={documentPreview.sale}
+                    documentType={documentPreview.type}
+                    withDogane={documentPreview.withDogane}
+                    onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
+                />
+            )}
             {
                 showPasswordModal && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>

@@ -115,10 +115,9 @@ const InlineEditableCell = memo(function InlineEditableCell({
       : placeholder;
 
   return (
-    <span 
+    <span
       ref={containerRef}
-      className="inline-cell-wrapper"
-      style={{ minWidth: isEditing ? '70px' : undefined }}
+      className={`inline-cell-wrapper ${isEditing ? 'inline-cell-editing' : ''} ${isSaving ? 'inline-cell-saving-state' : ''}`}
     >
       {isEditing ? (
         <span className="inline-cell-edit-container">
@@ -133,27 +132,31 @@ const InlineEditableCell = memo(function InlineEditableCell({
             disabled={isSaving}
             step={type === 'number' ? 'any' : undefined}
           />
-          {isSaving && (
-            <span className="inline-cell-saving">
-              <Loader2 className="w-3 h-3 animate-spin" />
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={handleSave} 
-            className="inline-cell-btn inline-cell-btn-save"
-            disabled={isSaving}
-          >
-            <Check className="w-3 h-3" />
-          </button>
-          <button 
-            type="button"
-            onClick={handleCancel} 
-            className="inline-cell-btn inline-cell-btn-cancel"
-            disabled={isSaving}
-          >
-            <X className="w-3 h-3" />
-          </button>
+          <span className="inline-cell-actions">
+            {isSaving && (
+              <span className="inline-cell-saving">
+                <Loader2 className="w-3 h-3 animate-spin" />
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              className="inline-cell-btn inline-cell-btn-save"
+              disabled={isSaving}
+              aria-label="Save"
+            >
+              <Check className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="inline-cell-btn inline-cell-btn-cancel"
+              disabled={isSaving}
+              aria-label="Cancel"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </span>
         </span>
       ) : (
         <span className="inline-cell-display-wrapper">
