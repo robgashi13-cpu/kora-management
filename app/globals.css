@@ -116,63 +116,79 @@ body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Dashboard Grid Layout - Compact */
+/* Dashboard Grid Layout - Ultra Compact (50% smaller) */
 :root {
-  --cols-admin: 28px 130px 42px 55px 65px 85px 85px 85px 65px 65px 65px 48px 48px 55px 65px 65px 85px 55px 36px;
-  --cols-user: 28px 130px 42px 55px 65px 85px 85px 85px 65px 65px 48px 65px 65px 85px 55px 36px;
-  --row-height-compact: 36px;
+  --cols-admin: 22px 100px 32px 42px 52px 68px 68px 68px 52px 52px 52px 38px 38px 44px 52px 52px 68px 44px 28px;
+  --cols-user: 22px 100px 32px 42px 52px 68px 68px 68px 52px 52px 38px 52px 52px 68px 44px 28px;
+  --row-height-compact: 24px;
 }
 
 @media (min-width: 1367px) {
   :root {
-    --cols-admin: 32px 180px 60px 80px 100px 120px 120px 120px 85px 85px 85px 65px 65px 80px 90px 90px 120px 80px 48px;
-    --cols-user: 32px 180px 60px 80px 100px 120px 120px 120px 85px 85px 85px 85px 85px 140px 100px 48px;
-    --row-height-compact: 40px;
+    --cols-admin: 26px 120px 42px 54px 70px 85px 85px 85px 60px 60px 60px 48px 48px 58px 65px 65px 85px 58px 36px;
+    --cols-user: 26px 120px 42px 54px 70px 85px 85px 85px 60px 60px 60px 60px 60px 100px 70px 36px;
+    --row-height-compact: 28px;
   }
 }
 
-/* Compact table row styles */
+/* Ultra Compact table row styles - 50% smaller */
 .table-row-compact > div {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  font-size: 0.75rem;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: 0.625rem;
   line-height: 1.1;
+  min-height: var(--row-height-compact);
 }
 
 @media (min-width: 1024px) {
   .table-row-compact > div {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
-    font-size: 0.8125rem;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 0.6875rem;
   }
 }
 
-/* Inline Editable Cell - Stable Layout */
+@media (min-width: 1367px) {
+  .table-row-compact > div {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Ensure stable row heights during edit */
+.table-row-compact {
+  contain: layout style;
+}
+
+/* Inline Editable Cell - Ultra Compact Stable Layout */
 .inline-cell-wrapper {
   display: inline-flex;
   align-items: center;
   position: relative;
-  min-height: 24px;
+  min-height: 18px;
   vertical-align: middle;
+  contain: layout style;
 }
 
 .inline-cell-display-wrapper {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .inline-cell-display {
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin: -2px -4px;
+  transition: background-color 0.1s ease, color 0.1s ease;
+  border-radius: 2px;
+  padding: 1px 3px;
+  margin: -1px -2px;
   border-bottom: 1px dashed transparent;
   white-space: nowrap;
-  max-width: 120px;
+  max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: inherit;
 }
 
 .inline-cell-display:hover {
@@ -205,21 +221,22 @@ body {
 
 .inline-cell-input {
   background: hsl(var(--card));
-  border: 1.5px solid hsl(var(--primary));
-  border-radius: 4px;
-  padding: 2px 6px;
+  border: 1px solid hsl(var(--primary));
+  border-radius: 2px;
+  padding: 1px 4px;
   outline: none;
   font: inherit;
   font-size: inherit;
   color: hsl(var(--foreground));
-  min-width: 50px;
-  max-width: 100px;
-  box-shadow: 0 2px 8px hsl(var(--primary) / 0.12);
-  transition: box-shadow 0.12s ease;
+  min-width: 40px;
+  max-width: 70px;
+  box-shadow: 0 1px 4px hsl(var(--primary) / 0.1);
+  transition: box-shadow 0.1s ease;
+  height: 18px;
 }
 
 .inline-cell-input:focus {
-  box-shadow: 0 2px 12px hsl(var(--primary) / 0.18);
+  box-shadow: 0 1px 6px hsl(var(--primary) / 0.15);
 }
 
 .inline-cell-saving {
@@ -232,15 +249,17 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
-  border-radius: 4px;
+  padding: 1px;
+  border-radius: 2px;
   border: none;
   cursor: pointer;
-  transition: background-color 0.1s ease, transform 0.1s ease;
+  transition: background-color 0.08s ease, transform 0.08s ease;
+  width: 14px;
+  height: 14px;
 }
 
 .inline-cell-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
 .inline-cell-btn-save {
@@ -263,12 +282,12 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
+  font-size: 7px;
   font-weight: 700;
-  width: 14px;
-  height: 14px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  animation: feedbackPop 0.2s ease-out;
+  animation: feedbackPop 0.15s ease-out;
 }
 
 @keyframes feedbackPop {
@@ -280,7 +299,7 @@ body {
 .inline-cell-feedback-success {
   background-color: hsl(142 71% 90%);
   color: hsl(142 71% 35%);
-  box-shadow: 0 0 6px hsl(142 71% 50% / 0.3);
+  box-shadow: 0 0 4px hsl(142 71% 50% / 0.25);
 }
 
 .inline-cell-feedback-error {
@@ -288,16 +307,23 @@ body {
   color: hsl(0 84% 50%);
 }
 
-/* Status Badge Styles - Compact */
+/* Status Badge Styles - Ultra Compact */
 .status-badge {
-  font-size: 9px;
+  font-size: 7px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 3px 8px;
+  letter-spacing: 0.01em;
+  padding: 2px 5px;
   border-radius: 999px;
   white-space: nowrap;
-  transition: transform 0.1s ease;
+  transition: transform 0.08s ease;
+}
+
+@media (min-width: 1367px) {
+  .status-badge {
+    font-size: 8px;
+    padding: 2px 6px;
+  }
 }
 
 .status-completed { 
