@@ -911,7 +911,8 @@ export default function Dashboard() {
                 orientation: 'portrait' as const,
                 compress: true,
                 putOnlyUsedFonts: true
-            }
+            },
+            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
         };
 
         const pdf = html2pdf().set(opt).from(invoiceElement || container);
@@ -964,7 +965,8 @@ export default function Dashboard() {
                 orientation: 'portrait' as const,
                 compress: true,
                 putOnlyUsedFonts: true
-            }
+            },
+            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
         };
 
         const pdf = html2pdf().set(opt).from(contractElement || container);

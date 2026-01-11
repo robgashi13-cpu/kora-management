@@ -20,6 +20,36 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
 
+    const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
+        const images = Array.from(container.querySelectorAll('img'));
+        if (images.length === 0) return;
+
+        const loadPromises = images.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise<void>((resolve, reject) => {
+                const onLoad = () => {
+                    cleanup();
+                    resolve();
+                };
+                const onError = () => {
+                    cleanup();
+                    reject(new Error('Image failed to load'));
+                };
+                const cleanup = () => {
+                    img.removeEventListener('load', onLoad);
+                    img.removeEventListener('error', onError);
+                };
+                img.addEventListener('load', onLoad);
+                img.addEventListener('error', onError);
+            });
+        });
+
+        await Promise.race([
+            Promise.all(loadPromises),
+            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
+        ]);
+    };
+
     const handlePrint = () => {
         handleDownload();
     };
@@ -50,11 +80,14 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     orientation: 'portrait' as const,
                     compress: true,
                     putOnlyUsedFonts: true
-                }
+                },
+                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
             };
 
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
+
+            await waitForImages(element);
 
             const pdf = html2pdf().set(opt).from(element);
 
