@@ -32,6 +32,36 @@ export default function EditablePreviewModal({
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
+    const images = Array.from(container.querySelectorAll('img'));
+    if (images.length === 0) return;
+
+    const loadPromises = images.map((img) => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise<void>((resolve, reject) => {
+        const onLoad = () => {
+          cleanup();
+          resolve();
+        };
+        const onError = () => {
+          cleanup();
+          reject(new Error('Image failed to load'));
+        };
+        const cleanup = () => {
+          img.removeEventListener('load', onLoad);
+          img.removeEventListener('error', onError);
+        };
+        img.addEventListener('load', onLoad);
+        img.addEventListener('error', onError);
+      });
+    });
+
+    await Promise.race([
+      Promise.all(loadPromises),
+      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
+    ]);
+  };
+
   // Initialize editable fields from sale
   useEffect(() => {
     if (isOpen) {
@@ -134,6 +164,8 @@ export default function EditablePreviewModal({
 
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
+
+      await waitForImages(element);
 
       if (!Capacitor.isNativePlatform()) {
         await html2pdf().set(opt).from(element).save();
@@ -841,6 +873,8 @@ export default function EditablePreviewModal({
           padding-bottom: 1.5cm;
           position: relative;
           box-sizing: border-box;
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
         .page-break {
           page-break-before: always;
@@ -855,10 +889,17 @@ export default function EditablePreviewModal({
         }
         .car-details div {
           display: flex;
+          flex-wrap: wrap;
+          gap: 6pt;
           justify-content: space-between;
           margin-bottom: 6pt;
           border-bottom: 1px dashed #ced4da;
           padding-bottom: 4px;
+        }
+        .car-details div span:last-child {
+          flex: 1 1 auto;
+          text-align: right;
+          word-break: break-word;
         }
         .car-details div:last-child {
           border-bottom: none;

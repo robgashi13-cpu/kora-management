@@ -10,7 +10,23 @@ export interface InvoiceDocumentProps {
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false }, ref) => {
     return (
-        <div className="p-5 md:p-8 print:p-0" id="invoice-content" ref={ref} style={{ backgroundColor: '#ffffff', color: '#000000', fontSize: '9pt' }}>
+        <div
+            className="p-5 md:p-8 print:p-0"
+            id="invoice-content"
+            ref={ref}
+            style={{
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                fontSize: '9pt',
+                lineHeight: 1.4,
+                boxSizing: 'border-box',
+                width: '100%',
+                maxWidth: '210mm',
+                minHeight: '297mm',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word'
+            }}
+        >
 
             {/* Invoice Header */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
@@ -100,7 +116,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             </div>
 
             {/* Footer */}
-            <div className="border-t pt-6 -mx-5 md:-mx-8 px-5 md:px-8 pb-4 mb-[-24px]" style={{ borderColor: '#f3f4f6', backgroundColor: '#f9fafb' }}>
+            <div className="border-t pt-6 mt-6 px-5 md:px-8 pb-4" style={{ borderColor: '#f3f4f6', backgroundColor: '#f9fafb' }}>
                 <h4 className="font-bold text-sm mb-4 uppercase tracking-wider" style={{ color: '#111827' }}>Payment Details</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm" style={{ color: '#4b5563' }}>
                     <div>
@@ -118,6 +134,20 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 </div>
             </div>
 
+            <style jsx>{`
+                #invoice-content *,
+                #invoice-content {
+                    box-sizing: border-box;
+                }
+                #invoice-content table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                #invoice-content th,
+                #invoice-content td {
+                    vertical-align: top;
+                }
+            `}</style>
         </div>
     );
 });

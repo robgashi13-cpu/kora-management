@@ -121,16 +121,15 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     orientation: 'portrait' as const,
                     compress: true,
                     putOnlyUsedFonts: true
-                }
+                },
+                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
             };
 
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
 
             if (!Capacitor.isNativePlatform()) {
-                if (type === 'deposit') {
-                    await waitForImages(element);
-                }
+                await waitForImages(element);
 
                 if (type === 'deposit' && isIosSafari()) {
                     const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');

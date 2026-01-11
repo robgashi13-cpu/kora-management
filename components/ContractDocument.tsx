@@ -46,8 +46,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
         <div
             ref={documentRef}
             data-contract-document
-            className={`bg-white text-black w-[21cm] shadow-2xl ${type === 'deposit' ? 'h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
-            style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt', lineHeight: type === 'deposit' ? 1.25 : type === 'full_shitblerje' ? 1.3 : 1.4, overflow: 'hidden' }}
+            className={`bg-white text-black w-[21cm] shadow-2xl box-border ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
+            style={{
+                fontFamily: '"Times New Roman", Times, serif',
+                fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt',
+                lineHeight: type === 'deposit' ? 1.25 : type === 'full_shitblerje' ? 1.3 : 1.4,
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+                boxSizing: 'border-box'
+            }}
         >
             {type === 'deposit' && (
                 <>
@@ -462,7 +469,8 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                 .blue-header { color: #0f172a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #0f172a; display: inline-block; padding-bottom: 2px; }
                 .label { font-weight: bold; min-width: 100px; display: inline-block; }
                 .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
-                .car-details div { display: flex; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
+                .car-details div { display: flex; flex-wrap: wrap; gap: 6pt; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
+                .car-details div span:last-child { flex: 1 1 auto; text-align: right; word-break: break-word; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-box { width: 40%; position: relative; height: 100px; }
                 .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }
