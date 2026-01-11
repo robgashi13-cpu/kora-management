@@ -4,10 +4,11 @@ import React, { useRef, useState } from 'react';
 import { X, Printer, Download, Loader2 } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
+import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -20,35 +21,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
 
-    const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
-        const images = Array.from(container.querySelectorAll('img'));
-        if (images.length === 0) return;
-
-        const loadPromises = images.map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            return new Promise<void>((resolve, reject) => {
-                const onLoad = () => {
-                    cleanup();
-                    resolve();
-                };
-                const onError = () => {
-                    cleanup();
-                    reject(new Error('Image failed to load'));
-                };
-                const cleanup = () => {
-                    img.removeEventListener('load', onLoad);
-                    img.removeEventListener('error', onError);
-                };
-                img.addEventListener('load', onLoad);
-                img.addEventListener('error', onError);
-            });
-        });
-
-        await Promise.race([
-            Promise.all(loadPromises),
-            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
-        ]);
-    };
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     const handlePrint = () => {
         handleDownload();
@@ -60,6 +33,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
         try {
             setIsDownloading(true);
+            setStatusMessage(null);
 
             // Wait for any UI updates to settle
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -72,7 +46,10 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     scale: 4,
                     useCORS: true,
                     logging: false,
-                    backgroundColor: '#ffffff'
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc: Document) => {
+                        sanitizePdfCloneStyles(clonedDoc);
+                    }
                 },
                 jsPDF: {
                     unit: 'mm' as const,
@@ -92,7 +69,11 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             const pdf = html2pdf().set(opt).from(element);
 
             if (!Capacitor.isNativePlatform()) {
-                await pdf.save();
+                const pdfBlob = await pdf.outputPdf('blob');
+                const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
+                if (!downloadResult.opened) {
+                    setStatusMessage('Popup blocked. We opened the PDF in this tab so you can save or share it.');
+                }
             } else {
                 const pdfBase64 = await pdf.outputPdf('datauristring');
                 const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
@@ -153,6 +134,11 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                         </button>
                     </div>
                 </div>
+                {statusMessage && (
+                    <div className="px-4 py-2 bg-amber-50 text-amber-700 text-sm flex items-center gap-2 print:hidden">
+                        {statusMessage}
+                    </div>
+                )}
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto print:overflow-visible">

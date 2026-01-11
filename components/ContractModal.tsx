@@ -5,6 +5,7 @@ import ContractDocument from './ContractDocument';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     sale: CarSale;
@@ -35,48 +36,11 @@ const validateDepositContract = (sale: CarSale): { valid: boolean; missingFields
     };
 };
 
-const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
-    const images = Array.from(container.querySelectorAll('img'));
-    if (images.length === 0) return;
-
-    const loadPromises = images.map((img) => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-        return new Promise<void>((resolve, reject) => {
-            const onLoad = () => {
-                cleanup();
-                resolve();
-            };
-            const onError = () => {
-                cleanup();
-                reject(new Error('Image failed to load'));
-            };
-            const cleanup = () => {
-                img.removeEventListener('load', onLoad);
-                img.removeEventListener('error', onError);
-            };
-            img.addEventListener('load', onLoad);
-            img.addEventListener('error', onError);
-        });
-    });
-
-    await Promise.race([
-        Promise.all(loadPromises),
-        new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
-    ]);
-};
-
-const isIosSafari = (): boolean => {
-    if (typeof window === 'undefined') return false;
-    const ua = window.navigator.userAgent;
-    const isIos = /iP(ad|od|hone)/.test(ua);
-    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
-    return isIos && isSafari;
-};
-
 export default function ContractModal({ sale, type, onClose }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     // Validate contract data
     const validation = type === 'deposit' ? validateDepositContract(sale) : { valid: true, missingFields: [] };
@@ -100,6 +64,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         try {
             setIsDownloading(true);
             setError(null);
+            setStatusMessage(null);
             
             const safeBrand = safeString(sale.brand, 'Unknown');
             const safeModel = safeString(sale.model, 'Car');
@@ -113,7 +78,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     scale: 4,
                     useCORS: true,
                     backgroundColor: '#ffffff',
-                    logging: false
+                    logging: false,
+                    onclone: (clonedDoc: Document) => {
+                        sanitizePdfCloneStyles(clonedDoc);
+                    }
                 },
                 jsPDF: {
                     unit: 'mm' as const,
@@ -131,17 +99,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             if (!Capacitor.isNativePlatform()) {
                 await waitForImages(element);
 
-                if (type === 'deposit' && isIosSafari()) {
-                    const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-                    const blobUrl = URL.createObjectURL(pdfBlob);
-                    const popup = window.open(blobUrl, '_blank');
-                    if (!popup) {
-                        window.location.href = blobUrl;
-                    }
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-                } else {
-                    // Desktop/Web browser - direct save
-                    await html2pdf().set(opt).from(element).save();
+                const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+                const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
+                if (!downloadResult.opened) {
+                    setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
                 }
             } else {
                 // Native mobile (iOS/Android) - use Capacitor filesystem
@@ -213,12 +174,17 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     {(error || !validation.valid) && (
                         <div className={`px-4 py-3 flex items-center gap-2 text-sm ${error ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
                             <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <span>
-                                {error || `Missing required fields: ${validation.missingFields.join(', ')}. Please fill them in before generating.`}
-                            </span>
-                        </div>
-                    )}
+                    <span>
+                        {error || `Missing required fields: ${validation.missingFields.join(', ')}. Please fill them in before generating.`}
+                    </span>
                 </div>
+            )}
+            {statusMessage && (
+                <div className="px-4 py-3 flex items-center gap-2 text-sm bg-amber-50 text-amber-700">
+                    {statusMessage}
+                </div>
+            )}
+        </div>
 
                 {/* Document Preview Area */}
                 <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center">
