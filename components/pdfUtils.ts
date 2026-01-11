@@ -36,16 +36,27 @@ export const isIosSafari = (): boolean => {
   return isIos && isSafari;
 };
 
+const sanitizePdfColorFunctions = (value: string) => value
+  .replace(/oklch\([^)]*\)/gi, 'rgb(0, 0, 0)')
+  .replace(/oklab\([^)]*\)/gi, 'rgb(0, 0, 0)')
+  .replace(/lab\([^)]*\)/gi, 'rgb(0, 0, 0)')
+  .replace(/color-mix\([^)]*\)/gi, 'rgb(0, 0, 0)')
+  .replace(/color\([^)]*\)/gi, 'rgb(0, 0, 0)');
+
 export const sanitizePdfCloneStyles = (clonedDoc: Document) => {
   const styleTags = clonedDoc.querySelectorAll('style');
   styleTags.forEach((styleTag) => {
     if (!styleTag.textContent) return;
-    styleTag.textContent = styleTag.textContent
-      .replace(/oklch\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/oklab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/lab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/color-mix\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/color\([^)]*\)/gi, 'rgb(0, 0, 0)');
+    styleTag.textContent = sanitizePdfColorFunctions(styleTag.textContent);
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>('[style]').forEach((node) => {
+    const inlineStyle = node.getAttribute('style');
+    if (!inlineStyle) return;
+    const sanitized = sanitizePdfColorFunctions(inlineStyle);
+    if (sanitized !== inlineStyle) {
+      node.setAttribute('style', sanitized);
+    }
   });
 };
 

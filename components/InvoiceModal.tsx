@@ -49,6 +49,13 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
+                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                            if (invoiceNode && node.closest('#invoice-content')) {
+                                return;
+                            }
+                            node.remove();
+                        });
                     }
                 },
                 jsPDF: {
@@ -120,17 +127,17 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
-                            className={`flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition shadow-sm text-xs font-semibold ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             {isDownloading ? 'Saving...' : 'Download PDF'}
                         </button>
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition" style={{ backgroundColor: '#111827' }}>
+                        <button onClick={handlePrint} className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 text-white rounded-md hover:bg-gray-700 transition text-xs font-semibold" style={{ backgroundColor: '#111827' }}>
                             <Printer className="w-4 h-4" /> Print
                         </button>
 
-                        <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 pointer-events-auto cursor-pointer relative z-50">
-                            <X className="w-5 h-5" />
+                        <button onClick={onClose} className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500 pointer-events-auto cursor-pointer relative z-50">
+                            <X className="w-4 h-4" />
                         </button>
                     </div>
                 </div>

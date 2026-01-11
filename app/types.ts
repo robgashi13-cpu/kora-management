@@ -20,6 +20,7 @@ export interface CarSale {
     vin: string;
 
     sellerName: string;
+    sellerId?: string;
     buyerName: string;
     buyerPersonalId?: string;
 
@@ -59,5 +60,6 @@ export interface CarSale {
     createdAt: string;
     sortOrder?: number;
     soldBy?: string;
+    soldById?: string;
     group?: string; // For grouping (e.g. "15 november SANG SHIN")
 }

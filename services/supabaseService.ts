@@ -62,6 +62,7 @@ const fromRemote = (r: any): CarSale => ({
     plateNumber: r.plate_number || r.attachments?.plateNumber,
     vin: r.vin || r.attachments?.vin,
     sellerName: r.seller_name || r.attachments?.sellerName,
+    sellerId: r.attachments?.sellerId,
     buyerName: r.buyer_name || r.attachments?.buyerName,
     buyerPersonalId: r.buyer_personal_id || r.attachments?.buyerPersonalId,
     shippingName: r.shipping_name || r.attachments?.shippingName,
@@ -96,6 +97,7 @@ const fromRemote = (r: any): CarSale => ({
 
     createdAt: r.created_at || r.attachments?.createdAt || new Date().toISOString(),
     soldBy: r.sold_by || r.attachments?.soldBy,
+    soldById: r.attachments?.soldById,
 });
 
 export const syncSalesWithSupabase = async (

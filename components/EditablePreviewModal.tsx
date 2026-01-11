@@ -7,7 +7,9 @@ import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import { createRoot } from 'react-dom/client';
 import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import InvoiceDocument from './InvoiceDocument';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -108,6 +110,7 @@ export default function EditablePreviewModal({
   const handleDownload = async () => {
     const element = printRef.current;
     if (!element) return;
+    let cleanupInvoiceRender: (() => void) | null = null;
 
     try {
       setIsDownloading(true);
@@ -152,6 +155,15 @@ export default function EditablePreviewModal({
           logging: false,
           onclone: (clonedDoc: Document) => {
             sanitizePdfCloneStyles(clonedDoc);
+            if (documentType === 'invoice') {
+              const invoiceNode = clonedDoc.querySelector('#invoice-content');
+              clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                if (invoiceNode && node.closest('#invoice-content')) {
+                  return;
+                }
+                node.remove();
+              });
+            }
           }
         },
         jsPDF: {
@@ -167,16 +179,42 @@ export default function EditablePreviewModal({
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
 
-      await waitForImages(element);
+      let renderElement: HTMLElement = element;
+      if (documentType === 'invoice') {
+        const invoiceContainer = document.createElement('div');
+        invoiceContainer.style.position = 'fixed';
+        invoiceContainer.style.left = '-9999px';
+        invoiceContainer.style.top = '0';
+        invoiceContainer.style.width = '1024px';
+        invoiceContainer.style.zIndex = '-1';
+        document.body.appendChild(invoiceContainer);
+
+        const root = createRoot(invoiceContainer);
+        const resolvedSale = { ...sale, ...editedFields } as CarSale;
+        root.render(<InvoiceDocument sale={resolvedSale} withDogane={withDogane} />);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const invoiceElement = invoiceContainer.querySelector('#invoice-content') as HTMLElement | null;
+        renderElement = invoiceElement || invoiceContainer;
+        await waitForImages(renderElement);
+
+        cleanupInvoiceRender = () => {
+          root.unmount();
+          invoiceContainer.remove();
+        };
+      } else {
+        await waitForImages(element);
+      }
 
       if (!Capacitor.isNativePlatform()) {
-        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const pdfBlob = await html2pdf().set(opt).from(renderElement).outputPdf('blob');
         const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
         if (!downloadResult.opened) {
           setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
         }
       } else {
-        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        const pdfBase64 = await html2pdf().set(opt).from(renderElement).outputPdf('datauristring');
         const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
         const base64Data = pdfBase64.split(',')[1];
 
@@ -197,6 +235,7 @@ export default function EditablePreviewModal({
       console.error('Download failed:', err);
       setError(`Download failed: ${err?.message || 'Unknown error'}`);
     } finally {
+      if (cleanupInvoiceRender) cleanupInvoiceRender();
       setIsDownloading(false);
     }
   };
@@ -342,7 +381,7 @@ export default function EditablePreviewModal({
               {onSaveToSale && (
                 <button
                   onClick={handleSaveToSale}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-all font-medium text-sm shadow-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-all font-medium text-xs shadow-sm"
                 >
                   {showSaveSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                   {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
@@ -350,7 +389,7 @@ export default function EditablePreviewModal({
               )}
               <button
                 onClick={handleReset}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-medium text-sm"
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-medium text-xs"
               >
                 <RotateCcw className="w-4 h-4" />
                 Reset
@@ -358,7 +397,7 @@ export default function EditablePreviewModal({
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold shadow-lg shadow-black/10 disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-xs shadow-sm disabled:opacity-50"
               >
                 {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {isDownloading ? 'Generating...' : 'Download PDF'}
@@ -366,16 +405,16 @@ export default function EditablePreviewModal({
               <button
                 onClick={handlePrint}
                 disabled={isDownloading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-medium text-sm shadow-sm disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-medium text-xs shadow-sm disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
                 Print
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
+                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
               >
-                <X className="w-6 h-6" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -400,7 +439,7 @@ export default function EditablePreviewModal({
               <div
                 ref={printRef}
                 className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8 pdf-root"
-                style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5, boxSizing: 'border-box' }}
+                style={{ fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '10pt', lineHeight: 1.5, boxSizing: 'border-box' }}
               >
                 {documentType === 'invoice' ? (
                   /* Invoice Template */
@@ -506,7 +545,6 @@ export default function EditablePreviewModal({
                           <div className="font-bold mb-1 text-gray-900">Raiffeisen Bank</div>
                           <div className="font-mono bg-white p-2 rounded border inline-block">1501080002435404</div>
                           <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
-                          <div className="mt-3 text-xs uppercase tracking-wide text-gray-400">Paid in Bank</div>
                           <div className="font-bold text-sm">
                             €<EditableField fieldKey="amountPaidBank" type="currency" />
                           </div>
