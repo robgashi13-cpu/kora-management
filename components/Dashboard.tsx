@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2 } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -15,7 +15,6 @@ import SaleModal from './SaleModal';
 import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
-import GroupManager from './GroupManager';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
 import { sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
@@ -359,6 +358,7 @@ export default function Dashboard() {
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [formReturnView, setFormReturnView] = useState('dashboard');
+    const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
     const [showArchivedGroups, setShowArchivedGroups] = useState(false);
@@ -406,6 +406,25 @@ export default function Dashboard() {
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy)
     }), []);
+
+    const profileOptions = useMemo(() => {
+        const profileMap = new Map<string, string>();
+        availableProfiles.forEach(name => {
+            const normalized = normalizeProfileName(name);
+            if (normalized) profileMap.set(normalized, name);
+        });
+        sales.forEach(sale => {
+            const seller = normalizeProfileName(sale.sellerName);
+            const soldBy = normalizeProfileName(sale.soldBy);
+            if (seller && !profileMap.has(seller)) profileMap.set(seller, sale.sellerName || seller);
+            if (soldBy && !profileMap.has(soldBy)) profileMap.set(soldBy, sale.soldBy || soldBy);
+        });
+        return Array.from(profileMap.entries())
+            .map(([id, label]) => ({ id, label: label || id }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+    }, [availableProfiles, sales]);
+
+    const profileOptionIds = useMemo(() => new Set(profileOptions.map(option => option.id)), [profileOptions]);
 
     const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
         const normalizedProfile = profile ? normalizeProfileName(profile) : null;
@@ -656,9 +675,9 @@ export default function Dashboard() {
     const resolveSoldBy = (sale: Partial<CarSale>, fallback?: string) => {
         const seller = sale.sellerName ? normalizeProfileName(sale.sellerName) : '';
         const soldBy = sale.soldBy ? normalizeProfileName(sale.soldBy) : '';
-        if (seller && availableProfiles.includes(seller)) return seller;
-        if (soldBy && availableProfiles.includes(soldBy)) return soldBy;
-        return normalizeProfileName(fallback || soldBy || seller || userProfile || 'Unknown');
+        if (seller && profileOptionIds.has(seller)) return seller;
+        if (soldBy && profileOptionIds.has(soldBy)) return soldBy;
+        return normalizeProfileName(soldBy || seller || fallback || userProfile || 'Unknown');
     };
 
     const handleInlineUpdate = async (id: string, field: keyof CarSale, value: string | number) => {
@@ -1194,6 +1213,11 @@ export default function Dashboard() {
         const reorderedActive = updatedActive.map((g, idx) => ({ ...g, order: idx }));
         const archived = ordered.filter(g => g.archived).map((g, idx) => ({ ...g, order: reorderedActive.length + idx }));
         await persistGroupMeta([...reorderedActive, ...archived]);
+    };
+
+    const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
+        const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
+        await updateSalesAndSave(newSales);
     };
 
     const handleRemoveFromGroup = async (id: string) => {
@@ -1897,6 +1921,7 @@ export default function Dashboard() {
     const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
+    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
@@ -2199,30 +2224,6 @@ export default function Dashboard() {
                         )}
 
                         {view === 'dashboard' ? (<>
-                            <div className="mb-3 md:mb-4 rounded-2xl border border-slate-100 bg-white p-4 md:p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-                                <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between mb-3">
-                                    <div>
-                                        <h2 className="text-sm font-semibold text-slate-800">Group Manager</h2>
-                                        <p className="text-xs text-slate-500">Create and organize car groups directly from the dashboard.</p>
-                                    </div>
-                                    <div className="text-[11px] text-slate-400">
-                                        Use group headers below to reorder or archive groups.
-                                    </div>
-                                </div>
-                                <GroupManager
-                                    sales={sales}
-                                    selectedIds={selectedIds}
-                                    groups={activeGroups.map(group => group.name)}
-                                    expandedGroups={expandedGroups}
-                                    onCreateGroup={createGroupWithName}
-                                    onRenameGroup={renameGroupWithName}
-                                    onRemoveFromGroup={handleRemoveFromGroup}
-                                    onToggleGroup={toggleGroup}
-                                    onAddToGroup={handleAddToGroup}
-                                    showDelete={false}
-                                />
-                            </div>
-
                             <div
                                 ref={scrollContainerRef}
                                 className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto flex-1"
@@ -2280,7 +2281,8 @@ export default function Dashboard() {
                                         </div>
                                         <div className="p-1 xl:p-2.5"></div>
                                     </div>
-                                    {/* Render Rows grouped manually */}
+                                    {/* Render Rows */}
+                                    {groupingEnabled ? (
                                     <Reorder.Group
                                         axis="y"
                                         values={activeGroups.map(g => g.name)}
@@ -2325,6 +2327,58 @@ export default function Dashboard() {
                                                                 >
                                                                     <ChevronDown className="w-3.5 h-3.5" />
                                                                 </button>
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                        }}
+                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group to tab"
+                                                                    >
+                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    {activeGroupMoveMenu === group.name && (
+                                                                        <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Sales
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Shipped
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Inspections
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Autosallon
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 <button
                                                                     onClick={() => handleRenameGroup(group.name)}
                                                                     className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
@@ -2526,6 +2580,45 @@ export default function Dashboard() {
                                             </div>
                                         )}
                                     </Reorder.Group>
+                                    ) : (
+                                        <Reorder.Group
+                                            axis="y"
+                                            values={filteredSales}
+                                            onReorder={(newOrder) => {
+                                                setSales(prev => {
+                                                    const next = [...prev];
+                                                    newOrder.forEach((newItem, newIndex) => {
+                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                    });
+                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                });
+                                            }}
+                                            className="grid grid-cols-subgrid"
+                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                        >
+                                            {filteredSales.map(s => (
+                                                <SortableSaleItem
+                                                    key={s.id}
+                                                    s={s}
+                                                    userProfile={userProfile}
+                                                    canViewPrices={canViewPrices}
+                                                    toggleSelection={toggleSelection}
+                                                    isSelected={selectedIds.has(s.id)}
+                                                    openInvoice={openInvoice}
+                                                    onInlineUpdate={handleInlineUpdate}
+                                                    onClick={() => {
+                                                        if (!isAdmin && s.soldBy !== userProfile) {
+                                                            alert("You do not have permission to edit this sale.");
+                                                            return;
+                                                        }
+                                                        openSaleForm(s);
+                                                    }}
+                                                    onDelete={handleDeleteSingle}
+                                                />
+                                            ))}
+                                        </Reorder.Group>
+                                    )}
 
                                     {/* Footer Totals */}
                                     <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
@@ -2546,150 +2639,74 @@ export default function Dashboard() {
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
                                 <div className="flex flex-col flex-1 overflow-y-auto pb-16 no-scrollbar">
-                                    {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
-                                        const groupSales = groupedSales[group.name] || [];
-                                        if (groupSales.length === 0) return null;
-                                        return (
-                                            <div key={group.name} className="border-b border-slate-200">
-                                                <button
-                                                    onClick={() => toggleGroup(group.name)}
-                                                    className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50"
-                                                >
-                                                    <span className="flex items-center gap-2">
-                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                        {group.name}
-                                                    </span>
-                                                    <span className="text-xs text-slate-400 font-medium">{groupSales.length} cars</span>
-                                                </button>
-                                                {expandedGroups.includes(group.name) && (
-                                                    <div>
-                                                        {groupSales.map(sale => (
-                                                            <motion.div
-                                                                key={sale.id}
-                                                                initial={{ opacity: 0 }}
-                                                                animate={{ opacity: 1 }}
-                                                                className="relative border-b border-slate-200"
-                                                            >
-                                                                {/* Background Action (Delete) */}
-                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                    <Trash2 className="text-white w-5 h-5" />
-                                                                </div>
-
-                                                                {/* Foreground Card */}
-                                                                <motion.div
-                                                                    layout
-                                                                    drag="x"
-                                                                    dragDirectionLock
-                                                                    dragConstraints={{ left: 0, right: 0 }}
-                                                                    dragElastic={{ left: 0.8, right: 0 }}
-                                                                    dragSnapToOrigin
-                                                                    onDragEnd={(e, { offset }) => {
-                                                                        if (offset.x < -100) {
-                                                                            const shouldDelete = confirm('Delete this item?');
-                                                                            if (shouldDelete) {
-                                                                                handleDeleteSingle(sale.id);
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
-                                                                    onClick={() => {
-                                                                        if (selectedIds.size > 0) {
-                                                                            toggleSelection(sale.id);
-                                                                        } else {
-                                                                            if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                                alert("You do not have permission to edit this sale.");
-                                                                                return;
-                                                                            }
-                                                                            openSaleForm(sale);
-                                                                        }
-                                                                    }}
-                                                                    onContextMenu={(e) => {
-                                                                        e.preventDefault();
-                                                                        toggleSelection(sale.id);
-                                                                    }}
-                                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                                >
-                                                                    {selectedIds.size > 0 && (
-                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex justify-between items-start">
-                                                                            <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                    sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                        'bg-slate-100 text-slate-500'
-                                                                                }`}>{sale.status}</span>
-                                                                        </div>
-                                                                        <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
-                                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                            {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                    {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                </span>
-                                                                            ) : (
-                                                                                <span className="font-mono text-slate-400">-</span>
-                                                                            )}
-                                                                        </div>
-                                                                        {isAdmin && (
-                                                                            <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
-                                                                                <span className="text-slate-400">Korea:</span>
-                                                                                <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                    {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                        {sale.group && (
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                className="mt-1 text-[10px] text-red-500 font-semibold hover:text-red-600"
-                                                                            >
-                                                                                Remove from group
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                </motion.div>
-                                                            </motion.div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    {archivedGroups.length > 0 && (
-                                        <div className="border-b border-slate-200">
-                                            <button
-                                                onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
-                                            >
-                                                <span className="flex items-center gap-2">
-                                                    {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                    Archived Groups
-                                                </span>
-                                                <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
-                                            </button>
-                                            {showArchivedGroups && archivedGroups.map(group => {
+                                    {groupingEnabled ? (
+                                        <>
+                                            {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
                                                 const groupSales = groupedSales[group.name] || [];
                                                 if (groupSales.length === 0) return null;
                                                 return (
                                                     <div key={group.name} className="border-b border-slate-200">
-                                                        <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                        <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
                                                             <button
                                                                 onClick={() => toggleGroup(group.name)}
-                                                                className="flex items-center gap-2"
+                                                                className="flex items-center gap-2 text-left"
                                                             >
                                                                 {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                                 {group.name}
+                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                             </button>
-                                                            <button
-                                                                onClick={() => handleArchiveGroup(group.name, false)}
-                                                                className="text-xs text-slate-900 font-semibold"
-                                                            >
-                                                                Unarchive
-                                                            </button>
+                                                            <div className="relative">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                    }}
+                                                                    className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                    title="Move group to tab"
+                                                                >
+                                                                    <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                {activeGroupMoveMenu === group.name && (
+                                                                    <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                setActiveGroupMoveMenu(null);
+                                                                            }}
+                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                        >
+                                                                            Sales
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                setActiveGroupMoveMenu(null);
+                                                                            }}
+                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                        >
+                                                                            Shipped
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                setActiveGroupMoveMenu(null);
+                                                                            }}
+                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                        >
+                                                                            Inspections
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                setActiveGroupMoveMenu(null);
+                                                                            }}
+                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                        >
+                                                                            Autosallon
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         {expandedGroups.includes(group.name) && (
                                                             <div>
@@ -2700,9 +2717,12 @@ export default function Dashboard() {
                                                                         animate={{ opacity: 1 }}
                                                                         className="relative border-b border-slate-200"
                                                                     >
+                                                                        {/* Background Action (Delete) */}
                                                                         <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
                                                                             <Trash2 className="text-white w-5 h-5" />
                                                                         </div>
+
+                                                                        {/* Foreground Card */}
                                                                         <motion.div
                                                                             layout
                                                                             drag="x"
@@ -2741,6 +2761,7 @@ export default function Dashboard() {
                                                                                     {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                 </div>
                                                                             )}
+
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex justify-between items-start">
                                                                                     <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
@@ -2768,7 +2789,133 @@ export default function Dashboard() {
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
-                                                                                {sale.group && (
+                                                                                {groupingEnabled && sale.group && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                        className="mt-1 text-[10px] text-red-500 font-semibold hover:text-red-600"
+                                                                                    >
+                                                                                        Remove from group
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    </motion.div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                            {archivedGroups.length > 0 && (
+                                                <div className="border-b border-slate-200">
+                                                    <button
+                                                        onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                        className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
+                                                    >
+                                                        <span className="flex items-center gap-2">
+                                                            {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                            Archived Groups
+                                                        </span>
+                                                        <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
+                                                    </button>
+                                                    {showArchivedGroups && archivedGroups.map(group => {
+                                                        const groupSales = groupedSales[group.name] || [];
+                                                        if (groupSales.length === 0) return null;
+                                                        return (
+                                                            <div key={group.name} className="border-b border-slate-200">
+                                                                <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                                    <button
+                                                                        onClick={() => toggleGroup(group.name)}
+                                                                        className="flex items-center gap-2"
+                                                                    >
+                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                        {group.name}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleArchiveGroup(group.name, false)}
+                                                                        className="text-xs text-slate-900 font-semibold"
+                                                                    >
+                                                                        Unarchive
+                                                                    </button>
+                                                                </div>
+                                                                {expandedGroups.includes(group.name) && (
+                                                                    <div>
+                                                                        {groupSales.map(sale => (
+                                                                            <motion.div
+                                                                                key={sale.id}
+                                                                                initial={{ opacity: 0 }}
+                                                                                animate={{ opacity: 1 }}
+                                                                                className="relative border-b border-slate-200"
+                                                                            >
+                                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                                                    <Trash2 className="text-white w-5 h-5" />
+                                                                                </div>
+                                                                                <motion.div
+                                                                                    layout
+                                                                                    drag="x"
+                                                                                    dragDirectionLock
+                                                                                    dragConstraints={{ left: 0, right: 0 }}
+                                                                                    dragElastic={{ left: 0.8, right: 0 }}
+                                                                                    dragSnapToOrigin
+                                                                                    onDragEnd={(e, { offset }) => {
+                                                                                        if (offset.x < -100) {
+                                                                                            const shouldDelete = confirm('Delete this item?');
+                                                                                            if (shouldDelete) {
+                                                                                                handleDeleteSingle(sale.id);
+                                                                                            }
+                                                                                        }
+                                                                                    }}
+                                                                                    className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                                                    onClick={() => {
+                                                                                        if (selectedIds.size > 0) {
+                                                                                            toggleSelection(sale.id);
+                                                                                        } else {
+                                                                                            if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                                                alert("You do not have permission to edit this sale.");
+                                                                                                return;
+                                                                                            }
+                                                                                            openSaleForm(sale);
+                                                                                        }
+                                                                                    }}
+                                                                                    onContextMenu={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        toggleSelection(sale.id);
+                                                                                    }}
+                                                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                                >
+                                                                                    {selectedIds.size > 0 && (
+                                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <div className="flex justify-between items-start">
+                                                                                    <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                'bg-slate-100 text-slate-500'
+                                                                                        }`}>{sale.status}</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
+                                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="font-mono text-slate-400">-</span>
+                                                                                    )}
+                                                                                </div>
+                                                                                {isAdmin && (
+                                                                                    <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
+                                                                                        <span className="text-slate-400">Korea:</span>
+                                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
+                                                                                {groupingEnabled && sale.group && (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
                                                                                         className="mt-1 text-[10px] text-red-500 font-semibold hover:text-red-600"
@@ -2786,6 +2933,89 @@ export default function Dashboard() {
                                                 );
                                             })}
                                         </div>
+                                    ) : (
+                                        <>
+                                            {filteredSales.map(sale => (
+                                                <motion.div
+                                                    key={sale.id}
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    className="relative border-b border-slate-200"
+                                                >
+                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                        <Trash2 className="text-white w-5 h-5" />
+                                                    </div>
+                                                    <motion.div
+                                                        layout
+                                                        drag="x"
+                                                        dragDirectionLock
+                                                        dragConstraints={{ left: 0, right: 0 }}
+                                                        dragElastic={{ left: 0.8, right: 0 }}
+                                                        dragSnapToOrigin
+                                                        onDragEnd={(e, { offset }) => {
+                                                            if (offset.x < -100) {
+                                                                const shouldDelete = confirm('Delete this item?');
+                                                                if (shouldDelete) {
+                                                                    handleDeleteSingle(sale.id);
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                        onClick={() => {
+                                                            if (selectedIds.size > 0) {
+                                                                toggleSelection(sale.id);
+                                                            } else {
+                                                                if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                    alert("You do not have permission to edit this sale.");
+                                                                    return;
+                                                                }
+                                                                openSaleForm(sale);
+                                                            }
+                                                        }}
+                                                        onContextMenu={(e) => {
+                                                            e.preventDefault();
+                                                            toggleSelection(sale.id);
+                                                        }}
+                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                    >
+                                                        {selectedIds.size > 0 && (
+                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                            'bg-slate-100 text-slate-500'
+                                                                    }`}>{sale.status}</span>
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
+                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="font-mono text-slate-400">-</span>
+                                                                )}
+                                                            </div>
+                                                            {isAdmin && (
+                                                                <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
+                                                                    <span className="text-slate-400">Korea:</span>
+                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </motion.div>
+                                                </motion.div>
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                             </div>
@@ -2994,10 +3224,12 @@ export default function Dashboard() {
                                         <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
                                     </button>
 
-                                    <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <FolderPlus className="w-5 h-5 text-slate-600" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
-                                    </button>
+                                    {groupingEnabled && (
+                                        <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <FolderPlus className="w-5 h-5 text-slate-600" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
+                                        </button>
+                                    )}
 
                                     <div className="relative">
                                         <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
@@ -3039,48 +3271,48 @@ export default function Dashboard() {
             <AnimatePresence>
                 {view === 'sale_form' && (
                     <motion.div
-                        className="fixed inset-0 z-[80] bg-slate-950/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                     >
                         <motion.div
-                            className="absolute inset-0 bg-white flex flex-col"
+                            className="relative w-full max-w-6xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                             initial={{ opacity: 0, y: 24 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 24 }}
                             transition={{ duration: 0.25 }}
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <button
                                 onClick={() => closeSaleForm()}
-                                className="absolute top-4 right-4 md:top-6 md:right-6 z-10 h-10 w-10 rounded-full bg-white/90 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                                className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-white/95 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                                 aria-label="Close sale form"
                                 type="button"
                             >
                                 <X className="w-5 h-5 mx-auto" />
                             </button>
-                            <div className="flex-1 overflow-hidden flex flex-col px-2 md:px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-                                <div className="flex items-center justify-between mb-4 md:mb-6">
-                                    <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors">
-                                        <ArrowRight className="w-5 h-5 rotate-180" />
-                                        {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
-                                    </button>
-                                    <h2 className="text-2xl font-bold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                                    <div className="w-20" />
-                                </div>
-                                <div className="flex-1 overflow-hidden bg-white">
-                                    <SaleModal
-                                        isOpen={true}
-                                        inline={true}
-                                        onClose={() => closeSaleForm()}
-                                        onSave={handleAddSale}
-                                        existingSale={editingSale}
-                                        defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
-                                        isAdmin={isAdmin}
-                                        availableProfiles={availableProfiles}
-                                    />
-                                </div>
+                            <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 bg-slate-50/80">
+                                <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
+                                    <ArrowRight className="w-4 h-4 rotate-180" />
+                                    {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
+                                </button>
+                                <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
+                                <div className="w-20" />
+                            </div>
+                            <div className="flex-1 overflow-hidden bg-white">
+                                <SaleModal
+                                    isOpen={true}
+                                    inline={true}
+                                    hideHeader={true}
+                                    onClose={() => closeSaleForm()}
+                                    onSave={handleAddSale}
+                                    existingSale={editingSale}
+                                    defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                                    isAdmin={isAdmin}
+                                    availableProfiles={profileOptions}
+                                />
                             </div>
                         </motion.div>
                     </motion.div>

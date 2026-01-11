@@ -338,37 +338,37 @@ export default function EditablePreviewModal({
                 Click any value to edit
               </span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {onSaveToSale && (
                 <button
                   onClick={handleSaveToSale}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-all font-medium text-sm shadow-sm"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-all font-semibold text-xs shadow-sm"
                 >
-                  {showSaveSuccess ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+                  {showSaveSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
                   {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-medium text-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-semibold text-xs"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 Reset
               </button>
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold shadow-lg shadow-black/10 disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-xs shadow-sm shadow-black/10 disabled:opacity-50"
               >
-                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 {isDownloading ? 'Generating...' : 'Download PDF'}
               </button>
               <button
                 onClick={handlePrint}
                 disabled={isDownloading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-medium text-sm shadow-sm disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-xs shadow-sm disabled:opacity-50"
               >
-                <Printer className="w-4 h-4" />
+                <Printer className="w-3.5 h-3.5" />
                 Print
               </button>
               <button
@@ -400,7 +400,14 @@ export default function EditablePreviewModal({
               <div
                 ref={printRef}
                 className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8 pdf-root"
-                style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5, boxSizing: 'border-box' }}
+                style={{
+                  fontFamily: documentType === 'invoice'
+                    ? 'Arial, "Helvetica Neue", Helvetica, sans-serif'
+                    : 'Georgia, "Times New Roman", Times, serif',
+                  fontSize: '10pt',
+                  lineHeight: 1.5,
+                  boxSizing: 'border-box'
+                }}
               >
                 {documentType === 'invoice' ? (
                   /* Invoice Template */
@@ -506,7 +513,6 @@ export default function EditablePreviewModal({
                           <div className="font-bold mb-1 text-gray-900">Raiffeisen Bank</div>
                           <div className="font-mono bg-white p-2 rounded border inline-block">1501080002435404</div>
                           <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
-                          <div className="mt-3 text-xs uppercase tracking-wide text-gray-400">Paid in Bank</div>
                           <div className="font-bold text-sm">
                             €<EditableField fieldKey="amountPaidBank" type="currency" />
                           </div>

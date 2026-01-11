@@ -17,8 +17,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             style={{
                 backgroundColor: '#ffffff',
                 color: '#000000',
-                fontSize: '9pt',
-                lineHeight: 1.4,
+                fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
+                fontSize: '9.5pt',
+                lineHeight: 1.5,
                 boxSizing: 'border-box',
                 width: '100%',
                 maxWidth: '210mm',
@@ -126,7 +127,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
                         <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'inline-block' }}>1501080002435404</div>
                         <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
-                        <div style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: '12px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid in Bank</div>
                         <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>€{(sale.amountPaidBank || 0).toLocaleString()}</div>
                     </div>
                     <div className="invoice-footer-right">

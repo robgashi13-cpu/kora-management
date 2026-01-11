@@ -14,7 +14,8 @@ interface Props {
     inline?: boolean;
     defaultStatus?: SaleStatus;
     isAdmin?: boolean;
-    availableProfiles?: string[];
+    availableProfiles?: { id: string; label: string }[];
+    hideHeader?: boolean;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -28,7 +29,8 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     includeTransport: false,
     amountPaidToKorea: 0, paidDateToKorea: null, paidDateFromClient: null,
     paymentMethod: 'Bank', status: 'New',
-    isPaid: false
+    isPaid: false,
+    soldBy: ''
 };
 
 const YEARS = Array.from({ length: 26 }, (_, i) => 2000 + i).reverse();
@@ -38,7 +40,7 @@ const COLORS = [
 
 import EditablePreviewModal from './EditablePreviewModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [] }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -62,7 +64,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (!migratedSale.bankInvoices) migratedSale.bankInvoices = [];
             if (!migratedSale.depositInvoices) migratedSale.depositInvoices = [];
 
-            setFormData(migratedSale);
+            setFormData({
+                ...migratedSale,
+                soldBy: migratedSale.soldBy || migratedSale.sellerName || ''
+            });
         } else {
             setFormData({
                 ...EMPTY_SALE,
@@ -161,6 +166,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }));
     };
 
+    const handleSellerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedId = e.target.value;
+        const selectedProfile = availableProfiles.find(profile => profile.id === selectedId);
+        setFormData(prev => ({
+            ...prev,
+            sellerName: selectedProfile?.label || '',
+            soldBy: selectedId
+        }));
+    };
+
     const handlePaidToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData(prev => ({
             ...prev,
@@ -239,14 +254,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             onClick={(e) => e.stopPropagation()}
             className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-[min(98vw,96rem)] max-w-[96rem] rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
         >
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
-                <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
-                {!inline && (
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
-                        <X className="w-5 h-5" />
-                    </button>
-                )}
-            </div>
+            {!hideHeader && (
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
+                    <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+                    {!inline && (
+                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+            )}
 
             <div
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2 min-h-0"
@@ -279,9 +296,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
-                            <Select label="Seller Name" name="sellerName" value={formData.sellerName || ''} onChange={handleChange}>
+                            <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange}>
                                 <option value="">Select Seller</option>
-                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                {availableProfiles.map(profile => (
+                                    <option key={profile.id} value={profile.id}>{profile.label}</option>
+                                ))}
                             </Select>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
