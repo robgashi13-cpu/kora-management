@@ -148,14 +148,14 @@ button {
 :root {
   --cols-admin: 28px minmax(160px, 2fr) 56px 76px minmax(120px, 1.4fr) minmax(130px, 1.6fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 88px 96px 110px 60px 70px 88px 110px 100px minmax(96px, 1.1fr) minmax(90px, 1fr) 48px;
   --cols-user: 28px minmax(170px, 2fr) 56px 76px minmax(120px, 1.4fr) minmax(130px, 1.6fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 96px 110px 60px 70px 110px minmax(96px, 1.1fr) minmax(90px, 1fr) 48px;
-  --row-height-compact: 22px;
+  --row-height-compact: 20px;
 }
 
 @media (min-width: 1367px) {
   :root {
     --cols-admin: 32px minmax(200px, 2.4fr) 64px 86px minmax(140px, 1.6fr) minmax(160px, 1.8fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr) 100px 110px 130px 70px 80px 100px 130px 120px minmax(110px, 1.2fr) minmax(100px, 1.1fr) 56px;
     --cols-user: 32px minmax(210px, 2.4fr) 64px 86px minmax(140px, 1.6fr) minmax(160px, 1.8fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr) 110px 130px 70px 80px 130px minmax(110px, 1.2fr) minmax(100px, 1.1fr) 56px;
-    --row-height-compact: 26px;
+    --row-height-compact: 24px;
   }
 }
 
@@ -187,6 +187,13 @@ button {
 /* Ensure stable row heights during edit */
 .table-row-compact {
   contain: layout style;
+}
+
+.scroll-container {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-behavior: smooth;
 }
 
 /* Inline Editable Cell - Ultra Compact Stable Layout */

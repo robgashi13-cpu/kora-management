@@ -149,36 +149,36 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 h-full flex flex-col justify-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight">
+            <div className="px-1 h-full flex items-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight">
                 {canEdit ? (
-                    <>
-                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium" />
-                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono text-[9px]" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
-                    </>
+                    <div className="flex items-center gap-1 min-w-0 max-w-full truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
+                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium truncate" />
+                        <span className="text-slate-300">•</span>
+                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono text-[9px] truncate" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
+                    </div>
                 ) : (
-                    <>
-                        <div className="text-slate-700 font-mono font-medium">{s.plateNumber}</div>
-                        <div className="text-slate-400 font-mono text-[9px]" title={s.vin}>{(s.vin || '').slice(-6)}</div>
-                    </>
+                    <div className="text-slate-700 font-mono font-medium truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
+                        {s.plateNumber} • {(s.vin || '').slice(-6)}
+                    </div>
                 )}
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 h-full flex items-center text-slate-700 whitespace-normal break-words leading-tight border-r border-slate-100 bg-white text-xs" title={s.buyerName}>
+            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.buyerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white text-xs" title={s.sellerName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.sellerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate border-r border-slate-100 bg-white text-xs" title={s.shippingName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.shippingName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
                 ) : s.shippingName}
@@ -1152,11 +1152,21 @@ export default function Dashboard() {
             return;
         }
 
+        const salesById = new Map(sales.map(s => [s.id, s]));
+        const ungroupedIds = saleIds.filter(id => {
+            const sale = salesById.get(id);
+            return !sale?.group || !sale.group.trim();
+        });
+        if (ungroupedIds.length === 0) {
+            alert('Select ungrouped cars to create a new group.');
+            return;
+        }
+
         const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
         await persistGroupMeta(nextMeta);
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
-        const saleIdSet = new Set(saleIds);
+        const saleIdSet = new Set(ungroupedIds);
         const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
@@ -2117,7 +2127,7 @@ export default function Dashboard() {
                             {showProfileMenu && (
                                 <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl p-2 w-52 shadow-xl z-[60]">
                                     <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
-                                    <div className="max-h-40 overflow-y-auto space-y-1">
+                                    <div className="max-h-40 overflow-y-auto scroll-container space-y-1">
                                         {availableProfiles.map(p => (
                                             <button key={p} onClick={() => {
                                                 if (p === ADMIN_PROFILE && userProfile !== p) {
@@ -2226,7 +2236,7 @@ export default function Dashboard() {
                         {view === 'dashboard' ? (<>
                             <div
                                 ref={scrollContainerRef}
-                                className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto flex-1"
+                                className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
                             >
                                 <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                     style={{
@@ -2638,7 +2648,7 @@ export default function Dashboard() {
                             {/* Mobile Card View */}
                             {/* Mobile Compact List View - Swipeable */}
                             <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                <div className="flex flex-col flex-1 overflow-y-auto pb-16 no-scrollbar">
+                                <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
                                     {groupingEnabled ? (
                                         <>
                                             {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
@@ -3058,7 +3068,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         ) : view === 'invoices' ? (
-                            <div className="flex-1 overflow-auto p-3 md:p-6">
+                            <div className="flex-1 overflow-auto scroll-container p-3 md:p-6">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                                     <button
@@ -3303,7 +3313,7 @@ export default function Dashboard() {
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
                                 <div className="w-20" />
                             </div>
-                            <div className="flex-1 overflow-y-auto bg-white">
+                            <div className="flex-1 overflow-y-auto scroll-container bg-white">
                                 <SaleModal
                                     isOpen={true}
                                     inline={true}

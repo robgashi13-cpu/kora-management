@@ -163,7 +163,7 @@ const InlineEditableCell = memo(function InlineEditableCell({
           <span
             onClick={handleStartEdit}
             className={`inline-cell-display ${disabled ? 'inline-cell-disabled' : ''} ${className}`}
-            title={disabled ? 'View only' : 'Click to edit'}
+            title={disabled ? String(displayValue) : `${displayValue} (Click to edit)`}
           >
             {displayValue}
           </span>

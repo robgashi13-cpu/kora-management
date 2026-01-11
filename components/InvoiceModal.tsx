@@ -148,7 +148,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 )}
 
                 {/* Invoice Content Area */}
-                <div className="flex-1 overflow-y-auto print:overflow-visible">
+                <div className="flex-1 overflow-y-auto scroll-container print:overflow-visible">
                     <InvoiceDocument sale={sale} withDogane={withDogane} ref={printRef} />
                 </div>
             </motion.div>

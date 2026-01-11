@@ -213,6 +213,8 @@ export default function EditablePreviewModal({
 
 
   // Editable inline field component
+  const isInvoice = documentType === 'invoice';
+
   const EditableField = ({ 
     fieldKey, 
     className = '', 
@@ -231,7 +233,7 @@ export default function EditablePreviewModal({
     
     const displayValue = type === 'currency' 
       ? `${prefix}${formatCurrency(value)}${suffix}`
-      : `${prefix}${value}${suffix}`;
+      : `${prefix}${value ?? ''}${suffix}`;
 
     if (isActive) {
       return (
@@ -264,7 +266,7 @@ export default function EditablePreviewModal({
         className={`editable-preview-field ${className}`}
         style={{
           cursor: 'pointer',
-          borderBottom: '1px dashed #94a3b8',
+          borderBottom: isInvoice ? 'none' : '1px dashed #94a3b8',
           transition: 'all 0.15s ease',
           display: 'inline-block',
           maxWidth: '100%',
@@ -274,7 +276,7 @@ export default function EditablePreviewModal({
         }}
         title="Click to edit"
       >
-        {displayValue || '-'}
+        {displayValue || (isInvoice ? '' : '-')}
       </span>
     );
   };
@@ -394,25 +396,24 @@ export default function EditablePreviewModal({
         </div>
 
         {/* Document Preview */}
-        <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8">
+        <div className="flex-1 overflow-auto scroll-container bg-slate-100 p-4 md:p-8">
           <div className="flex justify-center">
-            <div className="transform scale-[0.5] sm:scale-75 md:scale-90 lg:scale-100 origin-top">
-              <div
-                ref={printRef}
-                className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8 pdf-root"
-                style={{
-                  fontFamily: documentType === 'invoice'
-                    ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                    : 'Georgia, "Times New Roman", Times, serif',
-                  fontSize: '10pt',
-                  lineHeight: 1.45,
-                  boxSizing: 'border-box'
-                }}
-              >
-                {documentType === 'invoice' ? (
-                  /* Invoice Template */
-                  <>
-                    <div className="grid grid-cols-2 gap-6 items-start mb-6">
+            <div
+              ref={printRef}
+              className={`bg-white w-[21cm] ${isInvoice ? 'h-[29.7cm]' : 'min-h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
+              style={{
+                fontFamily: documentType === 'invoice'
+                  ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                  : 'Georgia, "Times New Roman", Times, serif',
+                fontSize: '10pt',
+                lineHeight: 1.45,
+                boxSizing: 'border-box'
+              }}
+            >
+              {documentType === 'invoice' ? (
+                /* Invoice Template */
+                <>
+                  <div className="grid grid-cols-2 gap-6 items-start mb-5">
                       <div>
                         <img src="/logo.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
                         <h1 className="text-xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
@@ -429,7 +430,7 @@ export default function EditablePreviewModal({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6 mb-6 border-t border-b border-gray-100 py-4">
+                  <div className="grid grid-cols-2 gap-6 mb-5 border-t border-b border-gray-100 py-3">
                       <div>
                         <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-400">Bill To</h3>
                         <div className="font-bold text-sm">
@@ -442,7 +443,7 @@ export default function EditablePreviewModal({
                       </div>
                     </div>
 
-                    <table className="w-full mb-6">
+                  <table className="w-full mb-5">
                       <thead>
                         <tr className="border-b-2 border-gray-900">
                           <th className="text-left py-2 font-bold text-sm uppercase text-gray-600">Description</th>
@@ -485,7 +486,7 @@ export default function EditablePreviewModal({
                       </tbody>
                     </table>
 
-                    <div className="w-1/2 ml-auto">
+                  <div className="w-1/2 ml-auto">
                       <div className="flex justify-between py-2 text-gray-600">
                         <span>Subtotal</span>
                         <span>€{formatCurrency((Number(getValue('soldPrice')) || 0) - 200)}</span>
@@ -494,7 +495,7 @@ export default function EditablePreviewModal({
                         <span>Services</span>
                         <span>€169.49</span>
                       </div>
-                      <div className="flex justify-between py-2 border-b mb-2 text-gray-600">
+                    <div className="flex justify-between py-2 border-b mb-2 text-gray-600">
                         <span>Tax (TVSH 18%)</span>
                         <span>€30.51</span>
                       </div>
@@ -506,16 +507,18 @@ export default function EditablePreviewModal({
                       </div>
                     </div>
 
-                    <div className="border-t pt-6 mt-8 bg-gray-50 -mx-8 px-8 pb-4">
-                      <h4 className="font-bold text-sm mb-4 uppercase tracking-wider">Payment Details</h4>
-                      <div className="grid grid-cols-2 gap-8 text-sm text-gray-600">
+                  <div className="border-t pt-4 mt-6 bg-gray-50 -mx-6 px-6 pb-3">
+                    <h4 className="font-bold text-sm mb-3 uppercase tracking-wider">Payment Details</h4>
+                    <div className="grid grid-cols-2 gap-6 text-sm text-gray-600">
                         <div>
                           <div className="font-bold mb-1 text-gray-900">Raiffeisen Bank</div>
                           <div className="font-mono bg-white p-2 rounded border inline-block">1501080002435404</div>
                           <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
-                          <div className="font-bold text-sm">
-                            €<EditableField fieldKey="amountPaidBank" type="currency" />
-                          </div>
+                          {Number(getValue('amountPaidBank') || 0) > 0 && (
+                            <div className="font-bold text-sm">
+                              €<EditableField fieldKey="amountPaidBank" type="currency" />
+                            </div>
+                          )}
                         </div>
                         <div className="text-right">
                           <div className="font-bold mb-1 text-gray-900">Contact</div>
@@ -524,8 +527,8 @@ export default function EditablePreviewModal({
                         </div>
                       </div>
                     </div>
-                  </>
-                ) : documentType === 'deposit' ? (
+                </>
+              ) : documentType === 'deposit' ? (
                   /* Deposit Contract Template */
                   <>
                     <div className="text-center mb-3 pb-2 border-b border-black">
@@ -925,9 +928,7 @@ export default function EditablePreviewModal({
                       </div>
                     )}
                   </>
-                )}
-              </div>
-            </div>
+              )}
           </div>
         </div>
       </motion.div>
