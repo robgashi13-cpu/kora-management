@@ -234,8 +234,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
             <style jsx>{`
                 .contract-logo { height: 60px; display: block; margin: 0 auto 20px auto; }
-                .party-title { font-weight: bold; margin-bottom: 8pt; color: #1e3a8a; text-decoration: underline; font-size: 11pt; }
-                .blue-header { color: #1e3a8a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #1e3a8a; display: inline-block; padding-bottom: 2px; }
+                .party-title { font-weight: bold; margin-bottom: 8pt; color: #0f172a; text-decoration: underline; font-size: 11pt; }
+                .blue-header { color: #0f172a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #0f172a; display: inline-block; padding-bottom: 2px; }
                 .label { font-weight: bold; min-width: 100px; display: inline-block; }
                 .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
                 .car-details div { display: flex; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }

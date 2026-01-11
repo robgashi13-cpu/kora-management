@@ -193,13 +193,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     // Helper component for file list
     const FileList = ({ files, field, label }: { files: Attachment[] | undefined, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices', label: string }) => (
-        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 border-dashed hover:border-blue-200 transition-colors h-full flex flex-col">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 border-dashed hover:border-slate-200 transition-colors h-full flex flex-col">
             <div className="flex justify-between items-center mb-2">
                 <label className="text-[11px] uppercase text-slate-500 font-bold block">
                     {label}
                     <span className="normal-case text-[10px] font-semibold text-slate-400 ml-1">(Optional)</span>
                 </label>
-                <label className="cursor-pointer text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1">
+                <label className="cursor-pointer text-slate-500 hover:text-slate-400 transition-colors bg-slate-500/10 hover:bg-slate-800/20 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1">
                     <Paperclip className="w-3 h-3" /> Add
                     <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(e) => handleFileChange(e, field)} />
                 </label>
@@ -210,7 +210,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     files.map((file, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 group cursor-pointer hover:bg-slate-50 transition-all" onClick={() => viewFile(file)}>
                             <div className="flex items-center gap-2 overflow-hidden">
-                                <FileText className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                                <FileText className="w-4 h-4 text-slate-400 group-hover:text-slate-700 transition-colors flex-shrink-0" />
                                 <span className="text-xs text-slate-600 truncate group-hover:text-slate-900 transition-colors">{file.name}</span>
                             </div>
                             <button type="button" onClick={(e) => { e.stopPropagation(); removeFile(field, idx); }} className="text-slate-400 hover:text-red-500 p-1 rounded transition-colors ml-1"><X className="w-3 h-3" /></button>
@@ -316,7 +316,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                     Transport
                                     <span className="text-xs font-medium text-slate-400">(Optional)</span>
                                 </label>
-                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-xl border transition-all justify-center select-none h-[52px] ${formData.includeTransport ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200'}`}>
+                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-xl border transition-all justify-center select-none h-[52px] ${formData.includeTransport ? 'bg-slate-900 border-slate-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-200'}`}>
                                     <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
                                     <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
                                 </label>
@@ -392,7 +392,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     {/* Footer Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
                         <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
-                        <button type="submit" className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto">
+                        <button type="submit" className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto">
                             {existingSale ? 'Update Sale' : 'Create Sale'}
                         </button>
                     </div>
@@ -424,35 +424,35 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     <button
                         type="button"
                         onClick={() => { setContractType('deposit'); setShowDocumentMenu(false); }}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-blue-300 hover:bg-blue-50/40 transition"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-300 hover:bg-slate-50/40 transition"
                     >
                         <div>
                             <div className="text-sm font-semibold text-slate-900">Deposit Contract</div>
                             <div className="text-xs text-slate-500">Marrëveshje për Kapar</div>
                         </div>
-                        <FileText className="w-4 h-4 text-blue-500" />
+                        <FileText className="w-4 h-4 text-slate-700" />
                     </button>
                     <button
                         type="button"
                         onClick={() => { setContractType('full_shitblerje'); setShowDocumentMenu(false); }}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50/40 transition"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                     >
                         <div>
                             <div className="text-sm font-semibold text-slate-900">Shitblerje Contract</div>
                             <div className="text-xs text-slate-500">Full Contract</div>
                         </div>
-                        <FileText className="w-4 h-4 text-indigo-500" />
+                        <FileText className="w-4 h-4 text-slate-600" />
                     </button>
                     <button
                         type="button"
                         onClick={() => { setContractType('full_marreveshje'); setShowDocumentMenu(false); }}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-purple-300 hover:bg-purple-50/40 transition"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                     >
                         <div>
                             <div className="text-sm font-semibold text-slate-900">Marrëveshje Contract</div>
                             <div className="text-xs text-slate-500">Full Contract</div>
                         </div>
-                        <FileText className="w-4 h-4 text-purple-500" />
+                        <FileText className="w-4 h-4 text-slate-600" />
                     </button>
                     <button
                         type="button"
@@ -586,7 +586,7 @@ const Input = ({ label, className = "", required, ...props }: any) => (
             {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
+            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
             required={required}
             {...props}
         />
@@ -601,7 +601,7 @@ const Select = ({ label, children, required, ...props }: any) => (
         </label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all w-full h-[52px] cursor-pointer"
+                className="appearance-none bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-[52px] cursor-pointer"
                 required={required}
                 {...props}
             >
@@ -622,7 +622,7 @@ const DateInput = ({ label, required, ...props }: any) => (
         </label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-blue-200 focus:border-blue-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
             required={required}
             {...props}
         />

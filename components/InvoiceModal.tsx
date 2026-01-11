@@ -106,8 +106,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
-                            className={`flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition shadow-lg ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            style={{ backgroundColor: '#2563eb' }}
+                            className={`flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             {isDownloading ? 'Saving...' : 'Download PDF'}

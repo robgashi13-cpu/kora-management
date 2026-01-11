@@ -134,10 +134,10 @@ const GroupManager = memo(function GroupManager({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-xl"
+            className="mb-3 p-3 bg-slate-50 border border-slate-200 rounded-xl"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-blue-700 font-medium">
+              <span className="text-sm text-slate-900 font-medium">
                 {selectedIds.size} items selected
               </span>
               <div className="flex gap-2">
@@ -149,7 +149,7 @@ const GroupManager = memo(function GroupManager({
                       value={newGroupName}
                       onChange={e => setNewGroupName(e.target.value)}
                       placeholder="Group name..."
-                      className="px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                      className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white"
                       autoFocus
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleCreateGroup();
@@ -159,7 +159,7 @@ const GroupManager = memo(function GroupManager({
                     <button
                       onClick={handleCreateGroup}
                       disabled={!newGroupName.trim() || isLoading}
-                      className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                      className="p-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 disabled:opacity-50 transition-colors"
                     >
                       <Check className="w-4 h-4" />
                     </button>
@@ -173,7 +173,7 @@ const GroupManager = memo(function GroupManager({
                 ) : (
                   <button
                     onClick={() => setIsCreating(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-500 transition-colors font-medium"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-800 transition-colors font-medium"
                   >
                     <FolderPlus className="w-4 h-4" />
                     Create Group
@@ -233,7 +233,7 @@ const GroupManager = memo(function GroupManager({
                       <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
                     )}
                     {isExpanded ? (
-                      <FolderOpen className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                      <FolderOpen className="w-4 h-4 text-slate-700 flex-shrink-0" />
                     ) : (
                       <Folder className="w-4 h-4 text-slate-400 flex-shrink-0" />
                     )}
@@ -250,7 +250,7 @@ const GroupManager = memo(function GroupManager({
                           if (e.key === 'Escape') setEditingGroup(null);
                         }}
                         autoFocus
-                        className="px-2 py-0.5 text-sm border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                        className="px-2 py-0.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-slate-400 bg-white"
                       />
                     ) : (
                       <span className="font-medium text-sm text-slate-700 truncate">
@@ -286,7 +286,7 @@ const GroupManager = memo(function GroupManager({
                             setEditingGroup(groupName);
                             setEditName(groupName);
                           }}
-                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded transition-colors"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
