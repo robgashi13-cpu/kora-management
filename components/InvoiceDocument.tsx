@@ -6,9 +6,49 @@ import { CarSale } from '@/app/types';
 export interface InvoiceDocumentProps {
     sale: CarSale;
     withDogane?: boolean;
+    renderField?: (
+        fieldKey: keyof CarSale,
+        value: CarSale[keyof CarSale],
+        options?: {
+            className?: string;
+            formatValue?: (value: CarSale[keyof CarSale]) => string;
+        }
+    ) => React.ReactNode;
 }
 
-const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false }, ref) => {
+const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, renderField }, ref) => {
+    const renderText = <K extends keyof CarSale>(
+        fieldKey: K,
+        fallback: React.ReactNode = '',
+        options?: { className?: string; formatValue?: (value: CarSale[K]) => string }
+    ) => {
+        if (renderField) {
+            return renderField(fieldKey, sale[fieldKey], options);
+        }
+        const value = sale[fieldKey];
+        if (value === undefined || value === null || value === '') {
+            return fallback;
+        }
+        if (options?.formatValue) {
+            return options.formatValue(value);
+        }
+        return String(value);
+    };
+
+    const renderCurrency = <K extends keyof CarSale>(
+        fieldKey: K,
+        amount: number,
+        options?: { className?: string; formatValue?: (value: CarSale[K]) => string }
+    ) => {
+        if (renderField) {
+            return renderField(fieldKey, sale[fieldKey], options);
+        }
+        return `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const soldPriceValue = Number(sale.soldPrice || 0);
+    const amountPaidBankValue = Number(sale.amountPaidBank || 0);
+
     return (
         <div
             className="pdf-root invoice-root"
@@ -24,7 +64,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 width: '100%',
                 maxWidth: '210mm',
                 minHeight: '297mm',
-                height: '297mm',
+                height: 'auto',
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word'
             }}
@@ -57,7 +97,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             <div className="invoice-client" style={{ borderColor: '#f3f4f6' }}>
                 <div>
                     <h3 style={{ color: '#9ca3af', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Bill To</h3>
-                    <div style={{ color: '#1f2937', fontSize: '0.875rem', fontWeight: 700, wordBreak: 'break-word' }}>{sale.buyerName}</div>
+                    <div style={{ color: '#1f2937', fontSize: '0.875rem', fontWeight: 700, wordBreak: 'break-word' }}>
+                        {renderText('buyerName')}
+                    </div>
                 </div>
                 <div className="invoice-client-right">
                     <div style={{ marginBottom: '8px' }}>
@@ -79,15 +121,22 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
                         <td style={{ padding: '12px 0' }}>
                             <div style={{ color: '#111827', fontWeight: 700 }}>
-                                {sale.year} {sale.brand} {sale.model}{withDogane ? ' ME DOGANË' : ''}
+                                {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
+                                {renderText('brand')}{' '}
+                                {renderText('model')}
+                                {withDogane ? ' ME DOGANË' : ''}
                             </div>
                             <div style={{ color: '#6b7280', fontSize: '0.875rem', display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
-                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', wordBreak: 'break-all' }}>VIN: {sale.vin}</span>
-                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px' }}>Color: {sale.color}</span>
+                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', wordBreak: 'break-all' }}>
+                                    VIN: {renderText('vin', '', { className: 'font-mono break-all' })}
+                                </span>
+                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px' }}>Color: {renderText('color')}</span>
                             </div>
-                            <div style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'flex', flexWrap: 'wrap', columnGap: '8px' }}>Mileage: {(sale.km || 0).toLocaleString()} km</div>
+                            <div style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'flex', flexWrap: 'wrap', columnGap: '8px' }}>
+                                Mileage: {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
+                            </div>
                         </td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#111827' }}>€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
+                        <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#111827' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
                     </tr>
                     {!withDogane && (
                         <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
@@ -104,7 +153,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             <div className="invoice-summary">
                 <div style={{ color: '#4b5563', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                     <span>Subtotal</span>
-                    <span>€{((sale.soldPrice || 0) - 200).toLocaleString()}</span>
+                    <span>€{(soldPriceValue - 200).toLocaleString()}</span>
                 </div>
                 <div style={{ color: '#4b5563', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                     <span>Services</span>
@@ -116,7 +165,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #111827' }}>
                     <span style={{ color: '#111827', fontWeight: 700, fontSize: '1rem' }}>Grand Total</span>
-                    <span style={{ color: '#111827', fontWeight: 700, fontSize: '1rem' }}>€{(sale.soldPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span style={{ color: '#111827', fontWeight: 700, fontSize: '1rem' }}>
+                        {renderCurrency('soldPrice', soldPriceValue, {
+                            formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        })}
+                    </span>
                 </div>
             </div>
 
@@ -128,8 +181,12 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
                         <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'inline-block' }}>1501080002435404</div>
                         <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
-                        {(sale.amountPaidBank || 0) > 0 && (
-                            <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>€{(sale.amountPaidBank || 0).toLocaleString()}</div>
+                        {amountPaidBankValue > 0 && (
+                            <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>
+                                {renderCurrency('amountPaidBank', amountPaidBankValue, {
+                                    formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
+                                })}
+                            </div>
                         )}
                     </div>
                     <div className="invoice-footer-right">

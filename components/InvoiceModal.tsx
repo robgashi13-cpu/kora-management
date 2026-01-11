@@ -39,7 +39,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             await new Promise(resolve => setTimeout(resolve, 500));
 
             const opt = {
-                margin: 5,
+                margin: 0,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: {

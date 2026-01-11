@@ -124,11 +124,12 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 2. Car Info */}
-            <div className="px-1 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white">
+            <div className="px-1 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
                 <button
                     type="button"
                     onClick={onClick}
                     className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-900 transition-colors text-xs xl:text-sm"
+                    title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
                 </button>
@@ -149,7 +150,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 h-full flex items-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight">
+            <div className="px-1 h-full flex items-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                 {canEdit ? (
                     <div className="flex items-center gap-1 min-w-0 max-w-full truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
                         <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium truncate" />
@@ -164,21 +165,21 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.buyerName}>
+            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.buyerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.sellerName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.sellerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs" title={s.shippingName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.shippingName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
                 ) : s.shippingName}
@@ -886,7 +887,7 @@ export default function Dashboard() {
         // @ts-ignore
         const html2pdf = (await import('html2pdf.js')).default;
         const opt = {
-            margin: 5,
+            margin: 0,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
             image: { type: 'jpeg' as const, quality: 0.98 },
                 html2canvas: {
