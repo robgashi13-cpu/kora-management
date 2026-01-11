@@ -24,6 +24,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 width: '100%',
                 maxWidth: '210mm',
                 minHeight: '297mm',
+                height: '297mm',
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word'
             }}
@@ -127,7 +128,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
                         <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'inline-block' }}>1501080002435404</div>
                         <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
-                        <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>€{(sale.amountPaidBank || 0).toLocaleString()}</div>
+                        {(sale.amountPaidBank || 0) > 0 && (
+                            <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>€{(sale.amountPaidBank || 0).toLocaleString()}</div>
+                        )}
                     </div>
                     <div className="invoice-footer-right">
                         <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Contact</div>
@@ -139,43 +142,48 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             <style>{`
                 .invoice-root {
-                    padding: 20px;
+                    padding: 18px;
                 }
 
                 .invoice-header {
                     display: grid;
                     grid-template-columns: 1fr;
-                    gap: 24px;
+                    gap: 20px;
                     align-items: flex-start;
-                    margin-bottom: 24px;
+                    margin-bottom: 18px;
+                    break-inside: avoid;
                 }
 
                 .invoice-client {
                     display: grid;
                     grid-template-columns: 1fr;
-                    gap: 24px;
+                    gap: 20px;
                     align-items: flex-start;
-                    margin-bottom: 24px;
-                    padding: 16px 0;
+                    margin-bottom: 18px;
+                    padding: 12px 0;
                     border-top: 1px solid;
                     border-bottom: 1px solid;
+                    break-inside: avoid;
                 }
 
                 .invoice-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 24px;
+                    margin-bottom: 18px;
+                    break-inside: avoid;
                 }
 
                 .invoice-summary {
                     width: 100%;
                     margin-left: auto;
+                    break-inside: avoid;
                 }
 
                 .invoice-footer {
                     border-top: 1px solid;
-                    padding: 24px 20px 16px;
-                    margin-top: 24px;
+                    padding: 18px 18px 12px;
+                    margin-top: 18px;
+                    break-inside: avoid;
                 }
 
                 .invoice-footer-grid {
@@ -186,7 +194,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
                 @media (min-width: 768px) {
                     .invoice-root {
-                        padding: 32px;
+                        padding: 24px;
                     }
 
                     .invoice-header {
@@ -208,8 +216,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     }
 
                     .invoice-footer {
-                        padding-left: 32px;
-                        padding-right: 32px;
+                        padding-left: 24px;
+                        padding-right: 24px;
                     }
 
                     .invoice-footer-grid {
@@ -230,6 +238,10 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 #invoice-content th,
                 #invoice-content td {
                     vertical-align: top;
+                }
+                #invoice-content tr {
+                    break-inside: avoid;
+                    page-break-inside: avoid;
                 }
             `}</style>
         </div>
