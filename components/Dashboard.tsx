@@ -903,7 +903,16 @@ export default function Dashboard() {
                 scale: 4,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc: Document) => {
+                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                        if (invoiceNode && node.closest('#invoice-content')) {
+                            return;
+                        }
+                        node.remove();
+                    });
+                }
             },
             jsPDF: {
                 unit: 'mm' as const,
