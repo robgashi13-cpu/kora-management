@@ -17,9 +17,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             style={{
                 backgroundColor: '#ffffff',
                 color: '#000000',
-                fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-                fontSize: '9.5pt',
-                lineHeight: 1.5,
+                fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                fontSize: '10pt',
+                lineHeight: 1.45,
                 boxSizing: 'border-box',
                 width: '100%',
                 maxWidth: '210mm',
@@ -38,7 +38,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         alt="KORAUTO Logo"
                         style={{ height: '64px', width: 'auto', marginBottom: '16px' }}
                     />
-                    <h1 style={{ color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>INVOICE</h1>
+                    <h1 style={{ color: '#111827', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.02em' }}>INVOICE</h1>
                     <p style={{ color: '#6b7280', marginTop: '4px' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                 </div>
                 <div className="invoice-header-right">

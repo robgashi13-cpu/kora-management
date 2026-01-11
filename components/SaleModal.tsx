@@ -49,6 +49,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
 
+    const resolveSellerSelection = (sale: CarSale | null) => {
+        const candidates = [sale?.soldBy, sale?.sellerName]
+            .filter((value): value is string => Boolean(value))
+            .map(value => value.trim())
+            .filter(Boolean);
+
+        const match = availableProfiles.find(profile => candidates.includes(profile.id))
+            || availableProfiles.find(profile => candidates.includes(profile.label))
+            || availableProfiles.find(profile => candidates.some(candidate =>
+                profile.id.toLowerCase() === candidate.toLowerCase()
+                || profile.label.toLowerCase() === candidate.toLowerCase()
+            ));
+
+        return {
+            soldBy: match?.id || candidates[0] || '',
+            sellerName: match?.label || sale?.sellerName || candidates[0] || ''
+        };
+    };
+
     useEffect(() => {
         if (existingSale) {
             // Migration logic: Ensure arrays exist if legacy singulars exist
@@ -64,9 +83,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (!migratedSale.bankInvoices) migratedSale.bankInvoices = [];
             if (!migratedSale.depositInvoices) migratedSale.depositInvoices = [];
 
+            const resolvedSeller = resolveSellerSelection(migratedSale);
             setFormData({
                 ...migratedSale,
-                soldBy: migratedSale.soldBy || migratedSale.sellerName || ''
+                ...resolvedSeller
             });
         } else {
             setFormData({
@@ -171,7 +191,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         const selectedProfile = availableProfiles.find(profile => profile.id === selectedId);
         setFormData(prev => ({
             ...prev,
-            sellerName: selectedProfile?.label || '',
+            sellerName: selectedProfile?.label || selectedId,
             soldBy: selectedId
         }));
     };

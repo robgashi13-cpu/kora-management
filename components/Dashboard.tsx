@@ -3278,7 +3278,7 @@ export default function Dashboard() {
                         transition={{ duration: 0.2 }}
                     >
                         <motion.div
-                            className="relative w-full max-w-6xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                            className="relative w-full max-w-5xl max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
                             initial={{ opacity: 0, y: 24 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 24 }}
@@ -3301,7 +3301,7 @@ export default function Dashboard() {
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
                                 <div className="w-20" />
                             </div>
-                            <div className="flex-1 overflow-hidden bg-white">
+                            <div className="flex-1 overflow-y-auto bg-white">
                                 <SaleModal
                                     isOpen={true}
                                     inline={true}
