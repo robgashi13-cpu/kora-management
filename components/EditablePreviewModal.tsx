@@ -342,33 +342,33 @@ export default function EditablePreviewModal({
               {onSaveToSale && (
                 <button
                   onClick={handleSaveToSale}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-all font-semibold text-xs shadow-sm"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-all font-semibold text-[11px] shadow-sm"
                 >
-                  {showSaveSuccess ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                  {showSaveSuccess ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
                   {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-all font-semibold text-xs"
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[11px]"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
                 Reset
               </button>
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-xs shadow-sm shadow-black/10 disabled:opacity-50"
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
               >
-                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                {isDownloading ? 'Generating...' : 'Download PDF'}
+                {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                {isDownloading ? 'Generating...' : 'Download'}
               </button>
               <button
                 onClick={handlePrint}
                 disabled={isDownloading}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-semibold text-xs shadow-sm disabled:opacity-50"
+                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm disabled:opacity-50"
               >
-                <Printer className="w-3.5 h-3.5" />
+                <Printer className="w-3 h-3" />
                 Print
               </button>
               <button
@@ -402,10 +402,10 @@ export default function EditablePreviewModal({
                 className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8 pdf-root"
                 style={{
                   fontFamily: documentType === 'invoice'
-                    ? 'Arial, "Helvetica Neue", Helvetica, sans-serif'
+                    ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
                     : 'Georgia, "Times New Roman", Times, serif',
                   fontSize: '10pt',
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   boxSizing: 'border-box'
                 }}
               >

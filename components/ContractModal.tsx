@@ -159,10 +159,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             <button
                                 onClick={handleDownload}
                                 disabled={isDownloading || !validation.valid}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-black text-white rounded-lg hover:bg-slate-900 transition-all font-semibold text-xs shadow-sm shadow-black/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center gap-1 px-2.5 py-1 bg-black text-white rounded-md hover:bg-slate-900 transition-all font-semibold text-[11px] shadow-sm shadow-black/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
-                                {isDownloading ? 'Generating PDF...' : 'Download PDF'}
+                                {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Printer className="w-3 h-3" />}
+                                {isDownloading ? 'Generating...' : 'Download'}
                             </button>
                             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700">
                                 <X className="w-6 h-6" />
