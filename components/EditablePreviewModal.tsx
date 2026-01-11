@@ -199,8 +199,9 @@ export default function EditablePreviewModal({
     handleDownload();
   };
 
-  const formatCurrency = (val: string | number) => {
-    const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
+  const formatCurrency = (val: string | number | undefined | null): string => {
+    if (val === undefined || val === null) return '0';
+    const num = typeof val === 'string' ? parseFloat(val) || 0 : (typeof val === 'number' ? val : 0);
     return num.toLocaleString();
   };
 
