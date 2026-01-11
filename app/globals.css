@@ -119,15 +119,15 @@ body {
 
 /* Dashboard Grid Layout - Ultra Compact (50% smaller) */
 :root {
-  --cols-admin: 22px 100px 32px 42px 52px 68px 68px 68px 52px 52px 52px 38px 38px 44px 52px 52px 68px 44px 28px;
-  --cols-user: 22px 100px 32px 42px 52px 68px 68px 68px 52px 52px 38px 52px 52px 68px 44px 28px;
+  --cols-admin: 28px minmax(160px, 2fr) 56px 76px minmax(120px, 1.4fr) minmax(130px, 1.6fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 88px 96px 110px 60px 70px 88px 110px 100px minmax(96px, 1.1fr) minmax(90px, 1fr) 48px;
+  --cols-user: 28px minmax(170px, 2fr) 56px 76px minmax(120px, 1.4fr) minmax(130px, 1.6fr) minmax(110px, 1.2fr) minmax(110px, 1.2fr) 96px 110px 60px 70px 110px minmax(96px, 1.1fr) minmax(90px, 1fr) 48px;
   --row-height-compact: 22px;
 }
 
 @media (min-width: 1367px) {
   :root {
-    --cols-admin: 26px 120px 42px 54px 70px 85px 85px 85px 60px 60px 60px 48px 48px 58px 65px 65px 85px 58px 36px;
-    --cols-user: 26px 120px 42px 54px 70px 85px 85px 85px 60px 60px 60px 60px 60px 100px 70px 36px;
+    --cols-admin: 32px minmax(200px, 2.4fr) 64px 86px minmax(140px, 1.6fr) minmax(160px, 1.8fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr) 100px 110px 130px 70px 80px 100px 130px 120px minmax(110px, 1.2fr) minmax(100px, 1.1fr) 56px;
+    --cols-user: 32px minmax(210px, 2.4fr) 64px 86px minmax(140px, 1.6fr) minmax(160px, 1.8fr) minmax(130px, 1.4fr) minmax(130px, 1.4fr) 110px 130px 70px 80px 130px minmax(110px, 1.2fr) minmax(100px, 1.1fr) 56px;
     --row-height-compact: 26px;
   }
 }
