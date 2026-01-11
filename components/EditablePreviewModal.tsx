@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import InvoiceDocument from './InvoiceDocument';
 import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
@@ -142,7 +143,7 @@ export default function EditablePreviewModal({
       }
 
       const opt = {
-        margin: documentType === 'invoice' ? 5 : 0,
+        margin: 0,
         filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
@@ -205,10 +206,10 @@ export default function EditablePreviewModal({
     handleDownload();
   };
 
-  const formatCurrency = (val: string | number | undefined | null): string => {
+  const formatCurrency = (val: string | number | undefined | null, fractionDigits = 0): string => {
     if (val === undefined || val === null) return '0';
     const num = typeof val === 'string' ? parseFloat(val) || 0 : (typeof val === 'number' ? val : 0);
-    return num.toLocaleString();
+    return num.toLocaleString(undefined, { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
   };
 
 
@@ -232,7 +233,7 @@ export default function EditablePreviewModal({
     const isActive = activeEdit === fieldKey;
     
     const displayValue = type === 'currency' 
-      ? `${prefix}${formatCurrency(value)}${suffix}`
+      ? `${prefix}${formatCurrency(value, isInvoice ? 2 : 0)}${suffix}`
       : `${prefix}${value ?? ''}${suffix}`;
 
     if (isActive) {
@@ -280,6 +281,34 @@ export default function EditablePreviewModal({
       </span>
     );
   };
+
+  const previewSale = useMemo(() => ({
+    ...sale,
+    ...editedFields
+  }), [sale, editedFields]);
+
+  const invoiceFieldConfig = useMemo(() => ({
+    year: { type: 'number' as const },
+    km: { type: 'number' as const },
+    soldPrice: { type: 'currency' as const, prefix: '€' },
+    amountPaidBank: { type: 'currency' as const, prefix: '€' }
+  }), []);
+
+  const renderInvoiceField = useCallback(
+    (fieldKey: keyof CarSale, _value: CarSale[keyof CarSale], options?: { className?: string }) => {
+      const config = invoiceFieldConfig[fieldKey as keyof typeof invoiceFieldConfig];
+      const className = [config?.className, options?.className].filter(Boolean).join(' ');
+      return (
+        <EditableField
+          fieldKey={String(fieldKey)}
+          type={config?.type ?? 'text'}
+          prefix={config?.prefix ?? ''}
+          className={className}
+        />
+      );
+    },
+    [invoiceFieldConfig]
+  );
 
   if (!isOpen) return null;
   
@@ -398,137 +427,27 @@ export default function EditablePreviewModal({
         {/* Document Preview */}
         <div className="flex-1 overflow-auto scroll-container bg-slate-100 p-4 md:p-8">
           <div className="flex justify-center">
-            <div
-              ref={printRef}
-              className={`bg-white w-[21cm] ${isInvoice ? 'h-[29.7cm]' : 'min-h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
-              style={{
-                fontFamily: documentType === 'invoice'
-                  ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                  : 'Georgia, "Times New Roman", Times, serif',
-                fontSize: '10pt',
-                lineHeight: 1.45,
-                boxSizing: 'border-box'
-              }}
-            >
-              {documentType === 'invoice' ? (
-                /* Invoice Template */
-                <>
-                  <div className="grid grid-cols-2 gap-6 items-start mb-5">
-                      <div>
-                        <img src="/logo.jpg" alt="KORAUTO Logo" className="h-16 w-auto mb-4" />
-                        <h1 className="text-xl font-bold" style={{ color: '#111827' }}>INVOICE</h1>
-                        <p className="mt-1 text-gray-500">#{String(getValue('vin')).slice(-6).toUpperCase() || 'N/A'}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-base font-bold mb-1">RG SH.P.K</div>
-                        <div className="text-sm leading-relaxed text-gray-500">
-                          Rr. Dardania 191<br />
-                          Owner: Robert Gashi<br />
-                          Phone: +383 48 181 116<br />
-                          Nr Biznesit: 810062092
-                        </div>
-                      </div>
-                    </div>
-
-                  <div className="grid grid-cols-2 gap-6 mb-5 border-t border-b border-gray-100 py-3">
-                      <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-400">Bill To</h3>
-                        <div className="font-bold text-sm">
-                          <EditableField fieldKey="buyerName" />
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm mr-4 text-gray-500">Invoice Date:</span>
-                        <span className="font-medium">{today}</span>
-                      </div>
-                    </div>
-
-                  <table className="w-full mb-5">
-                      <thead>
-                        <tr className="border-b-2 border-gray-900">
-                          <th className="text-left py-2 font-bold text-sm uppercase text-gray-600">Description</th>
-                          <th className="text-right py-2 font-bold text-sm uppercase text-gray-600">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b border-gray-100">
-                          <td className="py-3">
-                            <div className="font-bold">
-                              <EditableField fieldKey="year" type="number" /> <EditableField fieldKey="brand" /> <EditableField fieldKey="model" />
-                              {withDogane ? ' ME DOGANË' : ''}
-                            </div>
-                            <div className="text-sm text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
-                              <span className="inline-flex flex-wrap gap-1">
-                                VIN: <EditableField fieldKey="vin" className="font-mono break-all" />
-                              </span>
-                              <span className="inline-flex flex-wrap gap-1">
-                                Color: <EditableField fieldKey="color" />
-                              </span>
-                            </div>
-                            <div className="text-sm mt-1 text-gray-500 flex flex-wrap gap-x-2">
-                              <span className="inline-flex flex-wrap gap-1">
-                                Mileage: <EditableField fieldKey="km" type="number" /> km
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 text-right font-bold">
-                            €{formatCurrency((Number(getValue('soldPrice')) || 0) - 200)}
-                          </td>
-                        </tr>
-                        {!withDogane && (
-                          <tr className="border-b border-gray-100">
-                            <td className="py-3">
-                              <div className="font-bold uppercase">SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
-                            </td>
-                            <td></td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-
-                  <div className="w-1/2 ml-auto">
-                      <div className="flex justify-between py-2 text-gray-600">
-                        <span>Subtotal</span>
-                        <span>€{formatCurrency((Number(getValue('soldPrice')) || 0) - 200)}</span>
-                      </div>
-                      <div className="flex justify-between py-2 text-gray-600">
-                        <span>Services</span>
-                        <span>€169.49</span>
-                      </div>
-                    <div className="flex justify-between py-2 border-b mb-2 text-gray-600">
-                        <span>Tax (TVSH 18%)</span>
-                        <span>€30.51</span>
-                      </div>
-                      <div className="flex justify-between py-3 border-t-2 border-gray-900">
-                        <span className="font-bold text-base">Grand Total</span>
-                        <span className="font-bold text-base">
-                          €<EditableField fieldKey="soldPrice" type="currency" />
-                        </span>
-                      </div>
-                    </div>
-
-                  <div className="border-t pt-4 mt-6 bg-gray-50 -mx-6 px-6 pb-3">
-                    <h4 className="font-bold text-sm mb-3 uppercase tracking-wider">Payment Details</h4>
-                    <div className="grid grid-cols-2 gap-6 text-sm text-gray-600">
-                        <div>
-                          <div className="font-bold mb-1 text-gray-900">Raiffeisen Bank</div>
-                          <div className="font-mono bg-white p-2 rounded border inline-block">1501080002435404</div>
-                          <div className="mt-2 text-xs text-gray-500">Account Holder: RG SH.P.K.</div>
-                          {Number(getValue('amountPaidBank') || 0) > 0 && (
-                            <div className="font-bold text-sm">
-                              €<EditableField fieldKey="amountPaidBank" type="currency" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold mb-1 text-gray-900">Contact</div>
-                          <div>+383 48 181 116</div>
-                          <div className="mt-4 text-xs text-gray-400">Thank you for your business!</div>
-                        </div>
-                      </div>
-                    </div>
-                </>
-              ) : documentType === 'deposit' ? (
+            {documentType === 'invoice' ? (
+              <InvoiceDocument
+                sale={previewSale}
+                withDogane={withDogane}
+                ref={printRef}
+                renderField={renderInvoiceField}
+              />
+            ) : (
+              <div
+                ref={printRef}
+                className={`bg-white w-[21cm] ${isInvoice ? 'h-[29.7cm]' : 'min-h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
+                style={{
+                  fontFamily: documentType === 'invoice'
+                    ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
+                    : 'Georgia, "Times New Roman", Times, serif',
+                  fontSize: '10pt',
+                  lineHeight: 1.45,
+                  boxSizing: 'border-box'
+                }}
+              >
+              {documentType === 'deposit' ? (
                   /* Deposit Contract Template */
                   <>
                     <div className="text-center mb-3 pb-2 border-b border-black">
@@ -928,7 +847,9 @@ export default function EditablePreviewModal({
                       </div>
                     )}
                   </>
-              )}
+                )}
+              </div>
+            )}
           </div>
         </div>
       </motion.div>
