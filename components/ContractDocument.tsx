@@ -66,7 +66,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
         <div
             ref={documentRef}
             data-contract-document
-            className={`bg-white text-black w-[21cm] shadow-2xl box-border ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
+            className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
             style={{
                 fontFamily: '"Times New Roman", Times, serif',
                 fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt',
@@ -95,17 +95,32 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                     <div className="grid grid-cols-2 gap-4 mb-2">
                         <div>
                             <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">1. Shitësi:</div>
-                            <div className="text-xs" style={{ lineHeight: 1.3 }}>
-                                <div><span className="inline-block w-16">Emri:</span> <strong>{seller.name}</strong></div>
-                                <div><span className="inline-block w-16">Nr. personal:</span> {seller.id}</div>
-                                <div><span className="inline-block w-16">Tel:</span> {seller.phone}</div>
+                            <div className="text-xs space-y-1" style={{ lineHeight: 1.3 }}>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="min-w-16 font-semibold">Emri:</span>
+                                    <strong className="flex-1 break-words">{seller.name}</strong>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="min-w-16 font-semibold">Nr. personal:</span>
+                                    <span className="flex-1 break-words">{seller.id}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="min-w-16 font-semibold">Tel:</span>
+                                    <span className="flex-1 break-words">{seller.phone}</span>
+                                </div>
                             </div>
                         </div>
                         <div>
                             <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">2. Blerësi (Kaparidhënësi):</div>
-                            <div className="text-xs" style={{ lineHeight: 1.3 }}>
-                                <div><span className="inline-block w-16">Emri:</span> <strong>{safeString(sale.buyerName)}</strong></div>
-                                <div><span className="inline-block w-16">Nr. personal:</span> {safeString(sale.buyerPersonalId)}</div>
+                            <div className="text-xs space-y-1" style={{ lineHeight: 1.3 }}>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="min-w-16 font-semibold">Emri:</span>
+                                    <strong className="flex-1 break-words">{safeString(sale.buyerName)}</strong>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="min-w-16 font-semibold">Nr. personal:</span>
+                                    <span className="flex-1 break-words">{safeString(sale.buyerPersonalId)}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,7 +183,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <div className="text-center">
                             <div className="text-xs mb-8">Blerësi (Nënshkrimi)</div>
                             <div className="border-b border-black mx-4"></div>
-                            <div className="mt-1 font-bold text-xs">{safeString(sale.buyerName)}</div>
+                            <div className="mt-1 font-bold text-xs break-words">{safeString(sale.buyerName)}</div>
                         </div>
                     </div>
                 </>
@@ -200,10 +215,10 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
                             <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                             <div className="car-details">
-                                <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
-                                <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
-                                <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
-                                <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
+                                <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(sale.brand)} {safeString(sale.model)}</span></div>
+                                <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(sale.vin)}</span></div>
+                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(sale.year)}</span></div>
+                                <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(sale.km)}km</span></div>
                             </div>
                         </div>
 
@@ -386,7 +401,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             </div>
                             <div className="signature-box w-2/5 text-right">
                                 <div className="mb-1 font-bold">Blerësi:</div>
-                                <div className="mb-10">{safeString(sale.buyerName)}</div>
+                                <div className="mb-10 break-words">{safeString(sale.buyerName)}</div>
                                 <div className="border-b border-black w-full"></div>
                                 <div className="mt-1">(Nënshkrimi)</div>
                             </div>
@@ -428,10 +443,10 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
                         <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                         <div className="car-details text-xs" style={{ padding: '8pt', margin: '6pt 0' }}>
-                            <div><span className="label">Marka/Modeli:</span> <span>{safeString(sale.brand)} {safeString(sale.model)}</span></div>
-                            <div><span className="label">Numri i shasisë:</span> <span>{safeString(sale.vin)}</span></div>
-                            <div><span className="label">Viti I prodhimi:</span> <span>{safeNumber(sale.year)}</span></div>
-                            <div><span className="label">KM te kaluara:</span> <span>{formatCurrency(sale.km)}km</span></div>
+                            <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(sale.brand)} {safeString(sale.model)}</span></div>
+                            <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(sale.vin)}</span></div>
+                            <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(sale.year)}</span></div>
+                            <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(sale.km)}km</span></div>
                         </div>
                     </div>
 
@@ -476,7 +491,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         </div>
                         <div className="w-1/2 text-right pl-4">
                             <div className="font-bold text-xs mb-1">Blerësi</div>
-                            <div className="text-xs mb-6">{safeString(sale.buyerName)}</div>
+                            <div className="text-xs mb-6 break-words">{safeString(sale.buyerName)}</div>
                             <div className="border-b border-black w-4/5 ml-auto"></div>
                         </div>
                     </div>
@@ -489,8 +504,8 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                 .blue-header { color: #0f172a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #0f172a; display: inline-block; padding-bottom: 2px; }
                 .label { font-weight: bold; min-width: 100px; display: inline-block; }
                 .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
-                .car-details div { display: flex; flex-wrap: wrap; gap: 6pt; justify-content: space-between; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
-                .car-details div span:last-child { flex: 1 1 auto; text-align: right; word-break: break-word; }
+                .car-details div { display: grid; grid-template-columns: minmax(100px, 35%) minmax(0, 1fr); column-gap: 8pt; row-gap: 4pt; align-items: start; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
+                .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-box { width: 40%; position: relative; height: 100px; }
                 .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }

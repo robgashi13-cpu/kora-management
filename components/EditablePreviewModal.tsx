@@ -245,7 +245,8 @@ export default function EditablePreviewModal({
             outline: 'none',
             font: 'inherit',
             minWidth: '60px',
-            maxWidth: '150px'
+            maxWidth: '100%',
+            width: '100%'
           }}
         />
       );
@@ -259,6 +260,11 @@ export default function EditablePreviewModal({
           cursor: 'pointer',
           borderBottom: '1px dashed #94a3b8',
           transition: 'all 0.15s ease',
+          display: 'inline-block',
+          maxWidth: '100%',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
+          whiteSpace: 'normal',
         }}
         title="Click to edit"
       >
@@ -382,7 +388,7 @@ export default function EditablePreviewModal({
             <div className="transform scale-[0.5] sm:scale-75 md:scale-90 lg:scale-100 origin-top">
               <div
                 ref={printRef}
-                className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8"
+                className="bg-white w-[21cm] min-h-[29.7cm] shadow-2xl p-8 pdf-root"
                 style={{ fontFamily: 'Georgia, "Times New Roman", Times, serif', fontSize: '10pt', lineHeight: 1.5, boxSizing: 'border-box' }}
               >
                 {documentType === 'invoice' ? (
@@ -432,11 +438,18 @@ export default function EditablePreviewModal({
                               <EditableField fieldKey="year" type="number" /> <EditableField fieldKey="brand" /> <EditableField fieldKey="model" />
                               {withDogane ? ' ME DOGANË' : ''}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              VIN: <EditableField fieldKey="vin" className="font-mono" /> | Color: <EditableField fieldKey="color" />
+                            <div className="text-sm text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
+                              <span className="inline-flex flex-wrap gap-1">
+                                VIN: <EditableField fieldKey="vin" className="font-mono break-all" />
+                              </span>
+                              <span className="inline-flex flex-wrap gap-1">
+                                Color: <EditableField fieldKey="color" />
+                              </span>
                             </div>
-                            <div className="text-sm mt-1 text-gray-500">
-                              Mileage: <EditableField fieldKey="km" type="number" /> km
+                            <div className="text-sm mt-1 text-gray-500 flex flex-wrap gap-x-2">
+                              <span className="inline-flex flex-wrap gap-1">
+                                Mileage: <EditableField fieldKey="km" type="number" /> km
+                              </span>
                             </div>
                           </td>
                           <td className="py-3 text-right font-bold">
@@ -512,17 +525,32 @@ export default function EditablePreviewModal({
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">1. Shitësi:</div>
-                        <div className="text-xs" style={{ lineHeight: 1.4 }}>
-                          <div><span className="inline-block w-16">Emri:</span> <strong>{seller.name}</strong></div>
-                          <div><span className="inline-block w-16">Nr. personal:</span> {seller.id}</div>
-                          <div><span className="inline-block w-16">Tel:</span> {seller.phone}</div>
+                        <div className="text-xs space-y-1" style={{ lineHeight: 1.4 }}>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="min-w-16 font-semibold">Emri:</span>
+                            <strong className="flex-1 break-words">{seller.name}</strong>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="min-w-16 font-semibold">Nr. personal:</span>
+                            <span className="flex-1 break-words">{seller.id}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="min-w-16 font-semibold">Tel:</span>
+                            <span className="flex-1 break-words">{seller.phone}</span>
+                          </div>
                         </div>
                       </div>
                       <div>
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">2. Blerësi (Kaparidhënësi):</div>
-                        <div className="text-xs" style={{ lineHeight: 1.4 }}>
-                          <div><span className="inline-block w-16">Emri:</span> <strong><EditableField fieldKey="buyerName" /></strong></div>
-                          <div><span className="inline-block w-16">Nr. personal:</span> <EditableField fieldKey="buyerPersonalId" /></div>
+                        <div className="text-xs space-y-1" style={{ lineHeight: 1.4 }}>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="min-w-16 font-semibold">Emri:</span>
+                            <strong className="flex-1 break-words"><EditableField fieldKey="buyerName" /></strong>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="min-w-16 font-semibold">Nr. personal:</span>
+                            <span className="flex-1 break-words"><EditableField fieldKey="buyerPersonalId" /></span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -569,7 +597,7 @@ export default function EditablePreviewModal({
                       </div>
                       <div className="text-center">
                         <div className="text-xs uppercase font-bold mb-8 text-gray-600">Blerësi</div>
-                        <div className="border-t border-black pt-2 text-sm">{getValue('buyerName') || '________________'}</div>
+                        <div className="border-t border-black pt-2 text-sm break-words">{getValue('buyerName') || '________________'}</div>
                       </div>
                     </div>
                   </>
@@ -599,13 +627,13 @@ export default function EditablePreviewModal({
                           <div className="section mb-3">
                             <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
                             <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
-                            <div className="car-details">
-                              <div><span className="label">Marka/Modeli:</span> <span><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
-                              <div><span className="label">Numri i shasisë:</span> <span><EditableField fieldKey="vin" /></span></div>
-                              <div><span className="label">Viti I prodhimi:</span> <span><EditableField fieldKey="year" type="number" /></span></div>
-                              <div><span className="label">KM te kaluara:</span> <span><EditableField fieldKey="km" type="number" /> km</span></div>
-                            </div>
+                          <div className="car-details">
+                            <div><span className="label">Marka/Modeli:</span> <span className="value"><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
+                            <div><span className="label">Numri i shasisë:</span> <span className="value"><EditableField fieldKey="vin" className="break-all" /></span></div>
+                            <div><span className="label">Viti I prodhimi:</span> <span className="value"><EditableField fieldKey="year" type="number" /></span></div>
+                            <div><span className="label">KM te kaluara:</span> <span className="value"><EditableField fieldKey="km" type="number" /> km</span></div>
                           </div>
+                        </div>
 
                           <p className="font-bold mt-2 mb-2">
                             {fullSellerName} vepron si shitës, ndërsa <EditableField fieldKey="buyerName" /> si blerës.
@@ -782,7 +810,7 @@ export default function EditablePreviewModal({
                             </div>
                             <div className="signature-box w-2/5 text-right">
                               <div className="mb-1 font-bold">Blerësi:</div>
-                              <div className="mb-10"><EditableField fieldKey="buyerName" /></div>
+                              <div className="mb-10 break-words"><EditableField fieldKey="buyerName" /></div>
                               <div className="border-b border-black w-full"></div>
                               <div className="mt-1">(Nënshkrimi)</div>
                             </div>
@@ -823,13 +851,13 @@ export default function EditablePreviewModal({
                           <div className="section mb-3">
                             <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
                             <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
-                            <div className="car-details text-xs">
-                              <div><span className="label">Marka/Modeli:</span> <span><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
-                              <div><span className="label">Numri i shasisë:</span> <span><EditableField fieldKey="vin" /></span></div>
-                              <div><span className="label">Viti I prodhimi:</span> <span><EditableField fieldKey="year" type="number" /></span></div>
-                              <div><span className="label">KM te kaluara:</span> <span><EditableField fieldKey="km" type="number" /> km</span></div>
-                            </div>
+                          <div className="car-details text-xs">
+                            <div><span className="label">Marka/Modeli:</span> <span className="value"><EditableField fieldKey="brand" /> <EditableField fieldKey="model" /></span></div>
+                            <div><span className="label">Numri i shasisë:</span> <span className="value"><EditableField fieldKey="vin" className="break-all" /></span></div>
+                            <div><span className="label">Viti I prodhimi:</span> <span className="value"><EditableField fieldKey="year" type="number" /></span></div>
+                            <div><span className="label">KM te kaluara:</span> <span className="value"><EditableField fieldKey="km" type="number" /> km</span></div>
                           </div>
+                        </div>
 
                           <p className="font-bold mt-2 mb-2 text-xs">
                             {fullSellerName} vepron si shitës, ndërsa <EditableField fieldKey="buyerName" /> si blerës.
@@ -872,7 +900,7 @@ export default function EditablePreviewModal({
                             </div>
                             <div className="w-1/2 text-right pl-4">
                               <div className="font-bold text-xs mb-1">Blerësi</div>
-                              <div className="text-xs mb-6"><EditableField fieldKey="buyerName" /></div>
+                              <div className="text-xs mb-6 break-words"><EditableField fieldKey="buyerName" /></div>
                               <div className="border-b border-black w-4/5 ml-auto"></div>
                             </div>
                           </div>
@@ -912,18 +940,19 @@ export default function EditablePreviewModal({
           border-radius: 4pt;
         }
         .car-details div {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6pt;
-          justify-content: space-between;
+          display: grid;
+          grid-template-columns: minmax(100px, 35%) minmax(0, 1fr);
+          column-gap: 8pt;
+          row-gap: 4pt;
+          align-items: start;
           margin-bottom: 6pt;
           border-bottom: 1px dashed #ced4da;
           padding-bottom: 4px;
         }
-        .car-details div span:last-child {
-          flex: 1 1 auto;
+        .car-details .value {
           text-align: right;
           word-break: break-word;
+          overflow-wrap: anywhere;
         }
         .car-details div:last-child {
           border-bottom: none;
