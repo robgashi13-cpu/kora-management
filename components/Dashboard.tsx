@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback } from 'react';
-import { Attachment, CarSale, SaleStatus } from '@/app/types';
+import { Attachment, CarSale, ContractType, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -16,6 +16,7 @@ import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import GroupManager from './GroupManager';
+import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
@@ -406,8 +407,9 @@ export default function Dashboard() {
     }), []);
 
     const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
-        if (remember && profile) {
-            await Preferences.set({ key: 'user_profile', value: profile });
+        const normalizedProfile = profile ? normalizeProfileName(profile) : null;
+        if (remember && normalizedProfile) {
+            await Preferences.set({ key: 'user_profile', value: normalizedProfile });
             await Preferences.set({ key: 'remember_profile', value: 'true' });
         } else {
             await Preferences.remove({ key: 'user_profile' });
@@ -590,10 +592,11 @@ export default function Dashboard() {
 
     const handlePasswordSubmit = () => {
         if (passwordInput === ADMIN_PASSWORD) {
-            setUserProfile(pendingProfile);
-            persistUserProfile(pendingProfile);
+            const normalizedProfile = normalizeProfileName(pendingProfile);
+            setUserProfile(normalizedProfile);
+            persistUserProfile(normalizedProfile);
             setShowProfileMenu(false);
-            performAutoSync(supabaseUrl, supabaseKey, pendingProfile);
+            performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
             setShowPasswordModal(false);
             setPasswordInput('');
             setPendingProfile('');
@@ -923,6 +926,59 @@ export default function Dashboard() {
         };
     };
 
+    const generateContractPdfBase64 = async (sale: CarSale, type: ContractType) => {
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '1024px';
+        container.style.zIndex = '-1';
+        document.body.appendChild(container);
+
+        const root = createRoot(container);
+        root.render(<ContractDocument sale={sale} type={type} />);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const contractElement = container.querySelector('[data-contract-document]') as HTMLElement | null;
+        if (contractElement) {
+            await waitForImages(contractElement);
+        }
+
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
+        const fileName = `Contract_${type}_${sale.vin || sale.id}.pdf`;
+        const opt = {
+            margin: 0,
+            filename: fileName,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: {
+                scale: 4,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            },
+            jsPDF: {
+                unit: 'mm' as const,
+                format: 'a4' as const,
+                orientation: 'portrait' as const,
+                compress: true,
+                putOnlyUsedFonts: true
+            }
+        };
+
+        const pdf = html2pdf().set(opt).from(contractElement || container);
+        const dataUri = await pdf.outputPdf('datauristring');
+
+        root.unmount();
+        container.remove();
+
+        return {
+            fileName,
+            base64: dataUri.split(',')[1]
+        };
+    };
+
     const handleDownloadSelectedInvoices = async (selectedSales: CarSale[]) => {
         if (selectedSales.length === 0 || isDownloadingInvoices) return;
 
@@ -941,6 +997,12 @@ export default function Dashboard() {
                 const folderName = sanitizeFolderName(`Invoice_${sale.vin || sale.id}`);
                 const invoicePdf = await generateInvoicePdfBase64(sale);
                 fileMap[`Invoices_${dateStamp}/${folderName}/${invoicePdf.fileName}`] = base64ToUint8Array(invoicePdf.base64);
+
+                const contractTypes: ContractType[] = ['deposit', 'full_marreveshje', 'full_shitblerje'];
+                for (const contractType of contractTypes) {
+                    const contractPdf = await generateContractPdfBase64(sale, contractType);
+                    fileMap[`Invoices_${dateStamp}/${folderName}/${contractPdf.fileName}`] = base64ToUint8Array(contractPdf.base64);
+                }
 
                 collectInvoiceAttachments(sale).forEach(file => {
                     const base64Data = extractBase64(file.data);
@@ -973,7 +1035,8 @@ export default function Dashboard() {
                     dialogTitle: 'Download invoices'
                 });
             } else {
-                const blob = new Blob([zipData], { type: 'application/zip' });
+                const zipBuffer = zipData.buffer.slice(zipData.byteOffset, zipData.byteOffset + zipData.byteLength) as ArrayBuffer;
+                const blob = new Blob([zipBuffer], { type: 'application/zip' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -1651,8 +1714,9 @@ export default function Dashboard() {
                                         if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
                                         if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
                                         if (data.settings.userProfile) {
-                                            setUserProfile(data.settings.userProfile);
-                                            await persistUserProfile(data.settings.userProfile);
+                                            const normalizedProfile = normalizeProfileName(data.settings.userProfile);
+                                            setUserProfile(normalizedProfile);
+                                            await persistUserProfile(normalizedProfile);
                                         }
                                     }
 
