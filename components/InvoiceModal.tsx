@@ -48,6 +48,13 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     logging: false,
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
+                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                            if (invoiceNode && node.closest('#invoice-content')) {
+                                return;
+                            }
+                            node.remove();
+                        });
                         sanitizePdfCloneStyles(clonedDoc);
                     }
                 },
@@ -120,12 +127,12 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-sm text-xs font-semibold ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-sm text-[11px] font-semibold ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                             {isDownloading ? 'Saving...' : 'Download PDF'}
                         </button>
-                        <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition text-xs font-semibold" style={{ backgroundColor: '#111827' }}>
+                        <button onClick={handlePrint} className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition text-[11px] font-semibold" style={{ backgroundColor: '#111827' }}>
                             <Printer className="w-3.5 h-3.5" /> Print
                         </button>
 

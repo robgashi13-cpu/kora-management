@@ -895,7 +895,6 @@ export default function Dashboard() {
                     logging: false,
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
                         const invoiceNode = clonedDoc.querySelector('#invoice-content');
                         clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
                             if (invoiceNode && node.closest('#invoice-content')) {
@@ -903,6 +902,7 @@ export default function Dashboard() {
                             }
                             node.remove();
                         });
+                        sanitizePdfCloneStyles(clonedDoc);
                     }
                 },
             jsPDF: {
@@ -2933,6 +2933,7 @@ export default function Dashboard() {
                                                 );
                                             })}
                                         </div>
+                                        </>
                                     ) : (
                                         <>
                                             {filteredSales.map(sale => (
@@ -3270,52 +3271,16 @@ export default function Dashboard() {
             </main>
             <AnimatePresence>
                 {view === 'sale_form' && (
-                    <motion.div
-                        className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <motion.div
-                            className="relative w-full max-w-6xl max-h-[90vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-                            initial={{ opacity: 0, y: 24 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 24 }}
-                            transition={{ duration: 0.25 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={() => closeSaleForm()}
-                                className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-white/95 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
-                                aria-label="Close sale form"
-                                type="button"
-                            >
-                                <X className="w-5 h-5 mx-auto" />
-                            </button>
-                            <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 bg-slate-50/80">
-                                <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
-                                    <ArrowRight className="w-4 h-4 rotate-180" />
-                                    {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
-                                </button>
-                                <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                                <div className="w-20" />
-                            </div>
-                            <div className="flex-1 overflow-hidden bg-white">
-                                <SaleModal
-                                    isOpen={true}
-                                    inline={true}
-                                    hideHeader={true}
-                                    onClose={() => closeSaleForm()}
-                                    onSave={handleAddSale}
-                                    existingSale={editingSale}
-                                    defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
-                                    isAdmin={isAdmin}
-                                    availableProfiles={profileOptions}
-                                />
-                            </div>
-                        </motion.div>
-                    </motion.div>
+                    <SaleModal
+                        isOpen={true}
+                        inline={false}
+                        onClose={() => closeSaleForm()}
+                        onSave={handleAddSale}
+                        existingSale={editingSale}
+                        defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                        isAdmin={isAdmin}
+                        availableProfiles={profileOptions}
+                    />
                 )}
             </AnimatePresence>
 

@@ -38,11 +38,11 @@ export const isIosSafari = (): boolean => {
 
 export const sanitizePdfCloneStyles = (clonedDoc: Document) => {
   const sanitizeCssText = (cssText: string) => cssText
-    .replace(/oklch\([^)]*\)/gi, 'rgb(0, 0, 0)')
-    .replace(/oklab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-    .replace(/lab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-    .replace(/color-mix\([^)]*\)/gi, 'rgb(0, 0, 0)')
-    .replace(/color\([^)]*\)/gi, 'rgb(0, 0, 0)');
+    .replace(/oklch\([^;]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/oklab\([^;]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/lab\([^;]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/color-mix\([^;]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/color\([^;]*\)/gi, 'rgb(0, 0, 0)');
 
   const styleTags = clonedDoc.querySelectorAll('style');
   styleTags.forEach((styleTag) => {

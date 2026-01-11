@@ -17,9 +17,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             style={{
                 backgroundColor: '#ffffff',
                 color: '#000000',
-                fontFamily: 'Arial, "Helvetica Neue", Helvetica, sans-serif',
-                fontSize: '9.5pt',
-                lineHeight: 1.5,
+                fontFamily: '"Helvetica Neue", Arial, sans-serif',
+                fontSize: '10pt',
+                lineHeight: 1.45,
                 boxSizing: 'border-box',
                 width: '100%',
                 maxWidth: '210mm',
@@ -38,11 +38,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         alt="KORAUTO Logo"
                         style={{ height: '64px', width: 'auto', marginBottom: '16px' }}
                     />
-                    <h1 style={{ color: '#111827', fontSize: '1.25rem', fontWeight: 700 }}>INVOICE</h1>
-                    <p style={{ color: '#6b7280', marginTop: '4px' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
+                    <h1 style={{ color: '#111827', fontSize: '1.15rem', fontWeight: 700, letterSpacing: '0.02em' }}>INVOICE</h1>
+                    <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '0.85rem' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
                 </div>
                 <div className="invoice-header-right">
-                    <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '4px' }}>RG SH.P.K</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '4px' }}>RG SH.P.K</div>
                     <div style={{ color: '#6b7280', fontSize: '0.875rem', lineHeight: 1.6 }}>
                         Rr. Dardania 191<br />
                         Owner: Robert Gashi<br />
