@@ -14,7 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      sales: {
+        Row: {
+          amount_paid_bank: number | null
+          amount_paid_by_client: number | null
+          amount_paid_cash: number | null
+          amount_paid_to_korea: number | null
+          attachments: Json | null
+          brand: string | null
+          buyer_name: string | null
+          buyer_personal_id: string | null
+          color: string | null
+          cost_to_buy: number | null
+          created_at: string
+          deposit: number | null
+          deposit_date: string | null
+          group: string | null
+          id: string
+          include_transport: boolean | null
+          km: number | null
+          last_edited_by: string | null
+          model: string | null
+          notes: string | null
+          paid_date_from_client: string | null
+          paid_date_to_korea: string | null
+          payment_method: string | null
+          plate_number: string | null
+          seller_name: string | null
+          services_cost: number | null
+          shipping_date: string | null
+          shipping_name: string | null
+          sold_by: string | null
+          sold_price: number | null
+          sort_order: number | null
+          status: string | null
+          tax: number | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          amount_paid_bank?: number | null
+          amount_paid_by_client?: number | null
+          amount_paid_cash?: number | null
+          amount_paid_to_korea?: number | null
+          attachments?: Json | null
+          brand?: string | null
+          buyer_name?: string | null
+          buyer_personal_id?: string | null
+          color?: string | null
+          cost_to_buy?: number | null
+          created_at?: string
+          deposit?: number | null
+          deposit_date?: string | null
+          group?: string | null
+          id?: string
+          include_transport?: boolean | null
+          km?: number | null
+          last_edited_by?: string | null
+          model?: string | null
+          notes?: string | null
+          paid_date_from_client?: string | null
+          paid_date_to_korea?: string | null
+          payment_method?: string | null
+          plate_number?: string | null
+          seller_name?: string | null
+          services_cost?: number | null
+          shipping_date?: string | null
+          shipping_name?: string | null
+          sold_by?: string | null
+          sold_price?: number | null
+          sort_order?: number | null
+          status?: string | null
+          tax?: number | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          amount_paid_bank?: number | null
+          amount_paid_by_client?: number | null
+          amount_paid_cash?: number | null
+          amount_paid_to_korea?: number | null
+          attachments?: Json | null
+          brand?: string | null
+          buyer_name?: string | null
+          buyer_personal_id?: string | null
+          color?: string | null
+          cost_to_buy?: number | null
+          created_at?: string
+          deposit?: number | null
+          deposit_date?: string | null
+          group?: string | null
+          id?: string
+          include_transport?: boolean | null
+          km?: number | null
+          last_edited_by?: string | null
+          model?: string | null
+          notes?: string | null
+          paid_date_from_client?: string | null
+          paid_date_to_korea?: string | null
+          payment_method?: string | null
+          plate_number?: string | null
+          seller_name?: string | null
+          services_cost?: number | null
+          shipping_date?: string | null
+          shipping_name?: string | null
+          sold_by?: string | null
+          sold_price?: number | null
+          sort_order?: number | null
+          status?: string | null
+          tax?: number | null
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
