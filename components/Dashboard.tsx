@@ -18,6 +18,7 @@ import InlineEditableCell from './InlineEditableCell';
 import GroupManager from './GroupManager';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
+import { sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -787,36 +788,6 @@ export default function Dashboard() {
         });
     }, []);
 
-    const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
-        const images = Array.from(container.querySelectorAll('img'));
-        if (images.length === 0) return;
-
-        const loadPromises = images.map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            return new Promise<void>((resolve, reject) => {
-                const onLoad = () => {
-                    cleanup();
-                    resolve();
-                };
-                const onError = () => {
-                    cleanup();
-                    reject(new Error('Image failed to load'));
-                };
-                const cleanup = () => {
-                    img.removeEventListener('load', onLoad);
-                    img.removeEventListener('error', onError);
-                };
-                img.addEventListener('load', onLoad);
-                img.addEventListener('error', onError);
-            });
-        });
-
-        await Promise.race([
-            Promise.all(loadPromises),
-            new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
-        ]);
-    };
-
     const sanitizeFolderName = (name: string) => {
         const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim();
         return cleaned || 'Invoice';
@@ -899,21 +870,22 @@ export default function Dashboard() {
             margin: 5,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
             image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: {
-                scale: 4,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                onclone: (clonedDoc: Document) => {
-                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                        if (invoiceNode && node.closest('#invoice-content')) {
-                            return;
-                        }
-                        node.remove();
-                    });
-                }
-            },
+                html2canvas: {
+                    scale: 4,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc: Document) => {
+                        sanitizePdfCloneStyles(clonedDoc);
+                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                            if (invoiceNode && node.closest('#invoice-content')) {
+                                return;
+                            }
+                            node.remove();
+                        });
+                    }
+                },
             jsPDF: {
                 unit: 'mm' as const,
                 format: 'a4' as const,
@@ -930,9 +902,14 @@ export default function Dashboard() {
         root.unmount();
         container.remove();
 
+        const base64 = dataUri.split(',')[1];
+        if (!base64) {
+            throw new Error('Failed to generate invoice PDF data.');
+        }
+
         return {
             fileName: `Invoice_${sale.vin || sale.id}.pdf`,
-            base64: dataUri.split(',')[1]
+            base64
         };
     };
 
@@ -962,12 +939,15 @@ export default function Dashboard() {
             margin: 0,
             filename: fileName,
             image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: {
-                scale: 4,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            },
+                html2canvas: {
+                    scale: 4,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc: Document) => {
+                        sanitizePdfCloneStyles(clonedDoc);
+                    }
+                },
             jsPDF: {
                 unit: 'mm' as const,
                 format: 'a4' as const,
@@ -984,9 +964,14 @@ export default function Dashboard() {
         root.unmount();
         container.remove();
 
+        const base64 = dataUri.split(',')[1];
+        if (!base64) {
+            throw new Error('Failed to generate contract PDF data.');
+        }
+
         return {
             fileName,
-            base64: dataUri.split(',')[1]
+            base64
         };
     };
 

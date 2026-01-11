@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
+import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -32,35 +33,7 @@ export default function EditablePreviewModal({
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const waitForImages = async (container: HTMLElement, timeoutMs = 8000): Promise<void> => {
-    const images = Array.from(container.querySelectorAll('img'));
-    if (images.length === 0) return;
-
-    const loadPromises = images.map((img) => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise<void>((resolve, reject) => {
-        const onLoad = () => {
-          cleanup();
-          resolve();
-        };
-        const onError = () => {
-          cleanup();
-          reject(new Error('Image failed to load'));
-        };
-        const cleanup = () => {
-          img.removeEventListener('load', onLoad);
-          img.removeEventListener('error', onError);
-        };
-        img.addEventListener('load', onLoad);
-        img.addEventListener('error', onError);
-      });
-    });
-
-    await Promise.race([
-      Promise.all(loadPromises),
-      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('Image load timeout')), timeoutMs)),
-    ]);
-  };
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Initialize editable fields from sale
   useEffect(() => {
@@ -139,8 +112,34 @@ export default function EditablePreviewModal({
     try {
       setIsDownloading(true);
       setError(null);
+      setStatusMessage(null);
 
       await new Promise(resolve => setTimeout(resolve, 300));
+
+      const missingFields: string[] = [];
+      const requireValue = (key: string, label: string) => {
+        const value = getValue(key);
+        if (value === undefined || value === null || value === '') {
+          missingFields.push(label);
+        }
+      };
+      requireValue('buyerName', 'Buyer Name');
+      if (documentType !== 'invoice') {
+        requireValue('buyerPersonalId', 'Buyer ID');
+      }
+      requireValue('brand', 'Brand');
+      requireValue('model', 'Model');
+      requireValue('vin', 'VIN');
+      if (documentType !== 'invoice') {
+        requireValue('soldPrice', 'Sold Price');
+      }
+      if (documentType === 'deposit') {
+        requireValue('deposit', 'Deposit Amount');
+      }
+      if (missingFields.length > 0) {
+        setError(`Missing required fields: ${missingFields.join(', ')}`);
+        return;
+      }
 
       const opt = {
         margin: documentType === 'invoice' ? 5 : 0,
@@ -150,7 +149,10 @@ export default function EditablePreviewModal({
           scale: 4,
           useCORS: true,
           backgroundColor: '#ffffff',
-          logging: false
+          logging: false,
+          onclone: (clonedDoc: Document) => {
+            sanitizePdfCloneStyles(clonedDoc);
+          }
         },
         jsPDF: {
           unit: 'mm' as const,
@@ -168,7 +170,11 @@ export default function EditablePreviewModal({
       await waitForImages(element);
 
       if (!Capacitor.isNativePlatform()) {
-        await html2pdf().set(opt).from(element).save();
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
+        if (!downloadResult.opened) {
+          setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
+        }
       } else {
         const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
         const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
@@ -378,6 +384,11 @@ export default function EditablePreviewModal({
             <div className="px-4 py-2 bg-red-50 text-red-700 text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               {error}
+            </div>
+          )}
+          {statusMessage && (
+            <div className="px-4 py-2 bg-amber-50 text-amber-700 text-sm flex items-center gap-2">
+              {statusMessage}
             </div>
           )}
         </div>

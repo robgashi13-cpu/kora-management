@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
+import { openPdfBlob } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -129,9 +130,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 // Fetching the data URL is cleaner.
                 fetch(file.data)
                     .then(res => res.blob())
-                    .then(blob => {
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
+                    .then(async (blob) => {
+                        const openResult = await openPdfBlob(blob);
+                        if (!openResult.opened) {
+                            alert('Popup blocked. The PDF opened in this tab so you can save or share it.');
+                        }
                     });
             } catch (e) {
                 console.error("Error viewing file", e);
