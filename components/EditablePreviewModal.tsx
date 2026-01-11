@@ -287,12 +287,21 @@ export default function EditablePreviewModal({
     ...editedFields
   }), [sale, editedFields]);
 
-  const invoiceFieldConfig = useMemo(() => ({
-    year: { type: 'number' as const },
-    km: { type: 'number' as const },
-    soldPrice: { type: 'currency' as const, prefix: '€' },
-    amountPaidBank: { type: 'currency' as const, prefix: '€' }
-  }), []);
+  type InvoiceFieldConfig = {
+    type: 'number' | 'currency' | 'text';
+    prefix?: string;
+    className?: string;
+  };
+
+  const invoiceFieldConfig = useMemo<Partial<Record<keyof CarSale, InvoiceFieldConfig>>>(
+    () => ({
+      year: { type: 'number' },
+      km: { type: 'number' },
+      soldPrice: { type: 'currency', prefix: '€' },
+      amountPaidBank: { type: 'currency', prefix: '€' }
+    }),
+    []
+  );
 
   const renderInvoiceField = useCallback(
     (fieldKey: keyof CarSale, _value: CarSale[keyof CarSale], options?: { className?: string }) => {
@@ -439,9 +448,7 @@ export default function EditablePreviewModal({
                 ref={printRef}
                 className={`bg-white w-[21cm] ${isInvoice ? 'h-[29.7cm]' : 'min-h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
                 style={{
-                  fontFamily: documentType === 'invoice'
-                    ? '"Helvetica Neue", Helvetica, Arial, sans-serif'
-                    : 'Georgia, "Times New Roman", Times, serif',
+                  fontFamily: 'Georgia, "Times New Roman", Times, serif',
                   fontSize: '10pt',
                   lineHeight: 1.45,
                   boxSizing: 'border-box'

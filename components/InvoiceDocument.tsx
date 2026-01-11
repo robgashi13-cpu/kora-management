@@ -9,18 +9,20 @@ export interface InvoiceDocumentProps {
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
-        options?: {
-            className?: string;
-            formatValue?: (value: CarSale[keyof CarSale]) => string;
-        }
+        options?: FieldRenderOptions
     ) => React.ReactNode;
 }
+
+type FieldRenderOptions = {
+    className?: string;
+    formatValue?: (value: CarSale[keyof CarSale]) => string;
+};
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, renderField }, ref) => {
     const renderText = <K extends keyof CarSale>(
         fieldKey: K,
         fallback: React.ReactNode = '',
-        options?: { className?: string; formatValue?: (value: CarSale[K]) => string }
+        options?: FieldRenderOptions
     ) => {
         if (renderField) {
             return renderField(fieldKey, sale[fieldKey], options);
@@ -38,7 +40,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
     const renderCurrency = <K extends keyof CarSale>(
         fieldKey: K,
         amount: number,
-        options?: { className?: string; formatValue?: (value: CarSale[K]) => string }
+        options?: FieldRenderOptions
     ) => {
         if (renderField) {
             return renderField(fieldKey, sale[fieldKey], options);
