@@ -2932,7 +2932,7 @@ export default function Dashboard() {
                                                     </div>
                                                 );
                                             })}
-                                        </div>
+                                        </>
                                     ) : (
                                         <>
                                             {filteredSales.map(sale => (
