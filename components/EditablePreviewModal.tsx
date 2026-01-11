@@ -267,12 +267,35 @@ export default function EditablePreviewModal({
   };
 
   if (!isOpen) return null;
+  
+  // Guard against undefined sale
+  if (!sale) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50">
+        <div className="bg-white rounded-lg p-6">
+          <p className="text-slate-500">Loading document...</p>
+        </div>
+      </div>
+    );
+  }
 
   const today = new Date().toLocaleDateString('en-GB');
   const seller = { name: "RG SH.P.K.", id: "Business Nr 810062092", phone: "048181116" };
   const sellerBusinessId = "NR.Biznesit 810062092";
   const fullSellerName = "RG SH.P.K";
-  const saleRefId = sale.id ? sale.id.slice(0, 8).toUpperCase() : crypto.randomUUID().slice(0, 8).toUpperCase();
+  
+  const generateRefId = (): string => {
+    if (sale.id) return sale.id.slice(0, 8).toUpperCase();
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      try {
+        return crypto.randomUUID().slice(0, 8).toUpperCase();
+      } catch {
+        // Fallback for non-secure contexts
+      }
+    }
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  };
+  const saleRefId = generateRefId();
   const documentTitle = documentType === 'invoice'
     ? 'Invoice'
     : documentType === 'deposit'

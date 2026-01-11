@@ -34,13 +34,33 @@ const formatDate = (dateString: string | undefined | null): string => {
 };
 
 export default function ContractDocument({ sale, type, documentRef }: ContractDocumentProps) {
+    // Guard against undefined sale
+    if (!sale) {
+        return (
+            <div ref={documentRef} className="bg-white text-black w-[21cm] min-h-[29.7cm] p-8 flex items-center justify-center">
+                <p className="text-slate-500">Loading document...</p>
+            </div>
+        );
+    }
+
     const today = new Date().toLocaleDateString('en-GB');
     const shippingDate = formatDate(sale.shippingDate);
     const seller = { name: 'RG SH.P.K.', id: 'Business Nr 810062092', phone: '048181116' };
     const sellerBusinessId = 'NR.Biznesit 810062092';
     const fullSellerName = 'RG SH.P.K';
 
-    const saleRefId = sale.id ? sale.id.slice(0, 8).toUpperCase() : crypto.randomUUID().slice(0, 8).toUpperCase();
+    const generateRefId = (): string => {
+        if (sale.id) return sale.id.slice(0, 8).toUpperCase();
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            try {
+                return crypto.randomUUID().slice(0, 8).toUpperCase();
+            } catch {
+                // Fallback for non-secure contexts
+            }
+        }
+        return Math.random().toString(36).substring(2, 10).toUpperCase();
+    };
+    const saleRefId = generateRefId();
 
     return (
         <div
