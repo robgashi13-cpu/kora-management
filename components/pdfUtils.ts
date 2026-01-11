@@ -37,15 +37,44 @@ export const isIosSafari = (): boolean => {
 };
 
 export const sanitizePdfCloneStyles = (clonedDoc: Document) => {
+  const sanitizeCssText = (cssText: string) => cssText
+    .replace(/oklch\([^)]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/oklab\([^)]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/lab\([^)]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/color-mix\([^)]*\)/gi, 'rgb(0, 0, 0)')
+    .replace(/color\([^)]*\)/gi, 'rgb(0, 0, 0)');
+
   const styleTags = clonedDoc.querySelectorAll('style');
   styleTags.forEach((styleTag) => {
     if (!styleTag.textContent) return;
-    styleTag.textContent = styleTag.textContent
-      .replace(/oklch\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/oklab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/lab\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/color-mix\([^)]*\)/gi, 'rgb(0, 0, 0)')
-      .replace(/color\([^)]*\)/gi, 'rgb(0, 0, 0)');
+    styleTag.textContent = sanitizeCssText(styleTag.textContent);
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>('[style]').forEach((node) => {
+    const style = node.getAttribute('style');
+    if (!style) return;
+    node.setAttribute('style', sanitizeCssText(style));
+  });
+
+  Array.from(clonedDoc.styleSheets).forEach((sheet) => {
+    try {
+      const rules = Array.from(sheet.cssRules || []);
+      if (rules.length === 0) return;
+      const cssText = rules.map((rule) => rule.cssText).join('\n');
+      const sanitized = sanitizeCssText(cssText);
+      if (sanitized === cssText) return;
+      const styleEl = clonedDoc.createElement('style');
+      styleEl.textContent = sanitized;
+      const ownerNode = sheet.ownerNode;
+      if (ownerNode?.parentNode) {
+        ownerNode.parentNode.insertBefore(styleEl, ownerNode.nextSibling);
+        ownerNode.parentNode.removeChild(ownerNode);
+      } else {
+        clonedDoc.head?.appendChild(styleEl);
+      }
+    } catch {
+      // Ignore cross-origin or inaccessible stylesheet rules.
+    }
   });
 };
 

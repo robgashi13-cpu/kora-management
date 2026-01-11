@@ -116,17 +116,17 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 {/* Toolbar - Hidden when printing */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl print:hidden">
                     <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
-                            className={`flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-sm text-xs font-semibold ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                             {isDownloading ? 'Saving...' : 'Download PDF'}
                         </button>
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition" style={{ backgroundColor: '#111827' }}>
-                            <Printer className="w-4 h-4" /> Print
+                        <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition text-xs font-semibold" style={{ backgroundColor: '#111827' }}>
+                            <Printer className="w-3.5 h-3.5" /> Print
                         </button>
 
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 pointer-events-auto cursor-pointer relative z-50">
