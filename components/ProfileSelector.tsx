@@ -125,12 +125,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Profile Name"
-                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700"
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                     />
                     <div className="flex gap-4">
                         <button onClick={() => setIsAdding(false)} className="flex-1 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500">Cancel</button>
-                        <button onClick={handleAdd} className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500">Save</button>
+                        <button onClick={handleAdd} className="flex-1 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">Save</button>
                     </div>
                 </div>
             </div>
@@ -223,7 +223,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 accent-blue-600"
+                        className="h-4 w-4 accent-slate-900"
                     />
                     <label htmlFor="remember-profile" className="font-semibold cursor-pointer">
                         Remember me on this device
@@ -243,7 +243,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     autoFocus
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700 pr-12"
+                                    className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 pr-12"
                                     onKeyDown={e => e.key === 'Enter' && confirmPassword()}
                                 />
                                 <button
@@ -259,12 +259,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     type="checkbox"
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="h-4 w-4 accent-blue-600"
+                                    className="h-4 w-4 accent-slate-900"
                                 />
                                 Remember me on this device
                             </label>
 
-                            <button onClick={confirmPassword} className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500">
+                            <button onClick={confirmPassword} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">
                                 Login
                             </button>
                         </div>
@@ -286,7 +286,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                         <span className="text-4xl text-slate-400">{editingProfile[0]}</span>
                                     )}
                                 </div>
-                                <label className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full cursor-pointer hover:bg-blue-500 transition-colors shadow-lg">
+                                <label className="absolute bottom-0 right-0 p-2 bg-slate-900 rounded-full cursor-pointer hover:bg-slate-800 transition-colors shadow-lg">
                                     <input
                                         type="file"
                                         className="hidden"
@@ -313,7 +313,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 value={editName}
                                 onChange={e => setEditName(e.target.value)}
                                 placeholder="Profile Name"
-                                className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 outline-none text-slate-700"
+                                className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
                                 onKeyDown={e => e.key === 'Enter' && handleEditSave()}
                             />
 
@@ -321,7 +321,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 <button onClick={handleDelete} className="px-6 py-3 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 flex items-center gap-2">
                                     <Trash2 className="w-5 h-5" /> Delete
                                 </button>
-                                <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500">
+                                <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">
                                     Save Changes
                                 </button>
                             </div>

@@ -84,10 +84,10 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
     return (
         <Reorder.Item value={s} id={s.id} className="contents group table-row-hover table-row-compact">
             {/* Hidden Card View */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-blue-400 transition-colors hidden">
+            <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-slate-400 transition-colors hidden">
                 <div className="flex justify-between mb-4">
                     <div className="font-bold text-lg text-slate-800">{s.brand} {s.model}</div>
-                    <button onClick={(e) => openInvoice(s, e)} className="text-blue-600 hover:text-blue-700"><FileText className="w-5 h-5" /></button>
+                    <button onClick={(e) => openInvoice(s, e)} className="text-slate-900 hover:text-slate-900"><FileText className="w-5 h-5" /></button>
                 </div>
                 <div className="text-sm text-slate-500 space-y-2">
                     <div className="flex justify-between"><span>VIN</span><span className="font-mono text-xs text-slate-700">{s.vin}</span></div>
@@ -103,7 +103,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     </span>
                 </div>}
                 <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}>
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}>
                         <CheckSquare className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -117,7 +117,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleSelection(s.id); }}
-                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 bg-transparent hover:border-blue-500 hover:bg-blue-50'}`}
+                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 bg-transparent hover:border-slate-500 hover:bg-slate-50'}`}
                 >
                     {isSelected && <CheckSquare className="w-3 h-3" />}
                 </button>
@@ -128,7 +128,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-blue-600 transition-colors text-xs xl:text-sm"
+                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-900 transition-colors text-xs xl:text-sm"
                 >
                     {s.brand} {s.model}
                 </button>
@@ -243,7 +243,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                             <span className="font-mono text-[10px] xl:text-xs text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-violet-600 whitespace-nowrap border-r border-slate-100 bg-white text-xs">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-slate-700 whitespace-nowrap border-r border-slate-100 bg-white text-xs">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
@@ -311,7 +311,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <X className="w-3.5 h-3.5" />
                     </button>
                 )}
-                <button onClick={(e) => openInvoice(s, e)} className="text-blue-500 hover:text-blue-700 transition-colors p-1 hover:bg-blue-50 rounded" title="View Invoice">
+                <button onClick={(e) => openInvoice(s, e)} className="text-slate-700 hover:text-slate-900 transition-colors p-1 hover:bg-slate-50 rounded" title="View Invoice">
                     <FileText className="w-3.5 h-3.5" />
                 </button>
             </div>
@@ -1993,7 +1993,7 @@ export default function Dashboard() {
                         onClick={() => openSaleForm(null, 'landing')}
                         className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
                             <Plus className="w-12 h-12" />
                         </div>
                         <div className="text-center">
@@ -2007,7 +2007,7 @@ export default function Dashboard() {
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
                         className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
                             <Clipboard className="w-12 h-12" />
                         </div>
                         <div className="text-center">
@@ -2056,7 +2056,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 md:gap-3">
                             <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md border border-slate-100" />
                             <div>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">KORAUTO</h1>
+                                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">KORAUTO</h1>
                             </div>
                         </div>
                         <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
@@ -2073,13 +2073,13 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3 relative">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2 rounded-full hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-blue-500' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`p-2 rounded-full hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
                                 title="Force Sync"
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
                             <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-black p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
-                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-blue-600">
+                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-slate-900">
                                     {userProfile ? userProfile[0].toUpperCase() : 'U'}
                                 </div>
                             </button>
@@ -2228,7 +2228,7 @@ export default function Dashboard() {
                                     }}>
                                     <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                         <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
-                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4" />}
+                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-700" /> : <Square className="w-4 h-4" />}
                                         </div>
                                         <div className="p-1 xl:p-2 pl-2 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('brand')}>
                                             Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
@@ -2262,7 +2262,7 @@ export default function Dashboard() {
                                         <div className="p-1 xl:p-2.5 text-right">Paid</div>
                                         <div className="p-1 xl:p-2.5 text-right">Bank Fee</div>
                                         <div className="p-1 xl:p-2.5 text-right">Tax</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-blue-600">Profit</div>}
+                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-slate-900">Profit</div>}
                                         <div className="p-1 xl:p-2.5 text-right">Balance</div>
                                         {isAdmin && <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
                                             Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
@@ -2531,7 +2531,7 @@ export default function Dashboard() {
                                         {isAdmin && <>
                                             <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
                                             <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-blue-600">€{totalProfit.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
                                         </>}
                                         <div className="p-3 col-span-3"></div>
                                     </div>
@@ -2605,7 +2605,7 @@ export default function Dashboard() {
                                                                     style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
                                                                 >
                                                                     {selectedIds.size > 0 && (
-                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                             {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                         </div>
                                                                     )}
@@ -2614,7 +2614,7 @@ export default function Dashboard() {
                                                                         <div className="flex justify-between items-start">
                                                                             <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
                                                                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-blue-600' :
+                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                     sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                         'bg-slate-100 text-slate-500'
                                                                                 }`}>{sale.status}</span>
@@ -2681,7 +2681,7 @@ export default function Dashboard() {
                                                             </button>
                                                             <button
                                                                 onClick={() => handleArchiveGroup(group.name, false)}
-                                                                className="text-xs text-blue-600 font-semibold"
+                                                                className="text-xs text-slate-900 font-semibold"
                                                             >
                                                                 Unarchive
                                                             </button>
@@ -2732,7 +2732,7 @@ export default function Dashboard() {
                                                                             style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
                                                                         >
                                                                             {selectedIds.size > 0 && (
-                                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-300'}`}>
+                                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                     {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                 </div>
                                                                             )}
@@ -2740,7 +2740,7 @@ export default function Dashboard() {
                                                                                 <div className="flex justify-between items-start">
                                                                                     <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
                                                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-blue-600' :
+                                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                             sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                 'bg-slate-100 text-slate-500'
                                                                                         }`}>{sale.status}</span>
@@ -2831,7 +2831,7 @@ export default function Dashboard() {
                                         disabled={filteredSales.length === 0}
                                     >
                                         {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.length ? (
-                                            <CheckSquare className="w-4 h-4 text-blue-500" />
+                                            <CheckSquare className="w-4 h-4 text-slate-700" />
                                         ) : (
                                             <Square className="w-4 h-4" />
                                         )}
@@ -2845,7 +2845,7 @@ export default function Dashboard() {
                                             type="button"
                                             onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
                                             disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                                         >
                                             {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                             {isDownloadingInvoices ? 'Preparing...' : 'Download Selected'}
@@ -2865,14 +2865,14 @@ export default function Dashboard() {
                                         {filteredSales.map(s => (
                                             <div
                                                 key={s.id}
-                                                className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-blue-200 ring-2 ring-blue-100' : 'border-slate-100'}`}
+                                                className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-slate-200 ring-2 ring-slate-200' : 'border-slate-100'}`}
                                                 onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
                                             >
                                                 <div className="absolute top-3 left-3">
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-transparent hover:border-blue-400'}`}
+                                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}
                                                     >
                                                         <CheckSquare className="w-3.5 h-3.5" />
                                                     </button>
@@ -2882,7 +2882,7 @@ export default function Dashboard() {
                                                         <button
                                                             type="button"
                                                             onClick={(e) => { e.stopPropagation(); openSaleForm(s, 'invoices'); }}
-                                                            className="font-bold text-slate-900 text-lg text-left hover:text-blue-600 transition-colors"
+                                                            className="font-bold text-slate-900 text-lg text-left hover:text-slate-900 transition-colors"
                                                         >
                                                             {s.brand} {s.model}
                                                         </button>
@@ -2890,7 +2890,7 @@ export default function Dashboard() {
                                                     </div>
                                                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                         s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-                                                            s.status === 'Shipped' ? 'bg-purple-50 text-purple-700' :
+                                                            s.status === 'Shipped' ? 'bg-slate-100 text-slate-700' :
                                                                 'bg-slate-100 text-slate-500'
                                                         }`}>{s.status}</span>
                                                 </div>
@@ -2931,14 +2931,14 @@ export default function Dashboard() {
                                                             onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_marreveshje' }); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
-                                                            <FileText className="w-4 h-4 text-blue-500" />
+                                                            <FileText className="w-4 h-4 text-slate-700" />
                                                             Marrëveshje
                                                         </button>
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_shitblerje' }); }}
                                                             className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
                                                         >
-                                                            <FileText className="w-4 h-4 text-indigo-500" />
+                                                            <FileText className="w-4 h-4 text-slate-600" />
                                                             Shitblerje
                                                         </button>
                                                         <button
@@ -2968,7 +2968,7 @@ export default function Dashboard() {
                                 >
                                     <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
                                         <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
-                                        <span className="font-mono text-xl font-bold text-blue-600 leading-none">{selectedIds.size}</span>
+                                        <span className="font-mono text-xl font-bold text-slate-900 leading-none">{selectedIds.size}</span>
                                     </div>
 
                                     {selectedIds.size === 1 && (
@@ -2979,8 +2979,8 @@ export default function Dashboard() {
                                             }}
                                             className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
                                         >
-                                            <Edit className="w-5 h-5 text-blue-400" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-blue-500">Edit</span>
+                                            <Edit className="w-5 h-5 text-slate-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Edit</span>
                                         </button>
                                     )}
 
@@ -2990,8 +2990,8 @@ export default function Dashboard() {
                                     </button>
 
                                     <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <FolderPlus className="w-5 h-5 text-violet-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-violet-500">Create Group</span>
+                                        <FolderPlus className="w-5 h-5 text-slate-600" />
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
                                     </button>
 
                                     <div className="relative">
@@ -3000,7 +3000,7 @@ export default function Dashboard() {
                                             <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
                                         </button>
                                         {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
                                                 <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
                                                 <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
                                                 <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
@@ -3010,8 +3010,8 @@ export default function Dashboard() {
                                     </div>
 
                                     <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <CheckSquare className="w-5 h-5 text-blue-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-blue-500">Sold</span>
+                                        <CheckSquare className="w-5 h-5 text-slate-700" />
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
                                     </button>
 
                                     <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
@@ -3049,7 +3049,7 @@ export default function Dashboard() {
                         >
                             <button
                                 onClick={() => closeSaleForm()}
-                                className="absolute top-4 right-4 md:top-6 md:right-6 z-10 h-10 w-10 rounded-full bg-white/90 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                                className="absolute top-4 right-4 md:top-6 md:right-6 z-10 h-10 w-10 rounded-full bg-white/90 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                                 aria-label="Close sale form"
                                 type="button"
                             >
@@ -3101,7 +3101,7 @@ export default function Dashboard() {
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors"
                                     placeholder="Password"
                                     value={passwordInput}
                                     onChange={e => setPasswordInput(e.target.value)}
@@ -3120,13 +3120,13 @@ export default function Dashboard() {
                                     type="checkbox"
                                     checked={rememberProfile}
                                     onChange={(e) => setRememberProfile(e.target.checked)}
-                                    className="h-4 w-4 accent-blue-600"
+                                    className="h-4 w-4 accent-slate-900"
                                 />
                                 Remember me on this device
                             </label>
                             <div className="flex justify-end gap-3">
                                 <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 font-bold transition-colors shadow-sm">Submit</button>
+                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-colors shadow-sm">Submit</button>
                             </div>
                         </div>
                     </div>
@@ -3135,7 +3135,7 @@ export default function Dashboard() {
             {view !== 'sale_form' && (
                 <button
                     onClick={() => openSaleForm(null)}
-                    className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-[60] h-12 w-12 rounded-full border border-slate-200 bg-white/90 text-slate-900 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                    className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-[60] h-12 w-12 rounded-full border border-slate-200 bg-white/90 text-slate-900 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                     aria-label="Add sale"
                     type="button"
                 >

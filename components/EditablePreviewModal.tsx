@@ -262,11 +262,11 @@ export default function EditablePreviewModal({
         <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
               <h2 className="text-lg font-bold text-slate-800">
                 Preview & Edit {documentTitle}
               </h2>
-              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">
+              <span className="text-xs bg-slate-50 text-slate-900 px-2 py-1 rounded-full font-medium">
                 Click any value to edit
               </span>
             </div>
@@ -290,7 +290,7 @@ export default function EditablePreviewModal({
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all font-bold shadow-lg shadow-black/10 disabled:opacity-50"
               >
                 {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 {isDownloading ? 'Generating...' : 'Download PDF'}

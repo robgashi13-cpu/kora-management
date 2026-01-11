@@ -26,67 +26,67 @@ html {
 
 /* Clean White Admin Theme - Enhanced Colors */
 :root {
-  --background: 210 20% 98%;
-  --foreground: 222 47% 11%;
+  --background: 0 0% 100%;
+  --foreground: 222 20% 9%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --card-foreground: 222 20% 9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 221 83% 53%;
+  --popover-foreground: 222 20% 9%;
+  --primary: 222 15% 12%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 262 83% 58%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
+  --secondary: 210 16% 96%;
+  --secondary-foreground: 222 20% 16%;
+  --muted: 210 16% 96%;
+  --muted-foreground: 215 12% 38%;
+  --accent: 210 14% 93%;
+  --accent-foreground: 222 20% 12%;
+  --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 221 83% 53%;
+  --border: 214 18% 88%;
+  --input: 214 18% 88%;
+  --ring: 222 15% 18%;
   --radius: 0.5rem;
-  
+
   /* Semantic Colors */
-  --success: 142 71% 45%;
-  --success-light: 142 76% 94%;
-  --warning: 38 92% 50%;
-  --warning-light: 48 96% 89%;
-  --info: 199 89% 48%;
-  --info-light: 199 95% 93%;
-  --profit: 221 83% 53%;
-  --loss: 0 84% 60%;
-  --balance-due: 0 72% 51%;
-  --balance-paid: 142 71% 45%;
+  --success: 142 42% 36%;
+  --success-light: 142 30% 94%;
+  --warning: 38 58% 44%;
+  --warning-light: 40 40% 93%;
+  --info: 199 40% 40%;
+  --info-light: 199 30% 94%;
+  --profit: 222 15% 18%;
+  --loss: 0 70% 48%;
+  --balance-due: 0 60% 45%;
+  --balance-paid: 142 42% 36%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 100%;
+    --foreground: 222 20% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 20% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
+    --popover-foreground: 222 20% 9%;
+    --primary: 222 15% 12%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 262 83% 58%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --secondary: 210 16% 96%;
+    --secondary-foreground: 222 20% 16%;
+    --muted: 210 16% 96%;
+    --muted-foreground: 215 12% 38%;
+    --accent: 210 14% 93%;
+    --accent-foreground: 222 20% 12%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
-    --success: 142 71% 45%;
-    --success-light: 142 76% 94%;
-    --warning: 38 92% 50%;
-    --warning-light: 48 96% 89%;
-    --info: 199 89% 48%;
-    --info-light: 199 95% 93%;
+    --border: 214 18% 88%;
+    --input: 214 18% 88%;
+    --ring: 222 15% 18%;
+    --success: 142 42% 36%;
+    --success-light: 142 30% 94%;
+    --warning: 38 58% 44%;
+    --warning-light: 40 40% 93%;
+    --info: 199 40% 40%;
+    --info-light: 199 30% 94%;
   }
 }
 
@@ -102,6 +102,9 @@ body {
   color: hsl(var(--foreground));
   background: hsl(var(--background));
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  text-rendering: optimizeLegibility;
   overscroll-behavior-y: none;
   min-height: 100vh;
   min-height: -webkit-fill-available;
@@ -111,6 +114,13 @@ body {
 #__next {
   background-color: hsl(var(--background));
   min-height: 100%;
+}
+
+input,
+textarea,
+select,
+button {
+  transition-duration: 140ms;
 }
 
 /* Hide scrollbar */
@@ -175,9 +185,9 @@ body {
 }
 
 .inline-cell-wrapper.inline-cell-editing {
-  background: hsl(var(--primary) / 0.04);
+  background: hsl(var(--foreground) / 0.04);
   border-radius: 3px;
-  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2);
+  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 0.16);
   transition: box-shadow 0.12s ease, background-color 0.12s ease;
 }
 
@@ -353,39 +363,39 @@ body {
 }
 
 .status-completed { 
-  background: linear-gradient(135deg, hsl(142 76% 94%), hsl(142 70% 90%)); 
-  color: hsl(142 64% 32%);
-  border: 1px solid hsl(142 60% 80%);
+  background: linear-gradient(135deg, hsl(142 30% 95%), hsl(142 26% 92%)); 
+  color: hsl(142 36% 30%);
+  border: 1px solid hsl(142 24% 84%);
 }
 
 .status-new { 
-  background: linear-gradient(135deg, hsl(221 91% 95%), hsl(221 85% 90%)); 
-  color: hsl(221 83% 45%);
-  border: 1px solid hsl(221 80% 85%);
+  background: linear-gradient(135deg, hsl(220 14% 96%), hsl(220 12% 92%)); 
+  color: hsl(222 18% 28%);
+  border: 1px solid hsl(220 12% 86%);
 }
 
 .status-in-progress { 
-  background: linear-gradient(135deg, hsl(38 100% 94%), hsl(38 95% 88%)); 
-  color: hsl(32 95% 40%);
-  border: 1px solid hsl(38 90% 78%);
+  background: linear-gradient(135deg, hsl(38 40% 94%), hsl(38 34% 90%)); 
+  color: hsl(30 30% 32%);
+  border: 1px solid hsl(38 26% 84%);
 }
 
 .status-shipped { 
-  background: linear-gradient(135deg, hsl(262 83% 95%), hsl(262 75% 90%)); 
-  color: hsl(262 83% 48%);
-  border: 1px solid hsl(262 70% 85%);
+  background: linear-gradient(135deg, hsl(220 10% 95%), hsl(220 10% 92%)); 
+  color: hsl(222 18% 28%);
+  border: 1px solid hsl(220 10% 86%);
 }
 
 .status-inspection { 
-  background: linear-gradient(135deg, hsl(199 95% 93%), hsl(199 90% 88%)); 
-  color: hsl(199 89% 38%);
-  border: 1px solid hsl(199 85% 80%);
+  background: linear-gradient(135deg, hsl(199 30% 94%), hsl(199 26% 90%)); 
+  color: hsl(200 28% 32%);
+  border: 1px solid hsl(199 22% 84%);
 }
 
 .status-autosallon { 
-  background: linear-gradient(135deg, hsl(38 100% 94%), hsl(38 95% 88%)); 
-  color: hsl(32 95% 40%);
-  border: 1px solid hsl(38 90% 78%);
+  background: linear-gradient(135deg, hsl(38 40% 94%), hsl(38 34% 90%)); 
+  color: hsl(30 30% 32%);
+  border: 1px solid hsl(38 26% 84%);
 }
 
 /* Money Colors */
@@ -399,23 +409,23 @@ body {
   transition: background-color 0.1s ease;
 }
 .table-row-hover:hover {
-  background-color: hsl(var(--primary) / 0.04);
+  background-color: hsl(220 10% 96%);
 }
 .table-row-hover:hover > div {
-  background-color: hsl(var(--primary) / 0.04);
+  background-color: hsl(220 10% 96%);
 }
 
 /* Attractive Gradients */
 .gradient-primary {
-  background: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
+  background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));
 }
 
 .gradient-success {
-  background: linear-gradient(135deg, hsl(142 71% 45%), hsl(158 64% 52%));
+  background: linear-gradient(135deg, hsl(142 42% 36%), hsl(158 32% 38%));
 }
 
 .text-gradient-primary {
-  background: linear-gradient(135deg, hsl(221 83% 53%), hsl(262 83% 58%));
+  background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
