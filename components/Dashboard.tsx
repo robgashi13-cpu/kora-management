@@ -1505,7 +1505,12 @@ export default function Dashboard() {
 
             // 3. Clear Dirty IDs on success
             if (salesRes.success) {
-                dirtyItems.forEach(s => dirtyIds.current.delete(s.id));
+                const failedIds = new Set(salesRes.failedIds || []);
+                dirtyItems.forEach(s => {
+                    if (!failedIds.has(s.id)) {
+                        dirtyIds.current.delete(s.id);
+                    }
+                });
             }
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
@@ -1553,6 +1558,10 @@ export default function Dashboard() {
             } else if (salesRes.error) {
                 console.error("Sales Sync Failed:", salesRes.error);
                 setSyncError(`Sales Sync Failed: ${salesRes.error} `);
+            }
+            if (salesRes.success && salesRes.error) {
+                console.warn("Sales Sync Partial Failure:", salesRes.error);
+                setSyncError(`Sales Sync Warning: ${salesRes.error} `);
             }
 
             // Sync Transactions

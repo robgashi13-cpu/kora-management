@@ -6,44 +6,50 @@ export const createSupabaseClient = (url: string, key: string): SupabaseClient =
 };
 
 // Helper to map Local (camel) to Remote (snake)
-const toRemote = (s: CarSale, userProfile: string) => ({
-    id: s.id,
-    brand: s.brand,
-    model: s.model,
-    year: s.year,
-    km: s.km,
-    color: s.color,
-    plate_number: s.plateNumber,
-    vin: s.vin,
-    seller_name: s.sellerName,
-    buyer_name: s.buyerName,
-    // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB. Saved in attachments.
-    shipping_name: s.shippingName,
-    shipping_date: s.shippingDate,
-    include_transport: s.includeTransport,
-    cost_to_buy: s.costToBuy,
-    sold_price: s.soldPrice,
-    amount_paid_cash: s.amountPaidCash,
-    amount_paid_bank: s.amountPaidBank,
-    deposit: s.deposit,
-    deposit_date: s.depositDate,
-    services_cost: s.servicesCost,
-    tax: s.tax,
-    amount_paid_by_client: s.amountPaidByClient,
-    amount_paid_to_korea: s.amountPaidToKorea,
-    paid_date_to_korea: s.paidDateToKorea,
-    paid_date_from_client: s.paidDateFromClient,
-    payment_method: s.paymentMethod,
-    status: s.status,
-    sort_order: s.sortOrder,
-    sold_by: s.soldBy,
-    // Use attachments JSONB for flexible storage of missing columns and full backup
-    attachments: {
-        ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
-        last_edited_by: userProfile
-    },
-    last_edited_by: userProfile,
-});
+const toRemote = (s: CarSale, userProfile: string) => {
+    const payload = {
+        id: s.id,
+        brand: s.brand,
+        model: s.model,
+        year: s.year,
+        km: s.km,
+        color: s.color,
+        plate_number: s.plateNumber,
+        vin: s.vin,
+        seller_name: s.sellerName,
+        buyer_name: s.buyerName,
+        // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB. Saved in attachments.
+        shipping_name: s.shippingName,
+        shipping_date: s.shippingDate,
+        include_transport: s.includeTransport,
+        cost_to_buy: s.costToBuy,
+        sold_price: s.soldPrice,
+        amount_paid_cash: s.amountPaidCash,
+        amount_paid_bank: s.amountPaidBank,
+        deposit: s.deposit,
+        deposit_date: s.depositDate,
+        services_cost: s.servicesCost,
+        tax: s.tax,
+        amount_paid_by_client: s.amountPaidByClient,
+        amount_paid_to_korea: s.amountPaidToKorea,
+        paid_date_to_korea: s.paidDateToKorea,
+        paid_date_from_client: s.paidDateFromClient,
+        payment_method: s.paymentMethod,
+        status: s.status,
+        sort_order: s.sortOrder,
+        // Use attachments JSONB for flexible storage of missing columns and full backup
+        attachments: {
+            ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
+            soldBy: s.soldBy,
+            last_edited_by: userProfile
+        },
+        last_edited_by: userProfile,
+    } as Record<string, unknown>;
+
+    return Object.fromEntries(
+        Object.entries(payload).filter(([, value]) => value !== undefined)
+    );
+};
 
 // Helper to map Remote (snake) to Local (camel)
 const fromRemote = (r: any): CarSale => ({
@@ -96,28 +102,40 @@ export const syncSalesWithSupabase = async (
     client: SupabaseClient,
     localSales: CarSale[],
     userProfile: string
-): Promise<{ success: boolean; data?: CarSale[]; error?: string }> => {
+): Promise<{ success: boolean; data?: CarSale[]; error?: string; failedIds?: string[] }> => {
     try {
         // 1. Upsert Local to Remote (Row-by-Row to isolate huge payloads)
         const salesToPush = localSales.map(s => toRemote(s, userProfile));
         let errorCount = 0;
         let lastError = "";
+        const failedIds: string[] = [];
 
         for (const item of salesToPush) {
             try {
+                const itemId = typeof item.id === 'string' ? item.id : undefined;
+                if (!itemId) {
+                    console.warn("Skipping sync item without id:", item);
+                    errorCount++;
+                    lastError = "Missing sale id.";
+                    failedIds.push("unknown-id");
+                    continue;
+                }
                 const { error: upsertError } = await client
                     .from('sales')
                     .upsert(item, { onConflict: 'id' });
 
                 if (upsertError) {
-                    console.error("Sync Error Item:", item.id, "Error:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
+                    console.error("Sync Error Item:", itemId, "Error:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
                     errorCount++;
                     lastError = upsertError.message || upsertError.code || upsertError.details || "Unknown sync error";
+                    failedIds.push(itemId);
                 }
             } catch (e: any) {
-                console.error("Network Sync Error Item:", item.id, e);
+                const itemId = typeof item.id === 'string' ? item.id : "unknown-id";
+                console.error("Network Sync Error Item:", itemId, e);
                 errorCount++;
                 lastError = e.message || "Network Error";
+                failedIds.push(itemId);
             }
         }
 
@@ -133,9 +151,10 @@ export const syncSalesWithSupabase = async (
 
         // 3. Map Remote to Local
         const syncedSales = remoteSales ? remoteSales.map(r => fromRemote(r)) : localSales;
+        const partialError = errorCount > 0 ? `Failed to sync ${errorCount} sale(s). Last error: ${lastError}` : undefined;
 
         // Return latest remote state (which includes our just-pushed changes generally, unless race condition)
-        return { success: true, data: syncedSales };
+        return { success: true, data: syncedSales, error: partialError, failedIds: failedIds.length ? failedIds : undefined };
 
     } catch (e: any) {
         console.error("Supabase Sync Exception:", e);

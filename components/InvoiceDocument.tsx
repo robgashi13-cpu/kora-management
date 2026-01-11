@@ -11,7 +11,7 @@ export interface InvoiceDocumentProps {
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false }, ref) => {
     return (
         <div
-            className="p-5 md:p-8 print:p-0"
+            className="p-5 md:p-8 print:p-0 pdf-root"
             id="invoice-content"
             ref={ref}
             style={{
@@ -55,7 +55,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] items-start gap-6 mb-6 border-t border-b border-gray-100 py-4" style={{ borderColor: '#f3f4f6' }}>
                 <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#9ca3af' }}>Bill To</h3>
-                    <div className="font-bold text-sm" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
+                    <div className="font-bold text-sm break-words" style={{ color: '#1f2937' }}>{sale.buyerName}</div>
                 </div>
                 <div className="md:text-right">
                     <div className="mb-2">
@@ -79,8 +79,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                             <div className="font-bold" style={{ color: '#111827' }}>
                                 {sale.year} {sale.brand} {sale.model}{withDogane ? ' ME DOGANË' : ''}
                             </div>
-                            <div className="text-sm" style={{ color: '#6b7280' }}>VIN: {sale.vin} | Color: {sale.color}</div>
-                            <div className="text-sm mt-1" style={{ color: '#6b7280' }}>Mileage: {(sale.km || 0).toLocaleString()} km</div>
+                            <div className="text-sm flex flex-wrap gap-x-4 gap-y-1" style={{ color: '#6b7280' }}>
+                                <span className="inline-flex flex-wrap gap-1 break-all">VIN: {sale.vin}</span>
+                                <span className="inline-flex flex-wrap gap-1">Color: {sale.color}</span>
+                            </div>
+                            <div className="text-sm mt-1 flex flex-wrap gap-x-2" style={{ color: '#6b7280' }}>Mileage: {(sale.km || 0).toLocaleString()} km</div>
                         </td>
                         <td className="py-3 text-right font-bold" style={{ color: '#111827' }}>€{((sale.soldPrice || 0) - 200).toLocaleString()}</td>
                     </tr>
