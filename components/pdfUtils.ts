@@ -78,6 +78,28 @@ export const sanitizePdfCloneStyles = (clonedDoc: Document) => {
   });
 };
 
+export const normalizePdfLayout = (clonedDoc: Document) => {
+  clonedDoc.querySelectorAll<HTMLElement>('[data-pdf-scale-wrapper]').forEach((node) => {
+    node.style.transform = 'none';
+    node.style.transformOrigin = 'top left';
+    node.style.width = '100%';
+    node.style.height = 'auto';
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>('.pdf-root').forEach((node) => {
+    node.style.boxShadow = 'none';
+    node.style.margin = '0';
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>('.shadow-2xl,.shadow-xl,.shadow-lg,.shadow-md,.shadow').forEach((node) => {
+    node.style.boxShadow = 'none';
+  });
+
+  if (clonedDoc.body) {
+    clonedDoc.body.style.backgroundColor = '#ffffff';
+  }
+};
+
 export const downloadPdfBlob = async (
   blob: Blob,
   filename: string
