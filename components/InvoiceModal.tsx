@@ -8,7 +8,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
-import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -49,6 +49,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
+                        normalizePdfLayout(clonedDoc);
                         const invoiceNode = clonedDoc.querySelector('#invoice-content');
                         clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
                             if (invoiceNode && node.closest('#invoice-content')) {

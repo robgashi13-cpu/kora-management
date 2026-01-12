@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -17,7 +17,7 @@ import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
-import { sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -897,6 +897,7 @@ export default function Dashboard() {
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
+                        normalizePdfLayout(clonedDoc);
                         const invoiceNode = clonedDoc.querySelector('#invoice-content');
                         clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
                             if (invoiceNode && node.closest('#invoice-content')) {
@@ -966,6 +967,7 @@ export default function Dashboard() {
                     backgroundColor: '#ffffff',
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
+                        normalizePdfLayout(clonedDoc);
                     }
                 },
             jsPDF: {
@@ -1861,6 +1863,8 @@ export default function Dashboard() {
         } catch (e) { console.error(e); }
     };
 
+    const deferredSearchTerm = useDeferredValue(searchTerm);
+
     const filteredSales = React.useMemo(() => sales.filter(s => {
         // Filter out system config rows
         if (s.id === 'config_profile_avatars') return false;
@@ -1875,7 +1879,7 @@ export default function Dashboard() {
         if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
         if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
 
-        const term = searchTerm.toLowerCase().trim();
+        const term = deferredSearchTerm.toLowerCase().trim();
         if (!term) return true;
         return JSON.stringify(s).toLowerCase().includes(term);
     }).sort((a, b) => {
@@ -1910,7 +1914,7 @@ export default function Dashboard() {
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         }
         return 0;
-    }), [sales, userProfile, activeCategory, searchTerm, sortBy, sortDir]);
+    }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir]);
     const selectedInvoices = React.useMemo(
         () => filteredSales.filter(sale => selectedIds.has(sale.id)),
         [filteredSales, selectedIds]

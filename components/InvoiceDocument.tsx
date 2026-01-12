@@ -213,6 +213,12 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     break-inside: avoid;
                 }
 
+                .invoice-header > div,
+                .invoice-client > div,
+                .invoice-footer-grid > div {
+                    min-width: 0;
+                }
+
                 .invoice-client {
                     display: grid;
                     grid-template-columns: 1fr;
@@ -230,6 +236,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     border-collapse: collapse;
                     margin-bottom: 18px;
                     break-inside: avoid;
+                    table-layout: fixed;
                 }
 
                 .invoice-summary {
@@ -297,6 +304,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 #invoice-content th,
                 #invoice-content td {
                     vertical-align: top;
+                    word-break: break-word;
                 }
                 #invoice-content tr {
                     break-inside: avoid;

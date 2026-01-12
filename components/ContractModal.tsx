@@ -5,7 +5,7 @@ import ContractDocument from './ContractDocument';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
-import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     sale: CarSale;
@@ -81,6 +81,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     logging: false,
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
+                        normalizePdfLayout(clonedDoc);
                     }
                 },
                 jsPDF: {
@@ -190,7 +191,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center">
                     {/* The "Paper" Scaled for Mobile */}
                     <div className="w-full flex justify-center">
-                        <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto">
+                        <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto" data-pdf-scale-wrapper>
                             <ContractDocument sale={sale} type={type} documentRef={printRef} />
                         </div>
                     </div>

@@ -8,7 +8,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
-import { downloadPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -153,6 +153,7 @@ export default function EditablePreviewModal({
           logging: false,
           onclone: (clonedDoc: Document) => {
             sanitizePdfCloneStyles(clonedDoc);
+            normalizePdfLayout(clonedDoc);
           }
         },
         jsPDF: {
