@@ -145,12 +145,13 @@ export default function EditablePreviewModal({
       const opt = {
         margin: 0,
         filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.92 },
         html2canvas: {
-          scale: 4,
+          scale: 3,
           useCORS: true,
           backgroundColor: '#ffffff',
           logging: false,
+          imageTimeout: 10000,
           onclone: (clonedDoc: Document) => {
             sanitizePdfCloneStyles(clonedDoc);
             normalizePdfLayout(clonedDoc);
@@ -338,18 +339,7 @@ export default function EditablePreviewModal({
   const sellerBusinessId = "NR.Biznesit 810062092";
   const fullSellerName = "RG SH.P.K";
   
-  const generateRefId = (): string => {
-    if (sale.id) return sale.id.slice(0, 8).toUpperCase();
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      try {
-        return crypto.randomUUID().slice(0, 8).toUpperCase();
-      } catch {
-        // Fallback for non-secure contexts
-      }
-    }
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
-  };
-  const saleRefId = generateRefId();
+  const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
   const documentTitle = documentType === 'invoice'
     ? 'Invoice'
     : documentType === 'deposit'
@@ -452,7 +442,9 @@ export default function EditablePreviewModal({
                   fontFamily: 'Georgia, "Times New Roman", Times, serif',
                   fontSize: '10pt',
                   lineHeight: 1.45,
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  textRendering: 'optimizeLegibility',
+                  WebkitFontSmoothing: 'antialiased'
                 }}
               >
               {documentType === 'deposit' ? (
@@ -465,7 +457,7 @@ export default function EditablePreviewModal({
                     </div>
 
                     <div className="flex justify-between mb-3 text-xs">
-                      <div>Nr. Ref: <strong>{saleRefId}</strong></div>
+                      <div>Nr. Ref: <strong>{referenceId}</strong></div>
                       <div>Data: <strong>{today}</strong></div>
                     </div>
 
@@ -764,7 +756,7 @@ export default function EditablePreviewModal({
                           </div>
 
                           <div className="mt-8 text-center text-xs text-slate-500">
-                            <p>Nr. Ref: {saleRefId} | Data: {today}</p>
+                            <p>Nr. Ref: {referenceId} | Data: {today}</p>
                           </div>
 
                           <div className="absolute bottom-4 left-0 right-0 text-center text-xs text-slate-500">
@@ -780,6 +772,7 @@ export default function EditablePreviewModal({
                           <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
                           <h1 className="text-sm font-bold uppercase mb-2 text-center">KONTRATË SHITBLERJE</h1>
                           <div className="font-bold mb-2 text-xs">Data: {today}</div>
+                          <div className="font-bold mb-2 text-xs">Nr. Ref: {referenceId}</div>
 
                           <h2 className="font-bold text-xs mb-2 underline">Marrëveshje për Blerjen e Automjetit</h2>
 

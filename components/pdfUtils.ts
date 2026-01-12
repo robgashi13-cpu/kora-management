@@ -95,6 +95,18 @@ export const normalizePdfLayout = (clonedDoc: Document) => {
     node.style.boxShadow = 'none';
   });
 
+  clonedDoc.querySelectorAll<HTMLElement>('.pdf-root').forEach((node) => {
+    node.style.textShadow = 'none';
+    node.style.filter = 'none';
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>('.pdf-root *').forEach((node) => {
+    node.style.textShadow = 'none';
+    node.style.textDecoration = 'none';
+    node.style.filter = 'none';
+    node.style.webkitFontSmoothing = 'antialiased';
+  });
+
   if (clonedDoc.body) {
     clonedDoc.body.style.backgroundColor = '#ffffff';
   }
