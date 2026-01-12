@@ -9,7 +9,7 @@ import { openPdfBlob } from './pdfUtils';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (sale: CarSale) => void;
+    onSave: (sale: CarSale) => Promise<{ success: boolean; error?: string }>;
     existingSale: CarSale | null;
     inline?: boolean;
     defaultStatus?: SaleStatus;
@@ -48,6 +48,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
+    const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
 
     const resolveSellerSelection = (sale: CarSale | null) => {
         const candidates = [sale?.soldBy, sale?.sellerName]
@@ -96,6 +97,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 depositInvoices: []
             });
         }
+        setSaveState({ saving: false });
     }, [existingSale, isOpen]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
@@ -168,14 +170,48 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (saveState.saving) return;
+        const requiredFields: Array<{ key: keyof CarSale; label: string }> = [
+            { key: 'brand', label: 'Brand' },
+            { key: 'model', label: 'Model' },
+            { key: 'buyerName', label: 'Buyer Name' },
+            { key: 'soldPrice', label: 'Sold Price' }
+        ];
+
+        const missingFields = requiredFields
+            .filter(({ key }) => {
+                const value = formData[key];
+                if (typeof value === 'number') {
+                    return Number.isNaN(value);
+                }
+                return !String(value ?? '').trim();
+            })
+            .map(({ label }) => label);
+
+        if (missingFields.length > 0) {
+            setSaveState({ saving: false, error: `Please fill out: ${missingFields.join(', ')}.` });
+            return;
+        }
+
+        setSaveState({ saving: true });
         const sale: CarSale = {
             ...formData as CarSale,
             id: existingSale?.id || crypto.randomUUID(),
             createdAt: existingSale?.createdAt || new Date().toISOString(),
         };
-        onSave(sale);
+        try {
+            const result = await onSave(sale);
+            if (!result.success) {
+                setSaveState({ saving: false, error: result.error || 'Update failed. Please try again.' });
+                return;
+            }
+            setSaveState({ saving: false, success: existingSale ? 'Updated successfully.' : 'Created successfully.' });
+        } catch (error) {
+            console.error('Save error', error);
+            setSaveState({ saving: false, error: 'Update failed. Please try again.' });
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -434,10 +470,24 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     {/* Footer Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
                         <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
-                        <button type="submit" className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto">
-                            {existingSale ? 'Update Sale' : 'Create Sale'}
+                        <button
+                            type="submit"
+                            disabled={saveState.saving}
+                            className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto"
+                        >
+                            {saveState.saving ? 'Saving...' : existingSale ? 'Update Sale' : 'Create Sale'}
                         </button>
                     </div>
+                    {(saveState.error || saveState.success) && (
+                        <div
+                            className={`mt-4 rounded-xl border px-4 py-3 text-sm font-semibold ${saveState.error
+                                ? 'border-red-200 bg-red-50 text-red-600'
+                                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                }`}
+                        >
+                            {saveState.error || saveState.success}
+                        </div>
+                    )}
                 </form>
             </div>
         </motion.div>

@@ -1617,10 +1617,10 @@ export default function Dashboard() {
         finally { setIsSyncing(false); }
     };
 
-    const handleAddSale = async (sale: CarSale) => {
+    const handleAddSale = async (sale: CarSale): Promise<{ success: boolean; error?: string }> => {
         if (!sale.id) {
             console.error("Attempted to save sale without ID");
-            return;
+            return { success: false, error: 'Missing sale ID.' };
         }
         setIsSyncing(true);
         dirtyIds.current.add(sale.id);
@@ -1641,13 +1641,12 @@ export default function Dashboard() {
             }
 
             await updateSalesAndSave(newSales);
-
-            alert(editingSale ? 'Sale updated successfully and saved to database!' : 'Sale created successfully and saved to database!');
             const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
             closeSaleForm(nextView);
+            return { success: true };
         } catch (e) {
             console.error("Save Error", e);
-            alert("Error saving sale. Data is saved locally but might not be synced.");
+            return { success: false, error: 'Error saving sale. Data is saved locally but might not be synced.' };
         } finally {
             setIsSyncing(false);
         }
