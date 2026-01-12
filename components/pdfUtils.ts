@@ -104,7 +104,7 @@ export const normalizePdfLayout = (clonedDoc: Document) => {
     node.style.textShadow = 'none';
     node.style.textDecoration = 'none';
     node.style.filter = 'none';
-    node.style.webkitFontSmoothing = 'antialiased';
+    (node.style as unknown as Record<string, string>).webkitFontSmoothing = 'antialiased';
   });
 
   if (clonedDoc.body) {
