@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CarSale, ContractType } from '@/app/types';
+import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 
 interface ContractDocumentProps {
     sale: CarSale;
@@ -43,13 +44,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
         );
     }
 
+    const displaySale = type === 'full_shitblerje' ? applyShitblerjeOverrides(sale) : sale;
+
     const today = new Date().toLocaleDateString('en-GB');
-    const shippingDate = formatDate(sale.shippingDate);
+    const shippingDate = formatDate(displaySale.shippingDate);
     const seller = { name: 'RG SH.P.K.', id: 'Business Nr 810062092', phone: '048181116' };
     const sellerBusinessId = 'NR.Biznesit 810062092';
     const fullSellerName = 'RG SH.P.K';
 
-    const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+    const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
 
     return (
         <div
@@ -106,11 +109,11 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <div className="text-xs space-y-1" style={{ lineHeight: 1.3 }}>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="min-w-16 font-semibold">Emri:</span>
-                                    <strong className="flex-1 break-words">{safeString(sale.buyerName)}</strong>
+                                    <strong className="flex-1 break-words">{safeString(displaySale.buyerName)}</strong>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="min-w-16 font-semibold">Nr. personal:</span>
-                                    <span className="flex-1 break-words">{safeString(sale.buyerPersonalId)}</span>
+                                    <span className="flex-1 break-words">{safeString(displaySale.buyerPersonalId)}</span>
                                 </div>
                             </div>
                         </div>
@@ -123,9 +126,9 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
                         </p>
                         <ul className="list-none text-xs font-bold" style={{ lineHeight: 1.4 }}>
-                            <li>- Marka: {safeString(sale.brand)}</li>
-                            <li>- Modeli: {safeString(sale.model)}</li>
-                            <li>- Nr. shasie: {safeString(sale.vin)}</li>
+                            <li>- Marka: {safeString(displaySale.brand)}</li>
+                            <li>- Modeli: {safeString(displaySale.model)}</li>
+                            <li>- Nr. shasie: {safeString(displaySale.vin)}</li>
                         </ul>
                     </div>
 
@@ -133,7 +136,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                     <div className="mb-2">
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                         <p className="text-xs">
-                            Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(sale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(sale.soldPrice)}€</strong>. Deri ne Prishtine
+                            Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(displaySale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
                         </p>
                     </div>
 
@@ -174,7 +177,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <div className="text-center">
                             <div className="text-xs mb-8">Blerësi (Nënshkrimi)</div>
                             <div className="border-b border-black mx-4"></div>
-                            <div className="mt-1 font-bold text-xs break-words">{safeString(sale.buyerName)}</div>
+                            <div className="mt-1 font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
                         </div>
                     </div>
                 </>
@@ -198,7 +201,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                                     <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                 </li>
                                 <li>
-                                    <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
+                                    <strong>Z. {safeString(displaySale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(displaySale.buyerPersonalId)}</strong>
                                 </li>
                             </ul>
                         </div>
@@ -207,15 +210,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
                             <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                             <div className="car-details">
-                                <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(sale.brand)} {safeString(sale.model)}</span></div>
-                                <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(sale.vin)}</span></div>
-                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(sale.year)}</span></div>
-                                <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(sale.km)}km</span></div>
+                                <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(displaySale.brand)} {safeString(displaySale.model)}</span></div>
+                                <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(displaySale.vin)}</span></div>
+                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(displaySale.year)}</span></div>
+                                <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(displaySale.km)}km</span></div>
                             </div>
                         </div>
 
                         <p className="font-bold mt-2 mb-2">
-                            {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
+                            {fullSellerName} vepron si shitës, ndërsa {safeString(displaySale.buyerName)} si blerës.
                         </p>
 
                         <hr className="mb-3 border-black" />
@@ -226,8 +229,8 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                    <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
+                                    <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                    <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
                                 </ul>
                             </li>
                             <li>
@@ -240,7 +243,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <li>
                                 <strong>Vonesa në Dorëzim</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(sale.soldPrice)} brenda 7 ditëve kalendarike.</li>
+                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(displaySale.soldPrice)} brenda 7 ditëve kalendarike.</li>
                                 </ul>
                             </li>
                             <li>
@@ -393,7 +396,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             </div>
                             <div className="signature-box w-2/5 text-right">
                                 <div className="mb-1 font-bold">Blerësi:</div>
-                                <div className="mb-10 break-words">{safeString(sale.buyerName)}</div>
+                                <div className="mb-10 break-words">{safeString(displaySale.buyerName)}</div>
                                 <div className="border-b border-black w-full"></div>
                                 <div className="mt-1">(Nënshkrimi)</div>
                             </div>
@@ -427,7 +430,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                                 <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                             </li>
                             <li>
-                                <strong>Z. {safeString(sale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(sale.buyerPersonalId)}</strong>
+                                <strong>Z. {safeString(displaySale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(displaySale.buyerPersonalId)}</strong>
                             </li>
                         </ul>
                     </div>
@@ -436,15 +439,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
                         <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                         <div className="car-details text-xs" style={{ padding: '8pt', margin: '6pt 0' }}>
-                            <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(sale.brand)} {safeString(sale.model)}</span></div>
-                            <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(sale.vin)}</span></div>
-                            <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(sale.year)}</span></div>
-                            <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(sale.km)}km</span></div>
+                            <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(displaySale.brand)} {safeString(displaySale.model)}</span></div>
+                            <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(displaySale.vin)}</span></div>
+                            <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(displaySale.year)}</span></div>
+                            <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(displaySale.km)}km</span></div>
                         </div>
                     </div>
 
                     <p className="font-bold mt-2 mb-2 text-xs">
-                        {fullSellerName} vepron si shitës, ndërsa {safeString(sale.buyerName)} si blerës.
+                        {fullSellerName} vepron si shitës, ndërsa {safeString(displaySale.buyerName)} si blerës.
                     </p>
 
                     <hr className="mb-3 border-black" />
@@ -455,8 +458,8 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <li className="mb-2">
                             <strong>Pagesa</strong>
                             <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>Shuma totale prej € {formatCurrency(sale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                <li>Një shumë prej € {formatCurrency(sale.deposit)} do të paguhet në dorë si kapar.</li>
+                                <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
                             </ul>
                         </li>
                         <li className="mb-2">
@@ -484,7 +487,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         </div>
                         <div className="w-1/2 text-right pl-4">
                             <div className="font-bold text-xs mb-1">Blerësi</div>
-                            <div className="text-xs mb-6 break-words">{safeString(sale.buyerName)}</div>
+                            <div className="text-xs mb-6 break-words">{safeString(displaySale.buyerName)}</div>
                             <div className="border-b border-black w-4/5 ml-auto"></div>
                         </div>
                     </div>

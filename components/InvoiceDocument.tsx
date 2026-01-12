@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CarSale } from '@/app/types';
+import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
@@ -19,15 +20,16 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, renderField }, ref) => {
+    const displaySale = applyShitblerjeOverrides(sale);
     const renderText = <K extends keyof CarSale>(
         fieldKey: K,
         fallback: React.ReactNode = '',
         options?: FieldRenderOptions
     ) => {
         if (renderField) {
-            return renderField(fieldKey, sale[fieldKey], options);
+            return renderField(fieldKey, displaySale[fieldKey], options);
         }
-        const value = sale[fieldKey];
+        const value = displaySale[fieldKey];
         if (value === undefined || value === null || value === '') {
             return fallback;
         }
@@ -43,14 +45,14 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
         options?: FieldRenderOptions
     ) => {
         if (renderField) {
-            return renderField(fieldKey, sale[fieldKey], options);
+            return renderField(fieldKey, displaySale[fieldKey], options);
         }
         return `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    const soldPriceValue = Number(sale.soldPrice || 0);
-    const amountPaidBankValue = Number(sale.amountPaidBank || 0);
-    const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+    const soldPriceValue = Number(displaySale.soldPrice || 0);
+    const amountPaidBankValue = Number(displaySale.amountPaidBank || 0);
+    const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
 
     return (
         <div
@@ -77,20 +79,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             {/* Invoice Header */}
             <div className="invoice-header">
-                <div>
-                    {/* Company Logo */}
+                <div className="invoice-header-left">
                     <img
                         src="/logo.jpg"
                         alt="KORAUTO Logo"
-                        style={{ height: '64px', width: 'auto', marginBottom: '16px' }}
+                        style={{ height: '56px', width: 'auto' }}
                     />
-                    <h1 style={{ color: '#000000', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.02em' }}>INVOICE</h1>
-                    <p style={{ color: '#000000', marginTop: '4px' }}>Ref: {referenceId}</p>
-                    <p style={{ color: '#000000', marginTop: '2px' }}>VIN: {renderText('vin', 'N/A')}</p>
+                    <div className="invoice-title">
+                        <div className="invoice-title-label">INVOICE</div>
+                        <div className="invoice-title-meta">Ref: {referenceId}</div>
+                        <div className="invoice-title-meta">VIN: {renderText('vin', 'N/A')}</div>
+                    </div>
                 </div>
                 <div className="invoice-header-right">
-                    <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '4px' }}>RG SH.P.K</div>
-                    <div style={{ color: '#000000', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700 }}>RG SH.P.K</div>
+                    <div style={{ color: '#000000', fontSize: '0.825rem', lineHeight: 1.55 }}>
                         Rr. Dardania 191<br />
                         Owner: Robert Gashi<br />
                         Phone: +383 48 181 116<br />
@@ -102,19 +105,19 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             {/* Client Info & Dates */}
             <div className="invoice-client" style={{ borderColor: '#000000' }}>
                 <div>
-                    <h3 style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Bill To</h3>
-                    <div style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, wordBreak: 'break-word' }}>
+                    <h3 className="invoice-section-title">Bill To</h3>
+                    <div style={{ color: '#000000', fontSize: '0.95rem', fontWeight: 700, wordBreak: 'break-word' }}>
                         {renderText('buyerName')}
                     </div>
                 </div>
                 <div className="invoice-client-right">
-                    <div style={{ marginBottom: '8px' }}>
-                        <span style={{ color: '#000000', fontSize: '0.875rem', marginRight: '16px' }}>Invoice Date:</span>
-                        <span style={{ color: '#000000', fontWeight: 500 }}>{new Date().toLocaleDateString()}</span>
+                    <div className="invoice-meta-line">
+                        <span>Invoice Date</span>
+                        <span>{new Date().toLocaleDateString()}</span>
                     </div>
-                    <div>
-                        <span style={{ color: '#000000', fontSize: '0.875rem', marginRight: '16px' }}>Reference:</span>
-                        <span style={{ color: '#000000', fontWeight: 700 }}>{referenceId}</span>
+                    <div className="invoice-meta-line">
+                        <span>Reference</span>
+                        <span style={{ fontWeight: 700 }}>{referenceId}</span>
                     </div>
                 </div>
             </div>
@@ -122,38 +125,37 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             {/* Line Items */}
             <table className="invoice-table">
                 <thead>
-                    <tr style={{ borderBottom: '2px solid #000000' }}>
-                        <th style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'left' }}>Description</th>
-                        <th style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'right' }}>Total</th>
+                    <tr>
+                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'left' }}>Description</th>
+                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'right' }}>Total</th>
                     </tr>
                 </thead>
                 <tbody style={{ color: '#000000' }}>
-                    <tr style={{ borderBottom: '1px solid #000000' }}>
-                        <td style={{ padding: '12px 0' }}>
+                    <tr>
+                        <td style={{ padding: '14px 0' }}>
                             <div style={{ color: '#000000', fontWeight: 700 }}>
                                 {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
                                 {renderText('brand')}{' '}
                                 {renderText('model')}
                                 {withDogane ? ' ME DOGANË' : ''}
                             </div>
-                            <div style={{ color: '#000000', fontSize: '0.875rem', display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
-                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', wordBreak: 'break-all' }}>
-                                    VIN: {renderText('vin', '', { className: 'font-mono break-all' })}
-                                </span>
-                                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px' }}>Color: {renderText('color')}</span>
+                            <div className="invoice-subline">
+                                <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
+                                <span>Color: {renderText('color')}</span>
+                                <span>Plate: {renderText('plateNumber', '—')}</span>
                             </div>
-                            <div style={{ color: '#000000', fontSize: '0.875rem', marginTop: '4px', display: 'flex', flexWrap: 'wrap', columnGap: '8px' }}>
+                            <div className="invoice-subline">
                                 Mileage: {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
                             </div>
                         </td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
+                        <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
                     </tr>
                     {!withDogane && (
-                        <tr style={{ borderBottom: '1px solid #000000' }}>
-                            <td style={{ padding: '12px 0' }}>
-                                <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                        <tr>
+                            <td style={{ padding: '10px 0' }}>
+                                <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.8rem' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
                             </td>
-                            <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
+                            <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
                         </tr>
                     )}
                 </tbody>
@@ -161,21 +163,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             {/* Totals */}
             <div className="invoice-summary">
-                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <div className="invoice-summary-row">
                     <span>Subtotal</span>
                     <span>€{(soldPriceValue - 200).toLocaleString()}</span>
                 </div>
-                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <div className="invoice-summary-row">
                     <span>Services</span>
                     <span>€169.49</span>
                 </div>
-                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #000000', marginBottom: '8px' }}>
+                <div className="invoice-summary-row invoice-summary-row-divider">
                     <span>Tax (TVSH 18%)</span>
                     <span>€30.51</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #000000' }}>
-                    <span style={{ color: '#000000', fontWeight: 700, fontSize: '1rem' }}>Grand Total</span>
-                    <span style={{ color: '#000000', fontWeight: 700, fontSize: '1rem' }}>
+                <div className="invoice-summary-total">
+                    <span>Grand Total</span>
+                    <span>
                         {renderCurrency('soldPrice', soldPriceValue, {
                             formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         })}
@@ -185,14 +187,14 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             {/* Footer */}
             <div className="invoice-footer" style={{ borderColor: '#000000', backgroundColor: '#ffffff' }}>
-                <h4 style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Payment Details</h4>
-                <div className="invoice-footer-grid" style={{ color: '#000000', fontSize: '0.875rem' }}>
+                <h4 className="invoice-section-title">Payment Details</h4>
+                <div className="invoice-footer-grid" style={{ color: '#000000', fontSize: '0.85rem' }}>
                     <div>
-                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
-                        <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #000000', display: 'inline-block' }}>1501080002435404</div>
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Raiffeisen Bank</div>
+                        <div className="invoice-bank-chip">1501080002435404</div>
                         <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
                         {amountPaidBankValue > 0 && (
-                            <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem' }}>
+                            <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', marginTop: '6px' }}>
                                 {renderCurrency('amountPaidBank', amountPaidBankValue, {
                                     formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
                                 })}
@@ -200,7 +202,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         )}
                     </div>
                     <div className="invoice-footer-right">
-                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '4px' }}>Contact</div>
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Contact</div>
                         <div>+383 48 181 116</div>
                         <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '16px' }}>Thank you for your business!</div>
                     </div>
@@ -209,16 +211,39 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             <style>{`
                 .invoice-root {
-                    padding: 18px;
+                    padding: 20px;
                 }
 
                 .invoice-header {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    gap: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 18px;
                     align-items: flex-start;
-                    margin-bottom: 18px;
+                    margin-bottom: 16px;
                     break-inside: avoid;
+                }
+
+                .invoice-header-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+
+                .invoice-title {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+
+                .invoice-title-label {
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    letter-spacing: 0.04em;
+                }
+
+                .invoice-title-meta {
+                    font-size: 0.8rem;
+                    color: #000000;
                 }
 
                 .invoice-header > div,
@@ -232,8 +257,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     grid-template-columns: 1fr;
                     gap: 20px;
                     align-items: flex-start;
-                    margin-bottom: 18px;
-                    padding: 12px 0;
+                    margin-bottom: 16px;
+                    padding: 12px 0 10px;
                     border-top: 1px solid;
                     border-bottom: 1px solid;
                     break-inside: avoid;
@@ -242,9 +267,44 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 .invoice-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 18px;
+                    margin-bottom: 16px;
                     break-inside: avoid;
                     table-layout: fixed;
+                }
+
+                .invoice-table thead tr {
+                    border-bottom: 1px solid #000000;
+                }
+
+                .invoice-table tbody tr {
+                    border-bottom: 1px solid #000000;
+                }
+
+                .invoice-subline {
+                    color: #000000;
+                    font-size: 0.8rem;
+                    display: flex;
+                    flex-wrap: wrap;
+                    column-gap: 16px;
+                    row-gap: 4px;
+                    margin-top: 4px;
+                }
+
+                .invoice-section-title {
+                    color: #000000;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                    margin-bottom: 10px;
+                }
+
+                .invoice-meta-line {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 16px;
+                    font-size: 0.85rem;
+                    color: #000000;
                 }
 
                 .invoice-summary {
@@ -253,26 +313,59 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     break-inside: avoid;
                 }
 
+                .invoice-summary-row {
+                    color: #000000;
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 6px 0;
+                }
+
+                .invoice-summary-row-divider {
+                    border-bottom: 1px solid #000000;
+                    margin-bottom: 6px;
+                    padding-bottom: 10px;
+                }
+
+                .invoice-summary-total {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 10px 0 4px;
+                    border-top: 2px solid #000000;
+                    font-weight: 700;
+                    font-size: 1rem;
+                }
+
                 .invoice-footer {
                     border-top: 1px solid;
-                    padding: 18px 18px 12px;
-                    margin-top: 18px;
+                    padding: 16px 18px 12px;
+                    margin-top: 16px;
                     break-inside: avoid;
                 }
 
                 .invoice-footer-grid {
                     display: grid;
                     grid-template-columns: 1fr;
-                    gap: 32px;
+                    gap: 24px;
+                }
+
+                .invoice-bank-chip {
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+                    background-color: #ffffff;
+                    padding: 6px 10px;
+                    border-radius: 8px;
+                    border: 1px solid #000000;
+                    display: inline-block;
                 }
 
                 @media (min-width: 768px) {
                     .invoice-root {
-                        padding: 24px;
+                        padding: 26px;
                     }
 
                     .invoice-header {
-                        grid-template-columns: repeat(2, minmax(0, 1fr));
+                        flex-direction: row;
+                        justify-content: space-between;
+                        align-items: flex-start;
                     }
 
                     .invoice-header-right,

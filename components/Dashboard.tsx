@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
-import { Attachment, CarSale, ContractType, SaleStatus } from '@/app/types';
+import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -12,6 +12,7 @@ import { Share } from '@capacitor/share';
 import { createRoot } from 'react-dom/client';
 import { zip } from 'fflate';
 import SaleModal from './SaleModal';
+import EditShitblerjeModal from './EditShitblerjeModal';
 import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
@@ -358,6 +359,9 @@ export default function Dashboard() {
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
+    const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
+    const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
+    const [editShitblerjeSale, setEditShitblerjeSale] = useState<CarSale | null>(null);
     const [formReturnView, setFormReturnView] = useState('dashboard');
     const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -444,9 +448,41 @@ export default function Dashboard() {
         setView('sale_form');
     };
 
+    const requestEditChoice = (sale: CarSale, returnView = view) => {
+        setEditChoiceSale(sale);
+        setEditChoiceReturnView(returnView);
+    };
+
+    const handleEditSaleChoice = () => {
+        if (!editChoiceSale) return;
+        const sale = editChoiceSale;
+        const returnView = editChoiceReturnView;
+        setEditChoiceSale(null);
+        openSaleForm(sale, returnView);
+    };
+
+    const handleEditShitblerjeChoice = () => {
+        if (!editChoiceSale) return;
+        const sale = editChoiceSale;
+        setEditChoiceSale(null);
+        setEditShitblerjeSale(sale);
+    };
+
     const closeSaleForm = (returnView = formReturnView) => {
         setEditingSale(null);
         setView(returnView);
+    };
+
+    const handleSaveShitblerjeOverrides = async (sale: CarSale, overrides: ShitblerjeOverrides) => {
+        dirtyIds.current.add(sale.id);
+        const currentSales = salesRef.current;
+        const newSales = currentSales.map(existing =>
+            existing.id === sale.id
+                ? { ...existing, shitblerjeOverrides: overrides }
+                : existing
+        );
+        await updateSalesAndSave(newSales);
+        setEditShitblerjeSale(null);
     };
 
     useEffect(() => { isFormOpenRef.current = isFormOpen; }, [isFormOpen]);
@@ -2444,7 +2480,7 @@ export default function Dashboard() {
                                                                             alert("You do not have permission to edit this sale.");
                                                                             return;
                                                                         }
-                                                                        openSaleForm(s);
+                                                                        requestEditChoice(s);
                                                                     }}
                                                                     onDelete={handleDeleteSingle}
                                                                     onRemoveFromGroup={handleRemoveFromGroup}
@@ -2496,13 +2532,13 @@ export default function Dashboard() {
                                                                 isSelected={selectedIds.has(s.id)}
                                                                 openInvoice={openInvoice}
                                                                 onInlineUpdate={handleInlineUpdate}
-                                                                onClick={() => {
-                                                                    if (!isAdmin && s.soldBy !== userProfile) {
-                                                                        alert("You do not have permission to edit this sale.");
-                                                                        return;
-                                                                    }
-                                                                    openSaleForm(s);
-                                                                }}
+                                                                    onClick={() => {
+                                                                        if (!isAdmin && s.soldBy !== userProfile) {
+                                                                            alert("You do not have permission to edit this sale.");
+                                                                            return;
+                                                                        }
+                                                                        requestEditChoice(s);
+                                                                    }}
                                                                 onDelete={handleDeleteSingle}
                                                                 onRemoveFromGroup={handleRemoveFromGroup}
                                                             />
@@ -2577,13 +2613,13 @@ export default function Dashboard() {
                                                                             isSelected={selectedIds.has(s.id)}
                                                                             openInvoice={openInvoice}
                                                                             onInlineUpdate={handleInlineUpdate}
-                                                                            onClick={() => {
-                                                                                if (!isAdmin && s.soldBy !== userProfile) {
-                                                                                    alert("You do not have permission to edit this sale.");
-                                                                                    return;
-                                                                                }
-                                                                                openSaleForm(s);
-                                                                            }}
+                                                                    onClick={() => {
+                                                                        if (!isAdmin && s.soldBy !== userProfile) {
+                                                                            alert("You do not have permission to edit this sale.");
+                                                                            return;
+                                                                        }
+                                                                        requestEditChoice(s);
+                                                                    }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
                                                                         />
@@ -2628,7 +2664,7 @@ export default function Dashboard() {
                                                             alert("You do not have permission to edit this sale.");
                                                             return;
                                                         }
-                                                        openSaleForm(s);
+                                                        requestEditChoice(s);
                                                     }}
                                                     onDelete={handleDeleteSingle}
                                                 />
@@ -2763,7 +2799,7 @@ export default function Dashboard() {
                                                                                         alert("You do not have permission to edit this sale.");
                                                                                         return;
                                                                                     }
-                                                                                    openSaleForm(sale);
+                                                                                    requestEditChoice(sale);
                                                                                 }
                                                                             }}
                                                                             onContextMenu={(e) => {
@@ -2890,7 +2926,7 @@ export default function Dashboard() {
                                                                                                 alert("You do not have permission to edit this sale.");
                                                                                                 return;
                                                                                             }
-                                                                                            openSaleForm(sale);
+                                                                                            requestEditChoice(sale);
                                                                                         }
                                                                                     }}
                                                                                     onContextMenu={(e) => {
@@ -2987,7 +3023,7 @@ export default function Dashboard() {
                                                                     alert("You do not have permission to edit this sale.");
                                                                     return;
                                                                 }
-                                                                openSaleForm(sale);
+                                                                requestEditChoice(sale);
                                                             }
                                                         }}
                                                         onContextMenu={(e) => {
@@ -3287,6 +3323,55 @@ export default function Dashboard() {
 
             </main>
             <AnimatePresence>
+                {editChoiceSale && (
+                    <motion.div
+                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => setEditChoiceSale(null)}
+                    >
+                        <motion.div
+                            className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.98 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h3 className="text-base font-semibold text-slate-900">What do you want to edit?</h3>
+                                    <p className="text-xs text-slate-500 mt-1">{editChoiceSale.brand} {editChoiceSale.model}</p>
+                                </div>
+                                <button
+                                    onClick={() => setEditChoiceSale(null)}
+                                    className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                    aria-label="Close"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="mt-4 flex flex-col gap-2">
+                                <button
+                                    onClick={handleEditSaleChoice}
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    Edit Sale
+                                </button>
+                                <button
+                                    onClick={handleEditShitblerjeChoice}
+                                    className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                                >
+                                    Edit Shitblerje
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
                 {view === 'sale_form' && (
                     <motion.div
                         className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
@@ -3336,6 +3421,12 @@ export default function Dashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <EditShitblerjeModal
+                isOpen={!!editShitblerjeSale}
+                sale={editShitblerjeSale}
+                onClose={() => setEditShitblerjeSale(null)}
+                onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
+            />
 
             {/* Contextual FAB for Inspections/Autosallon */}
             {documentPreview && (

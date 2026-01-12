@@ -1,6 +1,16 @@
 export type PaymentMethod = 'Cash' | 'Bank' | 'Mixed';
 export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled' | 'Inspection' | 'Autosallon';
 export type ContractType = 'deposit' | 'full_marreveshje' | 'full_shitblerje';
+export type ShitblerjeOverrides = {
+    brand?: string;
+    model?: string;
+    year?: number;
+    km?: number;
+    color?: string;
+    plateNumber?: string;
+    vin?: string;
+    soldPrice?: number;
+};
 
 export interface Attachment {
     name: string;
@@ -61,4 +71,5 @@ export interface CarSale {
     soldBy?: string;
     group?: string; // For grouping (e.g. "15 november SANG SHIN")
     invoiceId?: string;
+    shitblerjeOverrides?: ShitblerjeOverrides;
 }

@@ -8,6 +8,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
+import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
@@ -284,10 +285,17 @@ export default function EditablePreviewModal({
     );
   };
 
+  const sourceSale = useMemo(() => {
+    if (documentType === 'full_shitblerje') {
+      return applyShitblerjeOverrides(sale);
+    }
+    return sale;
+  }, [sale, documentType]);
+
   const previewSale = useMemo(() => ({
-    ...sale,
+    ...sourceSale,
     ...editedFields
-  }), [sale, editedFields]);
+  }), [sourceSale, editedFields]);
 
   type InvoiceFieldConfig = {
     type: 'number' | 'currency' | 'text';
@@ -339,7 +347,7 @@ export default function EditablePreviewModal({
   const sellerBusinessId = "NR.Biznesit 810062092";
   const fullSellerName = "RG SH.P.K";
   
-  const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+  const referenceId = (sourceSale.invoiceId || sourceSale.id || sourceSale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
   const documentTitle = documentType === 'invoice'
     ? 'Invoice'
     : documentType === 'deposit'

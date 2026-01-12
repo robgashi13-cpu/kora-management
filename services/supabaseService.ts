@@ -93,6 +93,7 @@ const fromRemote = (r: any): CarSale => ({
     // Recover fields from attachments if not in columns
     notes: r.notes || r.attachments?.notes,
     group: r.group || r.attachments?.group,
+    shitblerjeOverrides: r.attachments?.shitblerjeOverrides,
 
     createdAt: r.created_at || r.attachments?.createdAt || new Date().toISOString(),
     soldBy: r.sold_by || r.attachments?.soldBy,
