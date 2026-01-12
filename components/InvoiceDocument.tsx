@@ -50,6 +50,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
     const soldPriceValue = Number(sale.soldPrice || 0);
     const amountPaidBankValue = Number(sale.amountPaidBank || 0);
+    const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
 
     return (
         <div
@@ -68,7 +69,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 minHeight: '297mm',
                 height: 'auto',
                 overflowWrap: 'anywhere',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                textRendering: 'optimizeLegibility',
+                WebkitFontSmoothing: 'antialiased'
             }}
         >
 
@@ -81,12 +84,13 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         alt="KORAUTO Logo"
                         style={{ height: '64px', width: 'auto', marginBottom: '16px' }}
                     />
-                    <h1 style={{ color: '#111827', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.02em' }}>INVOICE</h1>
-                    <p style={{ color: '#6b7280', marginTop: '4px' }}>#{sale.vin?.slice(-6).toUpperCase() || 'N/A'}</p>
+                    <h1 style={{ color: '#000000', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.02em' }}>INVOICE</h1>
+                    <p style={{ color: '#000000', marginTop: '4px' }}>Ref: {referenceId}</p>
+                    <p style={{ color: '#000000', marginTop: '2px' }}>VIN: {renderText('vin', 'N/A')}</p>
                 </div>
                 <div className="invoice-header-right">
                     <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '4px' }}>RG SH.P.K</div>
-                    <div style={{ color: '#6b7280', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                    <div style={{ color: '#000000', fontSize: '0.875rem', lineHeight: 1.6 }}>
                         Rr. Dardania 191<br />
                         Owner: Robert Gashi<br />
                         Phone: +383 48 181 116<br />
@@ -96,17 +100,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             </div>
 
             {/* Client Info & Dates */}
-            <div className="invoice-client" style={{ borderColor: '#f3f4f6' }}>
+            <div className="invoice-client" style={{ borderColor: '#000000' }}>
                 <div>
-                    <h3 style={{ color: '#9ca3af', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Bill To</h3>
-                    <div style={{ color: '#1f2937', fontSize: '0.875rem', fontWeight: 700, wordBreak: 'break-word' }}>
+                    <h3 style={{ color: '#000000', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Bill To</h3>
+                    <div style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, wordBreak: 'break-word' }}>
                         {renderText('buyerName')}
                     </div>
                 </div>
                 <div className="invoice-client-right">
                     <div style={{ marginBottom: '8px' }}>
-                        <span style={{ color: '#6b7280', fontSize: '0.875rem', marginRight: '16px' }}>Invoice Date:</span>
-                        <span style={{ color: '#1f2937', fontWeight: 500 }}>{new Date().toLocaleDateString()}</span>
+                        <span style={{ color: '#000000', fontSize: '0.875rem', marginRight: '16px' }}>Invoice Date:</span>
+                        <span style={{ color: '#000000', fontWeight: 500 }}>{new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div>
+                        <span style={{ color: '#000000', fontSize: '0.875rem', marginRight: '16px' }}>Reference:</span>
+                        <span style={{ color: '#000000', fontWeight: 700 }}>{referenceId}</span>
                     </div>
                 </div>
             </div>
@@ -114,38 +122,38 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             {/* Line Items */}
             <table className="invoice-table">
                 <thead>
-                    <tr style={{ borderBottom: '2px solid #111827' }}>
-                        <th style={{ color: '#4b5563', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'left' }}>Description</th>
-                        <th style={{ color: '#4b5563', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'right' }}>Total</th>
+                    <tr style={{ borderBottom: '2px solid #000000' }}>
+                        <th style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'left' }}>Description</th>
+                        <th style={{ color: '#000000', fontSize: '0.875rem', fontWeight: 700, textTransform: 'uppercase', padding: '8px 0', textAlign: 'right' }}>Total</th>
                     </tr>
                 </thead>
-                <tbody style={{ color: '#374151' }}>
-                    <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <tbody style={{ color: '#000000' }}>
+                    <tr style={{ borderBottom: '1px solid #000000' }}>
                         <td style={{ padding: '12px 0' }}>
-                            <div style={{ color: '#111827', fontWeight: 700 }}>
+                            <div style={{ color: '#000000', fontWeight: 700 }}>
                                 {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
                                 {renderText('brand')}{' '}
                                 {renderText('model')}
                                 {withDogane ? ' ME DOGANË' : ''}
                             </div>
-                            <div style={{ color: '#6b7280', fontSize: '0.875rem', display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
+                            <div style={{ color: '#000000', fontSize: '0.875rem', display: 'flex', flexWrap: 'wrap', columnGap: '16px', rowGap: '4px' }}>
                                 <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', wordBreak: 'break-all' }}>
                                     VIN: {renderText('vin', '', { className: 'font-mono break-all' })}
                                 </span>
                                 <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px' }}>Color: {renderText('color')}</span>
                             </div>
-                            <div style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '4px', display: 'flex', flexWrap: 'wrap', columnGap: '8px' }}>
+                            <div style={{ color: '#000000', fontSize: '0.875rem', marginTop: '4px', display: 'flex', flexWrap: 'wrap', columnGap: '8px' }}>
                                 Mileage: {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
                             </div>
                         </td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#111827' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
+                        <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
                     </tr>
                     {!withDogane && (
-                        <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
+                        <tr style={{ borderBottom: '1px solid #000000' }}>
                             <td style={{ padding: '12px 0' }}>
-                                <div style={{ color: '#111827', fontWeight: 700, textTransform: 'uppercase' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                                <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
                             </td>
-                            <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#111827' }}></td>
+                            <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
                         </tr>
                     )}
                 </tbody>
@@ -153,21 +161,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             {/* Totals */}
             <div className="invoice-summary">
-                <div style={{ color: '#4b5563', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                     <span>Subtotal</span>
                     <span>€{(soldPriceValue - 200).toLocaleString()}</span>
                 </div>
-                <div style={{ color: '#4b5563', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
                     <span>Services</span>
                     <span>€169.49</span>
                 </div>
-                <div style={{ color: '#4b5563', display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e7eb', marginBottom: '8px' }}>
+                <div style={{ color: '#000000', display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #000000', marginBottom: '8px' }}>
                     <span>Tax (TVSH 18%)</span>
                     <span>€30.51</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #111827' }}>
-                    <span style={{ color: '#111827', fontWeight: 700, fontSize: '1rem' }}>Grand Total</span>
-                    <span style={{ color: '#111827', fontWeight: 700, fontSize: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '2px solid #000000' }}>
+                    <span style={{ color: '#000000', fontWeight: 700, fontSize: '1rem' }}>Grand Total</span>
+                    <span style={{ color: '#000000', fontWeight: 700, fontSize: '1rem' }}>
                         {renderCurrency('soldPrice', soldPriceValue, {
                             formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         })}
@@ -176,15 +184,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             </div>
 
             {/* Footer */}
-            <div className="invoice-footer" style={{ borderColor: '#f3f4f6', backgroundColor: '#f9fafb' }}>
-                <h4 style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Payment Details</h4>
-                <div className="invoice-footer-grid" style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+            <div className="invoice-footer" style={{ borderColor: '#000000', backgroundColor: '#ffffff' }}>
+                <h4 style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Payment Details</h4>
+                <div className="invoice-footer-grid" style={{ color: '#000000', fontSize: '0.875rem' }}>
                     <div>
-                        <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
-                        <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', display: 'inline-block' }}>1501080002435404</div>
-                        <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '4px' }}>Raiffeisen Bank</div>
+                        <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', backgroundColor: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #000000', display: 'inline-block' }}>1501080002435404</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
                         {amountPaidBankValue > 0 && (
-                            <div style={{ color: '#111827', fontWeight: 700, fontSize: '0.875rem' }}>
+                            <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem' }}>
                                 {renderCurrency('amountPaidBank', amountPaidBankValue, {
                                     formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
                                 })}
@@ -192,9 +200,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         )}
                     </div>
                     <div className="invoice-footer-right">
-                        <div style={{ color: '#111827', fontWeight: 700, marginBottom: '4px' }}>Contact</div>
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '4px' }}>Contact</div>
                         <div>+383 48 181 116</div>
-                        <div style={{ color: '#9ca3af', fontSize: '0.75rem', marginTop: '16px' }}>Thank you for your business!</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '16px' }}>Thank you for your business!</div>
                     </div>
                 </div>
             </div>
@@ -309,6 +317,13 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 #invoice-content tr {
                     break-inside: avoid;
                     page-break-inside: avoid;
+                }
+                #invoice-content,
+                #invoice-content * {
+                    color: #000000 !important;
+                    text-shadow: none !important;
+                    text-decoration: none !important;
+                    filter: none !important;
                 }
             `}</style>
         </div>

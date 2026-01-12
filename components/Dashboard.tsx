@@ -889,12 +889,13 @@ export default function Dashboard() {
         const opt = {
             margin: 0,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
-            image: { type: 'jpeg' as const, quality: 0.98 },
+            image: { type: 'jpeg' as const, quality: 0.92 },
                 html2canvas: {
-                    scale: 4,
+                    scale: 3,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
+                    imageTimeout: 10000,
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
                         normalizePdfLayout(clonedDoc);
@@ -959,12 +960,13 @@ export default function Dashboard() {
         const opt = {
             margin: 0,
             filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.98 },
+            image: { type: 'jpeg' as const, quality: 0.92 },
                 html2canvas: {
-                    scale: 4,
+                    scale: 3,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
+                    imageTimeout: 10000,
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
                         normalizePdfLayout(clonedDoc);

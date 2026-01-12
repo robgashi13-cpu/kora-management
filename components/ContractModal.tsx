@@ -73,12 +73,13 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const opt = {
                 margin: 0,
                 filename: `Contract_${safeBrand}_${safeModel}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
+                image: { type: 'jpeg' as const, quality: 0.92 },
                 html2canvas: {
-                    scale: 4,
+                    scale: 3,
                     useCORS: true,
                     backgroundColor: '#ffffff',
                     logging: false,
+                    imageTimeout: 10000,
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
                         normalizePdfLayout(clonedDoc);

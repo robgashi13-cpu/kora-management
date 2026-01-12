@@ -49,18 +49,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
     const sellerBusinessId = 'NR.Biznesit 810062092';
     const fullSellerName = 'RG SH.P.K';
 
-    const generateRefId = (): string => {
-        if (sale.id) return sale.id.slice(0, 8).toUpperCase();
-        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-            try {
-                return crypto.randomUUID().slice(0, 8).toUpperCase();
-            } catch {
-                // Fallback for non-secure contexts
-            }
-        }
-        return Math.random().toString(36).substring(2, 10).toUpperCase();
-    };
-    const saleRefId = generateRefId();
+    const referenceId = (sale.invoiceId || sale.id || sale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
 
     return (
         <div
@@ -73,7 +62,9 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                 lineHeight: type === 'deposit' ? 1.25 : type === 'full_shitblerje' ? 1.3 : 1.4,
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                textRendering: 'optimizeLegibility',
+                WebkitFontSmoothing: 'antialiased'
             }}
         >
             {type === 'deposit' && (
@@ -87,7 +78,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
 
                     {/* Reference and Date */}
                     <div className="flex justify-between mb-2 text-xs">
-                        <div>Nr. Ref: <strong>{saleRefId}</strong></div>
+                        <div>Nr. Ref: <strong>{referenceId}</strong></div>
                         <div>Data: <strong>{today}</strong></div>
                     </div>
 
@@ -196,6 +187,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
+                        <div className="font-bold mb-2" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 
                         <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
@@ -408,7 +400,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                         </div>
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
-                            <p>Nr. Ref: {saleRefId} | Data: {today}</p>
+                            <p>Nr. Ref: {referenceId} | Data: {today}</p>
                         </div>
 
                         {/* Page number */}
@@ -424,6 +416,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                     <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
                     <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
                     <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Data: {today}</div>
+                    <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 
                     <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
@@ -509,6 +502,12 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-box { width: 40%; position: relative; height: 100px; }
                 .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }
+                .pdf-root,
+                .pdf-root * {
+                    text-shadow: none;
+                    text-decoration: none;
+                    filter: none;
+                }
 
                 @media print {
                     .page-break { page-break-before: always; }

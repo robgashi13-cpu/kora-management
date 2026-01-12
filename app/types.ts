@@ -60,4 +60,5 @@ export interface CarSale {
     sortOrder?: number;
     soldBy?: string;
     group?: string; // For grouping (e.g. "15 november SANG SHIN")
+    invoiceId?: string;
 }

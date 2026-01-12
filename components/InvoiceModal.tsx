@@ -41,12 +41,13 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             const opt = {
                 margin: 0,
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.98 },
+                image: { type: 'jpeg' as const, quality: 0.92 },
                 html2canvas: {
-                    scale: 4,
+                    scale: 3,
                     useCORS: true,
                     logging: false,
                     backgroundColor: '#ffffff',
+                    imageTimeout: 10000,
                     onclone: (clonedDoc: Document) => {
                         sanitizePdfCloneStyles(clonedDoc);
                         normalizePdfLayout(clonedDoc);
