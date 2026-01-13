@@ -219,8 +219,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                         src="/stamp.jpeg"
                         alt="Official Stamp"
                         style={{
-                            width: '176px',
-                            height: '176px'
+                            width: '196px',
+                            height: '196px'
                         }}
                     />
                 </div>
