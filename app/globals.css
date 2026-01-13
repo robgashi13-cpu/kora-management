@@ -148,7 +148,7 @@ button {
 :root {
   --cols-admin: 26px minmax(150px, 1.8fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 82px 90px 104px 56px 64px 82px 100px 92px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
   --cols-user: 26px minmax(160px, 1.9fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 90px 104px 56px 64px 100px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
-  --row-height-compact: 18px;
+  --row-height-compact: 16px;
 }
 
 @media (min-width: 1367px) {
@@ -163,8 +163,8 @@ button {
 .table-row-compact > div {
   padding-top: 1px;
   padding-bottom: 1px;
-  font-size: 0.6rem;
-  line-height: 1.2;
+  font-size: 0.58rem;
+  line-height: 1.1;
   min-height: var(--row-height-compact);
   min-width: 0;
   overflow: hidden;
@@ -176,7 +176,7 @@ button {
   .table-row-compact > div {
     padding-top: 2px;
     padding-bottom: 2px;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
   }
 }
 
@@ -184,7 +184,7 @@ button {
   .table-row-compact > div {
     padding-top: 3px;
     padding-bottom: 3px;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 }
 

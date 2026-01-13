@@ -53,12 +53,19 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
     const fullSellerName = 'RG SH.P.K';
 
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+    const isSinglePage = type === 'deposit' || type === 'full_shitblerje';
+    const rootPaddingClass = type === 'deposit'
+        ? 'p-[1.2cm] pt-[1.6cm]'
+        : type === 'full_shitblerje'
+            ? 'p-[1.6cm] pt-[2cm]'
+            : 'p-0';
+    const rootHeightClass = isSinglePage ? 'h-[29.7cm]' : 'min-h-[29.7cm]';
 
     return (
         <div
             ref={documentRef}
             data-contract-document
-            className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm] pt-[1.8cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm] pt-[2cm]' : 'min-h-[29.7cm] p-[2cm] pt-[2.5cm]'}`}
+            className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${rootHeightClass} ${rootPaddingClass}`}
             style={{
                 fontFamily: '"Times New Roman", Times, serif',
                 fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt',
@@ -67,7 +74,8 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                 wordBreak: 'break-word',
                 boxSizing: 'border-box',
                 textRendering: 'optimizeLegibility',
-                WebkitFontSmoothing: 'antialiased'
+                WebkitFontSmoothing: 'antialiased',
+                overflow: isSinglePage ? 'hidden' : 'visible'
             }}
         >
             {type === 'deposit' && (
@@ -186,7 +194,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
             {type === 'full_marreveshje' && (
                 <div className="max-w-2xl mx-auto" style={{ fontSize: '8pt', lineHeight: 1.25 }}>
                     {/* ===== PAGE 1 ===== */}
-                    <div className="page-1 relative" style={{ minHeight: '27.7cm', paddingBottom: '1.5cm' }}>
+                    <div className="page-1 relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
@@ -264,7 +272,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                     </div>
 
                     {/* ===== PAGE 2 - Warranty Terms ===== */}
-                    <div className="page-2 page-break relative" style={{ minHeight: '27.7cm', paddingTop: '0.8cm', paddingBottom: '1.5cm' }}>
+                    <div className="page-2 page-break relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
 
                         <div className="mb-3">
@@ -360,7 +368,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                     </div>
 
                     {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
-                    <div className="page-3 page-break relative" style={{ minHeight: '27.7cm', paddingTop: '0.8cm', paddingBottom: '1.5cm' }}>
+                    <div className="page-3 page-break relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
 
                         <div className="mb-3">
