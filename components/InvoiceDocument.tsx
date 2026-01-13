@@ -215,21 +215,20 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             {/* Stamp Section - Only shown when withStamp is true */}
             {withStamp && (
                 <div className="invoice-stamp" style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <img 
-                        src="/stamp.jpeg" 
-                        alt="Official Stamp" 
-                        style={{ 
-                            width: '130px', 
-                            height: 'auto',
-                            opacity: 0.9
-                        }} 
+                    <img
+                        src="/stamp.jpeg"
+                        alt="Official Stamp"
+                        style={{
+                            width: '160px',
+                            height: '160px'
+                        }}
                     />
                 </div>
             )}
 
             <style>{`
                 .invoice-root {
-                    padding: 20px;
+                    padding: 48px;
                 }
 
                 .invoice-header {
