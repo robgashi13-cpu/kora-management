@@ -197,7 +197,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         </div>
                         {withStamp && (
                             <div className="signature-stamp-row">
-                                <StampImage className="signature-stamp" />
+                                <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
                             </div>
                         )}
                     </div>
@@ -568,6 +568,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     margin: 0;
                 }
                 .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 110px); }
+                .signature-stamp-deposit { margin-left: calc((240px - 220px) / 2); }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;

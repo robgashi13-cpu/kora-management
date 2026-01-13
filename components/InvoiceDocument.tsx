@@ -392,6 +392,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     width: 220px;
                     height: 220px;
                     object-fit: contain;
+                    margin-top: -122px;
                 }
 
                 @media (min-width: 768px) {
