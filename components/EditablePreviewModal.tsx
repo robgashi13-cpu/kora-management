@@ -34,6 +34,7 @@ export default function EditablePreviewModal({
   const [activeEdit, setActiveEdit] = useState<string | null>(null);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [withStamp, setWithStamp] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -61,6 +62,12 @@ export default function EditablePreviewModal({
       setError(null);
     }
   }, [isOpen, sale]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setWithStamp(false);
+    }
+  }, [isOpen, documentType]);
 
   const getValue = useCallback((key: string) => {
     return editedFields[key] !== undefined ? editedFields[key] : (sale as any)[key];
@@ -218,6 +225,7 @@ export default function EditablePreviewModal({
 
   // Editable inline field component
   const isInvoice = documentType === 'invoice';
+  const canToggleStamp = documentType === 'invoice' || documentType === 'full_shitblerje';
 
   const EditableField = ({ 
     fieldKey, 
@@ -387,6 +395,21 @@ export default function EditablePreviewModal({
                   {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
                 </button>
               )}
+              {canToggleStamp && (
+                <button
+                  type="button"
+                  onClick={() => setWithStamp(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${
+                    withStamp
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  }`}
+                  aria-pressed={withStamp}
+                >
+                  <span>Stamp</span>
+                  <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
+                </button>
+              )}
               <button
                 onClick={handleReset}
                 className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[11px]"
@@ -439,20 +462,22 @@ export default function EditablePreviewModal({
               <InvoiceDocument
                 sale={previewSale}
                 withDogane={withDogane}
+                withStamp={withStamp}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />
             ) : (
               <div
                 ref={printRef}
-                className={`bg-white w-[21cm] ${isInvoice ? 'h-[29.7cm]' : 'min-h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
+                className={`bg-white w-[21cm] ${documentType === 'full_marreveshje' ? 'min-h-[29.7cm]' : 'h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
                 style={{
                   fontFamily: 'Georgia, "Times New Roman", Times, serif',
                   fontSize: '10pt',
                   lineHeight: 1.45,
                   boxSizing: 'border-box',
                   textRendering: 'optimizeLegibility',
-                  WebkitFontSmoothing: 'antialiased'
+                  WebkitFontSmoothing: 'antialiased',
+                  overflow: documentType === 'full_marreveshje' ? 'visible' : 'hidden'
                 }}
               >
               {documentType === 'deposit' ? (
@@ -852,6 +877,15 @@ export default function EditablePreviewModal({
                               <div className="border-b border-black w-4/5 ml-auto"></div>
                             </div>
                           </div>
+                          {withStamp && (
+                            <div className="mt-4 flex justify-end">
+                              <img
+                                src="/stamp.jpeg"
+                                alt="Official Stamp"
+                                className="h-12 w-auto opacity-90"
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -870,7 +904,7 @@ export default function EditablePreviewModal({
         }
         .pdf-page {
           min-height: 27.7cm;
-          padding-bottom: 1.5cm;
+          padding: 1.4cm 1.6cm 1.5cm;
           position: relative;
           box-sizing: border-box;
           overflow-wrap: anywhere;

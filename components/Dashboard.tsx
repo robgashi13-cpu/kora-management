@@ -2790,7 +2790,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }
                                                                             }}
-                                                                            className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                                            className="p-2 flex items-center gap-2 relative z-10 transition-colors"
                                                                             onClick={() => {
                                                                                 if (selectedIds.size > 0) {
                                                                                     toggleSelection(sale.id);
@@ -2816,14 +2816,14 @@ export default function Dashboard() {
 
                                                                             <div className="flex-1 min-w-0">
                                                                                 <div className="flex justify-between items-start">
-                                                                                    <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                    <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                    <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                         (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                             sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                 'bg-slate-100 text-slate-500'
                                                                                         }`}>{sale.status}</span>
                                                                                 </div>
-                                                                                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
+                                                                                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
                                                                                     <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                                                     {(isAdmin || sale.soldBy === userProfile) ? (
                                                                                         <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
@@ -2834,7 +2834,7 @@ export default function Dashboard() {
                                                                                     )}
                                                                                 </div>
                                                                                 {isAdmin && (
-                                                                                    <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
+                                                                                    <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
                                                                                         <span className="text-slate-400">Korea:</span>
                                                                                         <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                                                                             {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
@@ -2844,13 +2844,13 @@ export default function Dashboard() {
                                                                                 {groupingEnabled && sale.group && (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                        className="mt-1 text-[10px] text-red-500 font-semibold hover:text-red-600"
-                                                                                    >
-                                                                                        Remove from group
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        </motion.div>
+                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                >
+                                                                                    Remove from group
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+                                                                    </motion.div>
                                                                     </motion.div>
                                                                 ))}
                                                             </div>
@@ -2917,7 +2917,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }
                                                                                     }}
-                                                                                    className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                                                    className="p-2 flex items-center gap-2 relative z-10 transition-colors"
                                                                                     onClick={() => {
                                                                                         if (selectedIds.size > 0) {
                                                                                             toggleSelection(sale.id);
@@ -2942,39 +2942,39 @@ export default function Dashboard() {
                                                                                     )}
                                                                                     <div className="flex-1 min-w-0">
                                                                                         <div className="flex justify-between items-start">
-                                                                                            <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                                    sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                        'bg-slate-100 text-slate-500'
-                                                                                                }`}>{sale.status}</span>
-                                                                                        </div>
-                                                                                        <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
-                                                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                            {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                                <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                    {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                                </span>
-                                                                                            ) : (
-                                                                                                <span className="font-mono text-slate-400">-</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        {isAdmin && (
-                                                                                            <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
-                                                                                                <span className="text-slate-400">Korea:</span>
-                                                                                                <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                    {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                                </span>
-                                                                                            </div>
+                                                                                        <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            }`}>{sale.status}</span>
+                                                                                    </div>
+                                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="font-mono text-slate-400">-</span>
                                                                                         )}
-                                                                                        {groupingEnabled && sale.group && (
-                                                                                            <button
-                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                                className="mt-1 text-[10px] text-red-500 font-semibold hover:text-red-600"
-                                                                                            >
-                                                                                                Remove from group
-                                                                                            </button>
-                                                                                        )}
+                                                                                    </div>
+                                                                                    {isAdmin && (
+                                                                                        <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                            <span className="text-slate-400">Korea:</span>
+                                                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {groupingEnabled && sale.group && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                        >
+                                                                                            Remove from group
+                                                                                        </button>
+                                                                                    )}
                                                                                     </div>
                                                                                 </motion.div>
                                                                             </motion.div>

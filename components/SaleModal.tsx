@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
@@ -49,6 +49,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
+    const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
+    const closeRequestedRef = useRef(false);
 
     const resolveSellerSelection = (sale: CarSale | null) => {
         const candidates = [sale?.soldBy, sale?.sellerName]
@@ -85,20 +87,29 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (!migratedSale.depositInvoices) migratedSale.depositInvoices = [];
 
             const resolvedSeller = resolveSellerSelection(migratedSale);
-            setFormData({
+            const nextFormData = {
                 ...migratedSale,
                 ...resolvedSeller
-            });
+            };
+            setFormData(nextFormData);
+            initialFormDataRef.current = nextFormData;
         } else {
-            setFormData({
+            const nextFormData = {
                 ...EMPTY_SALE,
                 bankReceipts: [],
                 bankInvoices: [],
                 depositInvoices: []
-            });
+            };
+            setFormData(nextFormData);
+            initialFormDataRef.current = nextFormData;
         }
         setSaveState({ saving: false });
     }, [existingSale, isOpen]);
+
+    const isDirty = useMemo(() => {
+        if (!initialFormDataRef.current) return false;
+        return JSON.stringify(formData) !== JSON.stringify(initialFormDataRef.current);
+    }, [formData]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
         const files = e.target.files;
@@ -169,6 +180,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             }
         }
     };
+
+    const handleRequestClose = useCallback(() => {
+        if (!inline && window.history.state?.saleModalOpen) {
+            closeRequestedRef.current = true;
+            window.history.back();
+        }
+        onClose();
+    }, [inline, onClose]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -254,9 +273,36 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget && !inline) {
-            onClose();
+            handleRequestClose();
         }
     };
+
+    useEffect(() => {
+        if (!isOpen || inline) return;
+        const state = { ...window.history.state, saleModalOpen: true };
+        window.history.pushState(state, '');
+
+        const handlePopState = () => {
+            if (!isOpen) return;
+            if (closeRequestedRef.current) {
+                closeRequestedRef.current = false;
+                return;
+            }
+            if (isDirty) {
+                const confirmDiscard = window.confirm('Discard changes?');
+                if (!confirmDiscard) {
+                    window.history.pushState(state, '');
+                    return;
+                }
+            }
+            onClose();
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [inline, isDirty, isOpen, onClose]);
 
     // Helper for KM formatting
     const handleKmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,7 +360,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
                     <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                     {!inline && (
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                        <button onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
                             <X className="w-5 h-5" />
                         </button>
                     )}
@@ -469,7 +515,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
                     {/* Footer Actions */}
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
-                        <button type="button" onClick={onClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
+                        <button type="button" onClick={handleRequestClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
                         <button
                             type="submit"
                             disabled={saveState.saving}
