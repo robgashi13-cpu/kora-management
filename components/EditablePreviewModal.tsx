@@ -469,7 +469,7 @@ export default function EditablePreviewModal({
             ) : (
               <div
                 ref={printRef}
-                className={`bg-white w-[21cm] ${documentType === 'full_marreveshje' ? 'min-h-[29.7cm]' : 'h-[29.7cm]'} shadow-2xl p-6 pdf-root box-border`}
+                className={`bg-white w-[21cm] ${documentType === 'full_marreveshje' ? 'min-h-[29.7cm]' : 'h-[29.7cm]'} shadow-2xl p-[48px] pdf-root box-border`}
                 style={{
                   fontFamily: 'Georgia, "Times New Roman", Times, serif',
                   fontSize: '10pt',
@@ -562,24 +562,29 @@ export default function EditablePreviewModal({
                       </ul>
                     </div>
 
-                    <div className="mt-8 grid grid-cols-2 gap-8">
-                      <div className="text-center relative">
-                        <div className="text-xs uppercase font-bold mb-8 text-gray-600">Shitësi</div>
-                        <div className="border-b border-black mx-4 relative h-[130px]">
-                          {withStamp && (
-                            <img
-                              src="/stamp.jpeg"
-                              alt="Official Stamp"
-                              className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-90"
-                              style={{ width: '130px', height: 'auto' }}
-                            />
-                          )}
+                    <div className="signature-section border-t border-black pt-3">
+                      <div className="signature-grid">
+                        <div className="signature-column">
+                          <div className="signature-label text-xs uppercase font-bold text-gray-600">Shitësi</div>
+                          <div className="signature-line-row">
+                            <div className="signature-line" />
+                            {withStamp && (
+                              <img
+                                src="/stamp.jpeg"
+                                alt="Official Stamp"
+                                className="signature-stamp"
+                              />
+                            )}
+                          </div>
+                          <div className="signature-name text-sm">{seller.name}</div>
                         </div>
-                        <div className="mt-2 text-sm">{seller.name}</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs uppercase font-bold mb-8 text-gray-600">Blerësi</div>
-                        <div className="border-t border-black pt-2 text-sm break-words">{getValue('buyerName') || '________________'}</div>
+                        <div className="signature-column">
+                          <div className="signature-label text-xs uppercase font-bold text-gray-600">Blerësi</div>
+                          <div className="signature-line-row">
+                            <div className="signature-line" />
+                          </div>
+                          <div className="signature-name text-sm break-words">{getValue('buyerName') || '________________'}</div>
+                        </div>
                       </div>
                     </div>
                   </>
@@ -783,27 +788,35 @@ export default function EditablePreviewModal({
                             Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
                           </p>
 
-                          <div className="footer mt-10 pt-4 flex justify-between">
-                            <div className="signature-box w-2/5 text-left relative">
-                              <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
-                              <div className="mb-10">{fullSellerName}</div>
-                              <div className="border-b border-black w-full relative h-[130px]">
-                                {withStamp && (
-                                  <img
-                                    src="/stamp.jpeg"
-                                    alt="Official Stamp"
-                                    className="absolute left-2 bottom-2 opacity-90"
-                                    style={{ width: '130px', height: 'auto' }}
-                                  />
-                                )}
+                          <div className="signature-section">
+                            <div className="signature-grid">
+                              <div className="signature-column">
+                                <div className="signature-label font-bold">Ndërmjetësuesi:</div>
+                                <div className="signature-line-row">
+                                  <div className="signature-line" />
+                                  {withStamp && (
+                                    <img
+                                      src="/stamp.jpeg"
+                                      alt="Official Stamp"
+                                      className="signature-stamp"
+                                    />
+                                  )}
+                                </div>
+                                <div className="signature-name text-xs">
+                                  <div>{fullSellerName}</div>
+                                  <div>(Nënshkrimi dhe Vula)</div>
+                                </div>
                               </div>
-                              <div className="mt-1">(Nënshkrimi dhe Vula)</div>
-                            </div>
-                            <div className="signature-box w-2/5 text-right">
-                              <div className="mb-1 font-bold">Blerësi:</div>
-                              <div className="mb-10 break-words"><EditableField fieldKey="buyerName" /></div>
-                              <div className="border-b border-black w-full"></div>
-                              <div className="mt-1">(Nënshkrimi)</div>
+                              <div className="signature-column">
+                                <div className="signature-label font-bold">Blerësi:</div>
+                                <div className="signature-line-row">
+                                  <div className="signature-line" />
+                                </div>
+                                <div className="signature-name text-xs">
+                                  <div className="break-words"><EditableField fieldKey="buyerName" /></div>
+                                  <div>(Nënshkrimi)</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
@@ -884,25 +897,29 @@ export default function EditablePreviewModal({
                             </li>
                           </ol>
 
-                          <div className="mt-6 pt-4 flex justify-between">
-                            <div className="w-1/2 text-left pr-4 relative">
-                              <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
-                              <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                              <div className="border-b border-black w-4/5 relative h-[130px]">
-                                {withStamp && (
-                                  <img
-                                    src="/stamp.jpeg"
-                                    alt="Official Stamp"
-                                    className="absolute left-2 bottom-2 opacity-90"
-                                    style={{ width: '130px', height: 'auto' }}
-                                  />
-                                )}
+                          <div className="signature-section">
+                            <div className="signature-grid">
+                              <div className="signature-column">
+                                <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
+                                <div className="signature-line-row">
+                                  <div className="signature-line" />
+                                  {withStamp && (
+                                    <img
+                                      src="/stamp.jpeg"
+                                      alt="Official Stamp"
+                                      className="signature-stamp"
+                                    />
+                                  )}
+                                </div>
+                                <div className="signature-name text-xs">Owner: Robert Gashi</div>
                               </div>
-                            </div>
-                            <div className="w-1/2 text-right pl-4">
-                              <div className="font-bold text-xs mb-1">Blerësi</div>
-                              <div className="text-xs mb-6 break-words"><EditableField fieldKey="buyerName" /></div>
-                              <div className="border-b border-black w-4/5 ml-auto"></div>
+                              <div className="signature-column">
+                                <div className="signature-label font-bold text-xs">Blerësi</div>
+                                <div className="signature-line-row">
+                                  <div className="signature-line" />
+                                </div>
+                                <div className="signature-name text-xs break-words"><EditableField fieldKey="buyerName" /></div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -958,6 +975,45 @@ export default function EditablePreviewModal({
         .car-details div:last-child {
           border-bottom: none;
           margin-bottom: 0;
+        }
+        .signature-section {
+          margin-top: 72px;
+        }
+        .signature-grid {
+          display: flex;
+          gap: 64px;
+          width: 664px;
+          margin: 0 auto;
+        }
+        .signature-column {
+          width: 300px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          text-align: left;
+        }
+        .signature-label {
+          line-height: 20px;
+        }
+        .signature-line-row {
+          position: relative;
+          margin-top: 24px;
+        }
+        .signature-line {
+          width: 240px;
+          border-bottom: 1px solid #000;
+          height: 0;
+        }
+        .signature-name {
+          margin-top: 16px;
+          line-height: 20px;
+        }
+        .signature-stamp {
+          position: absolute;
+          left: calc(240px + 56px);
+          top: -28px;
+          width: 160px;
+          height: 160px;
         }
         .label {
           font-weight: bold;

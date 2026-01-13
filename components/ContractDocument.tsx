@@ -56,7 +56,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
     const isSinglePage = type === 'deposit' || type === 'full_shitblerje';
     const rootPaddingClass = type === 'deposit'
-        ? 'p-[1.2cm] pt-[1.6cm]'
+        ? 'p-[48px] pt-[64px]'
         : type === 'full_shitblerje'
             ? 'p-[1.6cm] pt-[2cm]'
             : 'p-0';
@@ -177,25 +177,29 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     </div>
 
                     {/* Signatures - Compact */}
-                    <div className="grid grid-cols-2 gap-8 mt-4 pt-3 border-t border-black">
-                        <div className="text-center relative">
-                            <div className="text-xs mb-8">Shitësi (Nënshkrimi)</div>
-                            <div className="border-b border-black mx-4 relative h-[130px]">
-                                {withStamp && (
-                                    <img
-                                        src="/stamp.jpeg"
-                                        alt="Official Stamp"
-                                        className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-90"
-                                        style={{ width: '130px', height: 'auto' }}
-                                    />
-                                )}
+                    <div className="signature-section border-t border-black pt-3">
+                        <div className="signature-grid">
+                            <div className="signature-column">
+                                <div className="signature-label">Shitësi (Nënshkrimi)</div>
+                                <div className="signature-line-row">
+                                    <div className="signature-line" />
+                                    {withStamp && (
+                                        <img
+                                            src="/stamp.jpeg"
+                                            alt="Official Stamp"
+                                            className="signature-stamp"
+                                        />
+                                    )}
+                                </div>
+                                <div className="signature-name font-bold text-xs">{seller.name}</div>
                             </div>
-                            <div className="mt-1 font-bold text-xs">{seller.name}</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-xs mb-8">Blerësi (Nënshkrimi)</div>
-                            <div className="border-b border-black mx-4"></div>
-                            <div className="mt-1 font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
+                            <div className="signature-column">
+                                <div className="signature-label">Blerësi (Nënshkrimi)</div>
+                                <div className="signature-line-row">
+                                    <div className="signature-line" />
+                                </div>
+                                <div className="signature-name font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
+                            </div>
                         </div>
                     </div>
                 </>
@@ -405,27 +409,35 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             Kjo marrëveshje është nënshkruar në mirëbesim të plotë nga të dy palët, duke pranuar të gjitha kushtet.
                         </p>
 
-                        <div className="footer mt-10 pt-4 flex justify-between">
-                            <div className="signature-box w-2/5 text-left relative">
-                                <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
-                                <div className="mb-10">{fullSellerName}</div>
-                                <div className="border-b border-black w-full relative h-[130px]">
-                                    {withStamp && (
-                                        <img
-                                            src="/stamp.jpeg"
-                                            alt="Official Stamp"
-                                            className="absolute left-2 bottom-2 opacity-90"
-                                            style={{ width: '130px', height: 'auto' }}
-                                        />
-                                    )}
+                        <div className="signature-section">
+                            <div className="signature-grid">
+                                <div className="signature-column">
+                                    <div className="signature-label font-bold">Ndërmjetësuesi:</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                        {withStamp && (
+                                            <img
+                                                src="/stamp.jpeg"
+                                                alt="Official Stamp"
+                                                className="signature-stamp"
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="signature-name text-xs">
+                                        <div>{fullSellerName}</div>
+                                        <div>(Nënshkrimi dhe Vula)</div>
+                                    </div>
                                 </div>
-                                <div className="mt-1">(Nënshkrimi dhe Vula)</div>
-                            </div>
-                            <div className="signature-box w-2/5 text-right">
-                                <div className="mb-1 font-bold">Blerësi:</div>
-                                <div className="mb-10 break-words">{safeString(displaySale.buyerName)}</div>
-                                <div className="border-b border-black w-full"></div>
-                                <div className="mt-1">(Nënshkrimi)</div>
+                                <div className="signature-column">
+                                    <div className="signature-label font-bold">Blerësi:</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                    </div>
+                                    <div className="signature-name text-xs">
+                                        <div className="break-words">{safeString(displaySale.buyerName)}</div>
+                                        <div>(Nënshkrimi)</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -506,25 +518,29 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         </li>
                     </ol>
 
-                    <div className="mt-6 pt-4 flex justify-between">
-                        <div className="w-1/2 text-left pr-4 relative">
-                            <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
-                            <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                            <div className="border-b border-black w-4/5 relative h-[130px]">
-                                {withStamp && (
-                                    <img
-                                        src="/stamp.jpeg"
-                                        alt="Official Stamp"
-                                        className="absolute left-2 bottom-2 opacity-90"
-                                        style={{ width: '130px', height: 'auto' }}
-                                    />
-                                )}
+                    <div className="signature-section">
+                        <div className="signature-grid">
+                            <div className="signature-column">
+                                <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
+                                <div className="signature-line-row">
+                                    <div className="signature-line" />
+                                    {withStamp && (
+                                        <img
+                                            src="/stamp.jpeg"
+                                            alt="Official Stamp"
+                                            className="signature-stamp"
+                                        />
+                                    )}
+                                </div>
+                                <div className="signature-name text-xs">Owner: Robert Gashi</div>
                             </div>
-                        </div>
-                        <div className="w-1/2 text-right pl-4">
-                            <div className="font-bold text-xs mb-1">Blerësi</div>
-                            <div className="text-xs mb-6 break-words">{safeString(displaySale.buyerName)}</div>
-                            <div className="border-b border-black w-4/5 ml-auto"></div>
+                            <div className="signature-column">
+                                <div className="signature-label font-bold text-xs">Blerësi</div>
+                                <div className="signature-line-row">
+                                    <div className="signature-line" />
+                                </div>
+                                <div className="signature-name text-xs break-words">{safeString(displaySale.buyerName)}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -539,8 +555,14 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details div { display: grid; grid-template-columns: minmax(100px, 35%) minmax(0, 1fr); column-gap: 8pt; row-gap: 4pt; align-items: start; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
-                .signature-box { width: 40%; position: relative; height: 100px; }
-                .signature-line { border-top: 1px solid black; margin-top: 80pt; padding-top: 6pt; font-weight: bold; text-align: center; }
+                .signature-section { margin-top: 72px; }
+                .signature-grid { display: flex; gap: 64px; width: 664px; margin: 0 auto; }
+                .signature-column { width: 300px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+                .signature-label { line-height: 20px; }
+                .signature-line-row { position: relative; margin-top: 24px; }
+                .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
+                .signature-name { margin-top: 16px; line-height: 20px; }
+                .signature-stamp { position: absolute; left: calc(240px + 56px); top: -28px; width: 160px; height: 160px; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
