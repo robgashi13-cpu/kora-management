@@ -1006,7 +1006,7 @@ export default function EditablePreviewModal({
         }
         .signature-stamp-row {
           position: absolute;
-          top: -24px;
+          top: -28px;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
