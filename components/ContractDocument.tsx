@@ -557,8 +557,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-line-row { position: relative; margin-top: 24px; }
                 .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
-                .signature-stamp-row { display: flex; justify-content: flex-start; width: 664px; margin: -64px auto 0; padding-left: 12px; }
-                .signature-stamp { width: 220px; height: 220px; object-fit: contain; }
+                .signature-stamp-row { display: flex; justify-content: flex-start; width: 664px; margin: -64px auto 0; }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2); }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;

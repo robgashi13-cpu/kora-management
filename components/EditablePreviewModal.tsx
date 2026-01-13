@@ -1008,12 +1008,12 @@ export default function EditablePreviewModal({
           justify-content: flex-start;
           width: 664px;
           margin: -64px auto 0;
-          padding-left: 12px;
         }
         .signature-stamp {
           width: 220px;
           height: 220px;
           object-fit: contain;
+          margin-left: calc((240px - 220px) / 2);
         }
         .label {
           font-weight: bold;
