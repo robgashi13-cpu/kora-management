@@ -565,17 +565,17 @@ export default function EditablePreviewModal({
                     <div className="mt-8 grid grid-cols-2 gap-8">
                       <div className="text-center relative">
                         <div className="text-xs uppercase font-bold mb-8 text-gray-600">Shitësi</div>
-                        <div className="border-t border-black pt-2 text-sm relative">
+                        <div className="border-b border-black mx-4 relative h-[130px]">
                           {withStamp && (
                             <img
                               src="/stamp.jpeg"
                               alt="Official Stamp"
-                              className="absolute left-1/2 -translate-x-1/2 -top-8 opacity-90"
-                              style={{ width: '100px', height: 'auto' }}
+                              className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-90"
+                              style={{ width: '130px', height: 'auto' }}
                             />
                           )}
-                          {seller.name}
                         </div>
+                        <div className="mt-2 text-sm">{seller.name}</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs uppercase font-bold mb-8 text-gray-600">Blerësi</div>
@@ -787,13 +787,13 @@ export default function EditablePreviewModal({
                             <div className="signature-box w-2/5 text-left relative">
                               <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
                               <div className="mb-10">{fullSellerName}</div>
-                              <div className="border-b border-black w-full relative">
+                              <div className="border-b border-black w-full relative h-[130px]">
                                 {withStamp && (
                                   <img
                                     src="/stamp.jpeg"
                                     alt="Official Stamp"
-                                    className="absolute left-0 -top-8 opacity-90"
-                                    style={{ width: '110px', height: 'auto' }}
+                                    className="absolute left-2 bottom-2 opacity-90"
+                                    style={{ width: '130px', height: 'auto' }}
                                   />
                                 )}
                               </div>
@@ -888,13 +888,13 @@ export default function EditablePreviewModal({
                             <div className="w-1/2 text-left pr-4 relative">
                               <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
                               <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                              <div className="border-b border-black w-4/5 relative">
+                              <div className="border-b border-black w-4/5 relative h-[130px]">
                                 {withStamp && (
                                   <img
                                     src="/stamp.jpeg"
                                     alt="Official Stamp"
-                                    className="absolute left-0 -top-7 opacity-90"
-                                    style={{ width: '100px', height: 'auto' }}
+                                    className="absolute left-2 bottom-2 opacity-90"
+                                    style={{ width: '130px', height: 'auto' }}
                                   />
                                 )}
                               </div>
