@@ -41,6 +41,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [withStamp, setWithStamp] = useState(false);
 
     // Validate contract data
     const validation = type === 'deposit' ? validateDepositContract(sale) : { valid: true, missingFields: [] };
@@ -159,6 +160,19 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                         </h2>
                         <div className="flex flex-wrap gap-2">
                             <button
+                                type="button"
+                                onClick={() => setWithStamp(prev => !prev)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${
+                                    withStamp
+                                        ? 'bg-slate-900 text-white border-slate-900'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                }`}
+                                aria-pressed={withStamp}
+                            >
+                                <span>Stamp</span>
+                                <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
+                            </button>
+                            <button
                                 onClick={handleDownload}
                                 disabled={isDownloading || !validation.valid}
                                 className="flex items-center gap-1 px-2.5 py-1 bg-black text-white rounded-md hover:bg-slate-900 transition-all font-semibold text-[11px] shadow-sm shadow-black/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -193,7 +207,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                     {/* The "Paper" Scaled for Mobile */}
                     <div className="w-full flex justify-center">
                         <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto" data-pdf-scale-wrapper>
-                            <ContractDocument sale={sale} type={type} documentRef={printRef} />
+                            <ContractDocument sale={sale} type={type} documentRef={printRef} withStamp={withStamp} />
                         </div>
                     </div>
                 </div>

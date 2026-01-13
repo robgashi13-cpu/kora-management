@@ -225,7 +225,7 @@ export default function EditablePreviewModal({
 
   // Editable inline field component
   const isInvoice = documentType === 'invoice';
-  const canToggleStamp = documentType === 'invoice' || documentType === 'full_shitblerje';
+  const canToggleStamp = true;
 
   const EditableField = ({ 
     fieldKey, 
@@ -365,7 +365,7 @@ export default function EditablePreviewModal({
         : 'Full Contract - Shitblerje';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -572,6 +572,15 @@ export default function EditablePreviewModal({
                         <div className="border-t border-black pt-2 text-sm break-words">{getValue('buyerName') || '________________'}</div>
                       </div>
                     </div>
+                    {withStamp && (
+                      <div className="mt-4 flex justify-end">
+                        <img
+                          src="/stamp.jpeg"
+                          alt="Official Stamp"
+                          style={{ width: '120px', height: 'auto', opacity: 0.9 }}
+                        />
+                      </div>
+                    )}
                   </>
                 ) : (
                   <>
@@ -787,6 +796,15 @@ export default function EditablePreviewModal({
                               <div className="mt-1">(Nënshkrimi)</div>
                             </div>
                           </div>
+                          {withStamp && (
+                            <div className="mt-6 flex justify-end">
+                              <img
+                                src="/stamp.jpeg"
+                                alt="Official Stamp"
+                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
+                              />
+                            </div>
+                          )}
 
                           <div className="mt-8 text-center text-xs text-slate-500">
                             <p>Nr. Ref: {referenceId} | Data: {today}</p>
@@ -882,7 +900,7 @@ export default function EditablePreviewModal({
                               <img
                                 src="/stamp.jpeg"
                                 alt="Official Stamp"
-                                className="h-12 w-auto opacity-90"
+                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
                               />
                             </div>
                           )}

@@ -114,7 +114,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] print:p-0">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] print:p-0">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md print:hidden" onClick={onClose} />
 
             <motion.div
@@ -126,16 +126,19 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl print:hidden">
                     <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Stamp Toggle */}
-                        <label className="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition text-[11px] font-medium text-gray-700">
-                            <input
-                                type="checkbox"
-                                checked={withStamp}
-                                onChange={(e) => setWithStamp(e.target.checked)}
-                                className="w-3.5 h-3.5 rounded border-gray-300 text-slate-900 focus:ring-slate-500"
-                            />
-                            <span>With Stamp</span>
-                        </label>
+                        <button
+                            type="button"
+                            onClick={() => setWithStamp(prev => !prev)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${
+                                withStamp
+                                    ? 'bg-slate-900 text-white border-slate-900'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            }`}
+                            aria-pressed={withStamp}
+                        >
+                            <span>Stamp</span>
+                            <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
+                        </button>
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
