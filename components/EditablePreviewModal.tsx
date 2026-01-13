@@ -1010,10 +1010,10 @@ export default function EditablePreviewModal({
         }
         .signature-stamp {
           position: absolute;
-          left: calc(240px + 56px);
-          top: -28px;
-          width: 160px;
-          height: 160px;
+          left: calc(240px + 48px);
+          top: -36px;
+          width: 176px;
+          height: 176px;
         }
         .label {
           font-weight: bold;
