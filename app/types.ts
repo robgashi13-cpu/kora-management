@@ -10,6 +10,8 @@ export type ShitblerjeOverrides = {
     plateNumber?: string;
     vin?: string;
     soldPrice?: number;
+    buyerName?: string;
+    buyerPersonalId?: string;
 };
 
 export interface Attachment {
