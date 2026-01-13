@@ -563,24 +563,25 @@ export default function EditablePreviewModal({
                     </div>
 
                     <div className="mt-8 grid grid-cols-2 gap-8">
-                      <div className="text-center">
+                      <div className="text-center relative">
                         <div className="text-xs uppercase font-bold mb-8 text-gray-600">Shitësi</div>
-                        <div className="border-t border-black pt-2 text-sm">{seller.name}</div>
+                        <div className="border-t border-black pt-2 text-sm relative">
+                          {withStamp && (
+                            <img
+                              src="/stamp.jpeg"
+                              alt="Official Stamp"
+                              className="absolute left-1/2 -translate-x-1/2 -top-8 opacity-90"
+                              style={{ width: '100px', height: 'auto' }}
+                            />
+                          )}
+                          {seller.name}
+                        </div>
                       </div>
                       <div className="text-center">
                         <div className="text-xs uppercase font-bold mb-8 text-gray-600">Blerësi</div>
                         <div className="border-t border-black pt-2 text-sm break-words">{getValue('buyerName') || '________________'}</div>
                       </div>
                     </div>
-                    {withStamp && (
-                      <div className="mt-4 flex justify-end">
-                        <img
-                          src="/stamp.jpeg"
-                          alt="Official Stamp"
-                          style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                        />
-                      </div>
-                    )}
                   </>
                 ) : (
                   <>
@@ -783,10 +784,19 @@ export default function EditablePreviewModal({
                           </p>
 
                           <div className="footer mt-10 pt-4 flex justify-between">
-                            <div className="signature-box w-2/5 text-left">
+                            <div className="signature-box w-2/5 text-left relative">
                               <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
                               <div className="mb-10">{fullSellerName}</div>
-                              <div className="border-b border-black w-full"></div>
+                              <div className="border-b border-black w-full relative">
+                                {withStamp && (
+                                  <img
+                                    src="/stamp.jpeg"
+                                    alt="Official Stamp"
+                                    className="absolute left-0 -top-8 opacity-90"
+                                    style={{ width: '110px', height: 'auto' }}
+                                  />
+                                )}
+                              </div>
                               <div className="mt-1">(Nënshkrimi dhe Vula)</div>
                             </div>
                             <div className="signature-box w-2/5 text-right">
@@ -796,15 +806,6 @@ export default function EditablePreviewModal({
                               <div className="mt-1">(Nënshkrimi)</div>
                             </div>
                           </div>
-                          {withStamp && (
-                            <div className="mt-6 flex justify-end">
-                              <img
-                                src="/stamp.jpeg"
-                                alt="Official Stamp"
-                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                              />
-                            </div>
-                          )}
 
                           <div className="mt-8 text-center text-xs text-slate-500">
                             <p>Nr. Ref: {referenceId} | Data: {today}</p>
@@ -884,10 +885,19 @@ export default function EditablePreviewModal({
                           </ol>
 
                           <div className="mt-6 pt-4 flex justify-between">
-                            <div className="w-1/2 text-left pr-4">
+                            <div className="w-1/2 text-left pr-4 relative">
                               <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
                               <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                              <div className="border-b border-black w-4/5"></div>
+                              <div className="border-b border-black w-4/5 relative">
+                                {withStamp && (
+                                  <img
+                                    src="/stamp.jpeg"
+                                    alt="Official Stamp"
+                                    className="absolute left-0 -top-7 opacity-90"
+                                    style={{ width: '100px', height: 'auto' }}
+                                  />
+                                )}
+                              </div>
                             </div>
                             <div className="w-1/2 text-right pl-4">
                               <div className="font-bold text-xs mb-1">Blerësi</div>
@@ -895,15 +905,6 @@ export default function EditablePreviewModal({
                               <div className="border-b border-black w-4/5 ml-auto"></div>
                             </div>
                           </div>
-                          {withStamp && (
-                            <div className="mt-4 flex justify-end">
-                              <img
-                                src="/stamp.jpeg"
-                                alt="Official Stamp"
-                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                              />
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}

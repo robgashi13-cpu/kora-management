@@ -129,7 +129,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-900 transition-colors text-xs xl:text-sm"
+                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-900 transition-colors text-[9px] xl:text-[10px]"
                     title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
@@ -137,21 +137,21 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 3. Year */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-600 border-r border-slate-100 bg-white text-xs">
+            <div className="px-1 h-full flex items-center justify-center text-slate-600 border-r border-slate-100 bg-white text-[9px]">
                 {canEdit ? (
                     <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-600" />
                 ) : s.year}
             </div>
 
             {/* 4. KM */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-500 font-mono text-xs border-r border-slate-100 bg-white">
+            <div className="px-1 h-full flex items-center justify-center text-slate-500 font-mono text-[9px] border-r border-slate-100 bg-white">
                 {canEdit ? (
                     <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-500" />
                 ) : (s.km || 0).toLocaleString()}
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 h-full flex items-center text-[10px] xl:text-xs border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="px-1 h-full flex items-center text-[9px] xl:text-[10px] border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                 {canEdit ? (
                     <div className="flex items-center gap-1 min-w-0 max-w-full truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
                         <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium truncate" />
@@ -166,21 +166,21 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.buyerName}>
+            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.buyerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.sellerName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.sellerName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-xs min-w-0" title={s.shippingName}>
+            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.shippingName}>
                 {canEdit ? (
                     <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
                 ) : s.shippingName}
@@ -188,7 +188,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 9. Cost (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white text-xs">
+                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white text-[9px]">
                     {canEdit ? (
                         <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-500" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
@@ -197,96 +197,96 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-emerald-600 font-semibold border-r border-slate-100 bg-white text-xs">
+                <div className="px-1 h-full flex items-center justify-end font-mono text-emerald-600 font-semibold border-r border-slate-100 bg-white text-[9px]">
                     {canEdit ? (
                         <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-600 font-semibold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <div className="flex flex-col items-end gap-0.5 text-[9px] xl:text-[10px] leading-tight">
+                        <div className="flex flex-col items-end gap-0.5 text-[8px] xl:text-[9px] leading-tight">
                             <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Bk</span>
+                                <span className="uppercase text-[7px] text-slate-400">Bk</span>
                                 <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-600 font-medium" />
                             </div>
                             <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Ca</span>
+                                <span className="uppercase text-[7px] text-slate-400">Ca</span>
                                 <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="text-slate-600 font-medium" />
                             </div>
                             <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[8px] text-slate-400">Dp</span>
+                                <span className="uppercase text-[7px] text-slate-400">Dp</span>
                                 <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-500 font-medium" />
                             </div>
                         </div>
                     ) : (
-                        <div className="font-mono text-sky-600 font-medium text-xs">
+                        <div className="font-mono text-sky-600 font-medium text-[9px]">
                             €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-[10px] xl:text-xs text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-[9px] xl:text-[10px] text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
                     <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                         {canEdit ? (
-                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-[10px] xl:text-xs" />
+                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-[9px] xl:text-[10px]" />
                         ) : (
-                            <span className="font-mono text-[10px] xl:text-xs text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
+                            <span className="font-mono text-[9px] xl:text-[10px] text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-slate-700 whitespace-nowrap border-r border-slate-100 bg-white text-xs">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-slate-700 whitespace-nowrap border-r border-slate-100 bg-white text-[9px]">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
+                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-1 h-full flex items-center justify-end font-mono font-semibold border-r border-slate-100 bg-white">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] xl:text-xs ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-xs">-</div>
+                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
                 <div className="px-1 h-full flex flex-col items-center justify-center gap-0.5 border-r border-slate-100 bg-white">
                     {canEdit && (
-                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[9px] xl:text-[10px] font-semibold text-slate-600" />
+                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[8px] xl:text-[9px] font-semibold text-slate-600" />
                     )}
-                    <span className={`text-[9px] xl:text-[10px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                    <span className={`text-[8px] xl:text-[9px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
             )}
 
             {/* 16. Status */}
-            <div className="px-1 h-full flex items-center justify-center border-r border-slate-100 bg-white">
+            <div className="px-1 h-full flex items-center justify-center border-r border-slate-100 bg-white" title={s.status}>
                 <div className="flex flex-col items-center gap-0.5">
                     {canEdit ? (
-                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[9px] xl:text-[10px] ${statusClass}`} />
+                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[8px] xl:text-[9px] ${statusClass}`} />
                     ) : (
-                        <span className={`status-badge text-[9px] xl:text-[10px] ${statusClass}`}>{s.status}</span>
+                        <span className={`status-badge text-[8px] xl:text-[9px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="text-[8px] xl:text-[9px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                        <span className="text-[7px] xl:text-[8px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
                             Paid
                         </span>
                     )}
@@ -294,7 +294,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1 h-full flex items-center justify-center text-[10px] xl:text-xs border-r border-slate-100 bg-white">
+            <div className="px-1 h-full flex items-center justify-center text-[9px] xl:text-[10px] border-r border-slate-100 bg-white" title={s.soldBy}>
                 {canEdit ? (
                     <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
                 ) : (

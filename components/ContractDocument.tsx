@@ -178,9 +178,18 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
                     {/* Signatures - Compact */}
                     <div className="grid grid-cols-2 gap-8 mt-4 pt-3 border-t border-black">
-                        <div className="text-center">
+                        <div className="text-center relative">
                             <div className="text-xs mb-8">Shitësi (Nënshkrimi)</div>
-                            <div className="border-b border-black mx-4"></div>
+                            <div className="border-b border-black mx-4 relative">
+                                {withStamp && (
+                                    <img
+                                        src="/stamp.jpeg"
+                                        alt="Official Stamp"
+                                        className="absolute left-1/2 -translate-x-1/2 -top-8 opacity-90"
+                                        style={{ width: '100px', height: 'auto' }}
+                                    />
+                                )}
+                            </div>
                             <div className="mt-1 font-bold text-xs">{seller.name}</div>
                         </div>
                         <div className="text-center">
@@ -189,15 +198,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="mt-1 font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
                         </div>
                     </div>
-                    {withStamp && (
-                        <div className="mt-4 flex justify-end">
-                            <img
-                                src="/stamp.jpeg"
-                                alt="Official Stamp"
-                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                            />
-                        </div>
-                    )}
                 </>
             )}
 
@@ -406,10 +406,19 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         </p>
 
                         <div className="footer mt-10 pt-4 flex justify-between">
-                            <div className="signature-box w-2/5 text-left">
+                            <div className="signature-box w-2/5 text-left relative">
                                 <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
                                 <div className="mb-10">{fullSellerName}</div>
-                                <div className="border-b border-black w-full"></div>
+                                <div className="border-b border-black w-full relative">
+                                    {withStamp && (
+                                        <img
+                                            src="/stamp.jpeg"
+                                            alt="Official Stamp"
+                                            className="absolute left-0 -top-8 opacity-90"
+                                            style={{ width: '110px', height: 'auto' }}
+                                        />
+                                    )}
+                                </div>
                                 <div className="mt-1">(Nënshkrimi dhe Vula)</div>
                             </div>
                             <div className="signature-box w-2/5 text-right">
@@ -419,15 +428,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="mt-1">(Nënshkrimi)</div>
                             </div>
                         </div>
-                        {withStamp && (
-                            <div className="mt-6 flex justify-end">
-                                <img
-                                    src="/stamp.jpeg"
-                                    alt="Official Stamp"
-                                    style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                                />
-                            </div>
-                        )}
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
                             <p>Nr. Ref: {referenceId} | Data: {today}</p>
@@ -507,10 +507,19 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     </ol>
 
                     <div className="mt-6 pt-4 flex justify-between">
-                        <div className="w-1/2 text-left pr-4">
+                        <div className="w-1/2 text-left pr-4 relative">
                             <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
                             <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                            <div className="border-b border-black w-4/5"></div>
+                            <div className="border-b border-black w-4/5 relative">
+                                {withStamp && (
+                                    <img
+                                        src="/stamp.jpeg"
+                                        alt="Official Stamp"
+                                        className="absolute left-0 -top-7 opacity-90"
+                                        style={{ width: '100px', height: 'auto' }}
+                                    />
+                                )}
+                            </div>
                         </div>
                         <div className="w-1/2 text-right pl-4">
                             <div className="font-bold text-xs mb-1">Blerësi</div>
@@ -518,15 +527,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="border-b border-black w-4/5 ml-auto"></div>
                         </div>
                     </div>
-                    {withStamp && (
-                        <div className="mt-4 flex justify-end">
-                            <img
-                                src="/stamp.jpeg"
-                                alt="Official Stamp"
-                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
-                            />
-                        </div>
-                    )}
                 </div>
             )}
 
