@@ -973,6 +973,7 @@ export default function EditablePreviewModal({
         }
         .signature-section {
           margin-top: 72px;
+          position: relative;
         }
         .signature-grid {
           display: flex;
@@ -1004,16 +1005,20 @@ export default function EditablePreviewModal({
           line-height: 20px;
         }
         .signature-stamp-row {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           justify-content: flex-start;
           width: 664px;
-          margin: -64px auto 0;
+          margin: 0;
         }
         .signature-stamp {
           width: 220px;
           height: 220px;
           object-fit: contain;
-          margin-left: calc((240px - 220px) / 2);
+          margin-left: calc((240px - 220px) / 2 + 12px);
         }
         .label {
           font-weight: bold;
