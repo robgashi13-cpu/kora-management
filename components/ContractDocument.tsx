@@ -550,15 +550,24 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details div { display: grid; grid-template-columns: minmax(100px, 35%) minmax(0, 1fr); column-gap: 8pt; row-gap: 4pt; align-items: start; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
-                .signature-section { margin-top: 72px; }
+                .signature-section { margin-top: 72px; position: relative; }
                 .signature-grid { display: flex; gap: 64px; width: 664px; margin: 0 auto; }
                 .signature-column { width: 300px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
                 .signature-label { line-height: 20px; }
                 .signature-line-row { position: relative; margin-top: 24px; }
                 .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
-                .signature-stamp-row { display: flex; justify-content: flex-start; width: 664px; margin: -64px auto 0; }
-                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2); }
+                .signature-stamp-row {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    display: flex;
+                    justify-content: flex-start;
+                    width: 664px;
+                    margin: 0;
+                }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 12px); }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
