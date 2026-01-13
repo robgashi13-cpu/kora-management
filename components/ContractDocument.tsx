@@ -180,13 +180,13 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="grid grid-cols-2 gap-8 mt-4 pt-3 border-t border-black">
                         <div className="text-center relative">
                             <div className="text-xs mb-8">Shitësi (Nënshkrimi)</div>
-                            <div className="border-b border-black mx-4 relative">
+                            <div className="border-b border-black mx-4 relative h-[130px]">
                                 {withStamp && (
                                     <img
                                         src="/stamp.jpeg"
                                         alt="Official Stamp"
-                                        className="absolute left-1/2 -translate-x-1/2 -top-8 opacity-90"
-                                        style={{ width: '100px', height: 'auto' }}
+                                        className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-90"
+                                        style={{ width: '130px', height: 'auto' }}
                                     />
                                 )}
                             </div>
@@ -409,13 +409,13 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="signature-box w-2/5 text-left relative">
                                 <div className="mb-1 font-bold">Ndërmjetësuesi:</div>
                                 <div className="mb-10">{fullSellerName}</div>
-                                <div className="border-b border-black w-full relative">
+                                <div className="border-b border-black w-full relative h-[130px]">
                                     {withStamp && (
                                         <img
                                             src="/stamp.jpeg"
                                             alt="Official Stamp"
-                                            className="absolute left-0 -top-8 opacity-90"
-                                            style={{ width: '110px', height: 'auto' }}
+                                            className="absolute left-2 bottom-2 opacity-90"
+                                            style={{ width: '130px', height: 'auto' }}
                                         />
                                     )}
                                 </div>
@@ -510,13 +510,13 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="w-1/2 text-left pr-4 relative">
                             <div className="font-bold text-xs mb-1">RG SH.P.K.</div>
                             <div className="text-xs mb-6">Owner: Robert Gashi</div>
-                            <div className="border-b border-black w-4/5 relative">
+                            <div className="border-b border-black w-4/5 relative h-[130px]">
                                 {withStamp && (
                                     <img
                                         src="/stamp.jpeg"
                                         alt="Official Stamp"
-                                        className="absolute left-0 -top-7 opacity-90"
-                                        style={{ width: '100px', height: 'auto' }}
+                                        className="absolute left-2 bottom-2 opacity-90"
+                                        style={{ width: '130px', height: 'auto' }}
                                     />
                                 )}
                             </div>
