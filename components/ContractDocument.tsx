@@ -58,7 +58,7 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
         <div
             ref={documentRef}
             data-contract-document
-            className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm]' : 'min-h-[29.7cm] p-[2cm]'}`}
+            className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${type === 'deposit' ? 'min-h-[29.7cm] p-[1.2cm] pt-[1.8cm]' : type === 'full_shitblerje' ? 'min-h-[29.7cm] p-[1.5cm] pt-[2cm]' : 'min-h-[29.7cm] p-[2cm] pt-[2.5cm]'}`}
             style={{
                 fontFamily: '"Times New Roman", Times, serif',
                 fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt',

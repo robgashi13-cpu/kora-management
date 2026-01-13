@@ -7,6 +7,7 @@ import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 export interface InvoiceDocumentProps {
     sale: CarSale;
     withDogane?: boolean;
+    withStamp?: boolean;
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
@@ -19,7 +20,7 @@ type FieldRenderOptions = {
     formatValue?: (value: CarSale[keyof CarSale]) => string;
 };
 
-const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, renderField }, ref) => {
+const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, withStamp = false, renderField }, ref) => {
     const displaySale = applyShitblerjeOverrides(sale);
     const renderText = <K extends keyof CarSale>(
         fieldKey: K,
@@ -161,27 +162,29 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                 </tbody>
             </table>
 
-            {/* Totals */}
-            <div className="invoice-summary">
-                <div className="invoice-summary-row">
-                    <span>Subtotal</span>
-                    <span>€{(soldPriceValue - 200).toLocaleString()}</span>
-                </div>
-                <div className="invoice-summary-row">
-                    <span>Services</span>
-                    <span>€169.49</span>
-                </div>
-                <div className="invoice-summary-row invoice-summary-row-divider">
-                    <span>Tax (TVSH 18%)</span>
-                    <span>€30.51</span>
-                </div>
-                <div className="invoice-summary-total">
-                    <span>Grand Total</span>
-                    <span>
-                        {renderCurrency('soldPrice', soldPriceValue, {
-                            formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                        })}
-                    </span>
+            {/* Totals - Right aligned */}
+            <div className="invoice-summary-wrapper">
+                <div className="invoice-summary">
+                    <div className="invoice-summary-row">
+                        <span>Subtotal</span>
+                        <span>€{(soldPriceValue - 200).toLocaleString()}</span>
+                    </div>
+                    <div className="invoice-summary-row">
+                        <span>Services</span>
+                        <span>€169.49</span>
+                    </div>
+                    <div className="invoice-summary-row invoice-summary-row-divider">
+                        <span>Tax (TVSH 18%)</span>
+                        <span>€30.51</span>
+                    </div>
+                    <div className="invoice-summary-total">
+                        <span>Grand Total</span>
+                        <span>
+                            {renderCurrency('soldPrice', soldPriceValue, {
+                                formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            })}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -208,6 +211,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     </div>
                 </div>
             </div>
+
+            {/* Stamp Section - Only shown when withStamp is true */}
+            {withStamp && (
+                <div className="invoice-stamp" style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <img 
+                        src="/stamp.jpeg" 
+                        alt="Official Stamp" 
+                        style={{ 
+                            width: '140px', 
+                            height: 'auto',
+                            opacity: 0.9
+                        }} 
+                    />
+                </div>
+            )}
 
             <style>{`
                 .invoice-root {
@@ -307,9 +325,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     color: #000000;
                 }
 
+                .invoice-summary-wrapper {
+                    display: flex;
+                    justify-content: flex-end;
+                    width: 100%;
+                    break-inside: avoid;
+                }
+
                 .invoice-summary {
                     width: 100%;
-                    margin-left: auto;
                     break-inside: avoid;
                 }
 
@@ -379,7 +403,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     }
 
                     .invoice-summary {
-                        width: 50%;
+                        width: 260px;
                     }
 
                     .invoice-footer {

@@ -19,6 +19,7 @@ interface Props {
 
 export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
+    const [withStamp, setWithStamp] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
 
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -122,10 +123,19 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 className="bg-white text-black w-full max-w-3xl rounded-xl shadow-2xl relative flex flex-col max-h-[90vh] print:max-w-none print:max-h-none print:shadow-none print:rounded-none"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
-                {/* Toolbar - Hidden when printing */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl print:hidden">
                     <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Stamp Toggle */}
+                        <label className="flex items-center gap-1.5 px-2 py-1 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition text-[11px] font-medium text-gray-700">
+                            <input
+                                type="checkbox"
+                                checked={withStamp}
+                                onChange={(e) => setWithStamp(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-slate-900 focus:ring-slate-500"
+                            />
+                            <span>With Stamp</span>
+                        </label>
                         <button
                             onClick={handleDownload}
                             disabled={isDownloading}
@@ -151,7 +161,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto scroll-container print:overflow-visible">
-                    <InvoiceDocument sale={sale} withDogane={withDogane} ref={printRef} />
+                    <InvoiceDocument sale={sale} withDogane={withDogane} withStamp={withStamp} ref={printRef} />
                 </div>
             </motion.div>
 
