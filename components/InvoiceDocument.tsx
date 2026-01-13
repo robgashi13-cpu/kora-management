@@ -3,6 +3,7 @@
 import React from 'react';
 import { CarSale } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
+import StampImage from './StampImage';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
@@ -214,15 +215,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
 
             {/* Stamp Section - Only shown when withStamp is true */}
             {withStamp && (
-                <div className="invoice-stamp" style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <img
-                        src="/stamp.jpeg"
-                        alt="Official Stamp"
-                        style={{
-                            width: '196px',
-                            height: '196px'
-                        }}
-                    />
+                <div className="invoice-signature">
+                    <div className="invoice-signature-line" />
+                    <StampImage className="invoice-stamp" />
                 </div>
             )}
 
@@ -378,6 +373,25 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     border-radius: 8px;
                     border: 1px solid #000000;
                     display: inline-block;
+                }
+
+                .invoice-signature {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    margin-top: 24px;
+                    gap: 12px;
+                }
+
+                .invoice-signature-line {
+                    width: 220px;
+                    border-bottom: 1px solid #000000;
+                }
+
+                .invoice-stamp {
+                    width: 220px;
+                    height: 220px;
+                    object-fit: contain;
                 }
 
                 @media (min-width: 768px) {

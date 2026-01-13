@@ -3,6 +3,7 @@
 import React from 'react';
 import { CarSale, ContractType } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
+import StampImage from './StampImage';
 
 interface ContractDocumentProps {
     sale: CarSale;
@@ -183,13 +184,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-label">Shitësi (Nënshkrimi)</div>
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
-                                    {withStamp && (
-                                        <img
-                                            src="/stamp.jpeg"
-                                            alt="Official Stamp"
-                                            className="signature-stamp"
-                                        />
-                                    )}
                                 </div>
                                 <div className="signature-name font-bold text-xs">{seller.name}</div>
                             </div>
@@ -201,6 +195,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-name font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
                             </div>
                         </div>
+                        {withStamp && (
+                            <div className="signature-stamp-row">
+                                <StampImage className="signature-stamp" />
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -412,21 +411,14 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="signature-section">
                             <div className="signature-grid">
                                 <div className="signature-column">
-                                    <div className="signature-label font-bold">Ndërmjetësuesi:</div>
-                                    <div className="signature-line-row">
-                                        <div className="signature-line" />
-                                        {withStamp && (
-                                            <img
-                                                src="/stamp.jpeg"
-                                                alt="Official Stamp"
-                                                className="signature-stamp"
-                                            />
-                                        )}
-                                    </div>
-                                    <div className="signature-name text-xs">
-                                        <div>{fullSellerName}</div>
-                                        <div>(Nënshkrimi dhe Vula)</div>
-                                    </div>
+                                <div className="signature-label font-bold">Ndërmjetësuesi:</div>
+                                <div className="signature-line-row">
+                                    <div className="signature-line" />
+                                </div>
+                                <div className="signature-name text-xs">
+                                    <div>{fullSellerName}</div>
+                                    <div>(Nënshkrimi dhe Vula)</div>
+                                </div>
                                 </div>
                                 <div className="signature-column">
                                     <div className="signature-label font-bold">Blerësi:</div>
@@ -439,6 +431,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     </div>
                                 </div>
                             </div>
+                            {withStamp && (
+                                <div className="signature-stamp-row">
+                                    <StampImage className="signature-stamp" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
@@ -524,13 +521,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
-                                    {withStamp && (
-                                        <img
-                                            src="/stamp.jpeg"
-                                            alt="Official Stamp"
-                                            className="signature-stamp"
-                                        />
-                                    )}
                                 </div>
                                 <div className="signature-name text-xs">Owner: Robert Gashi</div>
                             </div>
@@ -542,6 +532,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-name text-xs break-words">{safeString(displaySale.buyerName)}</div>
                             </div>
                         </div>
+                        {withStamp && (
+                            <div className="signature-stamp-row">
+                                <StampImage className="signature-stamp" />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -562,7 +557,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-line-row { position: relative; margin-top: 24px; }
                 .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
-                .signature-stamp { position: absolute; left: calc(240px + 56px); top: -44px; width: 196px; height: 196px; }
+                .signature-stamp-row { display: flex; justify-content: flex-start; width: 664px; margin: 12px auto 0; }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
