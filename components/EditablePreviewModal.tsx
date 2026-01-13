@@ -1007,7 +1007,8 @@ export default function EditablePreviewModal({
           display: flex;
           justify-content: flex-start;
           width: 664px;
-          margin: 12px auto 0;
+          margin: -64px auto 0;
+          padding-left: 12px;
         }
         .signature-stamp {
           width: 220px;
