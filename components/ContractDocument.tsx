@@ -8,6 +8,7 @@ interface ContractDocumentProps {
     sale: CarSale;
     type: ContractType;
     documentRef?: React.Ref<HTMLDivElement>;
+    withStamp?: boolean;
 }
 
 // Helper function to safely format values with fallbacks
@@ -34,7 +35,7 @@ const formatDate = (dateString: string | undefined | null): string => {
     }
 };
 
-export default function ContractDocument({ sale, type, documentRef }: ContractDocumentProps) {
+export default function ContractDocument({ sale, type, documentRef, withStamp = false }: ContractDocumentProps) {
     // Guard against undefined sale
     if (!sale) {
         return (
@@ -188,6 +189,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <div className="mt-1 font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
                         </div>
                     </div>
+                    {withStamp && (
+                        <div className="mt-4 flex justify-end">
+                            <img
+                                src="/stamp.jpeg"
+                                alt="Official Stamp"
+                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
+                            />
+                        </div>
+                    )}
                 </>
             )}
 
@@ -409,6 +419,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                                 <div className="mt-1">(Nënshkrimi)</div>
                             </div>
                         </div>
+                        {withStamp && (
+                            <div className="mt-6 flex justify-end">
+                                <img
+                                    src="/stamp.jpeg"
+                                    alt="Official Stamp"
+                                    style={{ width: '120px', height: 'auto', opacity: 0.9 }}
+                                />
+                            </div>
+                        )}
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
                             <p>Nr. Ref: {referenceId} | Data: {today}</p>
@@ -499,6 +518,15 @@ export default function ContractDocument({ sale, type, documentRef }: ContractDo
                             <div className="border-b border-black w-4/5 ml-auto"></div>
                         </div>
                     </div>
+                    {withStamp && (
+                        <div className="mt-4 flex justify-end">
+                            <img
+                                src="/stamp.jpeg"
+                                alt="Official Stamp"
+                                style={{ width: '120px', height: 'auto', opacity: 0.9 }}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
