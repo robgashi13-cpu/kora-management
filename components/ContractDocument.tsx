@@ -559,7 +559,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-stamp-row {
                     position: absolute;
-                    top: -24px;
+                    top: -28px;
                     left: 50%;
                     transform: translateX(-50%);
                     display: flex;
