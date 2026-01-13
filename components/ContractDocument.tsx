@@ -559,7 +559,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-stamp-row {
                     position: absolute;
-                    top: -28px;
+                    top: -66px;
                     left: 50%;
                     transform: translateX(-50%);
                     display: flex;
@@ -567,7 +567,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     width: 664px;
                     margin: 0;
                 }
-                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 80px); }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 110px); }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
