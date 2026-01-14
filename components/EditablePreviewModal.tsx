@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check } from 'lucide-react';
+import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -378,6 +378,13 @@ export default function EditablePreviewModal({
         <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-3">
+              <button
+                onClick={onClose}
+                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
               <h2 className="text-lg font-bold text-slate-800">
                 Preview & Edit {documentTitle}
@@ -582,7 +589,7 @@ export default function EditablePreviewModal({
                       </div>
                       {withStamp && (
                         <div className="signature-stamp-row">
-                          <StampImage className="signature-stamp" />
+                          <StampImage className={`signature-stamp ${documentType === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
                         </div>
                       )}
                     </div>
@@ -1019,6 +1026,9 @@ export default function EditablePreviewModal({
           height: 220px;
           object-fit: contain;
           margin-left: calc((240px - 220px) / 2 + 110px);
+        }
+        .signature-stamp-deposit {
+          margin-left: -40px;
         }
         .label {
           font-weight: bold;
