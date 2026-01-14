@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { X, Printer, Download, Loader2 } from 'lucide-react';
+import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -124,7 +124,16 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50 rounded-t-xl print:hidden">
-                    <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 hover:bg-gray-200 rounded-full transition-colors text-gray-500 hover:text-gray-700"
+                            aria-label="Go back"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft } from 'lucide-react';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
@@ -358,7 +358,18 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         >
             {!hideHeader && (
                 <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
-                    <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+                    <div className="flex items-center gap-3">
+                        {!inline && (
+                            <button
+                                onClick={handleRequestClose}
+                                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+                                aria-label="Go back"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                        )}
+                        <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+                    </div>
                     {!inline && (
                         <button onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
                             <X className="w-5 h-5" />

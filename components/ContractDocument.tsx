@@ -568,7 +568,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     margin: 0;
                 }
                 .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 110px); }
-                .signature-stamp-deposit { margin-left: calc((240px - 220px) / 2); }
+                .signature-stamp-deposit { margin-left: -40px; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;

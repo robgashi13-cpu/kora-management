@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, FileText } from 'lucide-react';
+import { X, FileText, ArrowLeft } from 'lucide-react';
 import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import EditablePreviewModal from './EditablePreviewModal';
@@ -111,9 +111,18 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     onClick={(e) => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 flex-shrink-0">
-                        <div>
-                            <h2 className="text-lg font-bold text-slate-900">Edit Shitblerje</h2>
-                            <p className="text-xs text-slate-500">Only affects Shitblerje + Invoice PDFs.</p>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={onClose}
+                                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700"
+                                aria-label="Go back"
+                            >
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">Edit Shitblerje</h2>
+                                <p className="text-xs text-slate-500">Only affects Shitblerje + Invoice PDFs.</p>
+                            </div>
                         </div>
                         <button
                             onClick={onClose}
