@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, FileText, ArrowLeft } from 'lucide-react';
+import { X, FileText, ArrowLeft, Eye } from 'lucide-react';
+import ViewSaleModal from './ViewSaleModal';
 import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import EditablePreviewModal from './EditablePreviewModal';
@@ -27,6 +28,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
+    const [showViewSale, setShowViewSale] = useState(false);
 
     const baseValues = useMemo(() => {
         if (!sale) return null;
@@ -124,13 +126,23 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                                 <p className="text-xs text-slate-500">Only affects Shitblerje + Invoice PDFs.</p>
                             </div>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700"
-                            aria-label="Close"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowViewSale(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                            >
+                                <Eye className="w-4 h-4" />
+                                <span className="hidden sm:inline">View Sale</span>
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700"
+                                aria-label="Close"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                     <form 
                         onSubmit={handleSubmit} 
@@ -322,6 +334,16 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     onClose={() => setShowInvoice(false)}
                     sale={previewSale}
                     withDogane={invoiceWithDogane}
+                />
+            )}
+
+            {/* View Sale Modal */}
+            {showViewSale && sale && (
+                <ViewSaleModal
+                    isOpen={showViewSale}
+                    sale={sale}
+                    onClose={() => setShowViewSale(false)}
+                    isAdmin={false}
                 />
             )}
         </>
