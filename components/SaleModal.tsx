@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown, ArrowLeft } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye } from 'lucide-react';
+import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
@@ -48,6 +49,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
+    const [showViewSale, setShowViewSale] = useState(false);
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
@@ -370,11 +372,23 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         )}
                         <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                     </div>
-                    {!inline && (
-                        <button onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
-                            <X className="w-5 h-5" />
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {existingSale && (
+                            <button
+                                type="button"
+                                onClick={() => setShowViewSale(true)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                            >
+                                <Eye className="w-4 h-4" />
+                                <span className="hidden sm:inline">View Sale</span>
+                            </button>
+                        )}
+                        {!inline && (
+                            <button onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -710,6 +724,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     sale={formData as CarSale}
                     documentType={contractType}
                     onSaveToSale={handlePreviewSaveToSale}
+                />
+            )}
+            {showViewSale && existingSale && (
+                <ViewSaleModal
+                    isOpen={showViewSale}
+                    sale={existingSale}
+                    onClose={() => setShowViewSale(false)}
+                    isAdmin={isAdmin}
                 />
             )}
         </div>
