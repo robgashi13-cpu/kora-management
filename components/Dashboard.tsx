@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -444,6 +444,8 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
+    const [showGroupMenu, setShowGroupMenu] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
@@ -1248,21 +1250,11 @@ export default function Dashboard() {
             return;
         }
 
-        const salesById = new Map(sales.map(s => [s.id, s]));
-        const ungroupedIds = saleIds.filter(id => {
-            const sale = salesById.get(id);
-            return !sale?.group || !sale.group.trim();
-        });
-        if (ungroupedIds.length === 0) {
-            alert('Select ungrouped cars to create a new group.');
-            return;
-        }
-
         const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
         await persistGroupMeta(nextMeta);
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
-        const saleIdSet = new Set(ungroupedIds);
+        const saleIdSet = new Set(saleIds);
         const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
@@ -2161,9 +2153,108 @@ export default function Dashboard() {
         );
     }
 
+    const navItems = [
+        { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
+        { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
+        { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
+        { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+        { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
+    ] as const;
+
+    const currentNavId = useMemo(() => {
+        if (view === 'settings') return 'SETTINGS';
+        if (view === 'invoices') return 'INVOICES';
+        return activeCategory as string;
+    }, [view, activeCategory]);
+
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full bg-slate-900 text-slate-400">
+            <div className="p-6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-200 p-[2px] shadow-lg">
+                    <img src="/logo_new.jpg" alt="Logo" className="w-full h-full rounded-lg object-cover" />
+                </div>
+                <span className="text-xl font-bold text-white tracking-tight">KORAUTO</span>
+            </div>
+
+            <nav className="flex-1 px-4 space-y-1 mt-4">
+                {navItems.map((item) => {
+                    if (item.adminOnly && !isAdmin) return null;
+                    const isActive = currentNavId === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                setView(item.view);
+                                if (item.category) setActiveCategory(item.category as any);
+                                setIsMobileMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                : 'hover:bg-slate-800 hover:text-white'
+                                }`}
+                        >
+                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                            {item.label}
+                        </button>
+                    );
+                })}
+            </nav>
+
+            <div className="p-4 mt-auto border-t border-slate-800">
+                <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
+                >
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
+                        {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex-1 text-left overflow-hidden">
+                        <div className="text-sm font-bold text-white truncate">{userProfile}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
+                    </div>
+                    <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                </button>
+
+                {showProfileMenu && (
+                    <div className="absolute bottom-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-bottom-2">
+                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
+                        <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
+                            {availableProfiles.map(p => (
+                                <button key={p} onClick={() => {
+                                    if (p === ADMIN_PROFILE && userProfile !== p) {
+                                        setPendingProfile(p);
+                                        setPasswordInput('');
+                                        setIsPasswordVisible(false);
+                                        setShowPasswordModal(true);
+                                        return;
+                                    }
+                                    setShowProfileMenu(false);
+                                    startTransition(() => { setUserProfile(p); });
+                                    persistUserProfile(p);
+                                    setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
+                                }}
+                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                    <span>{p}</span>
+                                    {userProfile === p && <CheckSquare className="w-4 h-4" />}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="h-px bg-slate-100 my-2" />
+                        <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
+                            <Plus className="w-4 h-4" /> Add Profile
+                        </button>
+                        <div className="h-px bg-slate-100 my-2" />
+                        <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                            <LogOut className="w-4 h-4" /> Log Out
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="h-screen flex flex-col bg-white text-slate-800 font-sans">
+        <div className="flex h-screen w-full bg-slate-50 relative overflow-hidden font-sans text-slate-900">
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
@@ -2187,148 +2278,116 @@ export default function Dashboard() {
                 </div>
             )}
 
-            <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-3 py-2 md:px-4 md:py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto flex flex-col gap-2 md:gap-3">
-                    <div className="flex justify-between items-center gap-2">
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md border border-slate-100" />
-                            <div>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">KORAUTO</h1>
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0">
+                <SidebarContent />
+            </aside>
+
+            {/* Mobile Drawer */}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] md:hidden shadow-2xl"
+                        >
+                            <SidebarContent />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            <div className="flex-1 flex flex-col min-w-0 relative">
+                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sticky top-0 z-40">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setIsMobileMenuOpen(true)}
+                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 md:hidden text-slate-600"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
+                            <h2 className="text-lg font-bold text-slate-900 hidden sm:block">
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : activeCategory}
+                            </h2>
+                        </div>
+
+                        <div className="flex-1 max-w-xl hidden md:block">
+                            <div className="relative group">
+                                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                                <input
+                                    placeholder="Search sales..."
+                                    className="w-full bg-slate-100 border-transparent rounded-2xl pl-11 pr-4 py-2 text-sm focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5 transition-all outline-none"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </div>
-                        <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
-                            {[
-                                { key: 'dashboard', label: 'Home' },
-                                { key: 'invoices', label: 'Invoice' },
-                                ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
-                            ].map((tab) => (
-                                <button key={tab.key} onClick={() => setView(tab.key)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${view === tab.key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    <span>{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-3 relative">
+
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2 rounded-full hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
-                                title="Force Sync"
+                                className={`p-2.5 rounded-xl hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}
+                                title="Sync Now"
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-black p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
-                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-slate-900">
-                                    {userProfile ? userProfile[0].toUpperCase() : 'U'}
+
+                            <div className="flex gap-2">
+                                <div className="relative hidden sm:block">
+                                    <ArrowUpDown className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
+                                        className="bg-slate-100 border-transparent text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none focus:bg-white focus:border-slate-300 transition-all appearance-none cursor-pointer text-slate-700 font-medium"
+                                    >
+                                        <option value="createdAt">Date Added</option>
+                                        <option value="nameAlphabetic">Name (A-Z)</option>
+                                        <option value="dueBalance">Balance (Client)</option>
+                                        {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
+                                        <option value="year">Year</option>
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                 </div>
-                            </button>
 
-                            {showProfileMenu && (
-                                <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl p-2 w-52 shadow-xl z-[60]">
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
-                                    <div className="max-h-40 overflow-y-auto scroll-container space-y-1">
-                                        {availableProfiles.map(p => (
-                                            <button key={p} onClick={() => {
-                                                if (p === ADMIN_PROFILE && userProfile !== p) {
-                                                    setPendingProfile(p);
-                                                    setPasswordInput('');
-                                                    setIsPasswordVisible(false);
-                                                    setShowPasswordModal(true);
-                                                    return;
-                                                }
-                                                setShowProfileMenu(false);
-                                                startTransition(() => { setUserProfile(p); });
-                                                persistUserProfile(p);
-                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
-                                            }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
-                                                <span>{p}</span>
-                                                {userProfile === p && <CheckSquare className="w-4 h-4" />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="h-px bg-slate-100 my-2" />
-                                    <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
-                                        <Plus className="w-4 h-4" /> Add Profile
-                                    </button>
-                                    <div className="h-px bg-slate-100 my-2" />
-                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
-                                        <LogOut className="w-4 h-4" /> Log Out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex md:hidden bg-white/80 border border-slate-100 p-1 rounded-full gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                        {[
-                            { key: 'dashboard', label: 'Home' },
-                            { key: 'invoices', label: 'Invoice' },
-                            ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
-                        ].map((tab) => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setView(tab.key)}
-                                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap ${view === tab.key
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex gap-2 md:gap-3 justify-between items-center">
-                        <div className="relative group flex-1 md:flex-none">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input placeholder="Search cars..." className="bg-white border border-slate-200 rounded-full pl-10 pr-4 py-2 text-sm w-full md:w-80 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 text-slate-700 placeholder:text-slate-400 transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            <div className="relative">
-                                <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                    className="bg-white border border-slate-200 text-slate-700 text-xs md:text-sm rounded-full pl-8 pr-4 py-2 outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all md:py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                                    <option value="createdAt">Date Added</option>
-                                    <option value="nameAlphabetic">Name (A-Z)</option>
-                                    <option value="dueBalance">Balance (Client)</option>
-                                    {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
-                                    <option value="year">Year</option>
-                                </select>
+                                <button
+                                    onClick={() => openSaleForm(null)}
+                                    className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span className="hidden lg:inline">New Sale</span>
+                                </button>
                             </div>
-                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
-                                <Plus className="w-4 h-4" /> Add Sale
-                            </button>
                         </div>
                     </div>
-                </div>
-            </header>
 
-            <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
-                {view !== 'sale_form' && (
-                    <>
+                    {/* Mobile Search - Visible only on mobile */}
+                    <div className="mt-3 md:hidden">
+                        <div className="relative group">
+                            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                placeholder="Search sales..."
+                                className="w-full bg-slate-100 border-transparent rounded-xl pl-11 pr-4 py-2.5 text-sm focus:bg-white focus:border-slate-300 transition-all outline-none"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </header>
 
-                        {/* Global Tabs (Visible on Dashboard and Invoices) */}
-                        {view !== 'settings' && (
-                            <div className="flex gap-1.5 md:gap-2 mb-2 md:mb-4 overflow-x-auto pb-1 md:pb-2 no-scrollbar">
-                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
-                                    const isActive = (view === 'dashboard' && activeCategory === cat);
-                                    return (
-                                        <button
-                                            key={cat}
-                                            onClick={() => {
-                                                setView('dashboard');
-                                                setActiveCategory(cat as any);
-                                            }}
-                                            className={`px-3 py-1 md:px-3.5 md:py-1.5 rounded-full font-semibold text-[11px] md:text-xs tracking-wide transition-all whitespace-nowrap ${isActive
-                                                ? 'bg-black text-white shadow-sm'
-                                                : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300'
-                                                }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
+                    {view !== 'sale_form' && (
+                        <>
 
                         {view === 'dashboard' ? (<>
                             <div
@@ -3362,10 +3421,58 @@ export default function Dashboard() {
                                     </button>
 
                                     {groupingEnabled && (
-                                        <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                            <FolderPlus className="w-5 h-5 text-slate-600" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
-                                        </button>
+                                        <div className="relative">
+                                            <button onClick={() => setShowGroupMenu(!showGroupMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                                <FolderPlus className="w-5 h-5 text-slate-600" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Group</span>
+                                            </button>
+                                            {showGroupMenu && (
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-48 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-1.5 border-b border-slate-50 mb-1">Move to Group</div>
+                                                    <div className="max-h-48 overflow-y-auto scroll-container py-1">
+                                                        {activeGroups.map(g => (
+                                                            <button
+                                                                key={g.name}
+                                                                onClick={() => {
+                                                                    handleAddToGroup(g.name, Array.from(selectedIds));
+                                                                    setShowGroupMenu(false);
+                                                                    setSelectedIds(new Set());
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between"
+                                                            >
+                                                                <span>{g.name}</span>
+                                                                <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{groupedSales[g.name]?.length || 0}</span>
+                                                            </button>
+                                                        ))}
+                                                        {groupedSales.Ungrouped?.length > 0 && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    const ids = Array.from(selectedIds);
+                                                                    const newSales = sales.map(s => ids.includes(s.id) ? { ...s, group: undefined } : s);
+                                                                    updateSalesAndSave(newSales);
+                                                                    setShowGroupMenu(false);
+                                                                    setSelectedIds(new Set());
+                                                                }}
+                                                                className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                                                            >
+                                                                Ungrouped
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <div className="h-px bg-slate-100 my-1" />
+                                                    <button
+                                                        onClick={() => {
+                                                            setShowGroupMenu(false);
+                                                            handleCreateGroup();
+                                                        }}
+                                                        className="w-full px-3 py-2.5 text-left text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-2"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                        Create New Group
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
 
                                     <div className="relative">
@@ -3405,6 +3512,7 @@ export default function Dashboard() {
                 )}
 
             </main>
+        </div> {/* Close flex-1 */}
             <AnimatePresence>
                 {editChoiceSale && (
                     <motion.div
@@ -3602,6 +3710,6 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5 mx-auto" />
                 </button>
             )}
-        </div >
+        </div>
     );
 }

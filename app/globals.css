@@ -221,8 +221,8 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #0f172a;
-  /* slate-900 (Darker) */
+  color: #000000;
+  /* Pure Black */
 }
 
 @media (min-width: 1024px) {

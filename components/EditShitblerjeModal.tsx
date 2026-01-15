@@ -111,106 +111,112 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     className="w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col my-auto overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 flex-shrink-0">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 flex-shrink-0 bg-slate-50/50">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={onClose}
-                                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700"
+                                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 hover:text-slate-700"
                                 aria-label="Go back"
                             >
-                                <ArrowLeft className="w-5 h-5" />
+                                <ArrowLeft className="w-4 h-4" />
                             </button>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">Edit Shitblerje</h2>
-                                <p className="text-xs text-slate-500">Only affects Shitblerje + Invoice PDFs.</p>
+                                <h2 className="text-base font-bold text-slate-900 leading-tight">Edit Shitblerje</h2>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">PDF Overrides Only</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setShowViewSale(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold transition-colors"
                             >
-                                <Eye className="w-4 h-4" />
-                                <span className="hidden sm:inline">View Sale</span>
+                                <Eye className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline uppercase">View</span>
                             </button>
                             <button
                                 onClick={onClose}
-                                className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700"
+                                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
                                 aria-label="Close"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
                     <form
                         onSubmit={handleSubmit}
-                        className="p-5 space-y-5 overflow-y-auto flex-1"
+                        className="p-4 space-y-4 overflow-y-auto flex-1 no-scrollbar"
                         style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
                     >
-                        {/* Buyer Info Section */}
-                        <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Buyer Information</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input label="Buyer Name" name="buyerName" value={formData.buyerName ?? ''} onChange={handleChange} required />
-                                <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId ?? ''} onChange={handleChange} />
+                        {/* Car Details Section */}
+                        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm space-y-4">
+                            <div className="border-b border-slate-100 pb-2">
+                                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Car Details</h3>
                             </div>
-                        </div>
-
-                        {/* Vehicle Info Section */}
-                        <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Vehicle Information</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <Input label="Brand" name="brand" value={formData.brand ?? ''} onChange={handleChange} required />
                                 <Input label="Model" name="model" value={formData.model ?? ''} onChange={handleChange} required />
                                 <Select label="Year" name="year" value={formData.year ?? new Date().getFullYear()} onChange={handleNumberChange}>
-                                    {YEARS.map(year => (
-                                        <option key={year} value={year}>{year}</option>
-                                    ))}
+                                    {YEARS.map(year => <option key={year} value={year}>{year}</option>)}
                                 </Select>
                                 <Select label="Color" name="color" value={formData.color ?? ''} onChange={handleChange}>
                                     <option value="">Select</option>
-                                    {COLORS.map(color => (
-                                        <option key={color} value={color}>{color}</option>
-                                    ))}
+                                    {COLORS.map(color => <option key={color} value={color}>{color}</option>)}
                                 </Select>
-                                <Input label="KM" name="km" type="number" value={formData.km ?? 0} onChange={handleNumberChange} />
-                                <Input label="VIN" name="vin" value={formData.vin ?? ''} onChange={handleChange} />
-                                <Input label="License Plate" name="plateNumber" value={formData.plateNumber ?? ''} onChange={handleChange} />
-                                <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice ?? 0} onChange={handleNumberChange} required />
+                                <Input label="KM" type="number" name="km" value={formData.km ?? 0} onChange={handleNumberChange} />
+                                <Input label="Plate" name="plateNumber" value={formData.plateNumber ?? ''} onChange={handleChange} />
+                                <div className="col-span-2">
+                                    <Input label="VIN" name="vin" value={formData.vin ?? ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Financials & Buyer Section */}
+                        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm space-y-4">
+                            <div className="border-b border-slate-100 pb-2">
+                                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Financials & Buyer</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <Input label="Buyer Name" name="buyerName" value={formData.buyerName ?? ''} onChange={handleChange} required />
+                                <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId ?? ''} onChange={handleChange} />
+                                <div className="md:col-span-2">
+                                    <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice ?? 0} onChange={handleNumberChange} required className="font-bold text-slate-900" />
+                                </div>
                             </div>
                         </div>
 
                         {/* Documents Section */}
-                        <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Documents</h3>
+                        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm space-y-3">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <p className="text-sm text-slate-500">Generate Shitblerje, Marrëveshje, or Invoice.</p>
+                                <div>
+                                    <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">Reports</div>
+                                    <p className="text-[10px] text-slate-500 uppercase mt-0.5">Generate Contracts & Invoices</p>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowDocumentMenu(true)}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-[11px] font-bold shadow-sm hover:bg-slate-800 transition-all uppercase"
                                 >
-                                    <FileText className="w-4 h-4" />
+                                    <FileText className="w-3.5 h-3.5" />
                                     Documents
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2 border-t border-slate-100">
+                        <div className="flex justify-end gap-2 pt-2">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50"
+                                className="px-5 py-2 rounded-lg border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors uppercase"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSaving}
-                                className="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-60"
+                                className="px-8 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 disabled:opacity-60 transition-colors shadow-sm uppercase"
                             >
-                                {isSaving ? 'Saving...' : 'Save Shitblerje'}
+                                {isSaving ? 'SAVING...' : 'SAVE CHANGES'}
                             </button>
                         </div>
                     </form>
@@ -347,13 +353,13 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
 }
 
 const Input = ({ label, className = '', required, ...props }: any) => (
-    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 leading-none">
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-tight ml-0.5">
             {label}
-            {required && <span className="text-red-500">*</span>}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 shadow-sm"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-2.5 text-xs text-slate-900 h-9 outline-none transition-all placeholder:text-slate-400 w-full shadow-sm"
             required={required}
             {...props}
         />
@@ -361,13 +367,13 @@ const Input = ({ label, className = '', required, ...props }: any) => (
 );
 
 const Select = ({ label, children, required, ...props }: any) => (
-    <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 leading-none">
+    <div className="flex flex-col gap-1 w-full">
+        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-tight ml-0.5">
             {label}
-            {required && <span className="text-red-500">*</span>}
+            {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
         <select
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer shadow-sm"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-2.5 text-xs text-slate-900 h-9 outline-none transition-all w-full cursor-pointer shadow-sm"
             required={required}
             {...props}
         >

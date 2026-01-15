@@ -398,10 +398,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 flex flex-col gap-8 md:gap-10"
+                    className="px-4 md:px-6 py-4 flex flex-col gap-6"
                 >
-                    <Section title="Vehicle Details" description="Core vehicle information for this sale.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
+                    <Section title="Car Details">
+                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
                             <Input label="Model" name="model" value={formData.model} onChange={handleChange} required />
                             <Select label="Year" name="year" value={formData.year} onChange={handleChange}>
@@ -411,18 +411,18 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <option value="">Select</option>
                                 {COLORS.map(c => <option key={c} value={c}>{c}</option>)}
                             </Select>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <Input label="KM" name="km" value={formData.km ? formData.km.toLocaleString() : ''} onChange={handleKmChange} placeholder="0" />
-                            <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
                             <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                            <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
                         </div>
                     </Section>
 
-                    <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                    <Section title="Participants">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
-                            <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
+                            <Input label="Buyer ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
                             <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange}>
                                 <option value="">Select Seller</option>
                                 {availableProfiles.map(profile => (
@@ -430,72 +430,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 ))}
                             </Select>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                            <Input label="Shipping" name="shippingName" value={formData.shippingName} onChange={handleChange} />
                             <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
-                        </div>
-                    </Section>
-
-                    <Section title="Financials" description="Costs, payments, and status for this sale.">
-                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
-                            {isAdmin && (
-                                <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
-                            )}
-                            <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
-                                    Paid?
-                                    <span className="text-xs font-medium text-slate-400">(Optional)</span>
-                                </label>
-                                <label className={`flex items-center justify-center gap-2 cursor-pointer h-[52px] rounded-xl border transition-all ${formData.isPaid ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-200'}`}>
-                                    <input
-                                        type="checkbox"
-                                        name="isPaid"
-                                        checked={formData.isPaid ?? false}
-                                        onChange={handlePaidToggle}
-                                        className="hidden"
-                                    />
-                                    <span className="text-sm font-bold uppercase">{formData.isPaid ? 'Paid' : 'Not Paid'}</span>
-                                </label>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
-                                    Transport
-                                    <span className="text-xs font-medium text-slate-400">(Optional)</span>
-                                </label>
-                                <label className={`flex items-center gap-2 cursor-pointer p-3 rounded-xl border transition-all justify-center select-none h-[52px] ${formData.includeTransport ? 'bg-slate-900 border-slate-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-200'}`}>
-                                    <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
-                                    <span className="text-xs font-bold uppercase">{formData.includeTransport ? 'Transport: Yes' : 'Transport: No'}</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        {isAdmin && (
-                            <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Supplier (Korea)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                                    <Input label="Paid to Korea (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
-                                    <DateInput label="Paid Date (KR)" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Client Payments</h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-                                <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
-                                <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
-                                <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
-                                <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
-                                <div className="col-span-1 sm:col-span-2 xl:col-span-3">
-                                    <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4 md:gap-6">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
                                 <option value="New">New</option>
                                 <option value="In Progress">In Progress</option>
@@ -504,36 +441,83 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <option value="Cancelled">Cancelled</option>
                             </Select>
                         </div>
+                    </Section>
 
-                        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-                            <span className="text-sm text-slate-500 font-bold uppercase tracking-wide">Balance Due</span>
-                            <span className={`text-2xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
-                            </span>
+                    <Section title="Financials">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            {isAdmin && (
+                                <Input label="Cost (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
+                            )}
+                            <Input label="Sold (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-slate-900" />
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">Paid?</label>
+                                <label className={`flex items-center justify-center gap-2 cursor-pointer h-10 rounded-lg border transition-all ${formData.isPaid ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-emerald-200'}`}>
+                                    <input type="checkbox" name="isPaid" checked={formData.isPaid ?? false} onChange={handlePaidToggle} className="hidden" />
+                                    <span className="text-[10px] font-bold uppercase">{formData.isPaid ? 'Paid' : 'Not Paid'}</span>
+                                </label>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs font-semibold text-slate-500 uppercase">Transport</label>
+                                <label className={`flex items-center gap-2 cursor-pointer rounded-lg border transition-all justify-center select-none h-10 ${formData.includeTransport ? 'bg-slate-900 border-slate-500 text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-200'}`}>
+                                    <input type="checkbox" name="includeTransport" checked={formData.includeTransport || false} onChange={(e) => { const c = e.target.checked; setFormData(p => ({ ...p, includeTransport: c, soldPrice: (p.soldPrice || 0) + (c ? 350 : -350) })); }} className="hidden" />
+                                    <span className="text-[10px] font-bold uppercase">{formData.includeTransport ? 'Yes' : 'No'}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Client Payments</h4>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <Input label="Bank" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
+                                    <Input label="Cash" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
+                                    <Input label="Deposit" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
+                                    <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            {isAdmin && (
+                                <div className="space-y-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Supplier (Korea)</h4>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <Input label="Paid KR (€)" name="amountPaidToKorea" type="number" value={formData.amountPaidToKorea || ''} onChange={handleChange} />
+                                        <DateInput label="Paid Date" name="paidDateToKorea" value={formData.paidDateToKorea ? String(formData.paidDateToKorea).split('T')[0] : ''} onChange={handleChange} />
+                                    </div>
+                                    <div className="p-3 rounded-lg bg-white border border-slate-100 flex justify-between items-center mt-2.5">
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase">Balance Due</span>
+                                        <span className={`text-lg font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                            €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Section>
 
-                    <Section title="Attachments" description="Attach receipts and invoices for this sale.">
-                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
+                    <Section title="Attachments">
+                        <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-3 md:gap-4`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
                             <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
 
-                    <Section title="Documents" description="Generate contracts and invoices from this sale.">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <Section title="Documents">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div>
-                                <div className="text-sm font-semibold text-slate-700">Documents</div>
-                                <p className="text-sm text-slate-500">Deposit, Shitblerje, Marrëveshje, or Invoice.</p>
+                                <div className="text-sm font-semibold text-slate-900">Reports</div>
+                                <p className="text-xs text-slate-500">Generate contracts and invoices.</p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setShowDocumentMenu(true)}
-                                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all w-full sm:w-auto justify-center"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold shadow-sm hover:bg-slate-800 transition-all w-full sm:w-auto justify-center"
                             >
                                 <FileText className="w-4 h-4" />
-                                Documents
+                                DOCUMENTS
                             </button>
                         </div>
                     </Section>
@@ -739,12 +723,12 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-5 md:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-7">
-        <div className="space-y-2 border-b border-slate-100 pb-5">
-            <h3 className="text-lg md:text-xl font-bold text-slate-900 tracking-wide">{title}</h3>
-            {description && <p className="text-sm md:text-[15px] text-slate-500 leading-relaxed">{description}</p>}
+    <div className="w-full rounded-xl border border-slate-100 bg-white/90 p-4 md:p-5 shadow-sm space-y-4">
+        <div className="border-b border-slate-100 pb-2">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">{title}</h3>
+            {description && <p className="text-[11px] text-slate-500">{description}</p>}
         </div>
-        <div className="space-y-5">
+        <div className="space-y-4">
             {children}
         </div>
     </div>
