@@ -125,11 +125,11 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 2. Car Info */}
-            <div className="px-1 h-full flex items-center font-semibold text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
+            <div className="px-2 h-full flex items-center font-semibold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-900 transition-colors text-[9px] xl:text-[10px]"
+                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-700 transition-colors text-[11px] xl:text-xs"
                     title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
@@ -137,156 +137,156 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 3. Year */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-600 border-r border-slate-100 bg-white text-[9px]">
+            <div className="px-2 h-full flex items-center justify-center text-slate-800 border-r border-slate-100 bg-white text-[11px] xl:text-xs font-medium">
                 {canEdit ? (
-                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-600" />
+                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-800" />
                 ) : s.year}
             </div>
 
             {/* 4. KM */}
-            <div className="px-1 h-full flex items-center justify-center text-slate-500 font-mono text-[9px] border-r border-slate-100 bg-white">
+            <div className="px-2 h-full flex items-center justify-center text-slate-700 font-mono text-[11px] xl:text-xs border-r border-slate-100 bg-white">
                 {canEdit ? (
-                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-500" />
+                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-700" />
                 ) : (s.km || 0).toLocaleString()}
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-1 h-full flex items-center text-[9px] xl:text-[10px] border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="px-2 h-full flex items-center text-[11px] xl:text-xs border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                 {canEdit ? (
                     <div className="flex items-center gap-1 min-w-0 max-w-full truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
-                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-700 font-medium truncate" />
-                        <span className="text-slate-300">•</span>
-                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-400 font-mono text-[9px] truncate" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
+                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-800 font-semibold truncate" />
+                        <span className="text-slate-400">•</span>
+                        <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-600 font-mono text-[10px] xl:text-[11px] truncate" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
                     </div>
                 ) : (
-                    <div className="text-slate-700 font-mono font-medium truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
-                        {s.plateNumber} • {(s.vin || '').slice(-6)}
+                    <div className="text-slate-800 font-mono font-semibold truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
+                        {s.plateNumber} • <span className="text-slate-600">{(s.vin || '').slice(-6)}</span>
                     </div>
                 )}
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-1 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.buyerName}>
+            <div className="px-2 h-full flex items-center text-slate-800 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0 font-medium" title={s.buyerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-700" />
+                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-800" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.sellerName}>
+            <div className="px-2 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0" title={s.sellerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-600" />
+                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-700" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-1 h-full flex items-center text-slate-600 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[9px] min-w-0" title={s.shippingName}>
+            <div className="px-2 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0" title={s.shippingName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-600" />
+                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-700" />
                 ) : s.shippingName}
             </div>
 
             {/* 9. Cost (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-500 border-r border-slate-100 bg-white text-[9px]">
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-700 border-r border-slate-100 bg-white text-[11px] xl:text-xs">
                     {canEdit ? (
-                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-500" />
+                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-700" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
                 </div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-emerald-600 font-semibold border-r border-slate-100 bg-white text-[9px]">
+                <div className="px-2 h-full flex items-center justify-end font-mono text-emerald-700 font-bold border-r border-slate-100 bg-white text-[11px] xl:text-xs">
                     {canEdit ? (
-                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-600 font-semibold" />
+                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-700 font-bold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
             )}
 
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                <div className="px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <div className="flex flex-col items-end gap-0.5 text-[8px] xl:text-[9px] leading-tight">
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[7px] text-slate-400">Bk</span>
-                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-600 font-medium" />
+                        <div className="flex flex-col items-end gap-0.5 text-[10px] xl:text-[11px] leading-tight">
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[8px] text-slate-500 font-semibold">Bk</span>
+                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-700 font-semibold" />
                             </div>
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[7px] text-slate-400">Ca</span>
-                                <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="text-slate-600 font-medium" />
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[8px] text-slate-500 font-semibold">Ca</span>
+                                <InlineEditableCell value={s.amountPaidCash || 0} onSave={(v) => handleFieldUpdate('amountPaidCash', v)} type="number" prefix="€" className="text-slate-700 font-semibold" />
                             </div>
-                            <div className="flex items-center gap-0.5">
-                                <span className="uppercase text-[7px] text-slate-400">Dp</span>
-                                <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-500 font-medium" />
+                            <div className="flex items-center gap-1">
+                                <span className="uppercase text-[8px] text-slate-500 font-semibold">Dp</span>
+                                <InlineEditableCell value={s.deposit || 0} onSave={(v) => handleFieldUpdate('deposit', v)} type="number" prefix="€" className="text-slate-600 font-semibold" />
                             </div>
                         </div>
                     ) : (
-                        <div className="font-mono text-sky-600 font-medium text-[9px]">
+                        <div className="font-mono text-sky-700 font-semibold text-[11px] xl:text-xs">
                             €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-[9px] xl:text-[10px] text-slate-400 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
-                    <div className="px-1 h-full flex items-center justify-end border-r border-slate-100 bg-white">
+                    <div className="px-2 h-full flex items-center justify-end font-mono text-[11px] xl:text-xs text-slate-600 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                         {canEdit ? (
-                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-500 font-mono text-[9px] xl:text-[10px]" />
+                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-600 font-mono text-[11px] xl:text-xs" />
                         ) : (
-                            <span className="font-mono text-[9px] xl:text-[10px] text-slate-400">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
+                            <span className="font-mono text-[11px] xl:text-xs text-slate-600">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-1 h-full flex items-center justify-end font-mono font-semibold text-slate-700 whitespace-nowrap border-r border-slate-100 bg-white text-[9px]">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-2 h-full flex items-center justify-end font-mono font-bold text-slate-900 whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
-                    <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
+                    <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
+                    <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
                 </>
             )}
 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-1 h-full flex items-center justify-end font-mono font-semibold border-r border-slate-100 bg-white">
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] xl:text-[10px] ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                <div className="px-2 h-full flex items-center justify-end font-mono font-bold border-r border-slate-100 bg-white">
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] xl:text-xs font-bold ${calculateBalance(s) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
             ) : (
-                <div className="px-1 h-full flex items-center justify-end font-mono text-slate-300 border-r border-slate-100 bg-white text-[9px]">-</div>
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
             )}
 
             {/* 15b. Korea Paid (Admin Only) */}
             {isAdmin && (
-                <div className="px-1 h-full flex flex-col items-center justify-center gap-0.5 border-r border-slate-100 bg-white">
+                <div className="px-2 h-full flex flex-col items-center justify-center gap-1 border-r border-slate-100 bg-white">
                     {canEdit && (
-                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[8px] xl:text-[9px] font-semibold text-slate-600" />
+                        <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] xl:text-[11px] font-bold text-slate-700" />
                     )}
-                    <span className={`text-[8px] xl:text-[9px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                    <span className={`text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
             )}
 
             {/* 16. Status */}
-            <div className="px-1 h-full flex items-center justify-center border-r border-slate-100 bg-white" title={s.status}>
-                <div className="flex flex-col items-center gap-0.5">
+            <div className="px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white" title={s.status}>
+                <div className="flex flex-col items-center gap-1">
                     {canEdit ? (
-                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[8px] xl:text-[9px] ${statusClass}`} />
+                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`} />
                     ) : (
-                        <span className={`status-badge text-[8px] xl:text-[9px] ${statusClass}`}>{s.status}</span>
+                        <span className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="text-[7px] xl:text-[8px] uppercase font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                        <span className="text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
                             Paid
                         </span>
                     )}
@@ -294,27 +294,27 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 17. Sold By */}
-            <div className="px-1 h-full flex items-center justify-center text-[9px] xl:text-[10px] border-r border-slate-100 bg-white" title={s.soldBy}>
+            <div className="px-2 h-full flex items-center justify-center text-[11px] xl:text-xs border-r border-slate-100 bg-white font-medium" title={s.soldBy}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-500" />
+                    <InlineEditableCell value={s.soldBy} onSave={(v) => handleFieldUpdate('soldBy', v)} className="text-slate-700" />
                 ) : (
-                    <span className="text-slate-500">{s.soldBy}</span>
+                    <span className="text-slate-700">{s.soldBy}</span>
                 )}
             </div>
 
             {/* 18. Actions */}
-            <div className="px-1 h-full flex items-center justify-center gap-0.5 bg-white">
+            <div className="px-2 h-full flex items-center justify-center gap-1 bg-white">
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
-                        className="text-slate-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
+                        className="text-slate-500 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-lg"
                         title="Remove from group"
                     >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                     </button>
                 )}
-                <button onClick={(e) => openInvoice(s, e)} className="text-slate-700 hover:text-slate-900 transition-colors p-1 hover:bg-slate-50 rounded" title="View Invoice">
-                    <FileText className="w-3.5 h-3.5" />
+                <button onClick={(e) => openInvoice(s, e)} className="text-slate-600 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg" title="View Invoice">
+                    <FileText className="w-4 h-4" />
                 </button>
             </div>
         </Reorder.Item>
@@ -2284,54 +2284,54 @@ export default function Dashboard() {
                                     style={{
                                         gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
                                     }}>
-                                    <div className="bg-slate-50 font-medium text-slate-500 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-1 xl:p-2 flex items-center justify-center cursor-pointer hover:text-slate-700" onClick={() => toggleAll(filteredSales)}>
-                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-700" /> : <Square className="w-4 h-4" />}
+                                    <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                        <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900" onClick={() => toggleAll(filteredSales)}>
+                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
                                         </div>
-                                        <div className="p-1 xl:p-2 pl-2 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('brand')}>
-                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
-                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
-                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
-                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
-                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
-                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 cursor-pointer hover:text-slate-700 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
-                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
                                         {isAdmin && (
-                                            <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
-                                                Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                                Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                             </div>
                                         )}
-                                        <div className="p-1 xl:p-2.5 text-right cursor-pointer hover:text-slate-700 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
-                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-right">Paid</div>
-                                        <div className="p-1 xl:p-2.5 text-right">Bank Fee</div>
-                                        <div className="p-1 xl:p-2.5 text-right">Tax</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-right text-slate-900">Profit</div>}
-                                        <div className="p-1 xl:p-2.5 text-right">Balance</div>
-                                        {isAdmin && <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
-                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 text-right">Paid</div>
+                                        <div className="p-2 xl:p-3 text-right">Bank Fee</div>
+                                        <div className="p-2 xl:p-3 text-right">Tax</div>
+                                        {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold">Profit</div>}
+                                        <div className="p-2 xl:p-3 text-right">Balance</div>
+                                        {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
+                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>}
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
-                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
+                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5 text-center cursor-pointer hover:text-slate-700 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
-                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
                                         </div>
-                                        <div className="p-1 xl:p-2.5"></div>
+                                        <div className="p-2 xl:p-3"></div>
                                     </div>
                                     {/* Render Rows */}
                                     {groupingEnabled ? (
