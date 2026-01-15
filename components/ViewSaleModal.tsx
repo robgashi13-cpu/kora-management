@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { X, ArrowLeft, FileText, Download, Eye } from 'lucide-react';
-import { CarSale, Attachment } from '@/app/types';
+import { CarSale, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
+import EditablePreviewModal from './EditablePreviewModal';
+import InvoiceModal from './InvoiceModal';
 
 interface Props {
     isOpen: boolean;
@@ -19,14 +21,18 @@ const getBankFee = (price: number) => {
     return 100;
 };
 
-const calculateBalance = (sale: CarSale) => 
+const calculateBalance = (sale: CarSale) =>
     (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 
-const calculateProfit = (sale: CarSale) => 
+const calculateProfit = (sale: CarSale) =>
     ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
 export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }: Props) {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [contractType, setContractType] = useState<ContractType | null>(null);
+    const [showInvoice, setShowInvoice] = useState(false);
+    const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
+    const [showDoganeSelection, setShowDoganeSelection] = useState(false);
 
     if (!isOpen || !sale) return null;
 
@@ -121,13 +127,12 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                                sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                                sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                                sale.status === 'Shipped' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                                sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border border-red-200' :
-                                'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}>
+                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
+                                    sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                                        sale.status === 'Shipped' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
+                                            sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border border-red-200' :
+                                                'bg-slate-100 text-slate-600 border border-slate-200'
+                                }`}>
                                 {sale.status}
                             </span>
                             <button
@@ -230,6 +235,40 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             </div>
                         </Section>
 
+                        {/* Documents Section */}
+                        <Section title="Documents">
+                            <div className="flex flex-wrap gap-3">
+                                <button
+                                    onClick={() => setContractType('deposit')}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all"
+                                >
+                                    <FileText className="w-4 h-4 text-slate-400" />
+                                    Deposit
+                                </button>
+                                <button
+                                    onClick={() => setContractType('full_shitblerje')}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all"
+                                >
+                                    <FileText className="w-4 h-4 text-slate-400" />
+                                    Shitblerje
+                                </button>
+                                <button
+                                    onClick={() => setContractType('full_marreveshje')}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all"
+                                >
+                                    <FileText className="w-4 h-4 text-slate-400" />
+                                    Marrëveshje
+                                </button>
+                                <button
+                                    onClick={() => setShowDoganeSelection(true)}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl border border-emerald-100 bg-emerald-50/30 hover:bg-emerald-50 text-emerald-700 text-sm font-semibold transition-all"
+                                >
+                                    <FileText className="w-4 h-4 text-emerald-500" />
+                                    Invoice
+                                </button>
+                            </div>
+                        </Section>
+
                         {/* Notes */}
                         {sale.notes && (
                             <Section title="Notes">
@@ -270,6 +309,58 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                         <X className="w-8 h-8" />
                     </button>
                 </div>
+            )}
+
+            {/* Document Selection / Sub-modals */}
+            {showDoganeSelection && (
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
+                    <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 className="text-base font-bold text-slate-900">Fatura</h4>
+                                <p className="text-sm text-slate-500">Me Doganë apo pa Doganë?</p>
+                            </div>
+                            <button type="button" onClick={() => setShowDoganeSelection(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => { setInvoiceWithDogane(false); setShowInvoice(true); setShowDoganeSelection(false); }}
+                                className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-4 text-center hover:border-slate-400 hover:bg-slate-50 transition"
+                            >
+                                <div className="text-sm font-bold text-slate-900">Pa Doganë</div>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setInvoiceWithDogane(true); setShowInvoice(true); setShowDoganeSelection(false); }}
+                                className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-200 px-4 py-4 text-center hover:border-emerald-400 hover:bg-emerald-50 transition"
+                            >
+                                <div className="text-sm font-bold text-emerald-700">Me Doganë</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {contractType && (
+                <EditablePreviewModal
+                    isOpen={!!contractType}
+                    sale={sale}
+                    documentType={contractType}
+                    onClose={() => setContractType(null)}
+                    onSaveToSale={() => { }}
+                />
+            )}
+
+            {showInvoice && (
+                <InvoiceModal
+                    isOpen={showInvoice}
+                    onClose={() => setShowInvoice(false)}
+                    sale={sale}
+                    withDogane={invoiceWithDogane}
+                />
             )}
         </>
     );

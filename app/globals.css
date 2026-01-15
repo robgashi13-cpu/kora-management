@@ -161,31 +161,31 @@ button {
 
 /* Compact table row styles with improved readability */
 .table-row-compact > div {
-  padding-top: 4px;
-  padding-bottom: 4px;
-  font-size: 0.7rem;
-  line-height: 1.3;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  font-size: 0.75rem;
+  line-height: 1.25;
   min-height: var(--row-height-compact);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: hsl(222 20% 15%);
+  color: #000000;
 }
 
 @media (min-width: 1024px) {
   .table-row-compact > div {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    font-size: 0.75rem;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 0.8rem;
   }
 }
 
 @media (min-width: 1367px) {
   .table-row-compact > div {
-    padding-top: 6px;
-    padding-bottom: 6px;
-    font-size: 0.8rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    font-size: 0.85rem;
   }
 }
 

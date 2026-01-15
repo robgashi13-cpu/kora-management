@@ -13,12 +13,14 @@ import { createRoot } from 'react-dom/client';
 import { zip } from 'fflate';
 import SaleModal from './SaleModal';
 import EditShitblerjeModal from './EditShitblerjeModal';
+import ViewSaleModal from './ViewSaleModal';
 import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
 import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -71,10 +73,10 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
     const canEdit = isAdmin || s.soldBy === userProfile;
     const statusClass = s.status === 'Completed' ? 'status-completed' :
         (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
-        s.status === 'New' ? 'status-new' :
-        s.status === 'Shipped' ? 'status-shipped' :
-        s.status === 'Inspection' ? 'status-inspection' :
-        'bg-slate-100 text-slate-500';
+            s.status === 'New' ? 'status-new' :
+                s.status === 'Shipped' ? 'status-shipped' :
+                    s.status === 'Inspection' ? 'status-inspection' :
+                        'bg-slate-100 text-slate-500';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -345,9 +347,62 @@ export default function Dashboard() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [rememberProfile, setRememberProfile] = useState(false);
+    const [viewSaleModalItem, setViewSaleModalItem] = useState<CarSale | null>(null);
 
-    const canViewPrices = userProfile === ADMIN_PROFILE;
     const isAdmin = userProfile === ADMIN_PROFILE;
+    const canViewPrices = isAdmin;
+
+    const defaultWidths = useMemo(() => ({
+        selection: 30,
+        carInfo: 185,
+        year: 60,
+        km: 80,
+        plateVin: 130,
+        buyer: 150,
+        seller: 120,
+        shipping: 120,
+        cost: 96,
+        sold: 106,
+        paid: 120,
+        bankFee: 66,
+        tax: 76,
+        profit: 96,
+        balance: 120,
+        korea: 110,
+        status: 104,
+        soldBy: 96,
+        actions: 52
+    }), []);
+
+    const { getColumnStyle, handleMouseDown, columnWidths } = useResizableColumns(defaultWidths, {
+        storageKey: isAdmin ? 'table-widths-admin' : 'table-widths-user',
+        minWidth: 30
+    });
+
+    const gridTemplateColumns = useMemo(() => {
+        const cols = [
+            getColumnStyle('selection').width + 'px',
+            getColumnStyle('carInfo').width + 'px',
+            getColumnStyle('year').width + 'px',
+            getColumnStyle('km').width + 'px',
+            getColumnStyle('plateVin').width + 'px',
+            getColumnStyle('buyer').width + 'px',
+            getColumnStyle('seller').width + 'px',
+            getColumnStyle('shipping').width + 'px',
+        ];
+        if (isAdmin) cols.push(getColumnStyle('cost').width + 'px');
+        cols.push(getColumnStyle('sold').width + 'px');
+        cols.push(getColumnStyle('paid').width + 'px');
+        cols.push(getColumnStyle('bankFee').width + 'px');
+        cols.push(getColumnStyle('tax').width + 'px');
+        if (isAdmin) cols.push(getColumnStyle('profit').width + 'px');
+        cols.push(getColumnStyle('balance').width + 'px');
+        if (isAdmin) cols.push(getColumnStyle('korea').width + 'px');
+        cols.push(getColumnStyle('status').width + 'px');
+        cols.push(getColumnStyle('soldBy').width + 'px');
+        cols.push(getColumnStyle('actions').width + 'px');
+        return cols.join(' ');
+    }, [isAdmin, getColumnStyle, columnWidths]);
 
     const [sortBy, setSortBy] = useState<string>('createdAt');
 
@@ -926,24 +981,24 @@ export default function Dashboard() {
             margin: 0,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
             image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                            if (invoiceNode && node.closest('#invoice-content')) {
-                                return;
-                            }
-                            node.remove();
-                        });
-                    }
-                },
+            html2canvas: {
+                scale: 3,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                imageTimeout: 10000,
+                onclone: (clonedDoc: Document) => {
+                    sanitizePdfCloneStyles(clonedDoc);
+                    normalizePdfLayout(clonedDoc);
+                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                        if (invoiceNode && node.closest('#invoice-content')) {
+                            return;
+                        }
+                        node.remove();
+                    });
+                }
+            },
             jsPDF: {
                 unit: 'mm' as const,
                 format: 'a4' as const,
@@ -997,17 +1052,17 @@ export default function Dashboard() {
             margin: 0,
             filename: fileName,
             image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                    }
-                },
+            html2canvas: {
+                scale: 3,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                imageTimeout: 10000,
+                onclone: (clonedDoc: Document) => {
+                    sanitizePdfCloneStyles(clonedDoc);
+                    normalizePdfLayout(clonedDoc);
+                }
+            },
             jsPDF: {
                 unit: 'mm' as const,
                 format: 'a4' as const,
@@ -2282,176 +2337,261 @@ export default function Dashboard() {
                             >
                                 <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                     style={{
-                                        gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
+                                        gridTemplateColumns: gridTemplateColumns
                                     }}>
                                     <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900" onClick={() => toggleAll(filteredSales)}>
+                                        <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900 border-r border-slate-200 resizable-header" onClick={() => toggleAll(filteredSales)}>
                                             {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('selection', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('brand')}>
+                                        <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('brand')}>
                                             Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('carInfo', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
+                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('year')}>
                                             Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('year', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
+                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('km')}>
                                             KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('km', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('plateNumber')}>
                                             Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('plateVin', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('buyerName')}>
                                             Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('buyer', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('sellerName')}>
                                             Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('seller', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
+                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('shippingName')}>
                                             Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('shipping', e)} />
                                         </div>
                                         {isAdmin && (
-                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
+                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('costToBuy')}>
                                                 Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('cost', e)} />
                                             </div>
                                         )}
-                                        <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
+                                        <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldPrice')}>
                                             Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('sold', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 text-right">Paid</div>
-                                        <div className="p-2 xl:p-3 text-right">Bank Fee</div>
-                                        <div className="p-2 xl:p-3 text-right">Tax</div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold">Profit</div>}
-                                        <div className="p-2 xl:p-3 text-right">Balance</div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
-                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                            Paid
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('paid', e)} />
+                                        </div>
+                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                            Bank Fee
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('bankFee', e)} />
+                                        </div>
+                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                            Tax
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('tax', e)} />
+                                        </div>
+                                        {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold border-r border-slate-200 resizable-header">
+                                            Profit
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('profit', e)} />
                                         </div>}
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
-                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                            Balance
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('balance', e)} />
                                         </div>
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
+                                        {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('koreaBalance')}>
+                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('korea', e)} />
+                                        </div>}
+                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('status')}>
+                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('status', e)} />
+                                        </div>
+                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldBy')}>
                                             Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('soldBy', e)} />
                                         </div>
                                         <div className="p-2 xl:p-3"></div>
                                     </div>
                                     {/* Render Rows */}
                                     {groupingEnabled ? (
-                                    <Reorder.Group
-                                        axis="y"
-                                        values={activeGroups.map(g => g.name)}
-                                        onReorder={(newOrder) => {
-                                            const updated = newOrder.map((name, index) => {
-                                                const match = groupMeta.find(g => g.name === name);
-                                                return match ? { ...match, order: index } : { name, order: index, archived: false };
-                                            });
-                                            const archived = groupMeta.filter(g => g.archived);
-                                            persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
-                                        }}
-                                        className="grid grid-cols-subgrid"
-                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                    >
-                                        {activeGroups.map(group => {
-                                            const groupSales = groupedSales[group.name] || [];
-                                            if (groupSales.length === 0) return null;
-                                            return (
-                                                <Reorder.Item key={group.name} value={group.name} className="contents">
+                                        <Reorder.Group
+                                            axis="y"
+                                            values={activeGroups.map(g => g.name)}
+                                            onReorder={(newOrder) => {
+                                                const updated = newOrder.map((name, index) => {
+                                                    const match = groupMeta.find(g => g.name === name);
+                                                    return match ? { ...match, order: index } : { name, order: index, archived: false };
+                                                });
+                                                const archived = groupMeta.filter(g => g.archived);
+                                                persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
+                                            }}
+                                            className="grid grid-cols-subgrid"
+                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                        >
+                                            {activeGroups.map(group => {
+                                                const groupSales = groupedSales[group.name] || [];
+                                                if (groupSales.length === 0) return null;
+                                                return (
+                                                    <Reorder.Item key={group.name} value={group.name} className="contents">
+                                                        <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                                <button
+                                                                    onClick={() => toggleGroup(group.name)}
+                                                                    className="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                                                                >
+                                                                    {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>{group.name}</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                </button>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={() => moveGroup(group.name, 'up')}
+                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group up"
+                                                                    >
+                                                                        <ChevronUp className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => moveGroup(group.name, 'down')}
+                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group down"
+                                                                    >
+                                                                        <ChevronDown className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <div className="relative">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                            }}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group to tab"
+                                                                        >
+                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        {activeGroupMoveMenu === group.name && (
+                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                        setActiveGroupMoveMenu(null);
+                                                                                    }}
+                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                >
+                                                                                    Sales
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                        setActiveGroupMoveMenu(null);
+                                                                                    }}
+                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                >
+                                                                                    Shipped
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                        setActiveGroupMoveMenu(null);
+                                                                                    }}
+                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                >
+                                                                                    Inspections
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => {
+                                                                                        handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                        setActiveGroupMoveMenu(null);
+                                                                                    }}
+                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                >
+                                                                                    Autosallon
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleRenameGroup(group.name)}
+                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Rename group"
+                                                                    >
+                                                                        <Edit className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleArchiveGroup(group.name, true)}
+                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Archive group"
+                                                                    >
+                                                                        <Archive className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {expandedGroups.includes(group.name) && (
+                                                            <Reorder.Group
+                                                                axis="y"
+                                                                values={groupSales}
+                                                                onReorder={(newOrder) => {
+                                                                    setSales(prev => {
+                                                                        const next = [...prev];
+                                                                        newOrder.forEach((newItem, newIndex) => {
+                                                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                        });
+                                                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                    });
+                                                                }}
+                                                                className="grid grid-cols-subgrid"
+                                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                            >
+                                                                {groupSales.map(s => (
+                                                                    <SortableSaleItem
+                                                                        key={s.id}
+                                                                        s={s}
+                                                                        userProfile={userProfile}
+                                                                        canViewPrices={canViewPrices}
+                                                                        toggleSelection={toggleSelection}
+                                                                        isSelected={selectedIds.has(s.id)}
+                                                                        openInvoice={openInvoice}
+                                                                        onInlineUpdate={handleInlineUpdate}
+                                                                        onClick={() => {
+                                                                            if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                alert("You do not have permission to edit this sale.");
+                                                                                return;
+                                                                            }
+                                                                            requestEditChoice(s);
+                                                                        }}
+                                                                        onDelete={handleDeleteSingle}
+                                                                        onRemoveFromGroup={handleRemoveFromGroup}
+                                                                    />
+                                                                ))}
+                                                            </Reorder.Group>
+                                                        )}
+                                                    </Reorder.Item>
+                                                );
+                                            })}
+                                            {groupedSales.Ungrouped?.length > 0 && (
+                                                <div className="contents">
                                                     <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                         <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                             <button
-                                                                onClick={() => toggleGroup(group.name)}
+                                                                onClick={() => toggleGroup('Ungrouped')}
                                                                 className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                             >
-                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                <span>{group.name}</span>
-                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                <span>Ungrouped</span>
+                                                                <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
                                                             </button>
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    onClick={() => moveGroup(group.name, 'up')}
-                                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group up"
-                                                                >
-                                                                    <ChevronUp className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => moveGroup(group.name, 'down')}
-                                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group down"
-                                                                >
-                                                                    <ChevronDown className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <div className="relative">
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                        }}
-                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group to tab"
-                                                                    >
-                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    {activeGroupMoveMenu === group.name && (
-                                                                        <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'In Progress');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Sales
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Shipped');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Shipped
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Inspection');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Inspections
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Autosallon');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Autosallon
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => handleRenameGroup(group.name)}
-                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Rename group"
-                                                                >
-                                                                    <Edit className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleArchiveGroup(group.name, true)}
-                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Archive group"
-                                                                >
-                                                                    <Archive className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            </div>
                                                         </div>
                                                     </div>
-                                                    {expandedGroups.includes(group.name) && (
+                                                    {expandedGroups.includes('Ungrouped') && (
                                                         <Reorder.Group
                                                             axis="y"
-                                                            values={groupSales}
+                                                            values={groupedSales.Ungrouped}
                                                             onReorder={(newOrder) => {
                                                                 setSales(prev => {
                                                                     const next = [...prev];
@@ -2465,7 +2605,7 @@ export default function Dashboard() {
                                                             className="grid grid-cols-subgrid"
                                                             style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
                                                         >
-                                                            {groupSales.map(s => (
+                                                            {groupedSales.Ungrouped.map(s => (
                                                                 <SortableSaleItem
                                                                     key={s.id}
                                                                     s={s}
@@ -2488,150 +2628,93 @@ export default function Dashboard() {
                                                             ))}
                                                         </Reorder.Group>
                                                     )}
-                                                </Reorder.Item>
-                                            );
-                                        })}
-                                        {groupedSales.Ungrouped?.length > 0 && (
-                                            <div className="contents">
-                                                <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                        <button
-                                                            onClick={() => toggleGroup('Ungrouped')}
-                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                        >
-                                                            {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            <span>Ungrouped</span>
-                                                            <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
-                                                        </button>
-                                                    </div>
                                                 </div>
-                                                {expandedGroups.includes('Ungrouped') && (
-                                                    <Reorder.Group
-                                                        axis="y"
-                                                        values={groupedSales.Ungrouped}
-                                                        onReorder={(newOrder) => {
-                                                            setSales(prev => {
-                                                                const next = [...prev];
-                                                                newOrder.forEach((newItem, newIndex) => {
-                                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                                });
-                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                            });
-                                                        }}
-                                                        className="grid grid-cols-subgrid"
-                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                    >
-                                                        {groupedSales.Ungrouped.map(s => (
-                                                            <SortableSaleItem
-                                                                key={s.id}
-                                                                s={s}
-                                                                userProfile={userProfile}
-                                                                canViewPrices={canViewPrices}
-                                                                toggleSelection={toggleSelection}
-                                                                isSelected={selectedIds.has(s.id)}
-                                                                openInvoice={openInvoice}
-                                                                onInlineUpdate={handleInlineUpdate}
-                                                                    onClick={() => {
-                                                                        if (!isAdmin && s.soldBy !== userProfile) {
-                                                                            alert("You do not have permission to edit this sale.");
-                                                                            return;
-                                                                        }
-                                                                        requestEditChoice(s);
-                                                                    }}
-                                                                onDelete={handleDeleteSingle}
-                                                                onRemoveFromGroup={handleRemoveFromGroup}
-                                                            />
-                                                        ))}
-                                                    </Reorder.Group>
-                                                )}
-                                            </div>
-                                        )}
-                                        {archivedGroups.length > 0 && (
-                                            <div className="contents">
-                                                <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                        <button
-                                                            onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-600"
-                                                        >
-                                                            {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            <span>Archived Groups</span>
-                                                            <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
-                                                        </button>
+                                            )}
+                                            {archivedGroups.length > 0 && (
+                                                <div className="contents">
+                                                    <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                            <button
+                                                                onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-600"
+                                                            >
+                                                                {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                <span>Archived Groups</span>
+                                                                <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {showArchivedGroups && archivedGroups.map(group => {
-                                                    const groupSales = groupedSales[group.name] || [];
-                                                    return (
-                                                        <div key={group.name} className="contents">
-                                                            <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                                    <button
-                                                                        onClick={() => toggleGroup(group.name)}
-                                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                                    >
-                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                        <span>{group.name}</span>
-                                                                        <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                                    </button>
-                                                                    <div className="flex items-center gap-2">
+                                                    {showArchivedGroups && archivedGroups.map(group => {
+                                                        const groupSales = groupedSales[group.name] || [];
+                                                        return (
+                                                            <div key={group.name} className="contents">
+                                                                <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                         <button
-                                                                            onClick={() => handleArchiveGroup(group.name, false)}
-                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Unarchive group"
+                                                                            onClick={() => toggleGroup(group.name)}
+                                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                                         >
-                                                                            <Eye className="w-3.5 h-3.5" />
+                                                                            {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                            <span>{group.name}</span>
+                                                                            <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                                         </button>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => handleArchiveGroup(group.name, false)}
+                                                                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                                title="Unarchive group"
+                                                                            >
+                                                                                <Eye className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            {expandedGroups.includes(group.name) && (
-                                                                <Reorder.Group
-                                                                    axis="y"
-                                                                    values={groupSales}
-                                                                    onReorder={(newOrder) => {
-                                                                        setSales(prev => {
-                                                                            const next = [...prev];
-                                                                            newOrder.forEach((newItem, newIndex) => {
-                                                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                {expandedGroups.includes(group.name) && (
+                                                                    <Reorder.Group
+                                                                        axis="y"
+                                                                        values={groupSales}
+                                                                        onReorder={(newOrder) => {
+                                                                            setSales(prev => {
+                                                                                const next = [...prev];
+                                                                                newOrder.forEach((newItem, newIndex) => {
+                                                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                                });
+                                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                                                             });
-                                                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                                        });
-                                                                    }}
-                                                                    className="grid grid-cols-subgrid"
-                                                                    style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                                >
-                                                                    {groupSales.map(s => (
-                                                                        <SortableSaleItem
-                                                                            key={s.id}
-                                                                            s={s}
-                                                                            userProfile={userProfile}
-                                                                            canViewPrices={canViewPrices}
-                                                                            toggleSelection={toggleSelection}
-                                                                            isSelected={selectedIds.has(s.id)}
-                                                                            openInvoice={openInvoice}
-                                                                            onInlineUpdate={handleInlineUpdate}
-                                                                    onClick={() => {
-                                                                        if (!isAdmin && s.soldBy !== userProfile) {
-                                                                            alert("You do not have permission to edit this sale.");
-                                                                            return;
-                                                                        }
-                                                                        requestEditChoice(s);
-                                                                    }}
-                                                                            onDelete={handleDeleteSingle}
-                                                                            onRemoveFromGroup={handleRemoveFromGroup}
-                                                                        />
-                                                                    ))}
-                                                                </Reorder.Group>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </Reorder.Group>
+                                                                        }}
+                                                                        className="grid grid-cols-subgrid"
+                                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                    >
+                                                                        {groupSales.map(s => (
+                                                                            <SortableSaleItem
+                                                                                key={s.id}
+                                                                                s={s}
+                                                                                userProfile={userProfile}
+                                                                                canViewPrices={canViewPrices}
+                                                                                toggleSelection={toggleSelection}
+                                                                                isSelected={selectedIds.has(s.id)}
+                                                                                openInvoice={openInvoice}
+                                                                                onInlineUpdate={handleInlineUpdate}
+                                                                                onClick={() => {
+                                                                                    if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                        alert("You do not have permission to edit this sale.");
+                                                                                        return;
+                                                                                    }
+                                                                                    requestEditChoice(s);
+                                                                                }}
+                                                                                onDelete={handleDeleteSingle}
+                                                                                onRemoveFromGroup={handleRemoveFromGroup}
+                                                                            />
+                                                                        ))}
+                                                                    </Reorder.Group>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </Reorder.Group>
                                     ) : (
                                         <Reorder.Group
                                             axis="y"
@@ -2844,13 +2927,13 @@ export default function Dashboard() {
                                                                                 {groupingEnabled && sale.group && (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                >
-                                                                                    Remove from group
-                                                                                </button>
-                                                                            )}
-                                                                        </div>
-                                                                    </motion.div>
+                                                                                        className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                    >
+                                                                                        Remove from group
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                        </motion.div>
                                                                     </motion.div>
                                                                 ))}
                                                             </div>
@@ -2942,48 +3025,48 @@ export default function Dashboard() {
                                                                                     )}
                                                                                     <div className="flex-1 min-w-0">
                                                                                         <div className="flex justify-between items-start">
-                                                                                        <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                    'bg-slate-100 text-slate-500'
-                                                                                            }`}>{sale.status}</span>
-                                                                                    </div>
-                                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
-                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                            </span>
-                                                                                        ) : (
-                                                                                            <span className="font-mono text-slate-400">-</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    {isAdmin && (
-                                                                                        <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                            <span className="text-slate-400">Korea:</span>
-                                                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                            </span>
+                                                                                            <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                            <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                                    sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                        'bg-slate-100 text-slate-500'
+                                                                                                }`}>{sale.status}</span>
                                                                                         </div>
-                                                                                    )}
-                                                                                    {groupingEnabled && sale.group && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                        >
-                                                                                            Remove from group
-                                                                                        </button>
-                                                                                    )}
+                                                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                            {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                                <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                    {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                                </span>
+                                                                                            ) : (
+                                                                                                <span className="font-mono text-slate-400">-</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        {isAdmin && (
+                                                                                            <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                                <span className="text-slate-400">Korea:</span>
+                                                                                                <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                    {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {groupingEnabled && sale.group && (
+                                                                                            <button
+                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                                className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                            >
+                                                                                                Remove from group
+                                                                                            </button>
+                                                                                        )}
                                                                                     </div>
                                                                                 </motion.div>
                                                                             </motion.div>
                                                                         ))}
                                                                     </div>
                                                                 )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </>
@@ -3355,6 +3438,17 @@ export default function Dashboard() {
                             </div>
                             <div className="mt-4 flex flex-col gap-2">
                                 <button
+                                    onClick={() => {
+                                        const sale = editChoiceSale;
+                                        setEditChoiceSale(null);
+                                        setViewSaleModalItem(sale);
+                                    }}
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 flex items-center justify-center gap-2"
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    View Sale
+                                </button>
+                                <button
                                     onClick={handleEditSaleChoice}
                                     className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
@@ -3402,7 +3496,18 @@ export default function Dashboard() {
                                     {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
                                 </button>
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                                <div className="w-20" />
+                                <div className="flex items-center gap-2">
+                                    {editingSale && (
+                                        <button
+                                            onClick={() => setViewSaleModalItem(editingSale)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            <span>View Sale</span>
+                                        </button>
+                                    )}
+                                    <div className="w-10 sm:w-20" />
+                                </div>
                             </div>
                             <div className="flex-1 overflow-y-auto scroll-container bg-white">
                                 <SaleModal
@@ -3437,6 +3542,15 @@ export default function Dashboard() {
                     documentType={documentPreview.type}
                     withDogane={documentPreview.withDogane}
                     onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
+                />
+            )}
+
+            {viewSaleModalItem && (
+                <ViewSaleModal
+                    isOpen={!!viewSaleModalItem}
+                    sale={viewSaleModalItem}
+                    onClose={() => setViewSaleModalItem(null)}
+                    isAdmin={isAdmin}
                 />
             )}
             {
