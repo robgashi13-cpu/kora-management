@@ -6,7 +6,7 @@ import { CarSale, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import EditablePreviewModal from './EditablePreviewModal';
-import InvoiceModal from './InvoiceModal';
+
 
 interface Props {
     isOpen: boolean;
@@ -29,8 +29,7 @@ const calculateProfit = (sale: CarSale) =>
 
 export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }: Props) {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
-    const [contractType, setContractType] = useState<ContractType | null>(null);
-    const [showInvoice, setShowInvoice] = useState(false);
+    const [contractType, setContractType] = useState<ContractType | 'invoice' | null>(null);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
 
@@ -128,10 +127,10 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                         </div>
                         <div className="flex items-center gap-2">
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                                    sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                                        sale.status === 'Shipped' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                                            sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border border-red-200' :
-                                                'bg-slate-100 text-slate-600 border border-slate-200'
+                                sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
+                                    sale.status === 'Shipped' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
+                                        sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border border-red-200' :
+                                            'bg-slate-100 text-slate-600 border border-slate-200'
                                 }`}>
                                 {sale.status}
                             </span>
@@ -327,17 +326,17 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                         <div className="flex gap-3">
                             <button
                                 type="button"
-                                onClick={() => { setInvoiceWithDogane(false); setShowInvoice(true); setShowDoganeSelection(false); }}
-                                className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-4 text-center hover:border-slate-400 hover:bg-slate-50 transition"
+                                onClick={() => { setInvoiceWithDogane(false); setContractType('invoice'); setShowDoganeSelection(false); }}
+                                className="flex-1 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition-all text-sm"
                             >
-                                <div className="text-sm font-bold text-slate-900">Pa Doganë</div>
+                                Pa Doganë
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setInvoiceWithDogane(true); setShowInvoice(true); setShowDoganeSelection(false); }}
-                                className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-200 px-4 py-4 text-center hover:border-emerald-400 hover:bg-emerald-50 transition"
+                                onClick={() => { setInvoiceWithDogane(true); setContractType('invoice'); setShowDoganeSelection(false); }}
+                                className="flex-1 px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold transition-all text-sm border border-emerald-100"
                             >
-                                <div className="text-sm font-bold text-emerald-700">Me Doganë</div>
+                                Me Doganë
                             </button>
                         </div>
                     </div>
@@ -351,17 +350,11 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                     documentType={contractType}
                     onClose={() => setContractType(null)}
                     onSaveToSale={() => { }}
-                />
-            )}
-
-            {showInvoice && (
-                <InvoiceModal
-                    isOpen={showInvoice}
-                    onClose={() => setShowInvoice(false)}
-                    sale={sale}
                     withDogane={invoiceWithDogane}
                 />
             )}
+
+
         </>
     );
 }

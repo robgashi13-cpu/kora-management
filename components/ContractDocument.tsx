@@ -5,12 +5,23 @@ import { CarSale, ContractType } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
 
-interface ContractDocumentProps {
+export interface ContractDocumentProps {
     sale: CarSale;
     type: ContractType;
     documentRef?: React.Ref<HTMLDivElement>;
     withStamp?: boolean;
+    renderField?: (
+        fieldKey: keyof CarSale,
+        value: CarSale[keyof CarSale],
+        options?: FieldRenderOptions
+    ) => React.ReactNode;
 }
+
+type FieldRenderOptions = {
+    className?: string;
+    formatValue?: (value: CarSale[keyof CarSale]) => string;
+    type?: 'text' | 'number' | 'currency' | 'date';
+};
 
 // Helper function to safely format values with fallbacks
 const safeString = (value: string | undefined | null, fallback = '________________'): string => {
@@ -24,7 +35,7 @@ const safeNumber = (value: number | undefined | null, fallback = 0): number => {
 };
 
 const formatCurrency = (value: number | undefined | null): string => {
-    return safeNumber(value).toLocaleString();
+    return safeNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const formatDate = (dateString: string | undefined | null): string => {
@@ -36,7 +47,7 @@ const formatDate = (dateString: string | undefined | null): string => {
     }
 };
 
-export default function ContractDocument({ sale, type, documentRef, withStamp = false }: ContractDocumentProps) {
+export default function ContractDocument({ sale, type, documentRef, withStamp = false, renderField }: ContractDocumentProps) {
     // Guard against undefined sale
     if (!sale) {
         return (
@@ -48,20 +59,55 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
     const displaySale = type === 'full_shitblerje' ? applyShitblerjeOverrides(sale) : sale;
 
+    const renderText = <K extends keyof CarSale>(
+        fieldKey: K,
+        fallback: string = '________________',
+        options?: FieldRenderOptions
+    ) => {
+        if (renderField) {
+            return renderField(fieldKey, displaySale[fieldKey], options);
+        }
+        const value = displaySale[fieldKey];
+        if (value === undefined || value === null || value === '') {
+            return fallback;
+        }
+        if (options?.formatValue) {
+            return options.formatValue(value);
+        }
+        if (options?.type === 'date') {
+            return formatDate(String(value));
+        }
+        return String(value);
+    };
+
+    const renderCurrencyValue = <K extends keyof CarSale>(
+        fieldKey: K,
+        fallback: number = 0,
+        options?: FieldRenderOptions
+    ) => {
+        if (renderField) {
+            return renderField(fieldKey, displaySale[fieldKey], { ...options, type: 'currency' });
+        }
+        const val = safeNumber(displaySale[fieldKey] as number, fallback);
+        return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
     const today = new Date().toLocaleDateString('en-GB');
-    const shippingDate = formatDate(displaySale.shippingDate);
+    const shippingDate = renderText('shippingDate', '________________', { type: 'date' });
     const seller = { name: 'RG SH.P.K.', id: 'Business Nr 810062092', phone: '048181116' };
     const sellerBusinessId = 'NR.Biznesit 810062092';
     const fullSellerName = 'RG SH.P.K';
 
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
     const isSinglePage = type === 'deposit' || type === 'full_shitblerje';
+
+    // Root container styles - matched to EditablePreviewModal
     const rootPaddingClass = type === 'deposit'
         ? 'p-[48px] pt-[64px]'
-        : type === 'full_shitblerje'
-            ? 'p-[1.6cm] pt-[2cm]'
-            : 'p-0';
-    const rootHeightClass = isSinglePage ? 'h-[29.7cm]' : 'min-h-[29.7cm]';
+        : 'p-0'; // full_marreveshje and full_shitblerje handle their own padding in inner divs
+
+    // Ensure height is correct for print
+    const rootHeightClass = 'min-h-[29.7cm]';
 
     return (
         <div
@@ -77,7 +123,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 boxSizing: 'border-box',
                 textRendering: 'optimizeLegibility',
                 WebkitFontSmoothing: 'antialiased',
-                overflow: isSinglePage ? 'hidden' : 'visible'
+                overflow: 'visible', // Always visible for print
+                marginLeft: 'auto',
+                marginRight: 'auto'
             }}
         >
             {type === 'deposit' && (
@@ -119,11 +167,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="text-xs space-y-1" style={{ lineHeight: 1.3 }}>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="min-w-16 font-semibold">Emri:</span>
-                                    <strong className="flex-1 break-words">{safeString(displaySale.buyerName)}</strong>
+                                    <strong className="flex-1 break-words">{renderText('buyerName')}</strong>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <span className="min-w-16 font-semibold">Nr. personal:</span>
-                                    <span className="flex-1 break-words">{safeString(displaySale.buyerPersonalId)}</span>
+                                    <span className="flex-1 break-words">{renderText('buyerPersonalId')}</span>
                                 </div>
                             </div>
                         </div>
@@ -136,9 +184,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
                         </p>
                         <ul className="list-none text-xs font-bold" style={{ lineHeight: 1.4 }}>
-                            <li>- Marka: {safeString(displaySale.brand)}</li>
-                            <li>- Modeli: {safeString(displaySale.model)}</li>
-                            <li>- Nr. shasie: {safeString(displaySale.vin)}</li>
+                            <li>- Marka: {renderText('brand')}</li>
+                            <li>- Modeli: {renderText('model')}</li>
+                            <li>- Nr. shasie: {renderText('vin')}</li>
                         </ul>
                     </div>
 
@@ -146,7 +194,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="mb-2">
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                         <p className="text-xs">
-                            Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(displaySale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
+                            Blerësi i dorëzon shitësit shumën prej <strong>€{renderCurrencyValue('deposit')}</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>€{renderCurrencyValue('soldPrice')}</strong>. Deri ne Prishtine
                         </p>
                     </div>
 
@@ -192,7 +240,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
                                 </div>
-                                <div className="signature-name font-bold text-xs break-words">{safeString(displaySale.buyerName)}</div>
+                                <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
                             </div>
                         </div>
                         {withStamp && (
@@ -207,7 +255,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             {type === 'full_marreveshje' && (
                 <div className="max-w-2xl mx-auto" style={{ fontSize: '8pt', lineHeight: 1.25 }}>
                     {/* ===== PAGE 1 ===== */}
-                    <div className="page-1 relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
+                    <div className="pdf-page relative">
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
@@ -222,7 +270,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
                                 </li>
                                 <li>
-                                    <strong>Z. {safeString(displaySale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(displaySale.buyerPersonalId)}</strong>
+                                    <strong>Z. {renderText('buyerName')}</strong> ne cilesin e blersit me nr personal <strong>{renderText('buyerPersonalId')}</strong>
                                 </li>
                             </ul>
                         </div>
@@ -231,15 +279,15 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="font-bold mb-1 underline">Objekti i Marrëveshjes:</div>
                             <p className="mb-1">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
                             <div className="car-details">
-                                <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(displaySale.brand)} {safeString(displaySale.model)}</span></div>
-                                <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(displaySale.vin)}</span></div>
-                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(displaySale.year)}</span></div>
-                                <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(displaySale.km)}km</span></div>
+                                <div><span className="label">Marka/Modeli:</span> <span className="value">{renderText('brand')} {renderText('model')}</span></div>
+                                <div><span className="label">Numri i shasisë:</span> <span className="value">{renderText('vin')}</span></div>
+                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{renderText('year')}</span></div>
+                                <div><span className="label">KM te kaluara:</span> <span className="value">{renderText('km')}km</span></div>
                             </div>
                         </div>
 
                         <p className="font-bold mt-2 mb-2">
-                            {fullSellerName} vepron si shitës, ndërsa {safeString(displaySale.buyerName)} si blerës.
+                            {fullSellerName} vepron si shitës, ndërsa {renderText('buyerName')} si blerës.
                         </p>
 
                         <hr className="mb-3 border-black" />
@@ -250,8 +298,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                    <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
+                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
                                 </ul>
                             </li>
                             <li>
@@ -264,7 +312,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Vonesa në Dorëzim</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {formatCurrency(displaySale.soldPrice)} brenda 7 ditëve kalendarike.</li>
+                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {renderCurrencyValue('soldPrice')} brenda 7 ditëve kalendarike.</li>
                                 </ul>
                             </li>
                             <li>
@@ -285,7 +333,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     </div>
 
                     {/* ===== PAGE 2 - Warranty Terms ===== */}
-                    <div className="page-2 page-break relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
+                    <div className="pdf-page page-break relative">
                         <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>Pjesët e Mbulueshme dhe të Përjashtuara nga Garancia</h2>
 
                         <div className="mb-3">
@@ -381,7 +429,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     </div>
 
                     {/* ===== PAGE 3 - Signatures and Final Terms ===== */}
-                    <div className="page-3 page-break relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
+                    <div className="pdf-page page-break relative">
                         <h2 className="font-bold text-sm mb-3 text-center uppercase" style={{ color: '#000000' }}>DISPOZITAT PËRFUNDIMTARE</h2>
 
                         <div className="mb-3">
@@ -411,14 +459,14 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="signature-section">
                             <div className="signature-grid">
                                 <div className="signature-column">
-                                <div className="signature-label font-bold">Ndërmjetësuesi:</div>
-                                <div className="signature-line-row">
-                                    <div className="signature-line" />
-                                </div>
-                                <div className="signature-name text-xs">
-                                    <div>{fullSellerName}</div>
-                                    <div>(Nënshkrimi dhe Vula)</div>
-                                </div>
+                                    <div className="signature-label font-bold">Ndërmjetësuesi:</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                    </div>
+                                    <div className="signature-name text-xs">
+                                        <div>{fullSellerName}</div>
+                                        <div>(Nënshkrimi dhe Vula)</div>
+                                    </div>
                                 </div>
                                 <div className="signature-column">
                                     <div className="signature-label font-bold">Blerësi:</div>
@@ -426,7 +474,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                         <div className="signature-line" />
                                     </div>
                                     <div className="signature-name text-xs">
-                                        <div className="break-words">{safeString(displaySale.buyerName)}</div>
+                                        <div className="break-words">{renderText('buyerName')}</div>
                                         <div>(Nënshkrimi)</div>
                                     </div>
                                 </div>
@@ -452,91 +500,93 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
             {type === 'full_shitblerje' && (
                 <div className="max-w-2xl mx-auto" style={{ fontSize: '8.5pt', lineHeight: 1.3 }}>
-                    <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
-                    <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
-                    <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Data: {today}</div>
-                    <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
+                    <div className="pdf-page relative">
+                        <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
+                        <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
+                        <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Data: {today}</div>
+                        <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 
-                    <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
+                        <h2 className="font-bold text-xs mb-2 underline" style={{ color: '#000000' }}>Marrëveshje për Blerjen e Automjetit</h2>
 
-                    <div className="section mb-3">
-                        <div className="font-bold mb-1 underline text-xs">Palët Kontraktuese:</div>
-                        <ul className="list-disc ml-4 text-xs" style={{ lineHeight: 1.4 }}>
-                            <li className="mb-1">
-                                <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                        <div className="section mb-3">
+                            <div className="font-bold mb-1 underline text-xs">Palët Kontraktuese:</div>
+                            <ul className="list-disc ml-4 text-xs" style={{ lineHeight: 1.4 }}>
+                                <li className="mb-1">
+                                    <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                </li>
+                                <li>
+                                    <strong>Z. {renderText('buyerName')}</strong> ne cilesin e blersit me nr personal <strong>{renderText('buyerPersonalId')}</strong>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="section mb-3">
+                            <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
+                            <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
+                            <div className="car-details text-xs" style={{ padding: '8pt', margin: '6pt 0' }}>
+                                <div><span className="label">Marka/Modeli:</span> <span className="value">{renderText('brand')} {renderText('model')}</span></div>
+                                <div><span className="label">Numri i shasisë:</span> <span className="value">{renderText('vin')}</span></div>
+                                <div><span className="label">Viti I prodhimi:</span> <span className="value">{renderText('year')}</span></div>
+                                <div><span className="label">KM te kaluara:</span> <span className="value">{renderText('km')}km</span></div>
+                            </div>
+                        </div>
+
+                        <p className="font-bold mt-2 mb-2 text-xs">
+                            {fullSellerName} vepron si shitës, ndërsa {renderText('buyerName')} si blerës.
+                        </p>
+
+                        <hr className="mb-3 border-black" />
+
+                        <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
+
+                        <ol className="list-decimal ml-4 text-xs mb-4" style={{ lineHeight: 1.4 }}>
+                            <li className="mb-2">
+                                <strong>Pagesa</strong>
+                                <ul className="list-[circle] ml-4 mt-0.5">
+                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
+                                </ul>
+                            </li>
+                            <li className="mb-2">
+                                <strong>Nisja dhe Dorëzimi i Automjetit</strong>
+                                <ul className="list-[circle] ml-4 mt-0.5">
+                                    <li>AUTOMJETI DORËZOHET NË DATËN: {shippingDate}</li>
+                                </ul>
+                            </li>
+                            <li className="mb-2">
+                                <strong>Gjendja Teknike e Automjetit</strong>
+                                <ul className="list-[circle] ml-4 mt-0.5">
+                                    <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
+                                </ul>
                             </li>
                             <li>
-                                <strong>Z. {safeString(displaySale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(displaySale.buyerPersonalId)}</strong>
+                                Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
                             </li>
-                        </ul>
-                    </div>
+                        </ol>
 
-                    <div className="section mb-3">
-                        <div className="font-bold mb-1 underline text-xs">Objekti i Marrëveshjes:</div>
-                        <p className="mb-1 text-xs">Qëllimi i kësaj marrëveshjeje është ndërmjetësimi dhe realizimi i blerjes së automjetit të mëposhtëm:</p>
-                        <div className="car-details text-xs" style={{ padding: '8pt', margin: '6pt 0' }}>
-                            <div><span className="label">Marka/Modeli:</span> <span className="value">{safeString(displaySale.brand)} {safeString(displaySale.model)}</span></div>
-                            <div><span className="label">Numri i shasisë:</span> <span className="value">{safeString(displaySale.vin)}</span></div>
-                            <div><span className="label">Viti I prodhimi:</span> <span className="value">{safeNumber(displaySale.year)}</span></div>
-                            <div><span className="label">KM te kaluara:</span> <span className="value">{formatCurrency(displaySale.km)}km</span></div>
-                        </div>
-                    </div>
-
-                    <p className="font-bold mt-2 mb-2 text-xs">
-                        {fullSellerName} vepron si shitës, ndërsa {safeString(displaySale.buyerName)} si blerës.
-                    </p>
-
-                    <hr className="mb-3 border-black" />
-
-                    <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
-
-                    <ol className="list-decimal ml-4 text-xs mb-4" style={{ lineHeight: 1.4 }}>
-                        <li className="mb-2">
-                            <strong>Pagesa</strong>
-                            <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
-                            </ul>
-                        </li>
-                        <li className="mb-2">
-                            <strong>Nisja dhe Dorëzimi i Automjetit</strong>
-                            <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>AUTOMJETI DORËZOHET NË DATËN: {shippingDate}</li>
-                            </ul>
-                        </li>
-                        <li className="mb-2">
-                            <strong>Gjendja Teknike e Automjetit</strong>
-                            <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>Pas inspektimit në Kosovë, nëse automjeti rezulton me defekte në pjesët e mbuluara nga garancia të cekura në faqen e dytë, përgjegjësia i takon shitësit.</li>
-                            </ul>
-                        </li>
-                        <li>
-                            Pas terheqjes se vetures nga terminali doganor ne prishtine ka te drejten e inspektimit dhe verifikimt te gjendjes se vetures per ni afat koher per 7 dite mbas ksaj kohe nuk marim pergjigisi.
-                        </li>
-                    </ol>
-
-                    <div className="signature-section">
-                        <div className="signature-grid">
-                            <div className="signature-column">
-                                <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
-                                <div className="signature-line-row">
-                                    <div className="signature-line" />
+                        <div className="signature-section">
+                            <div className="signature-grid">
+                                <div className="signature-column">
+                                    <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                    </div>
+                                    <div className="signature-name text-xs">Owner: Robert Gashi</div>
                                 </div>
-                                <div className="signature-name text-xs">Owner: Robert Gashi</div>
-                            </div>
-                            <div className="signature-column">
-                                <div className="signature-label font-bold text-xs">Blerësi</div>
-                                <div className="signature-line-row">
-                                    <div className="signature-line" />
+                                <div className="signature-column">
+                                    <div className="signature-label font-bold text-xs">Blerësi</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                    </div>
+                                    <div className="signature-name text-xs break-words">{renderText('buyerName')}</div>
                                 </div>
-                                <div className="signature-name text-xs break-words">{safeString(displaySale.buyerName)}</div>
                             </div>
+                            {withStamp && (
+                                <div className="signature-stamp-row">
+                                    <StampImage className="signature-stamp" />
+                                </div>
+                            )}
                         </div>
-                        {withStamp && (
-                            <div className="signature-stamp-row">
-                                <StampImage className="signature-stamp" />
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
@@ -546,6 +596,16 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .party-title { font-weight: bold; margin-bottom: 8pt; color: #0f172a; text-decoration: underline; font-size: 11pt; }
                 .blue-header { color: #0f172a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #0f172a; display: inline-block; padding-bottom: 2px; }
                 .label { font-weight: bold; min-width: 100px; display: inline-block; }
+                
+                .pdf-page {
+                    min-height: 27.7cm;
+                    padding: 1.4cm 1.6cm 1.5cm;
+                    position: relative;
+                    box-sizing: border-box;
+                    overflow-wrap: anywhere;
+                    word-break: break-word;
+                }
+
                 .car-details { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 16pt; margin: 12pt 0; border-radius: 4pt; }
                 .car-details div { display: grid; grid-template-columns: minmax(100px, 35%) minmax(0, 1fr); column-gap: 8pt; row-gap: 4pt; align-items: start; margin-bottom: 6pt; border-bottom: 1px dashed #ced4da; padding-bottom: 4px; }
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
@@ -577,7 +637,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 }
 
                 @media print {
-                    .page-break { page-break-before: always; }
+                    .page-break { page-break-before: always; break-before: page; }
                     .visual-break { display: none; }
                 }
             `}</style>

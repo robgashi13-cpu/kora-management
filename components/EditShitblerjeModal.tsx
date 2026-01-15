@@ -6,7 +6,7 @@ import ViewSaleModal from './ViewSaleModal';
 import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import EditablePreviewModal from './EditablePreviewModal';
-import InvoiceModal from './InvoiceModal';
+
 
 interface Props {
     isOpen: boolean;
@@ -24,8 +24,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
     const [formData, setFormData] = useState<ShitblerjeOverrides>({});
     const [isSaving, setIsSaving] = useState(false);
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
-    const [contractType, setContractType] = useState<ContractType | null>(null);
-    const [showInvoice, setShowInvoice] = useState(false);
+    const [contractType, setContractType] = useState<ContractType | 'invoice' | null>(null);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [showViewSale, setShowViewSale] = useState(false);
@@ -144,8 +143,8 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                             </button>
                         </div>
                     </div>
-                    <form 
-                        onSubmit={handleSubmit} 
+                    <form
+                        onSubmit={handleSubmit}
                         className="p-5 space-y-5 overflow-y-auto flex-1"
                         style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
                     >
@@ -297,7 +296,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                         <div className="flex gap-3">
                             <button
                                 type="button"
-                                onClick={() => { setInvoiceWithDogane(false); setShowInvoice(true); setShowDoganeSelection(false); }}
+                                onClick={() => { setInvoiceWithDogane(false); setContractType('invoice'); setShowDoganeSelection(false); }}
                                 className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-4 text-center hover:border-slate-400 hover:bg-slate-50 transition"
                             >
                                 <div className="text-sm font-bold text-slate-900">Pa Doganë</div>
@@ -305,7 +304,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setInvoiceWithDogane(true); setShowInvoice(true); setShowDoganeSelection(false); }}
+                                onClick={() => { setInvoiceWithDogane(true); setContractType('invoice'); setShowDoganeSelection(false); }}
                                 className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-200 px-4 py-4 text-center hover:border-emerald-400 hover:bg-emerald-50 transition"
                             >
                                 <div className="text-sm font-bold text-emerald-700">Me Doganë</div>
@@ -323,19 +322,16 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     sale={previewSale}
                     documentType={contractType}
                     onClose={() => setContractType(null)}
-                    onSaveToSale={() => {}}
+                    onSaveToSale={(updates) => {
+                        setFormData(prev => ({
+                            ...prev,
+                            ...updates
+                        }));
+                    }}
                 />
             )}
 
-            {/* Invoice Modal */}
-            {showInvoice && (
-                <InvoiceModal
-                    isOpen={showInvoice}
-                    onClose={() => setShowInvoice(false)}
-                    sale={previewSale}
-                    withDogane={invoiceWithDogane}
-                />
-            )}
+
 
             {/* View Sale Modal */}
             {showViewSale && sale && (
@@ -352,12 +348,12 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
 
 const Input = ({ label, className = '', required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-[13px] font-semibold text-slate-700 flex items-center gap-1">
+        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 leading-none">
             {label}
-            {!required && <span className="text-[11px] font-medium text-slate-400">(Optional)</span>}
+            {required && <span className="text-red-500">*</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-xl px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 shadow-sm"
             required={required}
             {...props}
         />
@@ -366,12 +362,12 @@ const Input = ({ label, className = '', required, ...props }: any) => (
 
 const Select = ({ label, children, required, ...props }: any) => (
     <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-[13px] font-semibold text-slate-700 flex items-center gap-1">
+        <label className="text-sm font-semibold text-slate-700 flex items-center gap-1 leading-none">
             {label}
-            {!required && <span className="text-[11px] font-medium text-slate-400">(Optional)</span>}
+            {required && <span className="text-red-500">*</span>}
         </label>
         <select
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-xl px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer shadow-sm"
             required={required}
             {...props}
         >
