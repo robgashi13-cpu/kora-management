@@ -143,9 +143,6 @@ export default function EditablePreviewModal({
       requireValue('model', 'Model');
       requireValue('vin', 'VIN');
       requireValue('soldPrice', 'Sold Price');
-      if (documentType === 'deposit') {
-        requireValue('deposit', 'Deposit Amount');
-      }
       if (missingFields.length > 0) {
         setError(`Missing required fields: ${missingFields.join(', ')}`);
         return;
