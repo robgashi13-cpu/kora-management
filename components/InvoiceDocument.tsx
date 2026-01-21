@@ -114,116 +114,119 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     <div style={{ color: '#000000', fontSize: '0.85rem' }}>
                         {renderText('buyerPersonalId')}
                     </div>
-                    <div className="invoice-client-right">
-                        <div className="invoice-meta-line">
-                            <span>Invoice Date</span>
-                            <span>{new Date().toLocaleDateString()}</span>
-                        </div>
-                        <div className="invoice-meta-line">
-                            <span>Reference</span>
-                            <span style={{ fontWeight: 700 }}>{referenceId}</span>
-                        </div>
+                </div>
+                <div className="invoice-client-right">
+                    <div className="invoice-meta-line">
+                        <span>Invoice Date</span>
+                        <span>{new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div className="invoice-meta-line">
+                        <span>Reference</span>
+                        <span style={{ fontWeight: 700 }}>{referenceId}</span>
                     </div>
                 </div>
+            </div>
 
-                {/* Line Items */}
-                <table className="invoice-table">
-                    <thead>
+            {/* Line Items */}
+            <table className="invoice-table">
+                <thead>
+                    <tr>
+                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'left' }}>Description</th>
+                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'right' }}>Total</th>
+                    </tr>
+                </thead>
+                <tbody style={{ color: '#000000' }}>
+                    <tr>
+                        <td style={{ padding: '14px 0' }}>
+                            <div style={{ color: '#000000', fontWeight: 700 }}>
+                                {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
+                                {renderText('brand')}{' '}
+                                {renderText('model')}
+                                {withDogane ? ' ME DOGANË' : ''}
+                            </div>
+                            <div className="invoice-subline">
+                                <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
+                                <span>Color: {renderText('color')}</span>
+                                <span>Plate: {renderText('plateNumber', '—')}</span>
+                            </div>
+                            <div className="invoice-subline">
+                                Mileage: {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
+                            </div>
+                        </td>
+                        <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
+                    </tr>
+                    {!withDogane && (
                         <tr>
-                            <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'left' }}>Description</th>
-                            <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'right' }}>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody style={{ color: '#000000' }}>
-                        <tr>
-                            <td style={{ padding: '14px 0' }}>
-                                <div style={{ color: '#000000', fontWeight: 700 }}>
-                                    {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
-                                    {renderText('brand')}{' '}
-                                    {renderText('model')}
-                                    {withDogane ? ' ME DOGANË' : ''}
-                                </div>
-                                <div className="invoice-subline">
-                                    <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
-                                    <span>Color: {renderText('color')}</span>
-                                    <span>Plate: {renderText('plateNumber', '—')}</span>
-                                </div>
-                                <div className="invoice-subline">
-                                    Mileage: {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
-                                </div>
+                            <td style={{ padding: '10px 0' }}>
+                                <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.8rem' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
                             </td>
-                            <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>€{(soldPriceValue - 200).toLocaleString()}</td>
+                            <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
                         </tr>
-                        {!withDogane && (
-                            <tr>
-                                <td style={{ padding: '10px 0' }}>
-                                    <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.8rem' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
-                                </td>
-                                <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                    )}
+                </tbody>
+            </table>
 
-                {/* Totals - Right aligned */}
-                <div className="invoice-summary-wrapper">
-                    <div className="invoice-summary">
-                        <div className="invoice-summary-row">
-                            <span>Subtotal</span>
-                            <span>€{(soldPriceValue - 200).toLocaleString()}</span>
-                        </div>
-                        <div className="invoice-summary-row">
-                            <span>Services</span>
-                            <span>€169.49</span>
-                        </div>
-                        <div className="invoice-summary-row invoice-summary-row-divider">
-                            <span>Tax (TVSH 18%)</span>
-                            <span>€30.51</span>
-                        </div>
-                        <div className="invoice-summary-total">
-                            <span>Grand Total</span>
-                            <span>
-                                {renderCurrency('soldPrice', soldPriceValue, {
-                                    formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            {/* Totals - Right aligned */}
+            <div className="invoice-summary-wrapper">
+                <div className="invoice-summary">
+                    <div className="invoice-summary-row">
+                        <span>Subtotal</span>
+                        <span>€{(soldPriceValue - 200).toLocaleString()}</span>
+                    </div>
+                    <div className="invoice-summary-row">
+                        <span>Services</span>
+                        <span>€169.49</span>
+                    </div>
+                    <div className="invoice-summary-row invoice-summary-row-divider">
+                        <span>Tax (TVSH 18%)</span>
+                        <span>€30.51</span>
+                    </div>
+                    <div className="invoice-summary-total">
+                        <span>Grand Total</span>
+                        <span>
+                            {renderCurrency('soldPrice', soldPriceValue, {
+                                formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            })}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer */}
+            <div className="invoice-footer" style={{ borderColor: '#000000', backgroundColor: '#ffffff' }}>
+                <h4 className="invoice-section-title">Payment Details</h4>
+                <div className="invoice-footer-grid" style={{ color: '#000000', fontSize: '0.85rem' }}>
+                    <div>
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Raiffeisen Bank</div>
+                        <div className="invoice-bank-chip">1501080002435404</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
+                        {amountPaidBankValue > 0 && (
+                            <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', marginTop: '6px' }}>
+                                {renderCurrency('amountPaidBank', amountPaidBankValue, {
+                                    formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
                                 })}
-                            </span>
-                        </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="invoice-footer-right">
+                        <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Contact</div>
+                        <div>+383 48 181 116</div>
+                        <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '16px' }}>Thank you for your business!</div>
                     </div>
                 </div>
+            </div>
 
-                {/* Footer */}
-                <div className="invoice-footer" style={{ borderColor: '#000000', backgroundColor: '#ffffff' }}>
-                    <h4 className="invoice-section-title">Payment Details</h4>
-                    <div className="invoice-footer-grid" style={{ color: '#000000', fontSize: '0.85rem' }}>
-                        <div>
-                            <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Raiffeisen Bank</div>
-                            <div className="invoice-bank-chip">1501080002435404</div>
-                            <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
-                            {amountPaidBankValue > 0 && (
-                                <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', marginTop: '6px' }}>
-                                    {renderCurrency('amountPaidBank', amountPaidBankValue, {
-                                        formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
-                                    })}
-                                </div>
-                            )}
-                        </div>
-                        <div className="invoice-footer-right">
-                            <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Contact</div>
-                            <div>+383 48 181 116</div>
-                            <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '16px' }}>Thank you for your business!</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stamp Section - Only shown when withStamp is true */}
-                {withStamp && (
+            {/* Stamp Section - Only shown when withStamp is true */}
+            {
+                withStamp && (
                     <div className="invoice-signature">
                         <div className="invoice-signature-line" />
                         <StampImage className="invoice-stamp" />
                     </div>
-                )}
+                )
+            }
 
-                <style>{`
+            <style>{`
                 .invoice-root {
                     padding: 48px;
                 }
@@ -459,10 +462,10 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     filter: none !important;
                 }
             `}</style>
-            </div>
-            );
+        </div >
+    );
 });
 
-            InvoiceDocument.displayName = 'InvoiceDocument';
+InvoiceDocument.displayName = 'InvoiceDocument';
 
-            export default InvoiceDocument;
+export default InvoiceDocument;
