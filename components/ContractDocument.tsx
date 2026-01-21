@@ -298,8 +298,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
+                                    <li>Shuma totale e shitjes është € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
                                 </ul>
                             </li>
                             <li>
@@ -543,8 +542,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li className="mb-2">
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-4 mt-0.5">
-                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
+                                    <li>Shuma totale e shitjes është € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
                                 </ul>
                             </li>
                             <li className="mb-2">
@@ -619,16 +617,16 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-stamp-row {
                     position: absolute;
-                    top: -66px;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    top: -120px;
+                    left: 0;
+                    right: 0;
                     display: flex;
-                    justify-content: flex-start;
-                    width: 664px;
-                    margin: 0;
+                    justify-content: flex-end;
+                    pointer-events: none;
+                    z-index: 10;
                 }
-                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 110px); }
-                .signature-stamp-deposit { margin-left: -40px; }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-right: 10px; }
+                .signature-stamp-deposit { margin-right: 10px; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
