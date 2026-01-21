@@ -539,7 +539,6 @@ export default function Dashboard() {
                 : existing
         );
         await updateSalesAndSave(newSales);
-        setEditShitblerjeSale(null);
     };
 
     useEffect(() => { isFormOpenRef.current = isFormOpen; }, [isFormOpen]);
