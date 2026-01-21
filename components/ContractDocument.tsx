@@ -59,11 +59,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
     const displaySale = type === 'full_shitblerje' ? applyShitblerjeOverrides(sale) : sale;
 
-    const renderText = <K extends keyof CarSale>(
+    function renderText<K extends keyof CarSale>(
         fieldKey: K,
         fallback: string = '________________',
         options?: FieldRenderOptions
-    ) => {
+    ) {
         if (renderField) {
             return renderField(fieldKey, displaySale[fieldKey], options);
         }
@@ -78,19 +78,19 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             return formatDate(String(value));
         }
         return String(value);
-    };
+    }
 
-    const renderCurrencyValue = <K extends keyof CarSale>(
+    function renderCurrencyValue<K extends keyof CarSale>(
         fieldKey: K,
         fallback: number = 0,
         options?: FieldRenderOptions
-    ) => {
+    ) {
         if (renderField) {
             return renderField(fieldKey, displaySale[fieldKey], { ...options, type: 'currency' });
         }
         const val = safeNumber(displaySale[fieldKey] as number, fallback);
         return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    };
+    }
 
     const today = new Date().toLocaleDateString('en-GB');
     const shippingDate = renderText('shippingDate', '________________', { type: 'date' });

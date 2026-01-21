@@ -23,11 +23,11 @@ type FieldRenderOptions = {
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(({ sale, withDogane = false, withStamp = false, renderField }, ref) => {
     const displaySale = applyShitblerjeOverrides(sale);
-    const renderText = <K extends keyof CarSale>(
+    function renderText<K extends keyof CarSale>(
         fieldKey: K,
         fallback: React.ReactNode = '',
         options?: FieldRenderOptions
-    ) => {
+    ) {
         if (renderField) {
             return renderField(fieldKey, displaySale[fieldKey], options);
         }
@@ -39,7 +39,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
             return options.formatValue(value);
         }
         return String(value);
-    };
+    }
 
     const renderCurrency = <K extends keyof CarSale>(
         fieldKey: K,
@@ -462,7 +462,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>((
                     filter: none !important;
                 }
             `}</style>
-        </div >
+        </div>
     );
 });
 
