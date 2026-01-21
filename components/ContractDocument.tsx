@@ -192,9 +192,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
                     {/* Article 2 */}
                     <div className="mb-2">
-                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
+                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Shitjes</div>
                         <p className="text-xs">
-                            Blerësi i dorëzon shitësit shumën prej <strong>€{renderCurrencyValue('deposit')}</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>€{renderCurrencyValue('soldPrice')}</strong>. Deri ne Prishtine
+                            <strong>Sold Price: €{renderCurrencyValue('soldPrice')}</strong>. Deri ne Prishtine
                         </p>
                     </div>
 
@@ -230,8 +230,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="signature-grid">
                             <div className="signature-column">
                                 <div className="signature-label">Shitësi (Nënshkrimi)</div>
-                                <div className="signature-line-row">
+                                <div className="signature-line-row signature-line-row-stamp">
                                     <div className="signature-line" />
+                                    {withStamp && (
+                                        <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
+                                    )}
                                 </div>
                                 <div className="signature-name font-bold text-xs">{seller.name}</div>
                             </div>
@@ -243,11 +246,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
                             </div>
                         </div>
-                        {withStamp && (
-                            <div className="signature-stamp-row">
-                                <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
-                            </div>
-                        )}
                     </div>
                 </>
             )}
@@ -298,7 +296,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Shuma totale e shitjes është € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
+                                    <li>Sold Price: € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
                                 </ul>
                             </li>
                             <li>
@@ -311,7 +309,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Vonesa në Dorëzim</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {renderCurrencyValue('soldPrice')} brenda 7 ditëve kalendarike.</li>
+                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën e pagesës brenda 7 ditëve kalendarike.</li>
                                 </ul>
                             </li>
                             <li>
@@ -459,8 +457,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="signature-grid">
                                 <div className="signature-column">
                                     <div className="signature-label font-bold">Ndërmjetësuesi:</div>
-                                    <div className="signature-line-row">
+                                    <div className="signature-line-row signature-line-row-stamp">
                                         <div className="signature-line" />
+                                        {withStamp && (
+                                            <StampImage className="signature-stamp" />
+                                        )}
                                     </div>
                                     <div className="signature-name text-xs">
                                         <div>{fullSellerName}</div>
@@ -478,11 +479,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     </div>
                                 </div>
                             </div>
-                            {withStamp && (
-                                <div className="signature-stamp-row">
-                                    <StampImage className="signature-stamp" />
-                                </div>
-                            )}
                         </div>
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
@@ -542,7 +538,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li className="mb-2">
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-4 mt-0.5">
-                                    <li>Shuma totale e shitjes është € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
+                                    <li>Sold Price: € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
                                 </ul>
                             </li>
                             <li className="mb-2">
@@ -566,8 +562,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="signature-grid">
                                 <div className="signature-column">
                                     <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
-                                    <div className="signature-line-row">
+                                    <div className="signature-line-row signature-line-row-stamp">
                                         <div className="signature-line" />
+                                        {withStamp && (
+                                            <StampImage className="signature-stamp" />
+                                        )}
                                     </div>
                                     <div className="signature-name text-xs">Owner: Robert Gashi</div>
                                 </div>
@@ -579,11 +578,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     <div className="signature-name text-xs break-words">{renderText('buyerName')}</div>
                                 </div>
                             </div>
-                            {withStamp && (
-                                <div className="signature-stamp-row">
-                                    <StampImage className="signature-stamp" />
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -615,18 +609,18 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-line-row { position: relative; margin-top: 24px; }
                 .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
-                .signature-stamp-row {
+                .signature-line-row-stamp { z-index: 1; }
+                .signature-stamp {
                     position: absolute;
                     top: -120px;
-                    left: 0;
-                    right: 0;
-                    display: flex;
-                    justify-content: flex-end;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 220px;
+                    height: 220px;
+                    object-fit: contain;
                     pointer-events: none;
-                    z-index: 10;
                 }
-                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-right: 10px; }
-                .signature-stamp-deposit { margin-right: 10px; }
+                .signature-stamp-deposit { margin-right: 0; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;
