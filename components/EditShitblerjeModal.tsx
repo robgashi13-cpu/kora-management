@@ -328,6 +328,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     sale={previewSale}
                     documentType={contractType}
                     onClose={() => setContractType(null)}
+                    includePreInvoice={contractType === 'invoice'}
                     onSaveToSale={(updates) => {
                         setFormData(prev => ({
                             ...prev,
