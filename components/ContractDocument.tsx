@@ -57,7 +57,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
         );
     }
 
-    const displaySale = type === 'full_shitblerje' ? applyShitblerjeOverrides(sale) : sale;
+    const displaySale = applyShitblerjeOverrides(sale);
 
     function renderText<K extends keyof CarSale>(
         fieldKey: K,
@@ -243,7 +243,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
                                 </div>
-                                <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
+                                    <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
+                                    <div className="signature-meta text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
                             </div>
                         </div>
                     </div>
@@ -475,6 +476,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     </div>
                                     <div className="signature-name text-xs">
                                         <div className="break-words">{renderText('buyerName')}</div>
+                                        <div className="text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
                                         <div>(Nënshkrimi)</div>
                                     </div>
                                 </div>
@@ -576,6 +578,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                         <div className="signature-line" />
                                     </div>
                                     <div className="signature-name text-xs break-words">{renderText('buyerName')}</div>
+                                    <div className="signature-meta text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
                                 </div>
                             </div>
                         </div>
@@ -603,16 +606,16 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-section { margin-top: 72px; position: relative; }
-                .signature-grid { display: flex; gap: 64px; width: 664px; margin: 0 auto; }
-                .signature-column { width: 300px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+                .signature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; width: 100%; max-width: 664px; margin: 0 auto; }
+                .signature-column { display: flex; flex-direction: column; align-items: center; text-align: center; }
                 .signature-label { line-height: 20px; }
-                .signature-line-row { position: relative; margin-top: 24px; }
-                .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
+                .signature-line-row { position: relative; margin-top: 24px; width: 240px; }
+                .signature-line { width: 100%; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-line-row-stamp { z-index: 1; }
                 .signature-stamp {
                     position: absolute;
-                    top: -120px;
+                    top: -118px;
                     left: 50%;
                     transform: translateX(-50%);
                     width: 220px;
@@ -620,6 +623,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     object-fit: contain;
                     pointer-events: none;
                 }
+                .signature-meta { margin-top: 4px; }
                 .signature-stamp-deposit { margin-right: 0; }
                 .pdf-root,
                 .pdf-root * {
