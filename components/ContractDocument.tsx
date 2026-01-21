@@ -609,15 +609,15 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .signature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; width: 100%; max-width: 664px; margin: 0 auto; }
                 .signature-column { display: flex; flex-direction: column; align-items: center; text-align: center; }
                 .signature-label { line-height: 20px; }
-                .signature-line-row { position: relative; margin-top: 24px; width: 240px; }
-                .signature-line { width: 100%; border-bottom: 1px solid #000; height: 0; }
+                .signature-line-row { position: relative; margin-top: 24px; width: 240px; height: 120px; display: flex; align-items: center; justify-content: center; }
+                .signature-line { position: absolute; top: 50%; left: 0; right: 0; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-line-row-stamp { z-index: 1; }
                 .signature-stamp {
                     position: absolute;
-                    top: -118px;
+                    top: 50%;
                     left: 50%;
-                    transform: translateX(-50%);
+                    transform: translate(-50%, -50%);
                     width: 220px;
                     height: 220px;
                     object-fit: contain;
