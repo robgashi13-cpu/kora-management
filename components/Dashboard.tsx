@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
+import { LucideIcon, Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -2153,13 +2153,22 @@ export default function Dashboard() {
         );
     }
 
-    const navItems = [
+    type NavItem = {
+        id: 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'SETTINGS';
+        label: string;
+        icon: LucideIcon;
+        view: 'dashboard' | 'settings';
+        category?: 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON';
+        adminOnly?: boolean;
+    };
+
+    const navItems: NavItem[] = [
         { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
         { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
         { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
         { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
         { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
-    ] as const;
+    ];
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
