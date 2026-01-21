@@ -22,6 +22,7 @@ import InvoiceDocument from './InvoiceDocument';
 import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
+import { verifyAdminPassword } from '@/services/adminAuth';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
@@ -34,7 +35,6 @@ const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amoun
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
 const ADMIN_PROFILE = 'Robert';
-const ADMIN_PASSWORD = 'Robertoo1396$';
 const LEGACY_ADMIN_PROFILE = 'Admin';
 const REQUIRED_PROFILES = [ADMIN_PROFILE, 'Leonit'];
 
@@ -703,8 +703,9 @@ export default function Dashboard() {
 
 
 
-    const handlePasswordSubmit = () => {
-        if (passwordInput === ADMIN_PASSWORD) {
+    const handlePasswordSubmit = async () => {
+        const result = await verifyAdminPassword(passwordInput);
+        if (result.ok) {
             const normalizedProfile = normalizeProfileName(pendingProfile);
             setUserProfile(normalizedProfile);
             persistUserProfile(normalizedProfile);
@@ -714,7 +715,7 @@ export default function Dashboard() {
             setPasswordInput('');
             setPendingProfile('');
         } else {
-            alert('Incorrect Password!');
+            alert(result.error ?? 'Incorrect password.');
         }
     };
 

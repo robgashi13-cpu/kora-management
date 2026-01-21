@@ -1,5 +1,15 @@
 import OpenAI from "openai";
 
+const allowBrowserOpenAI = process.env.NEXT_PUBLIC_ALLOW_BROWSER_OPENAI === 'true';
+
+const ensureBrowserOpenAIAllowed = () => {
+    if (typeof window !== 'undefined' && !allowBrowserOpenAI) {
+        throw new Error(
+            'OpenAI usage in the browser is disabled. Set NEXT_PUBLIC_ALLOW_BROWSER_OPENAI=true to enable it.'
+        );
+    }
+};
+
 export const extractTextFromPdf = async (base64Pdf: string): Promise<string> => {
     try {
         // @ts-ignore
@@ -28,6 +38,7 @@ export const extractTextFromPdf = async (base64Pdf: string): Promise<string> => 
 };
 
 export const analyzeBankStatement = async (apiKey: string, base64Pdf: string): Promise<any[]> => {
+    ensureBrowserOpenAIAllowed();
     const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
     // 1. Extract Text from PDF (Client Side)
@@ -72,6 +83,7 @@ export const analyzeBankStatement = async (apiKey: string, base64Pdf: string): P
 };
 
 export const processImportedData = async (apiKey: string, rawData: any[], onProgress?: (msg: string) => void): Promise<any[]> => {
+    ensureBrowserOpenAIAllowed();
     const openai = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
 
     // Process in chunks of 20 to ensure high quality and avoid token limits
