@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { verifyAdminPassword } from '@/services/adminAuth';
 
 interface ProfileSelectorProps {
     profiles: string[];
@@ -15,7 +16,6 @@ interface ProfileSelectorProps {
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
-    const ADMIN_PASSWORD = 'Robertoo1396$';
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
@@ -69,8 +69,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         }
     };
 
-    const confirmPassword = () => {
-        if (password === ADMIN_PASSWORD) {
+    const confirmPassword = async () => {
+        const result = await verifyAdminPassword(password);
+        if (result.ok) {
             if (adminAction === 'select' && pendingProfile) {
                 onSelect(pendingProfile, rememberMe);
                 setPendingProfile(null);
@@ -83,7 +84,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             setPassword('');
             setShowPassword(false);
         } else {
-            alert("Incorrect Password!");
+            alert(result.error ?? 'Incorrect password.');
         }
     };
 
@@ -294,6 +295,15 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
+                                                if (!file.type.startsWith('image/')) {
+                                                    alert('Only image files are allowed.');
+                                                    return;
+                                                }
+                                                const maxBytes = 2 * 1024 * 1024;
+                                                if (file.size > maxBytes) {
+                                                    alert('Image must be smaller than 2MB.');
+                                                    return;
+                                                }
                                                 const reader = new FileReader();
                                                 reader.onloadend = () => {
                                                     if (typeof reader.result === 'string') {
