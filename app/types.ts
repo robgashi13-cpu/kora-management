@@ -1,5 +1,5 @@
 export type PaymentMethod = 'Cash' | 'Bank' | 'Mixed';
-export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled' | 'Inspection' | 'Autosallon';
+export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled' | 'Inspection' | 'Autosallon' | 'Archived';
 export type ContractType = 'deposit' | 'full_marreveshje' | 'full_shitblerje';
 export type ShitblerjeOverrides = {
     brand?: string;
@@ -83,4 +83,7 @@ export interface CarSale {
     invoiceId?: string;
     shitblerjeOverrides?: ShitblerjeOverrides;
     sellerAudit?: SellerAuditEntry[];
+    archivedAt?: string;
+    archivedBy?: string;
+    archivedFromStatus?: SaleStatus;
 }
