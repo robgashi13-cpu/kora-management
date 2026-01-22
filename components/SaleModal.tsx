@@ -752,12 +752,12 @@ const Section = ({ title, description, children }: { title: string; description?
 
 const Input = ({ label, className = "", required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-sm font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-none">
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
             {label}
-            {required && <span className="text-red-500">*</span>}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 shadow-sm"
+            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
             required={required}
             {...props}
         />
@@ -766,20 +766,20 @@ const Input = ({ label, className = "", required, ...props }: any) => (
 
 const Select = ({ label, children, required, ...props }: any) => (
     <div className="flex flex-col gap-1.5 text-left w-full">
-        <label className="text-sm font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-none">
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
             {label}
-            {required && <span className="text-red-500">*</span>}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
         </label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer shadow-sm"
+                className="appearance-none bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-[52px] cursor-pointer"
                 required={required}
                 {...props}
             >
                 {children}
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-5 w-5" />
             </div>
         </div>
     </div>
@@ -787,16 +787,15 @@ const Select = ({ label, children, required, ...props }: any) => (
 
 const DateInput = ({ label, required, ...props }: any) => (
     <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-sm font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-none">
+        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
             {label}
-            {required && <span className="text-red-500">*</span>}
+            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
         </label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-500 rounded-lg px-3 text-sm text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 cursor-pointer shadow-sm"
+            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
             required={required}
             {...props}
         />
     </div>
 );
-
