@@ -41,6 +41,7 @@ const toRemote = (s: CarSale, userProfile: string) => {
         attachments: {
             ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
             soldBy: s.soldBy,
+            sellerAudit: s.sellerAudit,
             last_edited_by: userProfile
         },
         last_edited_by: userProfile,
@@ -94,6 +95,7 @@ const fromRemote = (r: any): CarSale => ({
     notes: r.notes || r.attachments?.notes,
     group: r.group || r.attachments?.group,
     shitblerjeOverrides: r.attachments?.shitblerjeOverrides,
+    sellerAudit: r.attachments?.sellerAudit,
 
     createdAt: r.created_at || r.attachments?.createdAt || new Date().toISOString(),
     soldBy: r.sold_by || r.attachments?.soldBy,
