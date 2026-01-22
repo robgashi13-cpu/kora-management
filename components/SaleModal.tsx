@@ -57,6 +57,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
+    const draftStorageKey = useMemo(() => (
+        existingSale?.id ? `sale_draft_${existingSale.id}` : 'sale_draft_new'
+    ), [existingSale?.id]);
 
     const resolveSellerSelection = (sale: CarSale | null) => {
         const candidates = [sale?.soldBy, sale?.sellerName]
@@ -111,6 +114,30 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }
         setSaveState({ saving: false });
     }, [existingSale, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || typeof window === 'undefined') return;
+        const raw = window.localStorage.getItem(draftStorageKey);
+        if (!raw) return;
+        try {
+            const draft = JSON.parse(raw) as { data: Partial<CarSale> };
+            if (draft?.data) {
+                setFormData(draft.data);
+                initialFormDataRef.current = draft.data;
+            }
+        } catch (error) {
+            console.warn('Failed to restore sale draft', error);
+        }
+    }, [draftStorageKey, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || typeof window === 'undefined') return;
+        const payload = {
+            updatedAt: new Date().toISOString(),
+            data: formData
+        };
+        window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
+    }, [draftStorageKey, formData, isOpen]);
 
     const isDirty = useMemo(() => {
         if (!initialFormDataRef.current) return false;
@@ -231,6 +258,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (!result.success) {
                 setSaveState({ saving: false, error: result.error || 'Update failed. Please try again.' });
                 return;
+            }
+            if (typeof window !== 'undefined') {
+                window.localStorage.removeItem(draftStorageKey);
             }
             setSaveState({ saving: false, success: existingSale ? 'Updated successfully.' : 'Created successfully.' });
         } catch (error) {
@@ -504,8 +534,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <option value="New">New</option>
                                 <option value="In Progress">In Progress</option>
                                 <option value="Shipped">Shipped</option>
+                                <option value="Inspection">Inspection</option>
+                                <option value="Autosallon">Autosallon</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
+                                <option value="Archived">Archived</option>
                             </Select>
                         </div>
 

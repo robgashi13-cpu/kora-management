@@ -91,11 +91,12 @@ type SellerReassignmentAudit = {
     toSeller?: string;
 };
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, onReassignSeller }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, onReassignSeller, onRestore }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
     const statusClass = s.status === 'Completed' ? 'status-completed' :
+        s.status === 'Archived' ? 'status-archived' :
         (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
         s.status === 'New' ? 'status-new' :
         s.status === 'Shipped' ? 'status-shipped' :
@@ -330,6 +331,15 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 18. Actions */}
             <div className="px-2 h-full flex items-center justify-center gap-1 bg-white">
+                {s.status === 'Archived' && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onRestore?.(s.id); }}
+                        className="text-slate-500 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
+                        title="Restore from archive"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
+                )}
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
@@ -393,7 +403,7 @@ export default function Dashboard() {
         }
     }, [isAdmin, sortBy]);
 
-    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
+    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
@@ -763,6 +773,99 @@ export default function Dashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const uiStateHydrated = useRef(false);
+    const selectionHydrated = useRef(false);
+    const uiStateKey = 'dashboard_ui_state_v1';
+    const selectionKey = 'dashboard_selected_ids_v1';
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const raw = window.localStorage.getItem(uiStateKey);
+        if (!raw) {
+            uiStateHydrated.current = true;
+            return;
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
+            if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
+            if (typeof parsed.sortBy === 'string') setSortBy(parsed.sortBy);
+            if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') setSortDir(parsed.sortDir);
+            if (typeof parsed.groupViewEnabled === 'boolean') setGroupViewEnabled(parsed.groupViewEnabled);
+            if (Array.isArray(parsed.expandedGroups)) setExpandedGroups(parsed.expandedGroups);
+        } catch (e) {
+            console.warn('Failed to restore dashboard UI state', e);
+        } finally {
+            uiStateHydrated.current = true;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!uiStateHydrated.current || typeof window === 'undefined') return;
+        const payload = {
+            activeCategory,
+            searchTerm,
+            sortBy,
+            sortDir,
+            groupViewEnabled,
+            expandedGroups
+        };
+        window.localStorage.setItem(uiStateKey, JSON.stringify(payload));
+    }, [activeCategory, searchTerm, sortBy, sortDir, groupViewEnabled, expandedGroups]);
+
+    useEffect(() => {
+        if (selectionHydrated.current || typeof window === 'undefined') return;
+        if (sales.length === 0) return;
+        const raw = window.localStorage.getItem(selectionKey);
+        if (!raw) {
+            selectionHydrated.current = true;
+            return;
+        }
+        try {
+            const parsed = JSON.parse(raw) as string[];
+            const validIds = parsed.filter(id => sales.some(s => s.id === id));
+            setSelectedIds(new Set(validIds));
+        } catch (e) {
+            console.warn('Failed to restore selection state', e);
+        } finally {
+            selectionHydrated.current = true;
+        }
+    }, [sales]);
+
+    useEffect(() => {
+        if (!selectionHydrated.current || typeof window === 'undefined') return;
+        window.localStorage.setItem(selectionKey, JSON.stringify(Array.from(selectedIds)));
+    }, [selectedIds]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (view !== 'dashboard') return;
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const key = `dashboard_scroll_${activeCategory}`;
+        const stored = window.localStorage.getItem(key);
+        if (stored) {
+            const position = Number(stored);
+            if (!Number.isNaN(position)) {
+                requestAnimationFrame(() => {
+                    if (scrollContainerRef.current) {
+                        scrollContainerRef.current.scrollTop = position;
+                    }
+                });
+            }
+        }
+        const handleScroll = () => {
+            if (!scrollContainerRef.current) return;
+            window.localStorage.setItem(key, String(scrollContainerRef.current.scrollTop));
+        };
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            if (scrollContainerRef.current) {
+                window.localStorage.setItem(key, String(scrollContainerRef.current.scrollTop));
+            }
+        };
+    }, [activeCategory, view]);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -1275,34 +1378,23 @@ export default function Dashboard() {
         }
     };
 
-    const handleBulkDelete = async () => {
-        if (!confirm(`Delete ${selectedIds.size} items permanently?`)) return;
+    const handleBulkArchive = async () => {
+        if (!confirm(`Archive ${selectedIds.size} items?`)) return;
 
-        const selectedSales = sales.filter(sale => selectedIds.has(sale.id));
-        const lockedSales = selectedSales.filter(sale => sale.status === 'Completed');
-        if (lockedSales.length > 0) {
-            alert('Sold cars cannot be deleted. Remove them from the selection to delete others.');
-        }
-        const idsToDelete = selectedSales.filter(sale => sale.status !== 'Completed').map(sale => sale.id);
-        if (idsToDelete.length === 0) {
-            return;
-        }
-
-        // Delete from Supabase immediately
-        if (supabaseUrl && supabaseKey) {
-            try {
-                const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                for (const id of idsToDelete) {
-                    await client.from('sales').delete().eq('id', id);
-                }
-                console.log("Deleted from Supabase:", idsToDelete.length, "records");
-            } catch (e) {
-                console.error("Supabase delete error:", e);
-            }
-        }
-
-        // Delete locally
-        const newSales = sales.filter(s => !selectedIds.has(s.id));
+        const timestamp = new Date().toISOString();
+        const actor = userProfile || 'Unknown';
+        const newSales = sales.map(sale => {
+            if (!selectedIds.has(sale.id)) return sale;
+            dirtyIds.current.add(sale.id);
+            const wasArchived = sale.status === 'Archived';
+            return {
+                ...sale,
+                archivedAt: timestamp,
+                archivedBy: actor,
+                archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
+                status: 'Archived'
+            };
+        });
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
@@ -1311,7 +1403,13 @@ export default function Dashboard() {
         const newSales = sales.map(s => {
             if (selectedIds.has(s.id)) {
                 dirtyIds.current.add(s.id);
-                return { ...s, status };
+                return {
+                    ...s,
+                    status,
+                    archivedAt: status === 'Archived' ? s.archivedAt : undefined,
+                    archivedBy: status === 'Archived' ? s.archivedBy : undefined,
+                    archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
+                };
             }
             return s;
         });
@@ -1319,28 +1417,58 @@ export default function Dashboard() {
         setSelectedIds(new Set());
     };
 
-    // Delete a single car immediately
-    const handleDeleteSingle = async (id: string) => {
+    const handleArchiveSingle = async (id: string) => {
+        if (!confirm('Archive this car?')) return;
+        const timestamp = new Date().toISOString();
+        const actor = userProfile || 'Unknown';
+        const newSales = sales.map(sale => {
+            if (sale.id !== id) return sale;
+            dirtyIds.current.add(sale.id);
+            const wasArchived = sale.status === 'Archived';
+            return {
+                ...sale,
+                archivedAt: timestamp,
+                archivedBy: actor,
+                archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
+                status: 'Archived'
+            };
+        });
+        await updateSalesAndSave(newSales);
+    };
+
+    const handleBulkRestore = async () => {
+        if (!confirm(`Restore ${selectedIds.size} archived items?`)) return;
+        const newSales = sales.map(sale => {
+            if (!selectedIds.has(sale.id)) return sale;
+            if (sale.status !== 'Archived') return sale;
+            dirtyIds.current.add(sale.id);
+            return {
+                ...sale,
+                status: sale.archivedFromStatus || 'New',
+                archivedAt: undefined,
+                archivedBy: undefined,
+                archivedFromStatus: undefined
+            };
+        });
+        await updateSalesAndSave(newSales);
+        setSelectedIds(new Set());
+    };
+
+    const handleRestoreSingle = async (id: string) => {
         const sale = salesRef.current.find(s => s.id === id);
-        if (sale?.status === 'Completed') {
-            alert('Sold cars cannot be deleted.');
-            return;
-        }
-        if (!confirm('Delete this car permanently?')) return;
-
-        // Delete from Supabase immediately
-        if (supabaseUrl && supabaseKey) {
-            try {
-                const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                await client.from('sales').delete().eq('id', id);
-                console.log("Deleted from Supabase:", id);
-            } catch (e) {
-                console.error("Supabase delete error:", e);
-            }
-        }
-
-        // Delete locally
-        const newSales = sales.filter(s => s.id !== id);
+        if (!sale || sale.status !== 'Archived') return;
+        const nextStatus = sale.archivedFromStatus || 'New';
+        const newSales = sales.map(s => {
+            if (s.id !== id) return s;
+            dirtyIds.current.add(s.id);
+            return {
+                ...s,
+                status: nextStatus,
+                archivedAt: undefined,
+                archivedBy: undefined,
+                archivedFromStatus: undefined
+            };
+        });
         await updateSalesAndSave(newSales);
     };
 
@@ -1382,7 +1510,11 @@ export default function Dashboard() {
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
         const saleIdSet = new Set(ungroupedIds);
-        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
+        const newSales = sales.map(s => {
+            if (!saleIdSet.has(s.id)) return s;
+            dirtyIds.current.add(s.id);
+            return { ...s, group: trimmed };
+        });
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
@@ -1405,7 +1537,11 @@ export default function Dashboard() {
 
         const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
         await persistGroupMeta(nextMeta);
-        const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
+        const newSales = sales.map(s => {
+            if (s.group !== groupName) return s;
+            dirtyIds.current.add(s.id);
+            return { ...s, group: trimmed };
+        });
         await updateSalesAndSave(newSales);
         setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
     };
@@ -1441,21 +1577,55 @@ export default function Dashboard() {
     };
 
     const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
-        const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
+        const newSales = sales.map(s => {
+            if (s.group?.trim() !== groupName) return s;
+            dirtyIds.current.add(s.id);
+            return {
+                ...s,
+                status,
+                archivedAt: status === 'Archived' ? s.archivedAt : undefined,
+                archivedBy: status === 'Archived' ? s.archivedBy : undefined,
+                archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
+            };
+        });
         await updateSalesAndSave(newSales);
     };
 
     const handleRemoveFromGroup = async (id: string) => {
-        const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
+        const newSales = sales.map(s => {
+            if (s.id !== id) return s;
+            dirtyIds.current.add(s.id);
+            return { ...s, group: undefined };
+        });
         await updateSalesAndSave(newSales);
     };
 
     const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
         if (saleIds.length === 0) return;
         const saleIdSet = new Set(saleIds);
-        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
+        const newSales = sales.map(s => {
+            if (!saleIdSet.has(s.id)) return s;
+            dirtyIds.current.add(s.id);
+            return { ...s, group: groupName };
+        });
         await updateSalesAndSave(newSales);
         setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
+        setSelectedIds(new Set());
+    };
+
+    const handleBulkGroupMove = async (groupName?: string) => {
+        if (selectedIds.size === 0) return;
+        const saleIdSet = new Set(selectedIds);
+        const normalizedGroup = groupName?.trim();
+        const newSales = sales.map(s => {
+            if (!saleIdSet.has(s.id)) return s;
+            dirtyIds.current.add(s.id);
+            return { ...s, group: normalizedGroup || undefined };
+        });
+        await updateSalesAndSave(newSales);
+        if (normalizedGroup) {
+            setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
+        }
         setSelectedIds(new Set());
     };
 
@@ -2000,41 +2170,24 @@ export default function Dashboard() {
         alert('Settings Saved!');
     };
 
-    const handleDelete = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleDeleteSingle(id);
-    };
-
     const handleDeleteAll = async () => {
-        if (confirm('DANGER: Delete all non-sold sales data? Sold cars will be محفوظ (kept).')) {
-            if (confirm('Please confirm again: DELETE ALL NON-SOLD DATA from local AND database?')) {
-                // Delete from Supabase immediately
-                if (supabaseUrl && supabaseKey) {
-                    try {
-                        const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                        // Delete all records
-                        const { data: allSales } = await client.from('sales').select('id,status');
-                        if (allSales && allSales.length > 0) {
-                            for (const sale of allSales) {
-                                if (sale.status === 'Completed') continue;
-                                if (sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts') continue;
-                                await client.from('sales').delete().eq('id', sale.id);
-                            }
-                            console.log("Deleted all non-sold from Supabase:", allSales.length, "records");
-                        }
-                    } catch (e) {
-                        console.error("Supabase delete all error:", e);
-                    }
-                }
-
-                // Delete locally
-                const remaining = salesRef.current.filter(sale => sale.status === 'Completed' || sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts');
-                updateSalesAndSave(remaining);
-                try {
-                    await Preferences.remove({ key: 'car_sales_data' });
-                    localStorage.removeItem('car_sales_data');
-                    alert('All non-sold data has been deleted from local and database.');
-                } catch (e) { console.error('Error clearing data', e); }
+        if (confirm('Archive all non-sold sales data? Sold cars will be kept.')) {
+            if (confirm('Please confirm again: ARCHIVE ALL NON-SOLD DATA?')) {
+                const timestamp = new Date().toISOString();
+                const actor = userProfile || 'Unknown';
+                const updated = salesRef.current.map(sale => {
+                    if (sale.status === 'Completed') return sale;
+                    if (sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts') return sale;
+                    return {
+                        ...sale,
+                        status: 'Archived',
+                        archivedAt: timestamp,
+                        archivedBy: actor,
+                        archivedFromStatus: sale.status
+                    };
+                });
+                await updateSalesAndSave(updated);
+                alert('All non-sold data has been archived.');
             }
         }
     };
@@ -2216,6 +2369,8 @@ export default function Dashboard() {
 
 
         // Category Filter
+        if (activeCategory === 'ARCHIVE' && s.status !== 'Archived') return false;
+        if (activeCategory !== 'ARCHIVE' && s.status === 'Archived') return false;
         if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
         if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
         if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
@@ -2265,7 +2420,7 @@ export default function Dashboard() {
         () => sales.filter(sale => selectedIds.has(sale.id)),
         [sales, selectedIds]
     );
-    const hasLockedSoldSelection = selectedSales.some(sale => sale.status === 'Completed');
+    const hasArchivedSelection = selectedSales.some(sale => sale.status === 'Archived');
     const setupAccount = useMemo(() => {
         if (!pendingSetupToken) return null;
         return userAccounts.find(account => account.setupToken === pendingSetupToken) || null;
@@ -2292,13 +2447,17 @@ export default function Dashboard() {
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
+        groupMeta.forEach(group => {
+            groups[group.name] = [];
+        });
+        groups.Ungrouped = [];
         filteredSales.forEach(s => {
             const groupKey = s.group?.trim() || 'Ungrouped';
             if (!groups[groupKey]) groups[groupKey] = [];
             groups[groupKey].push(s);
         });
         return groups;
-    }, [filteredSales]);
+    }, [filteredSales, groupMeta]);
 
     useEffect(() => {
         if (sales.length === 0) return;
@@ -2591,7 +2750,7 @@ export default function Dashboard() {
                         {/* Global Tabs (Visible on Dashboard and Invoices) */}
                         {view !== 'settings' && (
                             <div className="flex gap-1.5 md:gap-2 mb-2 md:mb-4 overflow-x-auto pb-1 md:pb-2 no-scrollbar">
-                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'] as const).map(cat => {
+                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON', 'ARCHIVE'] as const).map(cat => {
                                     const isActive = (view === 'dashboard' && activeCategory === cat);
                                     return (
                                         <button
@@ -2688,7 +2847,6 @@ export default function Dashboard() {
                                     >
                                         {activeGroups.map(group => {
                                             const groupSales = groupedSales[group.name] || [];
-                                            if (groupSales.length === 0) return null;
                                             return (
                                                 <Reorder.Item key={group.name} value={group.name} className="contents">
                                                     <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
@@ -2786,58 +2944,65 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
                                                     {expandedGroups.includes(group.name) && (
-                                                        <Reorder.Group
-                                                            axis="y"
-                                                            values={groupSales}
-                                                            onReorder={(newOrder) => {
-                                                                setSales(prev => {
-                                                                    const next = [...prev];
-                                                                    newOrder.forEach((newItem, newIndex) => {
-                                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                        groupSales.length > 0 ? (
+                                                            <Reorder.Group
+                                                                axis="y"
+                                                                values={groupSales}
+                                                                onReorder={(newOrder) => {
+                                                                    setSales(prev => {
+                                                                        const next = [...prev];
+                                                                        newOrder.forEach((newItem, newIndex) => {
+                                                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                        });
+                                                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                                                     });
-                                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                                });
-                                                            }}
-                                                            className="grid grid-cols-subgrid"
-                                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                        >
-                                                            {groupSales.map(s => (
-                                                                <SortableSaleItem
-                                                                    key={s.id}
-                                                                    s={s}
-                                                                    userProfile={userProfile}
-                                                                    canViewPrices={canViewPrices}
-                                                                    toggleSelection={toggleSelection}
-                                                                    isSelected={selectedIds.has(s.id)}
-                                                                    openInvoice={openInvoice}
-                                                                    onInlineUpdate={handleInlineUpdate}
-                                                                    onClick={() => handleSaleClick(s)}
-                                                                    onDelete={handleDeleteSingle}
-                                                                    onRemoveFromGroup={handleRemoveFromGroup}
-                                                                    onReassignSeller={openSellerReassignModal}
-                                                                />
-                                                            ))}
-                                                        </Reorder.Group>
+                                                                }}
+                                                                className="grid grid-cols-subgrid"
+                                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                            >
+                                                                {groupSales.map(s => (
+                                                                    <SortableSaleItem
+                                                                        key={s.id}
+                                                                        s={s}
+                                                                        userProfile={userProfile}
+                                                                        canViewPrices={canViewPrices}
+                                                                        toggleSelection={toggleSelection}
+                                                                        isSelected={selectedIds.has(s.id)}
+                                                                        openInvoice={openInvoice}
+                                                                        onInlineUpdate={handleInlineUpdate}
+                                                                        onClick={() => handleSaleClick(s)}
+                                                                        onDelete={handleArchiveSingle}
+                                                                        onRemoveFromGroup={handleRemoveFromGroup}
+                                                                        onReassignSeller={openSellerReassignModal}
+                                                                        onRestore={handleRestoreSingle}
+                                                                    />
+                                                                ))}
+                                                            </Reorder.Group>
+                                                        ) : (
+                                                            <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
+                                                                No cars in this group yet.
+                                                            </div>
+                                                        )
                                                     )}
                                                 </Reorder.Item>
                                             );
                                         })}
-                                        {groupedSales.Ungrouped?.length > 0 && (
-                                            <div className="contents">
-                                                <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                        <button
-                                                            onClick={() => toggleGroup('Ungrouped')}
-                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                        >
-                                                            {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            <span>Ungrouped</span>
-                                                            <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
-                                                        </button>
-                                                    </div>
+                                        <div className="contents">
+                                            <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                    <button
+                                                        onClick={() => toggleGroup('Ungrouped')}
+                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                                                    >
+                                                        {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                        <span>Ungrouped</span>
+                                                        <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
+                                                    </button>
                                                 </div>
-                                                {expandedGroups.includes('Ungrouped') && (
+                                            </div>
+                                            {expandedGroups.includes('Ungrouped') && (
+                                                groupedSales.Ungrouped.length > 0 ? (
                                                     <Reorder.Group
                                                         axis="y"
                                                         values={groupedSales.Ungrouped}
@@ -2865,15 +3030,20 @@ export default function Dashboard() {
                                                                 openInvoice={openInvoice}
                                                                 onInlineUpdate={handleInlineUpdate}
                                                                 onClick={() => handleSaleClick(s)}
-                                                                onDelete={handleDeleteSingle}
+                                                                onDelete={handleArchiveSingle}
                                                                 onRemoveFromGroup={handleRemoveFromGroup}
                                                                 onReassignSeller={openSellerReassignModal}
+                                                                onRestore={handleRestoreSingle}
                                                             />
                                                         ))}
                                                     </Reorder.Group>
-                                                )}
-                                            </div>
-                                        )}
+                                                ) : (
+                                                    <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
+                                                        No ungrouped cars.
+                                                    </div>
+                                                )
+                                            )}
+                                        </div>
                                         {archivedGroups.length > 0 && (
                                             <div className="contents">
                                                 <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
@@ -2914,41 +3084,48 @@ export default function Dashboard() {
                                                                 </div>
                                                             </div>
                                                             {expandedGroups.includes(group.name) && (
-                                                                <Reorder.Group
-                                                                    axis="y"
-                                                                    values={groupSales}
-                                                                    onReorder={(newOrder) => {
-                                                                        setSales(prev => {
-                                                                            const next = [...prev];
-                                                                            newOrder.forEach((newItem, newIndex) => {
-                                                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                groupSales.length > 0 ? (
+                                                                    <Reorder.Group
+                                                                        axis="y"
+                                                                        values={groupSales}
+                                                                        onReorder={(newOrder) => {
+                                                                            setSales(prev => {
+                                                                                const next = [...prev];
+                                                                                newOrder.forEach((newItem, newIndex) => {
+                                                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                                });
+                                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                                                                             });
-                                                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                                        });
-                                                                    }}
-                                                                    className="grid grid-cols-subgrid"
-                                                                    style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                                >
-                                                                    {groupSales.map(s => (
-                                                                        <SortableSaleItem
-                                                                            key={s.id}
-                                                                            s={s}
-                                                                            userProfile={userProfile}
-                                                                            canViewPrices={canViewPrices}
-                                                                            toggleSelection={toggleSelection}
-                                                                            isSelected={selectedIds.has(s.id)}
-                                                                            openInvoice={openInvoice}
-                                                                            onInlineUpdate={handleInlineUpdate}
-                                                                    onClick={() => {
-                                                                        handleSaleClick(s);
-                                                                    }}
-                                                                            onDelete={handleDeleteSingle}
-                                                                            onRemoveFromGroup={handleRemoveFromGroup}
-                                                                            onReassignSeller={openSellerReassignModal}
-                                                                        />
-                                                                    ))}
-                                                                </Reorder.Group>
+                                                                        }}
+                                                                        className="grid grid-cols-subgrid"
+                                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                    >
+                                                                        {groupSales.map(s => (
+                                                                            <SortableSaleItem
+                                                                                key={s.id}
+                                                                                s={s}
+                                                                                userProfile={userProfile}
+                                                                                canViewPrices={canViewPrices}
+                                                                                toggleSelection={toggleSelection}
+                                                                                isSelected={selectedIds.has(s.id)}
+                                                                                openInvoice={openInvoice}
+                                                                                onInlineUpdate={handleInlineUpdate}
+                                                                                onClick={() => {
+                                                                                    handleSaleClick(s);
+                                                                                }}
+                                                                                onDelete={handleArchiveSingle}
+                                                                                onRemoveFromGroup={handleRemoveFromGroup}
+                                                                                onReassignSeller={openSellerReassignModal}
+                                                                                onRestore={handleRestoreSingle}
+                                                                            />
+                                                                        ))}
+                                                                    </Reorder.Group>
+                                                                ) : (
+                                                                    <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
+                                                                        No cars in this archived group.
+                                                                    </div>
+                                                                )
                                                             )}
                                                         </div>
                                                     );
@@ -2984,8 +3161,9 @@ export default function Dashboard() {
                                                     openInvoice={openInvoice}
                                                     onInlineUpdate={handleInlineUpdate}
                                                     onClick={() => handleSaleClick(s)}
-                                                    onDelete={handleDeleteSingle}
+                                                    onDelete={handleArchiveSingle}
                                                     onReassignSeller={openSellerReassignModal}
+                                                    onRestore={handleRestoreSingle}
                                                 />
                                             ))}
                                         </Reorder.Group>
@@ -3012,9 +3190,8 @@ export default function Dashboard() {
                                 <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
                                     {groupingEnabled ? (
                                         <>
-                                            {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
+                                            {[...activeGroups, { name: 'Ungrouped', order: 9999, archived: false }].map(group => {
                                                 const groupSales = groupedSales[group.name] || [];
-                                                if (groupSales.length === 0) return null;
                                                 return (
                                                     <div key={group.name} className="border-b border-slate-200">
                                                         <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50 border-l-4 border-l-slate-300">
@@ -3080,7 +3257,8 @@ export default function Dashboard() {
                                                             </div>
                                                         </div>
                                                         {expandedGroups.includes(group.name) && (
-                                                            <div>
+                                                            groupSales.length > 0 ? (
+                                                                <div>
                                                                 {groupSales.map(sale => (
                                                                     <motion.div
                                                                         key={sale.id}
@@ -3088,9 +3266,9 @@ export default function Dashboard() {
                                                                         animate={{ opacity: 1 }}
                                                                         className="relative border-b border-slate-200"
                                                                     >
-                                                                        {/* Background Action (Delete) */}
-                                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                            <Trash2 className="text-white w-5 h-5" />
+                                                                        {/* Background Action (Archive) */}
+                                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
+                                                                            <Archive className="text-white w-5 h-5" />
                                                                         </div>
 
                                                                         {/* Foreground Card */}
@@ -3103,13 +3281,9 @@ export default function Dashboard() {
                                                                             dragSnapToOrigin
                                                                             onDragEnd={(e, { offset }) => {
                                                                                 if (offset.x < -100) {
-                                                                                    if (sale.status === 'Completed') {
-                                                                                        alert('Sold cars cannot be deleted.');
-                                                                                        return;
-                                                                                    }
-                                                                                    const shouldDelete = confirm('Delete this item?');
-                                                                                    if (shouldDelete) {
-                                                                                        handleDeleteSingle(sale.id);
+                                                                                    const shouldArchive = confirm('Archive this item?');
+                                                                                    if (shouldArchive) {
+                                                                                        handleArchiveSingle(sale.id);
                                                                                     }
                                                                                 }
                                                                             }}
@@ -3139,7 +3313,8 @@ export default function Dashboard() {
                                                                                     <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                         (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                             sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                'bg-slate-100 text-slate-500'
+                                                                                                sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
+                                                                                                    'bg-slate-100 text-slate-500'
                                                                                         }`}>{sale.status}</span>
                                                                                 </div>
                                                                                 <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
@@ -3160,14 +3335,22 @@ export default function Dashboard() {
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
-                                                                                    {groupingAvailable && sale.group && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                >
-                                                                                    Remove from group
-                                                                                </button>
-                                                                            )}
+                                                                                {groupingAvailable && sale.group && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                        className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                    >
+                                                                                        Remove from group
+                                                                                    </button>
+                                                                                )}
+                                                                                {sale.status === 'Archived' && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
+                                                                                        className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                                    >
+                                                                                        Restore
+                                                                                    </button>
+                                                                                )}
                                                                                 {isAdmin && sale.status === 'Completed' && (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
@@ -3180,7 +3363,12 @@ export default function Dashboard() {
                                                                     </motion.div>
                                                                     </motion.div>
                                                                 ))}
-                                                            </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="px-4 py-3 text-xs text-slate-400 italic bg-white border-t border-slate-100">
+                                                                    No cars in this group yet.
+                                                                </div>
+                                                            )
                                                         )}
                                                     </div>
                                                 );
@@ -3199,7 +3387,6 @@ export default function Dashboard() {
                                                     </button>
                                                     {showArchivedGroups && archivedGroups.map(group => {
                                                         const groupSales = groupedSales[group.name] || [];
-                                                        if (groupSales.length === 0) return null;
                                                         return (
                                                             <div key={group.name} className="border-b border-slate-200">
                                                                 <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
@@ -3218,16 +3405,17 @@ export default function Dashboard() {
                                                                     </button>
                                                                 </div>
                                                                 {expandedGroups.includes(group.name) && (
-                                                                    <div>
-                                                                        {groupSales.map(sale => (
+                                                                    groupSales.length > 0 ? (
+                                                                        <div>
+                                                                            {groupSales.map(sale => (
                                                                             <motion.div
                                                                                 key={sale.id}
                                                                                 initial={{ opacity: 0 }}
                                                                                 animate={{ opacity: 1 }}
                                                                                 className="relative border-b border-slate-200"
                                                                             >
-                                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                                    <Trash2 className="text-white w-5 h-5" />
+                                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
+                                                                                    <Archive className="text-white w-5 h-5" />
                                                                                 </div>
                                                                                 <motion.div
                                                                                     layout
@@ -3238,13 +3426,9 @@ export default function Dashboard() {
                                                                                     dragSnapToOrigin
                                                                                     onDragEnd={(e, { offset }) => {
                                                                                         if (offset.x < -100) {
-                                                                                            if (sale.status === 'Completed') {
-                                                                                                alert('Sold cars cannot be deleted.');
-                                                                                                return;
-                                                                                            }
-                                                                                            const shouldDelete = confirm('Delete this item?');
-                                                                                            if (shouldDelete) {
-                                                                                                handleDeleteSingle(sale.id);
+                                                                                            const shouldArchive = confirm('Archive this item?');
+                                                                                            if (shouldArchive) {
+                                                                                                handleArchiveSingle(sale.id);
                                                                                             }
                                                                                         }
                                                                                     }}
@@ -3273,8 +3457,9 @@ export default function Dashboard() {
                                                                                         <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                    'bg-slate-100 text-slate-500'
-                                                                                            }`}>{sale.status}</span>
+                                                                                                    sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
+                                                                                                        'bg-slate-100 text-slate-500'
+                                                                                                }`}>{sale.status}</span>
                                                                                     </div>
                                                                                     <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
                                                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
@@ -3302,6 +3487,14 @@ export default function Dashboard() {
                                                                                             Remove from group
                                                                                         </button>
                                                                                     )}
+                                                                                    {sale.status === 'Archived' && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
+                                                                                            className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                                        >
+                                                                                            Restore
+                                                                                        </button>
+                                                                                    )}
                                                                                     {isAdmin && sale.status === 'Completed' && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
@@ -3313,8 +3506,13 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                 </motion.div>
                                                                             </motion.div>
-                                                                        ))}
-                                                                    </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="px-4 py-3 text-xs text-slate-400 italic bg-white border-t border-slate-100">
+                                                                            No cars in this archived group.
+                                                                        </div>
+                                                                    )
                                                                 )}
                                                     </div>
                                                 );
@@ -3331,8 +3529,8 @@ export default function Dashboard() {
                                                     animate={{ opacity: 1 }}
                                                     className="relative border-b border-slate-200"
                                                 >
-                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                        <Trash2 className="text-white w-5 h-5" />
+                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
+                                                        <Archive className="text-white w-5 h-5" />
                                                     </div>
                                                     <motion.div
                                                         layout
@@ -3343,13 +3541,9 @@ export default function Dashboard() {
                                                         dragSnapToOrigin
                                                         onDragEnd={(e, { offset }) => {
                                                             if (offset.x < -100) {
-                                                                if (sale.status === 'Completed') {
-                                                                    alert('Sold cars cannot be deleted.');
-                                                                    return;
-                                                                }
-                                                                const shouldDelete = confirm('Delete this item?');
-                                                                if (shouldDelete) {
-                                                                    handleDeleteSingle(sale.id);
+                                                                const shouldArchive = confirm('Archive this item?');
+                                                                if (shouldArchive) {
+                                                                    handleArchiveSingle(sale.id);
                                                                 }
                                                             }
                                                         }}
@@ -3379,7 +3573,8 @@ export default function Dashboard() {
                                                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                     (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                         sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                            'bg-slate-100 text-slate-500'
+                                                                            sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
+                                                                                'bg-slate-100 text-slate-500'
                                                                     }`}>{sale.status}</span>
                                                             </div>
                                                             <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
@@ -3399,6 +3594,14 @@ export default function Dashboard() {
                                                                         {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                                                                     </span>
                                                                 </div>
+                                                            )}
+                                                            {sale.status === 'Archived' && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
+                                                                    className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                >
+                                                                    Restore
+                                                                </button>
                                                             )}
                                                         </div>
                                                     </motion.div>
@@ -3442,7 +3645,7 @@ export default function Dashboard() {
                                     <div className="h-px bg-slate-200 my-3 md:my-4" />
                                     <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
                                     <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
+                                    <button onClick={handleDeleteAll} className="w-full border border-slate-200 text-slate-700 py-2.5 md:py-3 rounded-xl hover:bg-slate-50 transition-colors">Archive All Data</button>
                                 </div>
                             </div>
                         ) : view === 'invoices' ? (
@@ -3516,7 +3719,8 @@ export default function Dashboard() {
                                                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                         s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
                                                             s.status === 'Shipped' ? 'bg-slate-100 text-slate-700' :
-                                                                'bg-slate-100 text-slate-500'
+                                                                s.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
+                                                                    'bg-slate-100 text-slate-500'
                                                         }`}>{s.status}</span>
                                                 </div>
                                                 <div className="space-y-1.5 md:space-y-2 text-sm">
@@ -3627,11 +3831,23 @@ export default function Dashboard() {
                                             <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
                                         </button>
                                         {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-48 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                <div className="px-3 pt-1 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Move to tab</div>
                                                 <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
                                                 <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
                                                 <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
                                                 <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
+                                                <div className="px-3 pt-2 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Move to group</div>
+                                                <button onClick={() => { handleBulkGroupMove(); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Ungrouped</button>
+                                                {orderedGroupMeta.map(group => (
+                                                    <button
+                                                        key={group.name}
+                                                        onClick={() => { handleBulkGroupMove(group.name); setShowMoveMenu(false); }}
+                                                        className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
+                                                    >
+                                                        {group.name}{group.archived ? ' (Archived)' : ''}
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
                                     </div>
@@ -3641,14 +3857,20 @@ export default function Dashboard() {
                                         <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
                                     </button>
 
+                                    {hasArchivedSelection && (
+                                        <button onClick={handleBulkRestore} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <RefreshCw className="w-5 h-5 text-slate-600" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Restore</span>
+                                        </button>
+                                    )}
+
                                     <button
-                                        onClick={handleBulkDelete}
-                                        disabled={hasLockedSoldSelection}
-                                        title={hasLockedSoldSelection ? 'Sold cars cannot be deleted' : 'Delete'}
-                                        className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                        onClick={handleBulkArchive}
+                                        title="Archive"
+                                        className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group"
                                     >
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
+                                        <Archive className="w-5 h-5 text-slate-500" />
+                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Archive</span>
                                     </button>
 
                                     <div className="w-px h-8 bg-slate-200 mx-1" />
