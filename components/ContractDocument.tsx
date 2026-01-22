@@ -57,13 +57,13 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
         );
     }
 
-    const displaySale = applyShitblerjeOverrides(sale);
+    const displaySale = type === 'full_shitblerje' ? applyShitblerjeOverrides(sale) : sale;
 
-    function renderText<K extends keyof CarSale>(
+    const renderText = <K extends keyof CarSale>(
         fieldKey: K,
         fallback: string = '________________',
         options?: FieldRenderOptions
-    ) {
+    ) => {
         if (renderField) {
             return renderField(fieldKey, displaySale[fieldKey], options);
         }
@@ -78,19 +78,19 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             return formatDate(String(value));
         }
         return String(value);
-    }
+    };
 
-    function renderCurrencyValue<K extends keyof CarSale>(
+    const renderCurrencyValue = <K extends keyof CarSale>(
         fieldKey: K,
         fallback: number = 0,
         options?: FieldRenderOptions
-    ) {
+    ) => {
         if (renderField) {
             return renderField(fieldKey, displaySale[fieldKey], { ...options, type: 'currency' });
         }
         const val = safeNumber(displaySale[fieldKey] as number, fallback);
         return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    };
 
     const today = new Date().toLocaleDateString('en-GB');
     const shippingDate = renderText('shippingDate', '________________', { type: 'date' });
@@ -192,9 +192,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
                     {/* Article 2 */}
                     <div className="mb-2">
-                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Shitjes</div>
+                        <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                         <p className="text-xs">
-                            <strong>Sold Price: €{renderCurrencyValue('soldPrice')}</strong>. Deri ne Prishtine
+                            Blerësi i dorëzon shitësit shumën prej <strong>€{renderCurrencyValue('deposit')}</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>€{renderCurrencyValue('soldPrice')}</strong>. Deri ne Prishtine
                         </p>
                     </div>
 
@@ -230,11 +230,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="signature-grid">
                             <div className="signature-column">
                                 <div className="signature-label">Shitësi (Nënshkrimi)</div>
-                                <div className="signature-line-row signature-line-row-stamp">
+                                <div className="signature-line-row">
                                     <div className="signature-line" />
-                                    {withStamp && (
-                                        <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
-                                    )}
                                 </div>
                                 <div className="signature-name font-bold text-xs">{seller.name}</div>
                             </div>
@@ -243,10 +240,14 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
                                 </div>
-                                    <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
-                                    <div className="signature-meta text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
+                                <div className="signature-name font-bold text-xs break-words">{renderText('buyerName')}</div>
                             </div>
                         </div>
+                        {withStamp && (
+                            <div className="signature-stamp-row">
+                                <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -297,7 +298,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Sold Price: € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
+                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
                                 </ul>
                             </li>
                             <li>
@@ -310,7 +312,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Vonesa në Dorëzim</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën e pagesës brenda 7 ditëve kalendarike.</li>
+                                    <li>Në rast se automjeti nuk mbërrin brenda afatit të përcaktuar, ndërmjetësi, Z. Robert Gashi, angazhohet të rimbursojë tërësisht shumën prej € {renderCurrencyValue('soldPrice')} brenda 7 ditëve kalendarike.</li>
                                 </ul>
                             </li>
                             <li>
@@ -458,11 +460,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="signature-grid">
                                 <div className="signature-column">
                                     <div className="signature-label font-bold">Ndërmjetësuesi:</div>
-                                    <div className="signature-line-row signature-line-row-stamp">
+                                    <div className="signature-line-row">
                                         <div className="signature-line" />
-                                        {withStamp && (
-                                            <StampImage className="signature-stamp" />
-                                        )}
                                     </div>
                                     <div className="signature-name text-xs">
                                         <div>{fullSellerName}</div>
@@ -476,11 +475,15 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     </div>
                                     <div className="signature-name text-xs">
                                         <div className="break-words">{renderText('buyerName')}</div>
-                                        <div className="text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
                                         <div>(Nënshkrimi)</div>
                                     </div>
                                 </div>
                             </div>
+                            {withStamp && (
+                                <div className="signature-stamp-row">
+                                    <StampImage className="signature-stamp" />
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-8 text-center text-xs" style={{ color: '#666' }}>
@@ -540,7 +543,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li className="mb-2">
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-4 mt-0.5">
-                                    <li>Sold Price: € {renderCurrencyValue('soldPrice')}. Pagesa realizohet sipas marrëveshjes së palëve.</li>
+                                    <li>Shuma totale prej € {renderCurrencyValue('amountPaidBank')} do të transferohet në llogarinë bankare të RG SH.P.K</li>
+                                    <li>Një shumë prej € {renderCurrencyValue('deposit')} do të paguhet në dorë si kapar.</li>
                                 </ul>
                             </li>
                             <li className="mb-2">
@@ -564,11 +568,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div className="signature-grid">
                                 <div className="signature-column">
                                     <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
-                                    <div className="signature-line-row signature-line-row-stamp">
+                                    <div className="signature-line-row">
                                         <div className="signature-line" />
-                                        {withStamp && (
-                                            <StampImage className="signature-stamp" />
-                                        )}
                                     </div>
                                     <div className="signature-name text-xs">Owner: Robert Gashi</div>
                                 </div>
@@ -578,9 +579,13 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                         <div className="signature-line" />
                                     </div>
                                     <div className="signature-name text-xs break-words">{renderText('buyerName')}</div>
-                                    <div className="signature-meta text-[10px] text-slate-600">{renderText('buyerPersonalId')}</div>
                                 </div>
                             </div>
+                            {withStamp && (
+                                <div className="signature-stamp-row">
+                                    <StampImage className="signature-stamp" />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -606,25 +611,24 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-section { margin-top: 72px; position: relative; }
-                .signature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; width: 100%; max-width: 664px; margin: 0 auto; }
-                .signature-column { display: flex; flex-direction: column; align-items: center; text-align: center; }
+                .signature-grid { display: flex; gap: 64px; width: 664px; margin: 0 auto; }
+                .signature-column { width: 300px; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
                 .signature-label { line-height: 20px; }
-                .signature-line-row { position: relative; margin-top: 24px; width: 240px; height: 120px; display: flex; align-items: center; justify-content: center; }
-                .signature-line { position: absolute; top: 50%; left: 0; right: 0; border-bottom: 1px solid #000; height: 0; }
+                .signature-line-row { position: relative; margin-top: 24px; }
+                .signature-line { width: 240px; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
-                .signature-line-row-stamp { z-index: 1; }
-                .signature-stamp {
+                .signature-stamp-row {
                     position: absolute;
-                    top: 50%;
+                    top: -66px;
                     left: 50%;
-                    transform: translate(-50%, -50%);
-                    width: 220px;
-                    height: 220px;
-                    object-fit: contain;
-                    pointer-events: none;
+                    transform: translateX(-50%);
+                    display: flex;
+                    justify-content: flex-start;
+                    width: 664px;
+                    margin: 0;
                 }
-                .signature-meta { margin-top: 4px; }
-                .signature-stamp-deposit { margin-right: 0; }
+                .signature-stamp { width: 220px; height: 220px; object-fit: contain; margin-left: calc((240px - 220px) / 2 + 110px); }
+                .signature-stamp-deposit { margin-left: -40px; }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;

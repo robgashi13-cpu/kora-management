@@ -18,9 +18,8 @@ interface EditablePreviewModalProps {
   onClose: () => void;
   sale: CarSale;
   documentType: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
-  onSaveToSale?: (updatedFields: Partial<CarSale>) => Promise<void> | void;
+  onSaveToSale?: (updatedFields: Partial<CarSale>) => void;
   withDogane?: boolean;
-  includePreInvoice?: boolean;
 }
 
 export default function EditablePreviewModal({
@@ -29,11 +28,9 @@ export default function EditablePreviewModal({
   sale,
   documentType,
   onSaveToSale,
-  withDogane = false,
-  includePreInvoice = false
+  withDogane = false
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
-  const preInvoiceRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [editedFields, setEditedFields] = useState<Record<string, string | number>>({});
   const [activeEdit, setActiveEdit] = useState<string | null>(null);
@@ -103,7 +100,7 @@ export default function EditablePreviewModal({
     });
   }, [sale]);
 
-  const handleSaveToSale = useCallback(async () => {
+  const handleSaveToSale = useCallback(() => {
     if (onSaveToSale) {
       const updates: Partial<CarSale> = {};
       Object.entries(editedFields).forEach(([key, value]) => {
@@ -112,7 +109,7 @@ export default function EditablePreviewModal({
         }
       });
       if (Object.keys(updates).length > 0) {
-        await onSaveToSale(updates);
+        onSaveToSale(updates);
         setShowSaveSuccess(true);
         setTimeout(() => setShowSaveSuccess(false), 2000);
       }
@@ -138,11 +135,18 @@ export default function EditablePreviewModal({
         }
       };
       requireValue('buyerName', 'Buyer Name');
-      requireValue('buyerPersonalId', 'Buyer ID');
+      if (documentType !== 'invoice') {
+        requireValue('buyerPersonalId', 'Buyer ID');
+      }
       requireValue('brand', 'Brand');
       requireValue('model', 'Model');
       requireValue('vin', 'VIN');
-      requireValue('soldPrice', 'Sold Price');
+      if (documentType !== 'invoice') {
+        requireValue('soldPrice', 'Sold Price');
+      }
+      if (documentType === 'deposit') {
+        requireValue('deposit', 'Deposit Amount');
+      }
       if (missingFields.length > 0) {
         setError(`Missing required fields: ${missingFields.join(', ')}`);
         return;
@@ -176,37 +180,31 @@ export default function EditablePreviewModal({
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
 
-      const generatePdf = async (target: HTMLDivElement, filename: string) => {
-        if (!Capacitor.isNativePlatform()) {
-          const pdfBlob = await html2pdf().set({ ...opt, filename }).from(target).outputPdf('blob');
-          const downloadResult = await downloadPdfBlob(pdfBlob, filename);
-          if (!downloadResult.opened) {
-            setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
-          }
-        } else {
-          const pdfBase64 = await html2pdf().set({ ...opt, filename }).from(target).outputPdf('datauristring');
-          const base64Data = pdfBase64.split(',')[1];
-          const savedFile = await Filesystem.writeFile({
-            path: filename,
-            data: base64Data,
-            directory: Directory.Documents,
-          });
-
-          await Share.share({
-            title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
-            text: `Document for ${getValue('vin')}`,
-            url: savedFile.uri,
-            dialogTitle: 'Download or Share Document'
-          });
-        }
-      };
-
       await waitForImages(element);
-      await generatePdf(element, opt.filename);
 
-      if (documentType === 'invoice' && includePreInvoice && preInvoiceRef.current) {
-        await waitForImages(preInvoiceRef.current);
-        await generatePdf(preInvoiceRef.current, `pre-invoice_${getValue('vin') || Date.now()}.pdf`);
+      if (!Capacitor.isNativePlatform()) {
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
+        if (!downloadResult.opened) {
+          setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
+        }
+      } else {
+        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
+        const base64Data = pdfBase64.split(',')[1];
+
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+
+        await Share.share({
+          title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
+          text: `Document for ${getValue('vin')}`,
+          url: savedFile.uri,
+          dialogTitle: 'Download or Share Document'
+        });
       }
     } catch (err: any) {
       console.error('Download failed:', err);
@@ -486,21 +484,6 @@ export default function EditablePreviewModal({
               />
             )}
           </div>
-          {documentType === 'invoice' && includePreInvoice && (
-            <div
-              aria-hidden="true"
-              className="absolute left-[-9999px] top-0 pointer-events-none"
-            >
-              <InvoiceDocument
-                sale={previewSale}
-                withDogane={withDogane}
-                withStamp={withStamp}
-                titleLabel="PRE-INVOICE"
-                ref={preInvoiceRef}
-                renderField={renderInvoiceField}
-              />
-            </div>
-          )}
         </div>
       </motion.div>
 

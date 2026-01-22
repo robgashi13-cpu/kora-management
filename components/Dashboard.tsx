@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { LucideIcon, Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -22,7 +22,7 @@ import InvoiceDocument from './InvoiceDocument';
 import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
-import { verifyAdminPassword } from '@/services/adminAuth';
+import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
 const getBankFee = (price: number) => {
@@ -34,6 +34,7 @@ const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amoun
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
 const ADMIN_PROFILE = 'Robert';
+const ADMIN_PASSWORD = 'Robertoo1396$';
 const LEGACY_ADMIN_PROFILE = 'Admin';
 const REQUIRED_PROFILES = [ADMIN_PROFILE, 'Leonit'];
 
@@ -448,20 +449,6 @@ export default function Dashboard() {
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
-    const supabaseClient = useMemo(() => {
-        if (!supabaseUrl || !supabaseKey) return null;
-        return createSupabaseClient(supabaseUrl.trim(), supabaseKey.trim());
-    }, [supabaseUrl, supabaseKey]);
-
-    const getSupabaseClient = useCallback((url: string, key: string) => {
-        const trimmedUrl = url.trim();
-        const trimmedKey = key.trim();
-        if (supabaseClient && trimmedUrl === supabaseUrl.trim() && trimmedKey === supabaseKey.trim()) {
-            return supabaseClient;
-        }
-        return createSupabaseClient(trimmedUrl, trimmedKey);
-    }, [supabaseClient, supabaseUrl, supabaseKey]);
-
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
         const unique = new Set(normalized);
@@ -552,6 +539,7 @@ export default function Dashboard() {
                 : existing
         );
         await updateSalesAndSave(newSales);
+        setEditShitblerjeSale(null);
     };
 
     useEffect(() => { isFormOpenRef.current = isFormOpen; }, [isFormOpen]);
@@ -562,9 +550,10 @@ export default function Dashboard() {
             const stored = (await Preferences.get({ key: 'profile_avatars' })).value;
             let current = stored ? JSON.parse(stored) : {};
 
-            if (supabaseClient) {
+            if (supabaseUrl && supabaseKey) {
                 try {
-                    const { data } = await supabaseClient.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                    const client = createClient(supabaseUrl, supabaseKey);
+                    const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
                     if (data?.attachments?.avatars) {
                         current = normalizeAvatarMap({ ...current, ...data.attachments.avatars });
                         setProfileAvatars(current);
@@ -584,7 +573,7 @@ export default function Dashboard() {
             }
         };
         syncAvatars();
-    }, [supabaseClient]);
+    }, [supabaseUrl, supabaseKey]);
 
     const handleEditAvatar = async (name: string, base64: string) => {
         const normalizedName = normalizeProfileName(name);
@@ -593,9 +582,10 @@ export default function Dashboard() {
         setProfileAvatars(updated);
         await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(updated) });
 
-        if (supabaseClient) {
+        if (supabaseUrl && supabaseKey) {
             try {
-                await supabaseClient.from('sales').upsert({
+                const client = createClient(supabaseUrl, supabaseKey);
+                await client.from('sales').upsert({
                     id: 'config_profile_avatars',
                     brand: 'CONFIG',
                     model: 'AVATARS',
@@ -615,9 +605,10 @@ export default function Dashboard() {
 
     // Sync profiles to Supabase when they change
     const syncProfilesToCloud = async (profiles: string[]) => {
-        if (!supabaseClient) return;
+        if (!supabaseUrl || !supabaseKey) return;
         try {
-            await supabaseClient.from('sales').upsert({
+            const client = createClient(supabaseUrl, supabaseKey);
+            await client.from('sales').upsert({
                 id: 'config_profile_avatars',
                 brand: 'CONFIG',
                 model: 'AVATARS',
@@ -636,11 +627,12 @@ export default function Dashboard() {
 
     // Load profiles from cloud on startup and periodically
     useEffect(() => {
-        if (!supabaseClient) return;
+        if (!supabaseUrl || !supabaseKey) return;
 
         const syncProfilesFromCloud = async () => {
             try {
-                const { data } = await supabaseClient.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                const client = createClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
                 if (data?.attachments?.profiles) {
                     const cloudProfiles: string[] = normalizeProfiles(data.attachments.profiles);
                     // Use cloud as source of truth - don't merge with defaults
@@ -712,9 +704,8 @@ export default function Dashboard() {
 
 
 
-    const handlePasswordSubmit = async () => {
-        const result = await verifyAdminPassword(passwordInput);
-        if (result.ok) {
+    const handlePasswordSubmit = () => {
+        if (passwordInput === ADMIN_PASSWORD) {
             const normalizedProfile = normalizeProfileName(pendingProfile);
             setUserProfile(normalizedProfile);
             persistUserProfile(normalizedProfile);
@@ -724,7 +715,7 @@ export default function Dashboard() {
             setPasswordInput('');
             setPendingProfile('');
         } else {
-            alert(result.error ?? 'Incorrect password.');
+            alert('Incorrect Password!');
         }
     };
 
@@ -877,8 +868,9 @@ export default function Dashboard() {
         await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txs) });
 
         // Sync to Supabase
-        if (supabaseClient && userProfile) {
-            syncTransactionsWithSupabase(supabaseClient, txs, userProfile.trim())
+        if (supabaseUrl && supabaseKey && userProfile) {
+            const client = createSupabaseClient(supabaseUrl.trim(), supabaseKey.trim());
+            syncTransactionsWithSupabase(client, txs, userProfile.trim())
                 .then(res => {
                     if (res.success && res.data) {
                         setTransactions(res.data);
@@ -1185,10 +1177,11 @@ export default function Dashboard() {
         const idsToDelete = Array.from(selectedIds);
 
         // Delete from Supabase immediately
-        if (supabaseClient) {
+        if (supabaseUrl && supabaseKey) {
             try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
                 for (const id of idsToDelete) {
-                    await supabaseClient.from('sales').delete().eq('id', id);
+                    await client.from('sales').delete().eq('id', id);
                 }
                 console.log("Deleted from Supabase:", idsToDelete.length, "records");
             } catch (e) {
@@ -1219,9 +1212,10 @@ export default function Dashboard() {
         if (!confirm('Delete this car permanently?')) return;
 
         // Delete from Supabase immediately
-        if (supabaseClient) {
+        if (supabaseUrl && supabaseKey) {
             try {
-                await supabaseClient.from('sales').delete().eq('id', id);
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                await client.from('sales').delete().eq('id', id);
                 console.log("Deleted from Supabase:", id);
             } catch (e) {
                 console.error("Supabase delete error:", e);
@@ -1436,10 +1430,11 @@ export default function Dashboard() {
 
     // Real-time Subscription
     useEffect(() => {
-        if (!supabaseClient || !userProfile) return;
+        if (!supabaseUrl || !supabaseKey || !userProfile) return;
+        const client = createSupabaseClient(supabaseUrl, supabaseKey);
 
         console.log("Subscribing to realtime changes...");
-        const channel = supabaseClient
+        const channel = client
             .channel('public:sales')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
                 console.log('Realtime Change:', payload);
@@ -1450,36 +1445,28 @@ export default function Dashboard() {
             .subscribe();
 
         return () => {
-            supabaseClient.removeChannel(channel);
+            client.removeChannel(channel);
         };
-    }, [supabaseClient, supabaseUrl, supabaseKey, userProfile]);
+    }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-            const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+            // Hardcoded Credentials (as fallback/default)
+            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
 
             try {
                 // Ensure Supabase URL/Key exist
                 let { value: url } = await Preferences.get({ key: 'supabase_url' });
                 let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
 
-                if (!url && SUPABASE_URL) {
-                    url = SUPABASE_URL;
-                    await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
-                }
-                if (!keyName && SUPABASE_KEY) {
-                    keyName = SUPABASE_KEY;
-                    await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
-                }
+                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
+                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-                const resolvedUrl = url ?? '';
-                const resolvedKey = keyName ?? '';
+                setSupabaseUrl(url);
+                setSupabaseKey(keyName);
 
-                setSupabaseUrl(resolvedUrl);
-                setSupabaseKey(resolvedKey);
-                if (!resolvedUrl || !resolvedKey) {
-                    setSyncError('Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or enter them in settings.');
-                }
+                if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
+                if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
 
                 const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
                 if (apiKeyVal) setApiKey(apiKeyVal);
@@ -1621,7 +1608,7 @@ export default function Dashboard() {
             }
             if (!localSalesToSync) localSalesToSync = [];
 
-            const client = getSupabaseClient(url, key);
+            const client = createSupabaseClient(url.trim(), key.trim());
 
             // 1. Identify Dirty Items to Push
             const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
@@ -1767,13 +1754,14 @@ export default function Dashboard() {
         if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
             if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
                 // Delete from Supabase immediately
-                if (supabaseClient) {
+                if (supabaseUrl && supabaseKey) {
                     try {
+                        const client = createSupabaseClient(supabaseUrl, supabaseKey);
                         // Delete all records
-                        const { data: allSales } = await supabaseClient.from('sales').select('id');
+                        const { data: allSales } = await client.from('sales').select('id');
                         if (allSales && allSales.length > 0) {
                             for (const sale of allSales) {
-                                await supabaseClient.from('sales').delete().eq('id', sale.id);
+                                await client.from('sales').delete().eq('id', sale.id);
                             }
                             console.log("Deleted all from Supabase:", allSales.length, "records");
                         }
@@ -2165,22 +2153,13 @@ export default function Dashboard() {
         );
     }
 
-    type NavItem = {
-        id: 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'SETTINGS';
-        label: string;
-        icon: LucideIcon;
-        view: 'dashboard' | 'settings';
-        category?: 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON';
-        adminOnly?: boolean;
-    };
-
-    const navItems: NavItem[] = [
+    const navItems = [
         { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
         { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
         { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
         { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
         { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
-    ];
+    ] as const;
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';

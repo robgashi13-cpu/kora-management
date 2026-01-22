@@ -80,7 +80,6 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                 km: Number(formData.km || 0),
                 soldPrice: Number(formData.soldPrice || 0)
             });
-            onClose();
         } finally {
             setIsSaving(false);
         }
@@ -329,19 +328,11 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     sale={previewSale}
                     documentType={contractType}
                     onClose={() => setContractType(null)}
-                    includePreInvoice={contractType === 'invoice'}
-                    onSaveToSale={async (updates) => {
-                        const nextData = {
-                            ...formData,
+                    onSaveToSale={(updates) => {
+                        setFormData(prev => ({
+                            ...prev,
                             ...updates
-                        };
-                        setFormData(nextData);
-                        await onSave({
-                            ...nextData,
-                            year: Number(nextData.year || 0),
-                            km: Number(nextData.km || 0),
-                            soldPrice: Number(nextData.soldPrice || 0)
-                        });
+                        }));
                     }}
                 />
             )}
