@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 interface ProfileSelectorProps {
     profiles: string[];
     onSelect: (profile: string, remember: boolean) => void;
-    onAdd: (name: string, remember: boolean) => void;
+    onAdd: (name: string, email: string, remember: boolean) => void;
     onDelete: (name: string) => void;
     onEdit: (oldName: string, newName: string) => void;
     avatars: Record<string, string>;
@@ -18,6 +18,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const ADMIN_PASSWORD = 'Robertoo1396$';
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
+    const [newEmail, setNewEmail] = useState('');
     const [editingProfile, setEditingProfile] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [isManaging, setIsManaging] = useState(false);
@@ -94,8 +95,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             alert('Profile already exists!');
             return;
         }
-        onAdd(trimmed, rememberMe);
+        onAdd(trimmed, newEmail.trim(), rememberMe);
         setNewName('');
+        setNewEmail('');
         setIsAdding(false);
     };
 
@@ -126,6 +128,13 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Profile Name"
                         className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
+                        onKeyDown={e => e.key === 'Enter' && handleAdd()}
+                    />
+                    <input
+                        value={newEmail}
+                        onChange={e => setNewEmail(e.target.value)}
+                        placeholder="Email (optional)"
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-base mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                     />
                     <div className="flex gap-4">

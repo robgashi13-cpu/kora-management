@@ -14,6 +14,14 @@ export type ShitblerjeOverrides = {
     buyerPersonalId?: string;
 };
 
+export type SellerAuditEntry = {
+    id: string;
+    changedAt: string;
+    changedBy: string;
+    fromSeller?: string;
+    toSeller?: string;
+};
+
 export interface Attachment {
     name: string;
     data: string; // Base64
@@ -74,4 +82,5 @@ export interface CarSale {
     group?: string; // For grouping (e.g. "15 november SANG SHIN")
     invoiceId?: string;
     shitblerjeOverrides?: ShitblerjeOverrides;
+    sellerAudit?: SellerAuditEntry[];
 }

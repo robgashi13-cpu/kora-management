@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
-import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
+import { Attachment, CarSale, ContractType, SaleStatus, SellerAuditEntry, ShitblerjeOverrides } from '@/app/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -23,6 +23,7 @@ import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdf
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
+import { createPasswordRecord, generateSetupToken } from '@/services/userAuth';
 
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -66,7 +67,31 @@ type GroupMeta = {
     archived: boolean;
 };
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup }: any) {
+type UserStatus = 'active' | 'pending';
+
+type UserAccount = {
+    id: string;
+    name: string;
+    email?: string;
+    status: UserStatus;
+    setupToken?: string | null;
+    setupTokenCreatedAt?: string | null;
+    passwordHash?: string | null;
+    passwordSalt?: string | null;
+    createdAt: string;
+    createdBy?: string;
+};
+
+type SellerReassignmentAudit = {
+    id: string;
+    saleId: string;
+    changedAt: string;
+    changedBy: string;
+    fromSeller?: string;
+    toSeller?: string;
+};
+
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, onReassignSeller }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
@@ -314,6 +339,15 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <X className="w-4 h-4" />
                     </button>
                 )}
+                {isAdmin && s.status === 'Completed' && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onReassignSeller?.(s); }}
+                        className="text-slate-500 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
+                        title="Reassign seller"
+                    >
+                        <ArrowRightLeft className="w-4 h-4" />
+                    </button>
+                )}
                 <button onClick={(e) => openInvoice(s, e)} className="text-slate-600 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg" title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
@@ -343,6 +377,7 @@ export default function Dashboard() {
     const [pendingProfile, setPendingProfile] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
     const [newProfileName, setNewProfileName] = useState('');
+    const [newProfileEmail, setNewProfileEmail] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [rememberProfile, setRememberProfile] = useState(false);
@@ -391,6 +426,18 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
+    const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
+    const [pendingSetupToken, setPendingSetupToken] = useState<string | null>(null);
+    const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+    const [setupPassword, setSetupPassword] = useState('');
+    const [setupPasswordConfirm, setSetupPasswordConfirm] = useState('');
+    const [setupError, setSetupError] = useState('');
+    const [setupSuccess, setSetupSuccess] = useState('');
+    const [showSetupLinkModal, setShowSetupLinkModal] = useState(false);
+    const [setupLinkData, setSetupLinkData] = useState<{ token: string; url: string; name: string } | null>(null);
+    const [showSellerReassignModal, setShowSellerReassignModal] = useState(false);
+    const [sellerReassignSale, setSellerReassignSale] = useState<CarSale | null>(null);
+    const [sellerReassignTarget, setSellerReassignTarget] = useState('');
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
@@ -406,6 +453,62 @@ export default function Dashboard() {
             }
         });
         return [...ordered, ...Array.from(unique)];
+    }, []);
+
+    const normalizeUserAccounts = useCallback((accounts: UserAccount[]) => {
+        const normalized = accounts
+            .map(account => ({
+                ...account,
+                name: normalizeProfileName(account.name),
+                status: account.status || 'pending'
+            }))
+            .filter(account => account.name);
+        const unique = new Map<string, UserAccount>();
+        normalized.forEach(account => {
+            if (!unique.has(account.name)) {
+                unique.set(account.name, account);
+            }
+        });
+        return Array.from(unique.values());
+    }, []);
+
+    const getUserAccount = useCallback((name: string) => {
+        const normalized = normalizeProfileName(name);
+        return userAccounts.find(account => account.name === normalized);
+    }, [userAccounts]);
+
+    const persistUserAccounts = useCallback(async (accounts: UserAccount[]) => {
+        const normalized = normalizeUserAccounts(accounts);
+        setUserAccounts(normalized);
+        await Preferences.set({ key: 'user_accounts', value: JSON.stringify(normalized) });
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createClient(supabaseUrl, supabaseKey);
+                await client.from('sales').upsert({
+                    id: 'config_user_accounts',
+                    brand: 'CONFIG',
+                    model: 'USERS',
+                    status: 'Completed',
+                    year: new Date().getFullYear(),
+                    km: 0,
+                    cost_to_buy: 0,
+                    sold_price: 0,
+                    amount_paid_cash: 0,
+                    amount_paid_bank: 0,
+                    deposit: 0,
+                    attachments: { users: normalized }
+                });
+            } catch (e) {
+                console.error('User account sync error', e);
+            }
+        }
+    }, [normalizeUserAccounts, supabaseKey, supabaseUrl]);
+
+    const buildSetupLink = useCallback((token: string) => {
+        if (typeof window === 'undefined') return token;
+        const url = new URL(window.location.href);
+        url.searchParams.set('setupToken', token);
+        return url.toString();
     }, []);
 
     const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
@@ -624,6 +727,38 @@ export default function Dashboard() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey) return;
+
+        const syncUsersFromCloud = async () => {
+            try {
+                const client = createClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_user_accounts').single();
+                if (data?.attachments?.users) {
+                    const cloudUsers: UserAccount[] = normalizeUserAccounts(data.attachments.users);
+                    setUserAccounts(cloudUsers);
+                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(cloudUsers) });
+                }
+            } catch (e) {
+                console.error('User account cloud sync error', e);
+            }
+        };
+
+        syncUsersFromCloud();
+        const interval = setInterval(syncUsersFromCloud, 30000);
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncUsersFromCloud();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [supabaseUrl, supabaseKey, normalizeUserAccounts]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -1142,8 +1277,15 @@ export default function Dashboard() {
     const handleBulkDelete = async () => {
         if (!confirm(`Delete ${selectedIds.size} items permanently?`)) return;
 
-        // Get IDs to delete
-        const idsToDelete = Array.from(selectedIds);
+        const selectedSales = sales.filter(sale => selectedIds.has(sale.id));
+        const lockedSales = selectedSales.filter(sale => sale.status === 'Completed');
+        if (lockedSales.length > 0) {
+            alert('Sold cars cannot be deleted. Remove them from the selection to delete others.');
+        }
+        const idsToDelete = selectedSales.filter(sale => sale.status !== 'Completed').map(sale => sale.id);
+        if (idsToDelete.length === 0) {
+            return;
+        }
 
         // Delete from Supabase immediately
         if (supabaseUrl && supabaseKey) {
@@ -1178,6 +1320,11 @@ export default function Dashboard() {
 
     // Delete a single car immediately
     const handleDeleteSingle = async (id: string) => {
+        const sale = salesRef.current.find(s => s.id === id);
+        if (sale?.status === 'Completed') {
+            alert('Sold cars cannot be deleted.');
+            return;
+        }
         if (!confirm('Delete this car permanently?')) return;
 
         // Delete from Supabase immediately
@@ -1340,6 +1487,40 @@ export default function Dashboard() {
         setShowProfileMenu(false);
     };
 
+    const createUserProfile = useCallback(async (profileName: string, email?: string, remember = rememberProfile) => {
+        const normalizedName = normalizeProfileName(profileName);
+        if (!normalizedName) return;
+        if (availableProfiles.includes(normalizedName)) {
+            alert('Profile already exists!');
+            return;
+        }
+        const setupToken = generateSetupToken();
+        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+        setAvailableProfiles(updated);
+        setUserProfile(normalizedName);
+        setRememberProfile(remember);
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+        await persistUserProfile(normalizedName, remember);
+        syncProfilesToCloud(updated);
+        const newAccount: UserAccount = {
+            id: crypto.randomUUID(),
+            name: normalizedName,
+            email: email?.trim() || undefined,
+            status: 'pending',
+            setupToken,
+            setupTokenCreatedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            createdBy: userProfile || undefined
+        };
+        await persistUserAccounts([...userAccounts, newAccount]);
+        setSetupLinkData({
+            token: setupToken,
+            url: buildSetupLink(setupToken),
+            name: normalizedName
+        });
+        setShowSetupLinkModal(true);
+    }, [availableProfiles, buildSetupLink, normalizeProfiles, persistUserAccounts, persistUserProfile, rememberProfile, syncProfilesToCloud, userAccounts, userProfile]);
+
     const handleAddProfile = async () => {
         if (!isAdmin) {
             alert(`Only ${ADMIN_PROFILE} can add users.`);
@@ -1347,17 +1528,9 @@ export default function Dashboard() {
         }
         const normalizedName = normalizeProfileName(newProfileName);
         if (!normalizedName) return;
-        if (availableProfiles.includes(normalizedName)) {
-            alert('Profile already exists!');
-            return;
-        }
-        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-        setAvailableProfiles(updated);
-        setUserProfile(normalizedName);
+        await createUserProfile(normalizedName, newProfileEmail);
         setNewProfileName('');
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        await persistUserProfile(normalizedName);
-        syncProfilesToCloud(updated);
+        setNewProfileEmail('');
     };
 
     const quickAddProfile = async () => {
@@ -1369,27 +1542,24 @@ export default function Dashboard() {
         if (name && name.trim()) {
             const normalizedName = normalizeProfileName(name);
             if (!normalizedName) return;
-            if (availableProfiles.includes(normalizedName)) {
-                alert('Profile already exists!');
-                return;
-            }
-            const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-            setAvailableProfiles(updated);
-            setUserProfile(normalizedName);
-            await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-            await persistUserProfile(normalizedName);
+            await createUserProfile(normalizedName);
             setShowProfileMenu(false);
-            syncProfilesToCloud(updated);
         }
     };
 
     const handleDeleteProfile = async (name: string) => {
+        if (!isAdmin) {
+            alert(`Only ${ADMIN_PROFILE} can delete users.`);
+            return;
+        }
         const updated = availableProfiles.filter(p => p !== name);
         const normalized = normalizeProfiles(updated);
         setAvailableProfiles(normalized);
         if (userProfile === name) setUserProfile('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
         syncProfilesToCloud(normalized);
+        const remainingAccounts = userAccounts.filter(account => account.name !== name);
+        await persistUserAccounts(remainingAccounts);
     };
 
     const handleEditProfile = async (oldName: string, newName: string) => {
@@ -1403,6 +1573,93 @@ export default function Dashboard() {
         }
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
         syncProfilesToCloud(updated);
+        const updatedAccounts = userAccounts.map(account => account.name === oldName ? { ...account, name: normalizedName } : account);
+        await persistUserAccounts(updatedAccounts);
+    };
+
+    const openSetupModalForToken = useCallback((token: string) => {
+        setPendingSetupToken(token);
+        setSetupPassword('');
+        setSetupPasswordConfirm('');
+        setSetupError('');
+        setSetupSuccess('');
+        setIsSetupModalOpen(true);
+    }, []);
+
+    const handleSetupPasswordSubmit = async () => {
+        if (!pendingSetupToken) return;
+        const account = userAccounts.find(u => u.setupToken === pendingSetupToken);
+        if (!account) {
+            setSetupError('Invalid or expired setup link.');
+            return;
+        }
+        if (!setupPassword || setupPassword.length < 8) {
+            setSetupError('Password must be at least 8 characters.');
+            return;
+        }
+        if (setupPassword !== setupPasswordConfirm) {
+            setSetupError('Passwords do not match.');
+            return;
+        }
+
+        try {
+            const record = await createPasswordRecord(setupPassword);
+            const updatedAccounts = userAccounts.map(u => {
+                if (u.setupToken !== pendingSetupToken) return u;
+                return {
+                    ...u,
+                    status: 'active' as UserStatus,
+                    passwordHash: record.passwordHash,
+                    passwordSalt: record.passwordSalt,
+                    setupToken: null,
+                    setupTokenCreatedAt: null
+                };
+            });
+            await persistUserAccounts(updatedAccounts);
+            setSetupSuccess('Password set successfully. You can now log in.');
+            setSetupError('');
+        } catch (error) {
+            console.error('Setup error', error);
+            setSetupError('Failed to set password. Please try again.');
+        }
+    };
+
+    const handleSellerReassign = async (saleId: string, nextSeller: string) => {
+        const normalizedSeller = normalizeProfileName(nextSeller);
+        if (!normalizedSeller) return;
+        const currentSales = salesRef.current;
+        const saleIndex = currentSales.findIndex(sale => sale.id === saleId);
+        if (saleIndex === -1) return;
+
+        const sale = currentSales[saleIndex];
+        const previousSeller = sale.soldBy;
+        if (previousSeller === normalizedSeller) return;
+
+        const auditEntry: SellerAuditEntry = {
+            id: crypto.randomUUID(),
+            changedAt: new Date().toISOString(),
+            changedBy: userProfile || 'Unknown',
+            fromSeller: previousSeller,
+            toSeller: normalizedSeller
+        };
+
+        const nextAudit = [...(sale.sellerAudit || []), auditEntry];
+        const updatedSale: CarSale = {
+            ...sale,
+            soldBy: normalizedSeller,
+            sellerName: normalizedSeller,
+            sellerAudit: nextAudit
+        };
+        const newSales = [...currentSales];
+        newSales[saleIndex] = updatedSale;
+        dirtyIds.current.add(saleId);
+        await updateSalesAndSave(newSales);
+    };
+
+    const openSellerReassignModal = (sale: CarSale) => {
+        setSellerReassignSale(sale);
+        setSellerReassignTarget(sale.soldBy || '');
+        setShowSellerReassignModal(true);
     };
 
 
@@ -1479,6 +1736,13 @@ export default function Dashboard() {
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
                     // Also sync to cloud on first run
                     syncProfilesToCloud(defaults);
+                }
+
+                const { value: storedUsers } = await Preferences.get({ key: 'user_accounts' });
+                if (storedUsers) {
+                    const loadedUsers = normalizeUserAccounts(JSON.parse(storedUsers));
+                    setUserAccounts(loadedUsers);
+                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(loadedUsers) });
                 }
 
                 const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
@@ -1573,6 +1837,17 @@ export default function Dashboard() {
         };
         syncOnLogin();
     }, [userProfile, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
+        if (!userProfile) return;
+        const account = getUserAccount(userProfile);
+        if (account && account.status === 'pending') {
+            alert('Password setup required. Use the setup link from your admin.');
+            setUserProfile('');
+            setView('profile_select');
+            persistUserProfile(null, false);
+        }
+    }, [getUserAccount, userProfile]);
 
     const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
         setIsSyncing(true);
@@ -1726,23 +2001,25 @@ export default function Dashboard() {
 
     const handleDelete = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
+        handleDeleteSingle(id);
     };
 
     const handleDeleteAll = async () => {
-        if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
-            if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
+        if (confirm('DANGER: Delete all non-sold sales data? Sold cars will be محفوظ (kept).')) {
+            if (confirm('Please confirm again: DELETE ALL NON-SOLD DATA from local AND database?')) {
                 // Delete from Supabase immediately
                 if (supabaseUrl && supabaseKey) {
                     try {
                         const client = createSupabaseClient(supabaseUrl, supabaseKey);
                         // Delete all records
-                        const { data: allSales } = await client.from('sales').select('id');
+                        const { data: allSales } = await client.from('sales').select('id,status');
                         if (allSales && allSales.length > 0) {
                             for (const sale of allSales) {
+                                if (sale.status === 'Completed') continue;
+                                if (sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts') continue;
                                 await client.from('sales').delete().eq('id', sale.id);
                             }
-                            console.log("Deleted all from Supabase:", allSales.length, "records");
+                            console.log("Deleted all non-sold from Supabase:", allSales.length, "records");
                         }
                     } catch (e) {
                         console.error("Supabase delete all error:", e);
@@ -1750,11 +2027,12 @@ export default function Dashboard() {
                 }
 
                 // Delete locally
-                updateSalesAndSave([]);
+                const remaining = salesRef.current.filter(sale => sale.status === 'Completed' || sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts');
+                updateSalesAndSave(remaining);
                 try {
                     await Preferences.remove({ key: 'car_sales_data' });
                     localStorage.removeItem('car_sales_data');
-                    alert('All data has been deleted from local and database.');
+                    alert('All non-sold data has been deleted from local and database.');
                 } catch (e) { console.error('Error clearing data', e); }
             }
         }
@@ -1930,7 +2208,7 @@ export default function Dashboard() {
 
     const filteredSales = React.useMemo(() => sales.filter(s => {
         // Filter out system config rows
-        if (s.id === 'config_profile_avatars') return false;
+        if (s.id === 'config_profile_avatars' || s.id === 'config_user_accounts') return false;
 
         // Restrict visibility for non-admin users to their own sales
         if (!isAdmin && s.soldBy !== userProfile) return false;
@@ -1982,6 +2260,15 @@ export default function Dashboard() {
         () => filteredSales.filter(sale => selectedIds.has(sale.id)),
         [filteredSales, selectedIds]
     );
+    const selectedSales = React.useMemo(
+        () => sales.filter(sale => selectedIds.has(sale.id)),
+        [sales, selectedIds]
+    );
+    const hasLockedSoldSelection = selectedSales.some(sale => sale.status === 'Completed');
+    const setupAccount = useMemo(() => {
+        if (!pendingSetupToken) return null;
+        return userAccounts.find(account => account.setupToken === pendingSetupToken) || null;
+    }, [pendingSetupToken, userAccounts]);
 
     // Toggle sort column
     const toggleSort = (column: string) => {
@@ -2043,6 +2330,17 @@ export default function Dashboard() {
         }
     }, [activeGroups, groupedSales.Ungrouped?.length]);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('setupToken');
+        if (!token) return;
+        openSetupModalForToken(token);
+        params.delete('setupToken');
+        const nextUrl = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, '');
+        window.history.replaceState({}, '', nextUrl);
+    }, [openSetupModalForToken]);
+
 
 
     if (isLoading) {
@@ -2060,21 +2358,18 @@ export default function Dashboard() {
             onSelect={(p, remember) => {
                 const normalizedProfile = normalizeProfileName(p);
                 if (!normalizedProfile) return;
+                const account = getUserAccount(normalizedProfile);
+                if (account && account.status === 'pending') {
+                    alert('Password setup required. Use the setup link from your admin.');
+                    return;
+                }
                 setUserProfile(normalizedProfile);
                 setView('landing');
                 setRememberProfile(remember);
                 persistUserProfile(normalizedProfile, remember);
             }}
-            onAdd={(name, remember) => {
-                const normalizedName = normalizeProfileName(name);
-                if (!normalizedName) return;
-                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-                setAvailableProfiles(updated);
-                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-                setUserProfile(normalizedName);
-                setRememberProfile(remember);
-                persistUserProfile(normalizedName, remember);
-                syncProfilesToCloud(updated);
+            onAdd={(name, email, remember) => {
+                createUserProfile(name, email, remember);
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
@@ -2504,6 +2799,7 @@ export default function Dashboard() {
                                                                     onClick={() => handleSaleClick(s)}
                                                                     onDelete={handleDeleteSingle}
                                                                     onRemoveFromGroup={handleRemoveFromGroup}
+                                                                    onReassignSeller={openSellerReassignModal}
                                                                 />
                                                             ))}
                                                         </Reorder.Group>
@@ -2555,6 +2851,7 @@ export default function Dashboard() {
                                                                 onClick={() => handleSaleClick(s)}
                                                                 onDelete={handleDeleteSingle}
                                                                 onRemoveFromGroup={handleRemoveFromGroup}
+                                                                onReassignSeller={openSellerReassignModal}
                                                             />
                                                         ))}
                                                     </Reorder.Group>
@@ -2632,6 +2929,7 @@ export default function Dashboard() {
                                                                     }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
+                                                                            onReassignSeller={openSellerReassignModal}
                                                                         />
                                                                     ))}
                                                                 </Reorder.Group>
@@ -2671,6 +2969,7 @@ export default function Dashboard() {
                                                     onInlineUpdate={handleInlineUpdate}
                                                     onClick={() => handleSaleClick(s)}
                                                     onDelete={handleDeleteSingle}
+                                                    onReassignSeller={openSellerReassignModal}
                                                 />
                                             ))}
                                         </Reorder.Group>
@@ -2788,6 +3087,10 @@ export default function Dashboard() {
                                                                             dragSnapToOrigin
                                                                             onDragEnd={(e, { offset }) => {
                                                                                 if (offset.x < -100) {
+                                                                                    if (sale.status === 'Completed') {
+                                                                                        alert('Sold cars cannot be deleted.');
+                                                                                        return;
+                                                                                    }
                                                                                     const shouldDelete = confirm('Delete this item?');
                                                                                     if (shouldDelete) {
                                                                                         handleDeleteSingle(sale.id);
@@ -2841,14 +3144,22 @@ export default function Dashboard() {
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
-                                                                                {groupingEnabled && sale.group && (
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                    {groupingEnabled && sale.group && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
                                                                                     className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
                                                                                 >
                                                                                     Remove from group
                                                                                 </button>
                                                                             )}
+                                                                                {isAdmin && sale.status === 'Completed' && (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
+                                                                                        className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                                    >
+                                                                                        Reassign seller
+                                                                                    </button>
+                                                                                )}
                                                                         </div>
                                                                     </motion.div>
                                                                     </motion.div>
@@ -2911,6 +3222,10 @@ export default function Dashboard() {
                                                                                     dragSnapToOrigin
                                                                                     onDragEnd={(e, { offset }) => {
                                                                                         if (offset.x < -100) {
+                                                                                            if (sale.status === 'Completed') {
+                                                                                                alert('Sold cars cannot be deleted.');
+                                                                                                return;
+                                                                                            }
                                                                                             const shouldDelete = confirm('Delete this item?');
                                                                                             if (shouldDelete) {
                                                                                                 handleDeleteSingle(sale.id);
@@ -2971,6 +3286,14 @@ export default function Dashboard() {
                                                                                             Remove from group
                                                                                         </button>
                                                                                     )}
+                                                                                    {isAdmin && sale.status === 'Completed' && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
+                                                                                            className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                                        >
+                                                                                            Reassign seller
+                                                                                        </button>
+                                                                                    )}
                                                                                     </div>
                                                                                 </motion.div>
                                                                             </motion.div>
@@ -3004,6 +3327,10 @@ export default function Dashboard() {
                                                         dragSnapToOrigin
                                                         onDragEnd={(e, { offset }) => {
                                                             if (offset.x < -100) {
+                                                                if (sale.status === 'Completed') {
+                                                                    alert('Sold cars cannot be deleted.');
+                                                                    return;
+                                                                }
                                                                 const shouldDelete = confirm('Delete this item?');
                                                                 if (shouldDelete) {
                                                                     handleDeleteSingle(sale.id);
@@ -3087,6 +3414,7 @@ export default function Dashboard() {
                                             <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
                                             <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
                                         </div>
+                                        <input value={newProfileEmail} onChange={e => setNewProfileEmail(e.target.value)} placeholder="Email for setup link (optional)" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
                                         {!isAdmin && (
                                             <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
                                         )}
@@ -3297,7 +3625,12 @@ export default function Dashboard() {
                                         <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
                                     </button>
 
-                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        disabled={hasLockedSoldSelection}
+                                        title={hasLockedSoldSelection ? 'Sold cars cannot be deleted' : 'Delete'}
+                                        className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
                                         <Trash2 className="w-5 h-5 text-red-500" />
                                         <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
                                     </button>
@@ -3429,6 +3762,116 @@ export default function Dashboard() {
                 onClose={() => setEditShitblerjeSale(null)}
                 onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
             />
+            {showSetupLinkModal && setupLinkData && (
+                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900">Send password setup link</h3>
+                            <button onClick={() => setShowSetupLinkModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-4">
+                            Share this link with <span className="font-semibold text-slate-900">{setupLinkData.name}</span> so they can create their password.
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <input
+                                readOnly
+                                value={setupLinkData.url}
+                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600"
+                            />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await navigator.clipboard.writeText(setupLinkData.url);
+                                        alert('Setup link copied.');
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert('Copy failed. Please copy the link manually.');
+                                    }
+                                }}
+                                className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isSetupModalOpen && (
+                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900">Set your password</h3>
+                            <button onClick={() => setIsSetupModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {setupAccount ? `Account: ${setupAccount.name}` : 'Use your setup link to activate your account.'}
+                        </p>
+                        <div className="space-y-3">
+                            <input
+                                type="password"
+                                value={setupPassword}
+                                onChange={(e) => setSetupPassword(e.target.value)}
+                                placeholder="New password"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+                            />
+                            <input
+                                type="password"
+                                value={setupPasswordConfirm}
+                                onChange={(e) => setSetupPasswordConfirm(e.target.value)}
+                                placeholder="Confirm password"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+                            />
+                            {setupError && <p className="text-sm text-red-500">{setupError}</p>}
+                            {setupSuccess && <p className="text-sm text-emerald-600">{setupSuccess}</p>}
+                        </div>
+                        <button
+                            onClick={handleSetupPasswordSubmit}
+                            disabled={!setupAccount}
+                            className="w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Save password
+                        </button>
+                    </div>
+                </div>
+            )}
+            {showSellerReassignModal && sellerReassignSale && (
+                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900">Reassign seller</h3>
+                            <button onClick={() => setShowSellerReassignModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-4">
+                            {sellerReassignSale.brand} {sellerReassignSale.model} ({sellerReassignSale.vin || sellerReassignSale.id})
+                        </p>
+                        <select
+                            value={sellerReassignTarget}
+                            onChange={(e) => setSellerReassignTarget(e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700"
+                        >
+                            <option value="">Select seller</option>
+                            {profileOptions.map(option => (
+                                <option key={option.id} value={option.id}>{option.label}</option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={async () => {
+                                await handleSellerReassign(sellerReassignSale.id, sellerReassignTarget);
+                                setShowSellerReassignModal(false);
+                            }}
+                            className="w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800"
+                        >
+                            Save reassignment
+                        </button>
+                    </div>
+                </div>
+            )}
             {viewSaleRecord && (
                 <ViewSaleModal
                     isOpen={!!viewSaleRecord}
