@@ -8,7 +8,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
-import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -77,19 +77,23 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
             await waitForImages(element);
 
-            const pdf = html2pdf().set(opt).from(element);
+            const fieldData = collectPdfTextFields(element);
+            const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+            addPdfFormFields(pdf, fieldData);
 
             if (!Capacitor.isNativePlatform()) {
-                const pdfBlob = await pdf.outputPdf('blob');
+                const pdfBlob = pdf.output('blob');
                 const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
                 if (!downloadResult.opened) {
                     setStatusMessage('Popup blocked. We opened the PDF in this tab so you can save or share it.');
                 }
             } else {
-                const pdfBase64 = await pdf.outputPdf('datauristring');
+                const pdfBase64 = pdf.output('datauristring');
                 const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
-
+                if (!base64Data) {
+                    throw new Error('Failed to generate PDF data');
+                }
                 const savedFile = await Filesystem.writeFile({
                     path: fileName,
                     data: base64Data,

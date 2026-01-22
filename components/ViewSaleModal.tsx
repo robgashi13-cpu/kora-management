@@ -57,14 +57,14 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
 
     const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
         <div className="space-y-3">
-            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">{title}</h3>
+            <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">{title}</h3>
             {children}
         </div>
     );
 
     const Field = ({ label, value, className = '' }: { label: string; value: React.ReactNode; className?: string }) => (
         <div className={`flex flex-col gap-0.5 ${className}`}>
-            <span className="text-[11px] text-slate-500 uppercase font-medium">{label}</span>
+            <span className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">{label}</span>
             <span className="text-sm text-slate-800 font-medium">{value || '-'}</span>
         </div>
     );
@@ -141,7 +141,65 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {/* Summary */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Vehicle</div>
+                                        <div className="text-lg font-semibold text-slate-900">{sale.brand} {sale.model}</div>
+                                        <div className="text-xs text-slate-500 mt-1">VIN: <span className="font-mono">{sale.vin || '-'}</span></div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Sold Price</div>
+                                        <div className="text-2xl font-bold text-emerald-600">€{(sale.soldPrice || 0).toLocaleString()}</div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="Buyer" value={sale.buyerName} />
+                                    <Field label="Buyer ID" value={sale.buyerPersonalId} />
+                                </div>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Payment</div>
+                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                                        sale.isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'
+                                    }`}>
+                                        {sale.isPaid ? 'Paid' : 'Not Paid'}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="Paid Bank" value={`€${(sale.amountPaidBank || 0).toLocaleString()}`} />
+                                    <Field label="Paid Cash" value={`€${(sale.amountPaidCash || 0).toLocaleString()}`} />
+                                    <Field label="Deposit" value={`€${(sale.deposit || 0).toLocaleString()}`} />
+                                    <Field label="Balance Due" value={
+                                        <span className={`font-semibold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                            €{calculateBalance(sale).toLocaleString()}
+                                        </span>
+                                    } />
+                                </div>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+                                <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Logistics</div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Field label="Shipping Co." value={sale.shippingName} />
+                                    <Field label="Shipping Date" value={formatDate(sale.shippingDate)} />
+                                    <Field label="Transport" value={sale.includeTransport ? 'Included' : 'Not Included'} />
+                                    <Field label="Seller" value={sale.sellerName} />
+                                </div>
+                                {isAdmin && (
+                                    <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                                        <div className="text-xs uppercase tracking-wide text-emerald-600 font-semibold mb-1">Profit</div>
+                                        <div className={`text-xl font-bold ${calculateProfit(sale) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                            €{calculateProfit(sale).toLocaleString()}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Vehicle Details */}
                         <Section title="Vehicle Details">
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -167,18 +225,13 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             </div>
                         </Section>
 
-                        {/* Financial Summary */}
-                        <Section title="Financial">
+                        {/* Financial Details */}
+                        <Section title="Financial Details">
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {isAdmin && <Field label="Cost to Buy" value={`€${(sale.costToBuy || 0).toLocaleString()}`} />}
                                 <Field label="Sold Price" value={<span className="text-emerald-600 font-bold">€{(sale.soldPrice || 0).toLocaleString()}</span>} />
                                 {isAdmin && <Field label="Services Cost" value={`€${(sale.servicesCost ?? 30.51).toLocaleString()}`} />}
                                 {isAdmin && <Field label="Tax" value={`€${(sale.tax || 0).toLocaleString()}`} />}
-                                <Field label="Payment Status" value={
-                                    <span className={`font-semibold ${sale.isPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                        {sale.isPaid ? 'Paid' : 'Not Paid'}
-                                    </span>
-                                } />
                             </div>
 
                             {isAdmin && (
@@ -200,24 +253,6 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                                 <Field label="Deposit" value={`€${(sale.deposit || 0).toLocaleString()}`} />
                                 <Field label="Deposit Date" value={formatDate(sale.depositDate)} />
                                 <Field label="Full Payment Date" value={formatDate(sale.paidDateFromClient)} />
-                            </div>
-
-                            {/* Balance Summary */}
-                            <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                                <div className="flex-1 p-4 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
-                                    <span className="text-sm text-slate-500 font-semibold">Balance Due</span>
-                                    <span className={`text-xl font-mono font-bold ${calculateBalance(sale) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                        €{calculateBalance(sale).toLocaleString()}
-                                    </span>
-                                </div>
-                                {isAdmin && (
-                                    <div className="flex-1 p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex justify-between items-center">
-                                        <span className="text-sm text-emerald-600 font-semibold">Profit</span>
-                                        <span className={`text-xl font-mono font-bold ${calculateProfit(sale) >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            €{calculateProfit(sale).toLocaleString()}
-                                        </span>
-                                    </div>
-                                )}
                             </div>
                         </Section>
 

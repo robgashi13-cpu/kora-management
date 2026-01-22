@@ -10,7 +10,7 @@ import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
-import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -142,12 +142,7 @@ export default function EditablePreviewModal({
       requireValue('brand', 'Brand');
       requireValue('model', 'Model');
       requireValue('vin', 'VIN');
-      if (documentType !== 'invoice') {
-        requireValue('soldPrice', 'Sold Price');
-      }
-      if (documentType === 'deposit') {
-        requireValue('deposit', 'Deposit Amount');
-      }
+      requireValue('soldPrice', 'Sold Price');
       if (missingFields.length > 0) {
         setError(`Missing required fields: ${missingFields.join(', ')}`);
         return;
@@ -184,15 +179,24 @@ export default function EditablePreviewModal({
       await waitForImages(element);
 
       if (!Capacitor.isNativePlatform()) {
-        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const fieldData = collectPdfTextFields(element);
+        const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+        addPdfFormFields(pdf, fieldData);
+        const pdfBlob = pdf.output('blob');
         const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
         if (!downloadResult.opened) {
           setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
         }
       } else {
-        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+        const fieldData = collectPdfTextFields(element);
+        const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+        addPdfFormFields(pdf, fieldData);
+        const pdfBase64 = pdf.output('datauristring');
         const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
         const base64Data = pdfBase64.split(',')[1];
+        if (!base64Data) {
+          throw new Error('Failed to generate PDF data');
+        }
 
         const savedFile = await Filesystem.writeFile({
           path: fileName,
@@ -318,8 +322,7 @@ export default function EditablePreviewModal({
     () => ({
       year: { type: 'number' },
       km: { type: 'number' },
-      soldPrice: { type: 'currency', prefix: '€' },
-      amountPaidBank: { type: 'currency', prefix: '€' }
+      soldPrice: { type: 'currency', prefix: '€' }
     }),
     []
   );
@@ -553,7 +556,7 @@ export default function EditablePreviewModal({
                     <div className="mb-3">
                       <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                       <p className="text-xs">
-                        Blerësi i dorëzon shitësit shumën prej <strong>€<EditableField fieldKey="deposit" type="currency" /></strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>€<EditableField fieldKey="soldPrice" type="currency" /></strong>. Deri ne Prishtine
+                        Blerësi i dorëzon shitësit kaparin si pjesë e pagesës përfundimtare të veturës, e cila kushton <strong>€<EditableField fieldKey="soldPrice" type="currency" /></strong>. Deri ne Prishtine
                       </p>
                     </div>
 
@@ -643,8 +646,7 @@ export default function EditablePreviewModal({
                             <li>
                               <strong>Pagesa</strong>
                               <ul className="list-[circle] ml-5 mt-0.5">
-                                <li>Shuma totale prej € <EditableField fieldKey="amountPaidBank" type="currency" /> do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                <li>Një shumë prej € <EditableField fieldKey="deposit" type="currency" /> do të paguhet në dorë si kapar.</li>
+                                <li>Shuma totale për veturën është € <EditableField fieldKey="soldPrice" type="currency" />.</li>
                               </ul>
                             </li>
                             <li>
@@ -880,13 +882,12 @@ export default function EditablePreviewModal({
                           <h3 className="font-bold text-xs mb-2 underline">Kushtet dhe Termat Kryesore të Marrëveshjes</h3>
 
                           <ol className="list-decimal ml-4 text-xs mb-4 leading-[1.4]">
-                            <li className="mb-2">
-                              <strong>Pagesa</strong>
-                              <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>Shuma totale prej € <EditableField fieldKey="amountPaidBank" type="currency" /> do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                <li>Një shumë prej € <EditableField fieldKey="deposit" type="currency" /> do të paguhet në dorë si kapar.</li>
-                              </ul>
-                            </li>
+                        <li className="mb-2">
+                          <strong>Pagesa</strong>
+                          <ul className="list-[circle] ml-4 mt-0.5">
+                            <li>Shuma totale për veturën është € <EditableField fieldKey="soldPrice" type="currency" />.</li>
+                          </ul>
+                        </li>
                             <li className="mb-2">
                               <strong>Nisja dhe Dorëzimi i Automjetit</strong>
                               <ul className="list-[circle] ml-4 mt-0.5">
