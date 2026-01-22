@@ -476,7 +476,7 @@ export default function Dashboard() {
             return;
         }
         if (!isAdmin && sale.soldBy !== userProfile) {
-            alert("You do not have permission to edit this sale.");
+            setViewSaleRecord(sale);
             return;
         }
         requestEditChoice(sale);
@@ -3347,6 +3347,16 @@ export default function Dashboard() {
                                     className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     Edit Sale
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (!editChoiceSale) return;
+                                        setViewSaleRecord(editChoiceSale);
+                                        setEditChoiceSale(null);
+                                    }}
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    View Sale
                                 </button>
                                 <button
                                     onClick={handleEditShitblerjeChoice}
