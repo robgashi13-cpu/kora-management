@@ -15,9 +15,10 @@ interface Props {
     onClose: () => void;
     sale: CarSale;
     withDogane?: boolean;
+    taxAmount?: number;
 }
 
-export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false }: Props) {
+export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [withStamp, setWithStamp] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -173,7 +174,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-y-auto scroll-container print:overflow-visible">
-                    <InvoiceDocument sale={sale} withDogane={withDogane} withStamp={withStamp} ref={printRef} />
+                    <InvoiceDocument sale={sale} withDogane={withDogane} withStamp={withStamp} taxAmount={taxAmount} ref={printRef} />
                 </div>
             </motion.div>
 
