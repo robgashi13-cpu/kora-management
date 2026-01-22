@@ -19,7 +19,7 @@ import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
-import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -976,8 +976,10 @@ export default function Dashboard() {
             pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
         };
 
-        const pdf = html2pdf().set(opt).from(invoiceElement || container);
-        const dataUri = await pdf.outputPdf('datauristring');
+        const fieldData = collectPdfTextFields(invoiceElement || container);
+        const pdf = await html2pdf().set(opt).from(invoiceElement || container).toPdf().get('pdf');
+        addPdfFormFields(pdf, fieldData);
+        const dataUri = pdf.output('datauristring');
 
         root.unmount();
         container.remove();
@@ -1040,8 +1042,10 @@ export default function Dashboard() {
             pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
         };
 
-        const pdf = html2pdf().set(opt).from(contractElement || container);
-        const dataUri = await pdf.outputPdf('datauristring');
+        const fieldData = collectPdfTextFields(contractElement || container);
+        const pdf = await html2pdf().set(opt).from(contractElement || container).toPdf().get('pdf');
+        addPdfFormFields(pdf, fieldData);
+        const dataUri = pdf.output('datauristring');
 
         root.unmount();
         container.remove();
@@ -3341,26 +3345,26 @@ export default function Dashboard() {
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
-                            <div className="mt-4 flex flex-col gap-2">
-                                <button
-                                    onClick={handleEditSaleChoice}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                                >
-                                    Edit Sale
-                                </button>
+                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
                                 <button
                                     onClick={() => {
                                         if (!editChoiceSale) return;
                                         setViewSaleRecord(editChoiceSale);
                                         setEditChoiceSale(null);
                                     }}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                    className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 shadow-sm"
                                 >
                                     View Sale
                                 </button>
                                 <button
+                                    onClick={handleEditSaleChoice}
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    Edit Sale
+                                </button>
+                                <button
                                     onClick={handleEditShitblerjeChoice}
-                                    className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                                    className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
                                 >
                                     Edit Shitblerje
                                 </button>

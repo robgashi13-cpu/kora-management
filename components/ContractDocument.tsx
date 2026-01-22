@@ -146,7 +146,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="mb-2">
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                         <p className="text-xs">
-                            Blerësi i dorëzon shitësit shumën prej <strong>{formatCurrency(displaySale.deposit)}€</strong> si kapar, që llogaritet si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
+                            Blerësi i dorëzon shitësit kaparin si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
                         </p>
                     </div>
 
@@ -250,8 +250,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <li>
                                 <strong>Pagesa</strong>
                                 <ul className="list-[circle] ml-5 mt-0.5">
-                                    <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                    <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
+                                    <li>Shuma totale për veturën është € {formatCurrency(displaySale.soldPrice)}.</li>
                                 </ul>
                             </li>
                             <li>
@@ -494,8 +493,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <li className="mb-2">
                             <strong>Pagesa</strong>
                             <ul className="list-[circle] ml-4 mt-0.5">
-                                <li>Shuma totale prej € {formatCurrency(displaySale.amountPaidBank)} do të transferohet në llogarinë bankare të RG SH.P.K</li>
-                                <li>Një shumë prej € {formatCurrency(displaySale.deposit)} do të paguhet në dorë si kapar.</li>
+                                <li>Shuma totale për veturën është € {formatCurrency(displaySale.soldPrice)}.</li>
                             </ul>
                         </li>
                         <li className="mb-2">

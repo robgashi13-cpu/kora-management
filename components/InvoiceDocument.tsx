@@ -22,9 +22,6 @@ type FieldRenderOptions = {
     formatValue?: (value: CarSale[keyof CarSale]) => string;
 };
 
-const DEFAULT_TAX_AMOUNT = 30.51;
-const SERVICES_AMOUNT = 169.49;
-
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     ({ sale, withDogane = false, withStamp = false, taxAmount, renderField }, ref) => {
     const displaySale = applyShitblerjeOverrides(sale);
@@ -46,17 +43,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         return String(value);
     };
 
-    const renderCurrency = <K extends keyof CarSale>(
-        fieldKey: K,
-        amount: number,
-        options?: FieldRenderOptions
-    ) => {
-        if (renderField) {
-            return renderField(fieldKey, displaySale[fieldKey], options);
-        }
-        return `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
-
     const toSafeNumber = (value: unknown) => {
         const parsed = Number(value);
         return Number.isFinite(parsed) ? parsed : 0;
@@ -64,15 +50,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const normalizeNonNegative = (value: number) => (value >= 0 ? value : 0);
 
     const soldPriceValue = normalizeNonNegative(toSafeNumber(displaySale.soldPrice));
-    const amountPaidBankValue = normalizeNonNegative(toSafeNumber(displaySale.amountPaidBank));
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
-    const resolvedTaxAmount = normalizeNonNegative(
-        Number.isFinite(taxAmount) ? Number(taxAmount) : DEFAULT_TAX_AMOUNT
-    );
-    const servicesAmount = normalizeNonNegative(SERVICES_AMOUNT);
-    const totalFees = servicesAmount + resolvedTaxAmount;
     const subtotalValue = soldPriceValue;
-    const totalCalculatedValue = soldPriceValue + totalFees;
     const formatCurrency = (amount: number) =>
         `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -188,23 +167,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             {/* Totals - Right aligned */}
             <div className="invoice-summary-wrapper">
                 <div className="invoice-summary">
-                    <div className="invoice-summary-row">
-                        <span>Subtotal</span>
-                        <span>{formatCurrency(subtotalValue)}</span>
-                    </div>
-                    <div className="invoice-summary-row">
-                        <span>Services</span>
-                        <span>{formatCurrency(servicesAmount)}</span>
-                    </div>
-                    <div className="invoice-summary-row invoice-summary-row-divider">
-                        <span>Tax (TVSH 18%)</span>
-                        <span>{formatCurrency(resolvedTaxAmount)}</span>
-                    </div>
                     <div className="invoice-summary-total">
-                        <span>Grand Total</span>
-                        <span>
-                            {formatCurrency(totalCalculatedValue)}
-                        </span>
+                        <span>Total</span>
+                        <span>{formatCurrency(subtotalValue)}</span>
                     </div>
                 </div>
             </div>
@@ -217,13 +182,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Raiffeisen Bank</div>
                         <div className="invoice-bank-chip">1501080002435404</div>
                         <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
-                        {amountPaidBankValue > 0 && (
-                            <div style={{ color: '#000000', fontWeight: 700, fontSize: '0.875rem', marginTop: '6px' }}>
-                                {renderCurrency('amountPaidBank', amountPaidBankValue, {
-                                    formatValue: (value) => `€${Number(value || 0).toLocaleString()}`
-                                })}
-                            </div>
-                        )}
                     </div>
                     <div className="invoice-footer-right">
                         <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Contact</div>

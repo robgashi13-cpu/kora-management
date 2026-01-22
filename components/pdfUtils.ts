@@ -152,3 +152,123 @@ export const openPdfBlob = async (blob: Blob): Promise<{ opened: boolean }> => {
   setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
   return { opened };
 };
+
+type PdfFieldRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type PdfTextField = {
+  pageIndex: number;
+  rect: PdfFieldRect;
+  value: string;
+  fontSize: number;
+  isMultiline: boolean;
+};
+
+type PdfPageRect = {
+  width: number;
+  height: number;
+};
+
+export const collectPdfTextFields = (container: HTMLElement): { fields: PdfTextField[]; pageRects: PdfPageRect[] } => {
+  const pageElements = Array.from(container.querySelectorAll<HTMLElement>('.pdf-page'));
+  const pages = pageElements.length > 0 ? pageElements : [container];
+  const fields: PdfTextField[] = [];
+  const pageRects: PdfPageRect[] = pages.map((page) => {
+    const rect = page.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+
+  pages.forEach((page, pageIndex) => {
+    const pageRect = page.getBoundingClientRect();
+    const walker = document.createTreeWalker(
+      page,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          if (!node.textContent || !node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+          const parent = (node as Text).parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName;
+          if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('[data-no-pdf-field="true"]')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    while (walker.nextNode()) {
+      const textNode = walker.currentNode as Text;
+      const value = textNode.textContent?.trim();
+      if (!value) continue;
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      const rect = range.getBoundingClientRect();
+      if (!rect || rect.width === 0 || rect.height === 0) continue;
+      const parent = textNode.parentElement;
+      if (!parent) continue;
+      const fontSize = Number.parseFloat(window.getComputedStyle(parent).fontSize || '12');
+      const isMultiline = rect.height > fontSize * 1.35;
+      fields.push({
+        pageIndex,
+        rect: {
+          x: rect.left - pageRect.left,
+          y: rect.top - pageRect.top,
+          width: rect.width,
+          height: rect.height
+        },
+        value,
+        fontSize,
+        isMultiline
+      });
+    }
+  });
+
+  return { fields, pageRects };
+};
+
+export const addPdfFormFields = (
+  pdf: any,
+  fieldData: { fields: PdfTextField[]; pageRects: PdfPageRect[] }
+) => {
+  const TextField = pdf.AcroFormTextField || pdf.AcroForm?.TextField;
+  if (!TextField) {
+    return pdf;
+  }
+  const getPageWidth = () => pdf.internal.pageSize.getWidth();
+  const getPageHeight = () => pdf.internal.pageSize.getHeight();
+  const totalPages = typeof pdf.getNumberOfPages === 'function'
+    ? pdf.getNumberOfPages()
+    : pdf.internal.getNumberOfPages();
+
+  fieldData.fields.forEach((field, index) => {
+    const targetPage = Math.min(field.pageIndex + 1, totalPages);
+    pdf.setPage(targetPage);
+    const pageRect = fieldData.pageRects[field.pageIndex] ?? fieldData.pageRects[0];
+    if (!pageRect) return;
+    const pageWidth = getPageWidth();
+    const pageHeight = getPageHeight();
+    const scaleX = pageWidth / pageRect.width;
+    const scaleY = pageHeight / pageRect.height;
+    const width = Math.max(4, field.rect.width * scaleX);
+    const height = Math.max(4, field.rect.height * scaleY);
+    const x = field.rect.x * scaleX;
+    const y = pageHeight - (field.rect.y + field.rect.height) * scaleY;
+
+    const textField = new TextField();
+    textField.fieldName = `field_${field.pageIndex}_${index}`;
+    textField.value = field.value;
+    textField.x = x;
+    textField.y = y;
+    textField.width = width;
+    textField.height = height;
+    textField.multiline = field.isMultiline;
+    textField.fontSize = Math.max(6, Math.min(16, field.fontSize * scaleY));
+    pdf.addField(textField);
+  });
+
+  return pdf;
+};

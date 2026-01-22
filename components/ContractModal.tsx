@@ -5,7 +5,7 @@ import ContractDocument from './ContractDocument';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
-import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     sale: CarSale;
@@ -102,14 +102,20 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             if (!Capacitor.isNativePlatform()) {
                 await waitForImages(element);
 
-                const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+                const fieldData = collectPdfTextFields(element);
+                const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+                addPdfFormFields(pdf, fieldData);
+                const pdfBlob = pdf.output('blob');
                 const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
                 if (!downloadResult.opened) {
                     setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
                 }
             } else {
                 // Native mobile (iOS/Android) - use Capacitor filesystem
-                const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
+                const fieldData = collectPdfTextFields(element);
+                const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+                addPdfFormFields(pdf, fieldData);
+                const pdfBase64 = pdf.output('datauristring');
                 const fileName = `Contract_${safeBrand}_${safeModel}_${Date.now()}.pdf`;
                 const base64Data = pdfBase64.split(',')[1];
 
