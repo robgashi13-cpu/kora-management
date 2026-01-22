@@ -51,12 +51,17 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
 
     const soldPriceValue = normalizeNonNegative(toSafeNumber(displaySale.soldPrice));
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
-    const subtotalValue = soldPriceValue;
-    const taxValue = normalizeNonNegative(
-        toSafeNumber(withDogane ? taxAmount : displaySale.tax)
-    );
-    const totalValue = subtotalValue + taxValue;
-    const taxLabel = withDogane ? 'Doganë' : 'Tax';
+    const defaultServicesValue = 169.49;
+    const defaultTaxValue = 30.51;
+    const defaultFeesTotal = defaultServicesValue + defaultTaxValue;
+    const subtotalValue = withDogane
+        ? soldPriceValue
+        : normalizeNonNegative(soldPriceValue - defaultFeesTotal);
+    const taxValue = withDogane
+        ? normalizeNonNegative(toSafeNumber(taxAmount))
+        : defaultTaxValue;
+    const totalValue = withDogane ? subtotalValue + taxValue : soldPriceValue;
+    const taxLabel = withDogane ? 'Doganë' : 'Tax (TVSH 18%)';
     const formatCurrency = (amount: number) =>
         `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -131,40 +136,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 </div>
             </div>
 
-            {/* Vehicle Info */}
-            <div className="invoice-section invoice-vehicle">
-                <h3 className="invoice-section-title">Vehicle Details</h3>
-                <div className="invoice-vehicle-grid">
-                    <div>
-                        <div className="invoice-meta-label">Vehicle</div>
-                        <div className="invoice-meta-value">
-                            {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
-                            {renderText('brand')}{' '}
-                            {renderText('model')}
-                            {withDogane ? ' ME DOGANË' : ''}
-                        </div>
-                    </div>
-                    <div>
-                        <div className="invoice-meta-label">VIN</div>
-                        <div className="invoice-meta-value">{renderText('vin', 'N/A')}</div>
-                    </div>
-                    <div>
-                        <div className="invoice-meta-label">Color</div>
-                        <div className="invoice-meta-value">{renderText('color', '—')}</div>
-                    </div>
-                    <div>
-                        <div className="invoice-meta-label">Plate</div>
-                        <div className="invoice-meta-value">{renderText('plateNumber', '—')}</div>
-                    </div>
-                    <div>
-                        <div className="invoice-meta-label">Mileage</div>
-                        <div className="invoice-meta-value">
-                            {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {/* Line Items */}
             <table className="invoice-table">
                 <thead>
@@ -210,6 +181,12 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         <span>Subtotal</span>
                         <span>{formatCurrency(subtotalValue)}</span>
                     </div>
+                    {!withDogane && (
+                        <div className="invoice-summary-row">
+                            <span>Services</span>
+                            <span>{formatCurrency(defaultServicesValue)}</span>
+                        </div>
+                    )}
                     <div className="invoice-summary-row">
                         <span>{taxLabel}</span>
                         <span>{formatCurrency(taxValue)}</span>
