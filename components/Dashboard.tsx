@@ -404,6 +404,7 @@ export default function Dashboard() {
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
     const [showArchivedGroups, setShowArchivedGroups] = useState(false);
+    const [groupViewEnabled, setGroupViewEnabled] = useState(true);
     const hasInitializedGroups = useRef(false);
     const [documentPreview, setDocumentPreview] = useState<{
         sale: CarSale;
@@ -2286,7 +2287,8 @@ export default function Dashboard() {
     const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
-    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+    const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+    const groupingEnabled = groupingAvailable && groupViewEnabled;
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
@@ -2560,6 +2562,20 @@ export default function Dashboard() {
                                     <option value="year">Year</option>
                                 </select>
                             </div>
+                            {groupingAvailable && (
+                                <button
+                                    onClick={() => setGroupViewEnabled((prev) => !prev)}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-full border text-[11px] md:text-xs font-semibold transition-all ${groupViewEnabled
+                                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                                        }`}
+                                    title={`Group view ${groupViewEnabled ? 'on' : 'off'}`}
+                                >
+                                    {groupViewEnabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                    <span className="hidden sm:inline">Group View</span>
+                                    <span className="text-[9px] uppercase tracking-wide">{groupViewEnabled ? 'On' : 'Off'}</span>
+                                </button>
+                            )}
                             <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
                                 <Plus className="w-4 h-4" /> Add Sale
                             </button>
@@ -2675,7 +2691,7 @@ export default function Dashboard() {
                                             if (groupSales.length === 0) return null;
                                             return (
                                                 <Reorder.Item key={group.name} value={group.name} className="contents">
-                                                    <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                    <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                         <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                             <button
                                                                 onClick={() => toggleGroup(group.name)}
@@ -2809,7 +2825,7 @@ export default function Dashboard() {
                                         })}
                                         {groupedSales.Ungrouped?.length > 0 && (
                                             <div className="contents">
-                                                <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                     <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                         <button
                                                             onClick={() => toggleGroup('Ungrouped')}
@@ -2876,7 +2892,7 @@ export default function Dashboard() {
                                                     const groupSales = groupedSales[group.name] || [];
                                                     return (
                                                         <div key={group.name} className="contents">
-                                                            <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="bg-slate-50/80 border-b border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                                 <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                     <button
                                                                         onClick={() => toggleGroup(group.name)}
@@ -3001,7 +3017,7 @@ export default function Dashboard() {
                                                 if (groupSales.length === 0) return null;
                                                 return (
                                                     <div key={group.name} className="border-b border-slate-200">
-                                                        <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                        <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50 border-l-4 border-l-slate-300">
                                                             <button
                                                                 onClick={() => toggleGroup(group.name)}
                                                                 className="flex items-center gap-2 text-left"
@@ -3144,7 +3160,7 @@ export default function Dashboard() {
                                                                                         </span>
                                                                                     </div>
                                                                                 )}
-                                                                                    {groupingEnabled && sale.group && (
+                                                                                    {groupingAvailable && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
                                                                                     className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
@@ -3278,7 +3294,7 @@ export default function Dashboard() {
                                                                                             </span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {groupingEnabled && sale.group && (
+                                                                                    {groupingAvailable && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
                                                                                             className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
@@ -3598,7 +3614,7 @@ export default function Dashboard() {
                                         <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
                                     </button>
 
-                                    {groupingEnabled && (
+                                    {groupingAvailable && (
                                         <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
                                             <FolderPlus className="w-5 h-5 text-slate-600" />
                                             <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
