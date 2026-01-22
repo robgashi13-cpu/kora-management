@@ -52,6 +52,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const soldPriceValue = normalizeNonNegative(toSafeNumber(displaySale.soldPrice));
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
     const subtotalValue = soldPriceValue;
+    const taxValue = normalizeNonNegative(
+        toSafeNumber(withDogane ? taxAmount : displaySale.tax)
+    );
+    const totalValue = subtotalValue + taxValue;
+    const taxLabel = withDogane ? 'Doganë' : 'Tax';
     const formatCurrency = (amount: number) =>
         `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -84,7 +89,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     <img
                         src="/logo.jpg"
                         alt="KORAUTO Logo"
-                        style={{ height: '56px', width: 'auto' }}
+                        style={{ height: '52px', width: 'auto' }}
                     />
                     <div className="invoice-title">
                         <div className="invoice-title-label">INVOICE</div>
@@ -103,12 +108,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 </div>
             </div>
 
-            {/* Client Info & Dates */}
-            <div className="invoice-client" style={{ borderColor: '#000000' }}>
+            {/* Client & Invoice Details */}
+            <div className="invoice-section invoice-client" style={{ borderColor: '#000000' }}>
                 <div>
                     <h3 className="invoice-section-title">Bill To</h3>
-                    <div style={{ color: '#000000', fontSize: '0.95rem', fontWeight: 700, wordBreak: 'break-word' }}>
-                        {renderText('buyerName')}
+                    <div className="invoice-client-name">
+                        {renderText('buyerName', '—')}
+                    </div>
+                    <div className="invoice-client-id">
+                        Client ID: {renderText('buyerPersonalId', 'N/A')}
                     </div>
                 </div>
                 <div className="invoice-client-right">
@@ -123,22 +131,53 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 </div>
             </div>
 
+            {/* Vehicle Info */}
+            <div className="invoice-section invoice-vehicle">
+                <h3 className="invoice-section-title">Vehicle Details</h3>
+                <div className="invoice-vehicle-grid">
+                    <div>
+                        <div className="invoice-meta-label">Vehicle</div>
+                        <div className="invoice-meta-value">
+                            {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
+                            {renderText('brand')}{' '}
+                            {renderText('model')}
+                            {withDogane ? ' ME DOGANË' : ''}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="invoice-meta-label">VIN</div>
+                        <div className="invoice-meta-value">{renderText('vin', 'N/A')}</div>
+                    </div>
+                    <div>
+                        <div className="invoice-meta-label">Color</div>
+                        <div className="invoice-meta-value">{renderText('color', '—')}</div>
+                    </div>
+                    <div>
+                        <div className="invoice-meta-label">Plate</div>
+                        <div className="invoice-meta-value">{renderText('plateNumber', '—')}</div>
+                    </div>
+                    <div>
+                        <div className="invoice-meta-label">Mileage</div>
+                        <div className="invoice-meta-value">
+                            {renderText('km', '0', { formatValue: (value) => Number(value || 0).toLocaleString() })} km
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {/* Line Items */}
             <table className="invoice-table">
                 <thead>
                     <tr>
                         <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'left' }}>Description</th>
-                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'right' }}>Total</th>
+                        <th style={{ color: '#000000', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', padding: '10px 0', textAlign: 'right' }}>Amount</th>
                     </tr>
                 </thead>
                 <tbody style={{ color: '#000000' }}>
                     <tr>
                         <td style={{ padding: '14px 0' }}>
                             <div style={{ color: '#000000', fontWeight: 700 }}>
-                                {renderText('year', '', { formatValue: (value) => String(value) })}{' '}
-                                {renderText('brand')}{' '}
-                                {renderText('model')}
-                                {withDogane ? ' ME DOGANË' : ''}
+                                Vehicle Sale Price
                             </div>
                             <div className="invoice-subline">
                                 <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
@@ -167,9 +206,17 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             {/* Totals - Right aligned */}
             <div className="invoice-summary-wrapper">
                 <div className="invoice-summary">
+                    <div className="invoice-summary-row">
+                        <span>Subtotal</span>
+                        <span>{formatCurrency(subtotalValue)}</span>
+                    </div>
+                    <div className="invoice-summary-row">
+                        <span>{taxLabel}</span>
+                        <span>{formatCurrency(taxValue)}</span>
+                    </div>
                     <div className="invoice-summary-total">
                         <span>Total</span>
-                        <span>{formatCurrency(subtotalValue)}</span>
+                        <span>{formatCurrency(totalValue)}</span>
                     </div>
                 </div>
             </div>
@@ -201,7 +248,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
 
             <style>{`
                 .invoice-root {
-                    padding: 48px;
+                    padding: 40px;
                 }
 
                 .invoice-header {
@@ -226,9 +273,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-title-label {
-                    font-size: 1.1rem;
+                    font-size: 1.05rem;
                     font-weight: 700;
-                    letter-spacing: 0.04em;
+                    letter-spacing: 0.08em;
                 }
 
                 .invoice-title-meta {
@@ -242,16 +289,58 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     min-width: 0;
                 }
 
+                .invoice-section {
+                    border-top: 1px solid;
+                    border-bottom: 1px solid;
+                    padding: 14px 16px;
+                    margin-bottom: 16px;
+                    break-inside: avoid;
+                }
+
                 .invoice-client {
                     display: grid;
                     grid-template-columns: 1fr;
                     gap: 20px;
                     align-items: flex-start;
-                    margin-bottom: 16px;
-                    padding: 12px 0 10px;
-                    border-top: 1px solid;
-                    border-bottom: 1px solid;
-                    break-inside: avoid;
+                    background: #f8fafc;
+                }
+
+                .invoice-client-name {
+                    color: #000000;
+                    font-size: 1rem;
+                    font-weight: 700;
+                    word-break: break-word;
+                }
+
+                .invoice-client-id {
+                    margin-top: 6px;
+                    font-size: 0.8rem;
+                    color: #1f2937;
+                }
+
+                .invoice-vehicle {
+                    background: #ffffff;
+                }
+
+                .invoice-vehicle-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                    gap: 12px 16px;
+                }
+
+                .invoice-meta-label {
+                    font-size: 0.7rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    color: #475569;
+                    margin-bottom: 4px;
+                    font-weight: 600;
+                }
+
+                .invoice-meta-value {
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    color: #0f172a;
                 }
 
                 .invoice-table {
@@ -272,7 +361,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
 
                 .invoice-subline {
                     color: #000000;
-                    font-size: 0.8rem;
+                    font-size: 0.78rem;
                     display: flex;
                     flex-wrap: wrap;
                     column-gap: 16px;
@@ -307,6 +396,10 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 .invoice-summary {
                     width: 100%;
                     break-inside: avoid;
+                    background: #f8fafc;
+                    border: 1px solid #000000;
+                    padding: 10px 14px;
+                    border-radius: 10px;
                 }
 
                 .invoice-summary-row {
@@ -375,7 +468,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
 
                 @media (min-width: 768px) {
                     .invoice-root {
-                        padding: 26px;
+                        padding: 30px;
                     }
 
                     .invoice-header {
