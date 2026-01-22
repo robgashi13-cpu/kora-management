@@ -19,6 +19,7 @@ interface EditablePreviewModalProps {
   documentType: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
   onSaveToSale?: (updatedFields: Partial<CarSale>) => void;
   withDogane?: boolean;
+  taxAmount?: number;
 }
 
 export default function EditablePreviewModal({
@@ -27,7 +28,8 @@ export default function EditablePreviewModal({
   sale,
   documentType,
   onSaveToSale,
-  withDogane = false
+  withDogane = false,
+  taxAmount
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -471,6 +473,7 @@ export default function EditablePreviewModal({
                 sale={previewSale}
                 withDogane={withDogane}
                 withStamp={withStamp}
+                taxAmount={taxAmount}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />

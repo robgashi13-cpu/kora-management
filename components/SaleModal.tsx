@@ -49,6 +49,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
+    const [invoiceTaxAmount, setInvoiceTaxAmount] = useState<number | undefined>(undefined);
+    const [showTaxPrompt, setShowTaxPrompt] = useState(false);
+    const [taxInputValue, setTaxInputValue] = useState('');
+    const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
@@ -633,6 +637,26 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         </div>
     );
 
+    const handleTaxConfirm = () => {
+        const trimmed = taxInputValue.trim();
+        if (!trimmed) {
+            setInvoiceTaxAmount(undefined);
+            setInvoiceWithDogane(true);
+            setShowInvoice(true);
+            setShowTaxPrompt(false);
+            return;
+        }
+        const parsed = Number(trimmed);
+        if (Number.isNaN(parsed) || parsed < 0) {
+            setTaxInputError('Enter a valid non-negative number.');
+            return;
+        }
+        setInvoiceTaxAmount(parsed);
+        setInvoiceWithDogane(true);
+        setShowInvoice(true);
+        setShowTaxPrompt(false);
+    };
+
     const doganeSelectionModal = showDoganeSelection && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
             <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
@@ -648,7 +672,12 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <div className="flex gap-3">
                     <button
                         type="button"
-                        onClick={() => { setInvoiceWithDogane(false); setShowInvoice(true); setShowDoganeSelection(false); }}
+                        onClick={() => {
+                            setInvoiceWithDogane(false);
+                            setInvoiceTaxAmount(undefined);
+                            setShowInvoice(true);
+                            setShowDoganeSelection(false);
+                        }}
                         className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-4 text-center hover:border-slate-400 hover:bg-slate-50 transition"
                     >
                         <div className="text-sm font-bold text-slate-900">Pa Doganë</div>
@@ -656,11 +685,63 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setInvoiceWithDogane(true); setShowInvoice(true); setShowDoganeSelection(false); }}
+                        onClick={() => {
+                            setTaxInputValue('');
+                            setTaxInputError(null);
+                            setShowTaxPrompt(true);
+                            setShowDoganeSelection(false);
+                        }}
                         className="flex-1 flex flex-col items-center gap-2 rounded-xl border-2 border-emerald-200 px-4 py-4 text-center hover:border-emerald-400 hover:bg-emerald-50 transition"
                     >
                         <div className="text-sm font-bold text-emerald-700">Me Doganë</div>
                         <div className="text-xs text-emerald-600">Përfshirë doganën</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
+    const taxPromptModal = showTaxPrompt && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowTaxPrompt(false)}>
+            <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 className="text-base font-bold text-slate-900">Enter Tax Price</h4>
+                        <p className="text-sm text-slate-500">Numbers only, no negatives.</p>
+                    </div>
+                    <button type="button" onClick={() => setShowTaxPrompt(false)} className="p-2 rounded-full hover:bg-slate-100 text-slate-500">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="space-y-2">
+                    <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={taxInputValue}
+                        onChange={(e) => {
+                            setTaxInputValue(e.target.value);
+                            if (taxInputError) setTaxInputError(null);
+                        }}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/40"
+                        placeholder="e.g. 1000"
+                    />
+                    {taxInputError && <p className="text-xs text-red-600">{taxInputError}</p>}
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowTaxPrompt(false)}
+                        className="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleTaxConfirm}
+                        className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800"
+                    >
+                        Continue
                     </button>
                 </div>
             </div>
@@ -674,6 +755,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 {Content}
                 {documentMenu}
                 {doganeSelectionModal}
+                {taxPromptModal}
                 {showInvoice && (
                     <EditablePreviewModal
                         isOpen={showInvoice}
@@ -681,6 +763,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         sale={formData as CarSale}
                         documentType="invoice"
                         withDogane={invoiceWithDogane}
+                        taxAmount={invoiceTaxAmount}
                         onSaveToSale={handlePreviewSaveToSale}
                     />
                 )}
@@ -707,6 +790,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             {Content}
             {documentMenu}
             {doganeSelectionModal}
+            {taxPromptModal}
             {showInvoice && (
                 <EditablePreviewModal
                     isOpen={showInvoice}
@@ -714,6 +798,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     sale={formData as CarSale}
                     documentType="invoice"
                     withDogane={invoiceWithDogane}
+                    taxAmount={invoiceTaxAmount}
                     onSaveToSale={handlePreviewSaveToSale}
                 />
             )}
