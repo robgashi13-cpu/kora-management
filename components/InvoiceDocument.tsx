@@ -57,12 +57,24 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         return `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    const soldPriceValue = Number(displaySale.soldPrice || 0);
-    const amountPaidBankValue = Number(displaySale.amountPaidBank || 0);
+    const toSafeNumber = (value: unknown) => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const normalizeNonNegative = (value: number) => (value >= 0 ? value : 0);
+
+    const soldPriceValue = normalizeNonNegative(toSafeNumber(displaySale.soldPrice));
+    const amountPaidBankValue = normalizeNonNegative(toSafeNumber(displaySale.amountPaidBank));
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
-    const resolvedTaxAmount = Number.isFinite(taxAmount) && (taxAmount as number) >= 0 ? Number(taxAmount) : DEFAULT_TAX_AMOUNT;
-    const totalFees = SERVICES_AMOUNT + resolvedTaxAmount;
-    const subtotalValue = soldPriceValue - totalFees;
+    const resolvedTaxAmount = normalizeNonNegative(
+        Number.isFinite(taxAmount) ? Number(taxAmount) : DEFAULT_TAX_AMOUNT
+    );
+    const servicesAmount = normalizeNonNegative(SERVICES_AMOUNT);
+    const totalFees = servicesAmount + resolvedTaxAmount;
+    const subtotalValue = soldPriceValue;
+    const totalCalculatedValue = soldPriceValue + totalFees;
+    const formatCurrency = (amount: number) =>
+        `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     return (
         <div
@@ -159,7 +171,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             </div>
                         </td>
                         <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
-                            €{subtotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatCurrency(subtotalValue)}
                         </td>
                     </tr>
                     {!withDogane && (
@@ -178,22 +190,20 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 <div className="invoice-summary">
                     <div className="invoice-summary-row">
                         <span>Subtotal</span>
-                        <span>€{subtotalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>{formatCurrency(subtotalValue)}</span>
                     </div>
                     <div className="invoice-summary-row">
                         <span>Services</span>
-                        <span>€{SERVICES_AMOUNT.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>{formatCurrency(servicesAmount)}</span>
                     </div>
                     <div className="invoice-summary-row invoice-summary-row-divider">
                         <span>Tax (TVSH 18%)</span>
-                        <span>€{resolvedTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>{formatCurrency(resolvedTaxAmount)}</span>
                     </div>
                     <div className="invoice-summary-total">
                         <span>Grand Total</span>
                         <span>
-                            {renderCurrency('soldPrice', soldPriceValue, {
-                                formatValue: (value) => `€${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                            })}
+                            {formatCurrency(totalCalculatedValue)}
                         </span>
                     </div>
                 </div>
