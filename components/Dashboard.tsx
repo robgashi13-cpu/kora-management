@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -127,11 +127,11 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 2. Car Info */}
-            <div className="px-2 h-full flex items-center font-semibold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
+            <div className="px-2 h-full flex items-center font-semibold whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-700 transition-colors text-[11px] xl:text-xs"
+                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-700 transition-colors"
                     title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
@@ -139,80 +139,83 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 3. Year */}
-            <div className="px-2 h-full flex items-center justify-center text-slate-800 border-r border-slate-100 bg-white text-[11px] xl:text-xs font-medium">
+            <div className="px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white font-medium">
                 {canEdit ? (
-                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" className="text-slate-800" />
+                    <InlineEditableCell value={s.year} onSave={(v) => handleFieldUpdate('year', v)} type="number" />
                 ) : s.year}
             </div>
 
             {/* 4. KM */}
-            <div className="px-2 h-full flex items-center justify-center text-slate-700 font-mono text-[11px] xl:text-xs border-r border-slate-100 bg-white">
+            <div className="px-2 h-full flex items-center justify-center font-mono border-r border-slate-100 bg-white">
                 {canEdit ? (
-                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} className="text-slate-700" />
+                    <InlineEditableCell value={s.km || 0} onSave={(v) => handleFieldUpdate('km', v)} type="number" formatDisplay={(v) => `${Number(v || 0).toLocaleString()}`} />
                 ) : (s.km || 0).toLocaleString()}
             </div>
 
             {/* 5. Plate/VIN */}
-            <div className="px-2 h-full flex items-center text-[11px] xl:text-xs border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="px-2 h-full flex items-center border-r border-slate-100 bg-white leading-tight min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
                 {canEdit ? (
                     <div className="flex items-center gap-1 min-w-0 max-w-full truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
-                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono text-slate-800 font-semibold truncate" />
+                        <InlineEditableCell value={s.plateNumber} onSave={(v) => handleFieldUpdate('plateNumber', v)} className="font-mono font-semibold truncate" />
                         <span className="text-slate-400">•</span>
                         <InlineEditableCell value={s.vin} onSave={(v) => handleFieldUpdate('vin', v)} className="text-slate-600 font-mono text-[10px] xl:text-[11px] truncate" placeholder="VIN" formatDisplay={(v) => (v ? String(v).slice(-6) : '-')} />
                     </div>
                 ) : (
-                    <div className="text-slate-800 font-mono font-semibold truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
-                        {s.plateNumber} • <span className="text-slate-600">{(s.vin || '').slice(-6)}</span>
+                    <div className="font-mono font-semibold truncate" title={`${s.plateNumber || ''} • ${(s.vin || '').slice(-6)}`}>
+                        {s.plateNumber} • <span className="text-slate-500">{(s.vin || '').slice(-6)}</span>
                     </div>
                 )}
             </div>
 
             {/* 6. Buyer */}
-            <div className="px-2 h-full flex items-center text-slate-800 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0 font-medium" title={s.buyerName}>
+            <div className="px-2 h-full flex items-center truncate whitespace-nowrap border-r border-slate-100 bg-white min-w-0 font-medium" title={s.buyerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" className="text-slate-800" />
+                    <InlineEditableCell value={s.buyerName} onSave={(v) => handleFieldUpdate('buyerName', v)} placeholder="Buyer" />
                 ) : s.buyerName}
             </div>
 
             {/* 7. Seller */}
-            <div className="px-2 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0" title={s.sellerName}>
+            <div className="px-2 h-full flex items-center truncate whitespace-nowrap border-r border-slate-100 bg-white min-w-0" title={s.sellerName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" className="text-slate-700" />
+                    <InlineEditableCell value={s.sellerName} onSave={(v) => handleFieldUpdate('sellerName', v)} placeholder="Seller" />
                 ) : s.sellerName}
             </div>
 
             {/* 8. Shipping */}
-            <div className="px-2 h-full flex items-center text-slate-700 truncate whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs min-w-0" title={s.shippingName}>
+            <div className="px-2 h-full flex items-center truncate whitespace-nowrap border-r border-slate-100 bg-white min-w-0" title={s.shippingName}>
                 {canEdit ? (
-                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" className="text-slate-700" />
+                    <InlineEditableCell value={s.shippingName} onSave={(v) => handleFieldUpdate('shippingName', v)} placeholder="Shipping" />
                 ) : s.shippingName}
             </div>
 
             {/* 9. Cost (Admin Only) */}
+            {/* 9. Cost (Admin Only) */}
             {isAdmin && (
-                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-700 border-r border-slate-100 bg-white text-[11px] xl:text-xs">
+                <div className="px-2 h-full flex items-center justify-end font-mono border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" className="text-slate-700" />
+                        <InlineEditableCell value={s.costToBuy || 0} onSave={(v) => handleFieldUpdate('costToBuy', v)} type="number" prefix="€" />
                     ) : `€${(s.costToBuy || 0).toLocaleString()}`}
                 </div>
             )}
 
             {/* 10. Sold (Admin OR own sale) */}
+            {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-2 h-full flex items-center justify-end font-mono text-emerald-700 font-bold border-r border-slate-100 bg-white text-[11px] xl:text-xs">
+                <div className="px-2 h-full flex items-center justify-end font-mono text-emerald-700 font-bold border-r border-slate-100 bg-white">
                     {canEdit ? (
                         <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-700 font-bold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
-                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white">-</div>
             )}
 
+            {/* 11. Paid (Admin OR own sale) */}
             {/* 11. Paid (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                     {canEdit ? (
-                        <div className="flex flex-col items-end gap-0.5 text-[10px] xl:text-[11px] leading-tight">
+                        <div className="flex flex-col items-end gap-0.5 leading-tight">
                             <div className="flex items-center gap-1">
                                 <span className="uppercase text-[8px] text-slate-500 font-semibold">Bk</span>
                                 <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-700 font-semibold" />
@@ -227,27 +230,27 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                             </div>
                         </div>
                     ) : (
-                        <div className="font-mono text-sky-700 font-semibold text-[11px] xl:text-xs">
+                        <div className="font-mono text-sky-700 font-semibold">
                             €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white text-[11px] xl:text-xs">-</div>
+                <div className="px-2 h-full flex items-center justify-end font-mono text-slate-400 border-r border-slate-100 bg-white">-</div>
             )}
 
             {/* 12,13,14. Fees/Tax/Profit (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <>
-                    <div className="px-2 h-full flex items-center justify-end font-mono text-[11px] xl:text-xs text-slate-600 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
+                    <div className="px-2 h-full flex items-center justify-end font-mono text-slate-600 border-r border-slate-100 bg-white">€{getBankFee(s.soldPrice || 0)}</div>
                     <div className="px-2 h-full flex items-center justify-end border-r border-slate-100 bg-white">
                         {canEdit ? (
-                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-600 font-mono text-[11px] xl:text-xs" />
+                            <InlineEditableCell value={s.servicesCost ?? 30.51} onSave={(v) => handleFieldUpdate('servicesCost', v)} type="number" prefix="€" className="text-slate-600 font-mono" />
                         ) : (
-                            <span className="font-mono text-[11px] xl:text-xs text-slate-600">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
+                            <span className="font-mono text-slate-600">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-2 h-full flex items-center justify-end font-mono font-bold text-slate-900 whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-2 h-full flex items-center justify-end font-mono font-bold text-slate-900 whitespace-nowrap border-r border-slate-100 bg-white">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
@@ -417,6 +420,7 @@ export default function Dashboard() {
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
     const [editShitblerjeSale, setEditShitblerjeSale] = useState<CarSale | null>(null);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
     const [formReturnView, setFormReturnView] = useState('dashboard');
     const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -444,8 +448,6 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
-    const [showGroupMenu, setShowGroupMenu] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
@@ -1250,145 +1252,138 @@ export default function Dashboard() {
             return;
         }
 
-        const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
-        await persistGroupMeta(nextMeta);
-        setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+        const createGroupWithName = async (name: string, saleIds: string[]) => {
+            const trimmed = name.trim();
+            if (!trimmed) return;
 
-        const saleIdSet = new Set(saleIds);
-        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
-        await updateSalesAndSave(newSales);
-        setSelectedIds(new Set());
-    };
+            // If group doesn't exist, create it
+            if (!groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+                const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
+                await persistGroupMeta(nextMeta);
+                setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+            } else {
+                // If it exists, ensure it's expanded so user sees the change
+                setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+            }
 
-    const handleCreateGroup = async () => {
-        if (selectedIds.size === 0) return;
-        const name = prompt('Enter group name:');
-        if (!name?.trim()) return;
-        await createGroupWithName(name, Array.from(selectedIds));
-    };
+            const saleIdSet = new Set(saleIds);
+            // Update sales: if in set, set group to new name. Otherwise keep as is.
+            const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
+            await updateSalesAndSave(newSales);
+            setSelectedIds(new Set());
+        };
 
-    const renameGroupWithName = async (groupName: string, newName: string) => {
-        if (!newName || !newName.trim()) return;
-        const trimmed = newName.trim();
-        if (trimmed === groupName) return;
-        if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
-            alert('Group name already exists.');
-            return;
-        }
+        const handleCreateGroup = async () => {
+            if (selectedIds.size === 0) return;
 
-        const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
-        await persistGroupMeta(nextMeta);
-        const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
-        await updateSalesAndSave(newSales);
-        setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
-    };
+            // Build a list of existing group names for suggestion/reference if needed, 
+            // but for now just a simple prompt as requested.
+            const name = prompt('Enter group name (to create new or move to existing):');
+            if (!name?.trim()) return;
 
-    const handleRenameGroup = async (groupName: string) => {
-        const newName = prompt('Rename group to:', groupName);
-        if (!newName || !newName.trim()) return;
-        await renameGroupWithName(groupName, newName);
-    };
+            await createGroupWithName(name, Array.from(selectedIds));
+        };
 
-    const handleArchiveGroup = async (groupName: string, archived: boolean) => {
-        const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, archived } : g);
-        await persistGroupMeta(nextMeta);
-        if (archived) {
-            setExpandedGroups(prev => prev.filter(g => g !== groupName));
-        } else {
+        const renameGroupWithName = async (groupName: string, newName: string) => {
+            if (!newName || !newName.trim()) return;
+            const trimmed = newName.trim();
+            if (trimmed === groupName) return;
+            if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+                alert('Group name already exists.');
+                return;
+            }
+
+            const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
+            await persistGroupMeta(nextMeta);
+            const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
+            await updateSalesAndSave(newSales);
+            setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
+        };
+
+        const handleRenameGroup = async (groupName: string) => {
+            const newName = prompt('Rename group to:', groupName);
+            if (!newName || !newName.trim()) return;
+            await renameGroupWithName(groupName, newName);
+        };
+
+        const handleArchiveGroup = async (groupName: string, archived: boolean) => {
+            const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, archived } : g);
+            await persistGroupMeta(nextMeta);
+            if (archived) {
+                setExpandedGroups(prev => prev.filter(g => g !== groupName));
+            } else {
+                setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
+            }
+        };
+
+        const moveGroup = async (groupName: string, direction: 'up' | 'down') => {
+            const ordered = [...groupMeta].sort((a, b) => a.order - b.order);
+            const active = ordered.filter(g => !g.archived);
+            const index = active.findIndex(g => g.name === groupName);
+            if (index === -1) return;
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= active.length) return;
+            const updatedActive = [...active];
+            [updatedActive[index], updatedActive[targetIndex]] = [updatedActive[targetIndex], updatedActive[index]];
+            const reorderedActive = updatedActive.map((g, idx) => ({ ...g, order: idx }));
+            const archived = ordered.filter(g => g.archived).map((g, idx) => ({ ...g, order: reorderedActive.length + idx }));
+            await persistGroupMeta([...reorderedActive, ...archived]);
+        };
+
+        const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
+            const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
+            await updateSalesAndSave(newSales);
+        };
+
+        const handleRemoveFromGroup = async (id: string) => {
+            const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
+            await updateSalesAndSave(newSales);
+        };
+
+        const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
+            if (saleIds.length === 0) return;
+            const saleIdSet = new Set(saleIds);
+            const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
+            await updateSalesAndSave(newSales);
             setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
-        }
-    };
+            setSelectedIds(new Set());
+        };
 
-    const moveGroup = async (groupName: string, direction: 'up' | 'down') => {
-        const ordered = [...groupMeta].sort((a, b) => a.order - b.order);
-        const active = ordered.filter(g => !g.archived);
-        const index = active.findIndex(g => g.name === groupName);
-        if (index === -1) return;
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= active.length) return;
-        const updatedActive = [...active];
-        [updatedActive[index], updatedActive[targetIndex]] = [updatedActive[targetIndex], updatedActive[index]];
-        const reorderedActive = updatedActive.map((g, idx) => ({ ...g, order: idx }));
-        const archived = ordered.filter(g => g.archived).map((g, idx) => ({ ...g, order: reorderedActive.length + idx }));
-        await persistGroupMeta([...reorderedActive, ...archived]);
-    };
+        const handleBulkCopy = () => {
+            const itemsToCopy = sales.filter(s => selectedIds.has(s.id));
+            localStorage.setItem('clipboard_sales', JSON.stringify(itemsToCopy));
+            alert(`${itemsToCopy.length} items copied to clipboard`);
+            setSelectedIds(new Set());
+        };
 
-    const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
-        const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
-        await updateSalesAndSave(newSales);
-    };
+        const handleBulkPaste = async () => {
+            const clipboard = localStorage.getItem('clipboard_sales');
+            if (!clipboard) return;
+            const itemsToPaste: CarSale[] = JSON.parse(clipboard);
+            const newItems = itemsToPaste.map(item => ({
+                ...item,
+                id: crypto.randomUUID(),
+                createdAt: new Date().toISOString(),
+                vin: `${item.vin} (Copy)`,
+                plateNumber: `${item.plateNumber} (Copy)`
+            }));
+            await updateSalesAndSave([...newItems, ...sales]);
+        };
 
-    const handleRemoveFromGroup = async (id: string) => {
-        const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
-        await updateSalesAndSave(newSales);
-    };
+        const handleLogout = async () => {
+            setUserProfile('');
+            await Preferences.remove({ key: 'user_profile' });
+            await Preferences.remove({ key: 'remember_profile' });
+            setRememberProfile(false);
+            setShowProfileMenu(false);
+        };
 
-    const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
-        if (saleIds.length === 0) return;
-        const saleIdSet = new Set(saleIds);
-        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
-        await updateSalesAndSave(newSales);
-        setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
-        setSelectedIds(new Set());
-    };
-
-    const handleBulkCopy = () => {
-        const itemsToCopy = sales.filter(s => selectedIds.has(s.id));
-        localStorage.setItem('clipboard_sales', JSON.stringify(itemsToCopy));
-        alert(`${itemsToCopy.length} items copied to clipboard`);
-        setSelectedIds(new Set());
-    };
-
-    const handleBulkPaste = async () => {
-        const clipboard = localStorage.getItem('clipboard_sales');
-        if (!clipboard) return;
-        const itemsToPaste: CarSale[] = JSON.parse(clipboard);
-        const newItems = itemsToPaste.map(item => ({
-            ...item,
-            id: crypto.randomUUID(),
-            createdAt: new Date().toISOString(),
-            vin: `${item.vin} (Copy)`,
-            plateNumber: `${item.plateNumber} (Copy)`
-        }));
-        await updateSalesAndSave([...newItems, ...sales]);
-    };
-
-    const handleLogout = async () => {
-        setUserProfile('');
-        await Preferences.remove({ key: 'user_profile' });
-        await Preferences.remove({ key: 'remember_profile' });
-        setRememberProfile(false);
-        setShowProfileMenu(false);
-    };
-
-    const handleAddProfile = async () => {
-        if (!isAdmin) {
-            alert(`Only ${ADMIN_PROFILE} can add users.`);
-            return;
-        }
-        const normalizedName = normalizeProfileName(newProfileName);
-        if (!normalizedName) return;
-        if (availableProfiles.includes(normalizedName)) {
-            alert('Profile already exists!');
-            return;
-        }
-        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-        setAvailableProfiles(updated);
-        setUserProfile(normalizedName);
-        setNewProfileName('');
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        await persistUserProfile(normalizedName);
-        syncProfilesToCloud(updated);
-    };
-
-    const quickAddProfile = async () => {
-        if (!isAdmin) {
-            alert(`Only ${ADMIN_PROFILE} can add users.`);
-            return;
-        }
-        const name = prompt("Enter new profile name:");
-        if (name && name.trim()) {
-            const normalizedName = normalizeProfileName(name);
+        const handleAddProfile = async () => {
+            if (!isAdmin) {
+                alert(`Only ${ADMIN_PROFILE} can add users.`);
+                return;
+            }
+            const normalizedName = normalizeProfileName(newProfileName);
             if (!normalizedName) return;
             if (availableProfiles.includes(normalizedName)) {
                 alert('Profile already exists!');
@@ -1397,1203 +1392,1368 @@ export default function Dashboard() {
             const updated = normalizeProfiles([...availableProfiles, normalizedName]);
             setAvailableProfiles(updated);
             setUserProfile(normalizedName);
+            setNewProfileName('');
             await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
             await persistUserProfile(normalizedName);
-            setShowProfileMenu(false);
             syncProfilesToCloud(updated);
-        }
-    };
-
-    const handleDeleteProfile = async (name: string) => {
-        const updated = availableProfiles.filter(p => p !== name);
-        const normalized = normalizeProfiles(updated);
-        setAvailableProfiles(normalized);
-        if (userProfile === name) setUserProfile('');
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
-        syncProfilesToCloud(normalized);
-    };
-
-    const handleEditProfile = async (oldName: string, newName: string) => {
-        const normalizedName = normalizeProfileName(newName);
-        if (!normalizedName || (normalizedName !== oldName && availableProfiles.includes(normalizedName))) return;
-        const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? normalizedName : p));
-        setAvailableProfiles(updated);
-        if (userProfile === oldName) {
-            setUserProfile(normalizedName);
-            await persistUserProfile(normalizedName);
-        }
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        syncProfilesToCloud(updated);
-    };
-
-
-
-    // Real-time Subscription
-    useEffect(() => {
-        if (!supabaseUrl || !supabaseKey || !userProfile) return;
-        const client = createSupabaseClient(supabaseUrl, supabaseKey);
-
-        console.log("Subscribing to realtime changes...");
-        const channel = client
-            .channel('public:sales')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
-                console.log('Realtime Change:', payload);
-                // Trigger auto-sync to pull latest data and merge
-                // We pass undefined for sales to force a fresh read from Persistence to avoid stale closure state
-                if (userProfile) performAutoSync(supabaseUrl, supabaseKey, userProfile);
-            })
-            .subscribe();
-
-        return () => {
-            client.removeChannel(channel);
         };
-    }, [supabaseUrl, supabaseKey, userProfile]);
-    useEffect(() => {
-        const initSettings = async () => {
-            // Hardcoded Credentials (as fallback/default)
-            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
-            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
 
-            try {
-                // Ensure Supabase URL/Key exist
-                let { value: url } = await Preferences.get({ key: 'supabase_url' });
-                let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
-
-                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
-                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
-
-                setSupabaseUrl(url);
-                setSupabaseKey(keyName);
-
-                if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
-                if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
-
-                const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
-                if (apiKeyVal) setApiKey(apiKeyVal);
-
-                const { value: rememberVal } = await Preferences.get({ key: 'remember_profile' });
-                const shouldRemember = rememberVal === 'true';
-                setRememberProfile(shouldRemember);
-
-                let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
-                const normalizedStoredProfile = normalizeProfileName(storedProfile);
-                if (normalizedStoredProfile && normalizedStoredProfile !== storedProfile) {
-                    storedProfile = normalizedStoredProfile;
-                    await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
+        const quickAddProfile = async () => {
+            if (!isAdmin) {
+                alert(`Only ${ADMIN_PROFILE} can add users.`);
+                return;
+            }
+            const name = prompt("Enter new profile name:");
+            if (name && name.trim()) {
+                const normalizedName = normalizeProfileName(name);
+                if (!normalizedName) return;
+                if (availableProfiles.includes(normalizedName)) {
+                    alert('Profile already exists!');
+                    return;
                 }
-                if (storedProfile && shouldRemember) {
-                    setUserProfile(storedProfile);
-                    setView('landing');
-                } else if (storedProfile && !shouldRemember) {
-                    await Preferences.remove({ key: 'user_profile' });
-                }
+                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+                setAvailableProfiles(updated);
+                setUserProfile(normalizedName);
+                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                await persistUserProfile(normalizedName);
+                setShowProfileMenu(false);
+                syncProfilesToCloud(updated);
+            }
+        };
 
-                let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
-                if (profiles) {
-                    const loaded = normalizeProfiles(JSON.parse(profiles));
-                    setAvailableProfiles(loaded);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
-                    syncProfilesToCloud(loaded);
-                } else {
-                    const defaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
-                    setAvailableProfiles(defaults);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
-                    // Also sync to cloud on first run
-                    syncProfilesToCloud(defaults);
-                }
+        const handleDeleteProfile = async (name: string) => {
+            const updated = availableProfiles.filter(p => p !== name);
+            const normalized = normalizeProfiles(updated);
+            setAvailableProfiles(normalized);
+            if (userProfile === name) setUserProfile('');
+            await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
+            syncProfilesToCloud(normalized);
+        };
 
-                const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
-                if (groupMetaValue) {
-                    const parsed = JSON.parse(groupMetaValue) as GroupMeta[];
-                    setGroupMeta(parsed);
-                } else {
-                    const stored = localStorage.getItem('sale_group_meta');
-                    if (stored) {
-                        setGroupMeta(JSON.parse(stored));
+        const handleEditProfile = async (oldName: string, newName: string) => {
+            const normalizedName = normalizeProfileName(newName);
+            if (!normalizedName || (normalizedName !== oldName && availableProfiles.includes(normalizedName))) return;
+            const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? normalizedName : p));
+            setAvailableProfiles(updated);
+            if (userProfile === oldName) {
+                setUserProfile(normalizedName);
+                await persistUserProfile(normalizedName);
+            }
+            await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+            syncProfilesToCloud(updated);
+        };
+
+
+
+        // Real-time Subscription
+        useEffect(() => {
+            if (!supabaseUrl || !supabaseKey || !userProfile) return;
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+
+            console.log("Subscribing to realtime changes...");
+            const channel = client
+                .channel('public:sales')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
+                    console.log('Realtime Change:', payload);
+                    // Trigger auto-sync to pull latest data and merge
+                    // We pass undefined for sales to force a fresh read from Persistence to avoid stale closure state
+                    if (userProfile) performAutoSync(supabaseUrl, supabaseKey, userProfile);
+                })
+                .subscribe();
+
+            return () => {
+                client.removeChannel(channel);
+            };
+        }, [supabaseUrl, supabaseKey, userProfile]);
+        useEffect(() => {
+            const initSettings = async () => {
+                // Hardcoded Credentials (as fallback/default)
+                const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
+                const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
+
+                try {
+                    // Ensure Supabase URL/Key exist
+                    let { value: url } = await Preferences.get({ key: 'supabase_url' });
+                    let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
+
+                    if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
+                    if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
+
+                    setSupabaseUrl(url);
+                    setSupabaseKey(keyName);
+
+                    if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
+                    if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
+
+                    const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
+                    if (apiKeyVal) setApiKey(apiKeyVal);
+
+                    const { value: rememberVal } = await Preferences.get({ key: 'remember_profile' });
+                    const shouldRemember = rememberVal === 'true';
+                    setRememberProfile(shouldRemember);
+
+                    let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
+                    const normalizedStoredProfile = normalizeProfileName(storedProfile);
+                    if (normalizedStoredProfile && normalizedStoredProfile !== storedProfile) {
+                        storedProfile = normalizedStoredProfile;
+                        await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
                     }
-                }
-            } catch (e) {
-                console.error("Initialization Failed:", e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        initSettings();
-    }, []);
-
-    useEffect(() => {
-        const loadSales = async () => {
-            try {
-                // 1. Load Local Data First for Immediate Display
-                let currentSales = INITIAL_SALES;
-                const { value } = await Preferences.get({ key: 'car_sales_data' });
-                if (value) {
-                    currentSales = JSON.parse(value);
-                } else {
-                    const saved = localStorage.getItem('car_sales_data');
-                }
-
-                // Just load the saved data - no auto-import
-                const normalizedSales = currentSales.map(normalizeSaleProfiles);
-                const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
-                if (hasAdminOwnership) {
-                    currentSales.forEach((sale: CarSale) => {
-                        if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
-                            dirtyIds.current.add(sale.id);
-                        }
-                    });
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
-                }
-                setSales(normalizedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
-
-                // 2. Fetch/Sync with Supabase (Background)
-                const { value: key } = await Preferences.get({ key: 'openai_api_key' });
-                const { value: sbUrl } = await Preferences.get({ key: 'supabase_url' });
-                const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
-                const { value: profile } = await Preferences.get({ key: 'user_profile' });
-
-                if (key && sbUrl && sbKey && profile) {
-                    performAutoSync(sbUrl, sbKey, profile, currentSales);
-                }
-            } catch (e) {
-                console.error("Load failed", e);
-            }
-        };
-
-        const initApp = async () => {
-            await loadSales();
-        };
-        initApp();
-
-        // Auto-sync on focus
-        const onFocus = async () => {
-            // Prevent sync if user is editing
-            if (isFormOpenRef.current) return;
-
-            const { value: url } = await Preferences.get({ key: 'supabase_url' });
-            const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
-            const { value: prof } = await Preferences.get({ key: 'user_profile' });
-            if (url && sbKey && prof) {
-                console.log("App focused, syncing...", url);
-                const { value: s } = await Preferences.get({ key: 'car_sales_data' });
-                const latestSales = s ? JSON.parse(s) : [];
-                performAutoSync(url, sbKey, prof, latestSales);
-            }
-        };
-        window.addEventListener('focus', onFocus);
-        return () => window.removeEventListener('focus', onFocus);
-    }, []);
-
-    useEffect(() => {
-        if (!userProfile || !supabaseUrl || !supabaseKey) return;
-        const syncOnLogin = async () => {
-            const { value } = await Preferences.get({ key: 'car_sales_data' });
-            const localSales = value ? JSON.parse(value) : salesRef.current;
-            performAutoSync(supabaseUrl, supabaseKey, userProfile, localSales);
-        };
-        syncOnLogin();
-    }, [userProfile, supabaseUrl, supabaseKey]);
-
-    const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
-        setIsSyncing(true);
-        setSyncError(''); // Clear previous errors
-        console.log("Starting AutoSync to:", url);
-
-        try {
-            let localSalesToSync = currentLocalSales;
-            if (!localSalesToSync) {
-                const { value } = await Preferences.get({ key: 'car_sales_data' });
-                localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
-            }
-            if (!localSalesToSync) localSalesToSync = [];
-
-            const client = createSupabaseClient(url.trim(), key.trim());
-
-            // 1. Identify Dirty Items to Push
-            const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
-            if (localSalesToSync.length > 0 && dirtyIds.current.size === 0) {
-                console.log("No local changes to push (Clean Sync)");
-            }
-
-            // 2. Sync (Upsert Dirty -> Fetch All)
-            const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim());
-
-            // 3. Clear Dirty IDs on success
-            if (salesRes.success) {
-                const failedIds = new Set(salesRes.failedIds || []);
-                dirtyItems.forEach(s => {
-                    if (!failedIds.has(s.id)) {
-                        dirtyIds.current.delete(s.id);
+                    if (storedProfile && shouldRemember) {
+                        setUserProfile(storedProfile);
+                        setView('landing');
+                    } else if (storedProfile && !shouldRemember) {
+                        await Preferences.remove({ key: 'user_profile' });
                     }
-                });
-            }
-            if (salesRes.success) {
-                console.log("Sales Sync Success - content synced");
-                if (salesRes.data) {
-                    // Aggressive Deduplication: Filter by ID, VIN, and Plate Number
-                    const seenIds = new Set<string>();
-                    const seenVins = new Set<string>();
-                    const seenPlates = new Set<string>();
 
-                    const uniqueSales = salesRes.data.filter((s: CarSale) => {
-                        // 1. Check ID
-                        if (seenIds.has(s.id)) return false;
+                    let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
+                    if (profiles) {
+                        const loaded = normalizeProfiles(JSON.parse(profiles));
+                        setAvailableProfiles(loaded);
+                        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
+                        syncProfilesToCloud(loaded);
+                    } else {
+                        const defaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                        setAvailableProfiles(defaults);
+                        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
+                        // Also sync to cloud on first run
+                        syncProfilesToCloud(defaults);
+                    }
 
-                        // 2. Check VIN (if present and valid length > 5 to avoid short garbage)
-                        if (s.vin && s.vin.trim().length > 5) {
-                            const normalizedVin = s.vin.trim().toUpperCase();
-                            if (seenVins.has(normalizedVin)) return false;
-                            seenVins.add(normalizedVin);
+                    const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
+                    if (groupMetaValue) {
+                        const parsed = JSON.parse(groupMetaValue) as GroupMeta[];
+                        setGroupMeta(parsed);
+                    } else {
+                        const stored = localStorage.getItem('sale_group_meta');
+                        if (stored) {
+                            setGroupMeta(JSON.parse(stored));
                         }
+                    }
+                } catch (e) {
+                    console.error("Initialization Failed:", e);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            initSettings();
+        }, []);
 
-                        // 3. Check Plate (if present)
-                        if (s.plateNumber && s.plateNumber.trim().length > 3) {
-                            const normalizedPlate = s.plateNumber.trim().toUpperCase().replace(/\s+/g, '');
-                            if (seenPlates.has(normalizedPlate)) return false;
-                            seenPlates.add(normalizedPlate);
-                        }
+        useEffect(() => {
+            const loadSales = async () => {
+                try {
+                    // 1. Load Local Data First for Immediate Display
+                    let currentSales = INITIAL_SALES;
+                    const { value } = await Preferences.get({ key: 'car_sales_data' });
+                    if (value) {
+                        currentSales = JSON.parse(value);
+                    } else {
+                        const saved = localStorage.getItem('car_sales_data');
+                    }
 
-                        seenIds.add(s.id);
-                        return true;
-                    });
-
-                    const normalizedSales = uniqueSales.map(normalizeSaleProfiles);
-                    const hasAdminOwnership = uniqueSales.some(sale => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
+                    // Just load the saved data - no auto-import
+                    const normalizedSales = currentSales.map(normalizeSaleProfiles);
+                    const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
                     if (hasAdminOwnership) {
-                        uniqueSales.forEach(sale => {
+                        currentSales.forEach((sale: CarSale) => {
                             if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                                 dirtyIds.current.add(sale.id);
                             }
                         });
+                        await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
+                        localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
                     }
-                    setSales(normalizedSales);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
-                }
-            } else if (salesRes.error) {
-                console.error("Sales Sync Failed:", salesRes.error);
-                setSyncError(`Sales Sync Failed: ${salesRes.error} `);
-            }
-            if (salesRes.success && salesRes.error) {
-                console.warn("Sales Sync Partial Failure:", salesRes.error);
-                setSyncError(`Sales Sync Warning: ${salesRes.error} `);
-            }
+                    setSales(normalizedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
-            // Sync Transactions
-            const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
-            let localTxs = [];
-            try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
+                    // 2. Fetch/Sync with Supabase (Background)
+                    const { value: key } = await Preferences.get({ key: 'openai_api_key' });
+                    const { value: sbUrl } = await Preferences.get({ key: 'supabase_url' });
+                    const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
+                    const { value: profile } = await Preferences.get({ key: 'user_profile' });
 
-            const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim());
-            if (txRes.success && txRes.data) {
-                console.log("TX Sync Success:", txRes.data.length);
-                setTransactions(txRes.data);
-                await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
-            } else if (txRes.error) {
-                console.error("TX Sync Failed:", txRes.error);
-                setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
-            }
-
-        } catch (e: any) {
-            console.error("Auto Sync Exception", e);
-            setSyncError(`Sync Exception: ${e.message} `);
-        }
-        finally { setIsSyncing(false); }
-    };
-
-    const handleAddSale = async (sale: CarSale): Promise<{ success: boolean; error?: string }> => {
-        if (!sale.id) {
-            console.error("Attempted to save sale without ID");
-            return { success: false, error: 'Missing sale ID.' };
-        }
-        setIsSyncing(true);
-        dirtyIds.current.add(sale.id);
-
-        try {
-            const currentSales = salesRef.current;
-            const index = currentSales.findIndex(s => s.id === sale.id);
-            let newSales;
-
-            if (index >= 0) {
-                // UPDATE
-                const currentSoldBy = currentSales[index].soldBy;
-                newSales = [...currentSales];
-                newSales[index] = { ...sale, soldBy: resolveSoldBy(sale, currentSoldBy) };
-            } else {
-                // CREATE
-                newSales = [...currentSales, { ...sale, soldBy: resolveSoldBy(sale, userProfile || 'Unknown') }];
-            }
-
-            await updateSalesAndSave(newSales);
-            const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
-            closeSaleForm(nextView);
-            return { success: true };
-        } catch (e) {
-            console.error("Save Error", e);
-            return { success: false, error: 'Error saving sale. Data is saved locally but might not be synced.' };
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    const saveSettings = async () => {
-        await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
-        await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
-        await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
-        await persistUserProfile((userProfile || '').trim());
-        alert('Settings Saved!');
-    };
-
-    const handleDelete = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
-    };
-
-    const handleDeleteAll = async () => {
-        if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
-            if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
-                // Delete from Supabase immediately
-                if (supabaseUrl && supabaseKey) {
-                    try {
-                        const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                        // Delete all records
-                        const { data: allSales } = await client.from('sales').select('id');
-                        if (allSales && allSales.length > 0) {
-                            for (const sale of allSales) {
-                                await client.from('sales').delete().eq('id', sale.id);
-                            }
-                            console.log("Deleted all from Supabase:", allSales.length, "records");
-                        }
-                    } catch (e) {
-                        console.error("Supabase delete all error:", e);
+                    if (key && sbUrl && sbKey && profile) {
+                        performAutoSync(sbUrl, sbKey, profile, currentSales);
                     }
-                }
-
-                // Delete locally
-                updateSalesAndSave([]);
-                try {
-                    await Preferences.remove({ key: 'car_sales_data' });
-                    localStorage.removeItem('car_sales_data');
-                    alert('All data has been deleted from local and database.');
-                } catch (e) { console.error('Error clearing data', e); }
-            }
-        }
-    };
-
-    const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false) => {
-        e.stopPropagation();
-        setDocumentPreview({ sale, type: 'invoice', withDogane });
-    };
-
-    const handleFullBackup = async () => {
-        const backupData = {
-            version: 1,
-            timestamp: new Date().toISOString(),
-            type: 'full_backup',
-            sales,
-            transactions,
-            settings: {
-                apiKey,
-                supabaseUrl,
-                supabaseKey,
-                userProfile
-            }
-        };
-        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `rg_backup_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const handleImport = async () => {
-        try {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json, .xlsx';
-            input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                    setImportStatus('Reading file...');
-                    await new Promise(r => setTimeout(r, 100));
-
-                    if (file.name.endsWith('.json')) {
-                        const text = await file.text();
-                        try {
-                            const data = JSON.parse(text);
-
-                            // Check for Full Backup Structure
-                            if (data.type === 'full_backup' && data.sales) {
-                                if (confirm('Restoring Full Backup! This will OVERWRITE current data. Continue?')) {
-                                    // 1. Restore Operations
-                                    await updateSalesAndSave(data.sales || []);
-                                    await saveTransactions(data.transactions || []);
-
-                                    // 2. Restore Settings
-                                    if (data.settings) {
-                                        if (data.settings.apiKey) { setApiKey(data.settings.apiKey); await Preferences.set({ key: 'openai_api_key', value: data.settings.apiKey }); }
-                                        if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
-                                        if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
-                                        if (data.settings.userProfile) {
-                                            const normalizedProfile = normalizeProfileName(data.settings.userProfile);
-                                            setUserProfile(normalizedProfile);
-                                            await persistUserProfile(normalizedProfile);
-                                        }
-                                    }
-
-                                    setImportStatus('Full Backup Restored Successfully!');
-                                    setTimeout(() => window.location.reload(), 1500); // Reload to apply settings fresh
-                                }
-                                return;
-                            }
-
-                            // Fallback to legacy JSON array import
-                            if (Array.isArray(data)) {
-                                // Assume it's just sales list
-                                if (confirm(`Import ${data.length} sales ? `)) {
-                                    await updateSalesAndSave([...data, ...sales]); // Merge
-                                    setImportStatus('Imported JSON successfully');
-                                }
-                            }
-                        } catch (e) {
-                            console.error(e);
-                            setImportStatus('Invalid JSON File');
-                        }
-                        return;
-                    }
-
-                    if (file.name.endsWith('.xlsx')) {
-                        try {
-                            const XLSX = await import('xlsx');
-                            const arrayBuffer = await file.arrayBuffer();
-                            const workbook = XLSX.read(arrayBuffer);
-                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(sheet);
-                            setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
-
-                            // Helper for standard mapping
-                            const mapStandardImport = (data: any[]) => {
-                                const findVal = (row: any, keys: string[]) => {
-                                    const rowKeys = Object.keys(row);
-                                    for (const key of keys) {
-                                        if (row[key] !== undefined) return row[key];
-                                        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-                                        const foundKey = rowKeys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanKey));
-                                        if (foundKey && row[foundKey] !== undefined) return row[foundKey];
-                                    }
-                                    return undefined;
-                                };
-                                const parseNum = (val: any) => {
-                                    if (typeof val === 'number') return val;
-                                    if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
-                                    return 0;
-                                };
-                                const parseDate = (val: any) => {
-                                    if (!val) return undefined;
-                                    if (val instanceof Date) return val.toISOString().split('T')[0];
-                                    if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000)).toISOString().split('T')[0];
-                                    return String(val);
-                                };
-
-                                return data.map((row: any) => ({
-                                    id: findVal(row, ['id', 'ID', 'uuid']) || crypto.randomUUID(),
-                                    brand: findVal(row, ['brand', 'item', 'make', 'car model']) || 'Unknown',
-                                    model: findVal(row, ['model', 'car model', 'type']) || 'Unknown',
-                                    year: parseInt(findVal(row, ['year', 'yr']) || new Date().getFullYear()),
-                                    km: parseNum(findVal(row, ['km', 'mileage', 'odometer', 'kilometers'])),
-                                    vin: findVal(row, ['vin', 'vin number', 'chassis']) || 'N/A',
-                                    costToBuy: parseNum(findVal(row, ['costToBuy', 'cost', 'buyPrice', 'purchasePrice'])),
-                                    soldPrice: parseNum(findVal(row, ['soldPrice', 'sold', 'salePrice'])),
-                                    amountPaidCash: parseNum(findVal(row, ['amountPaidCash', 'cash', 'paid-cash'])),
-                                    amountPaidBank: parseNum(findVal(row, ['amountPaidBank', 'bank', 'paid-check', 'paid check'])),
-                                    deposit: parseNum(findVal(row, ['deposit', 'downPayment'])),
-                                    servicesCost: parseNum(findVal(row, ['services', 'serviceCost'])),
-                                    tax: parseNum(findVal(row, ['tax', 'taxes', 'vat', 'faturat'])),
-                                    color: findVal(row, ['color', 'paint']),
-                                    buyerName: findVal(row, ['buyerName', 'buyer name', 'client']),
-                                    sellerName: findVal(row, ['sellerName', 'seller name', 'seller']),
-                                    shippingName: findVal(row, ['shippingName', 'ship name', 'shipper']),
-                                    shippingDate: parseDate(findVal(row, ['shippingDate', 'ship date', 'date'])),
-                                    plateNumber: findVal(row, ['plateNumber', 'plate', 'registration']),
-                                    status: findVal(row, ['status', 'state']) || 'In Progress',
-                                    paymentMethod: findVal(row, ['paymentMethod', 'method']),
-                                    paidDateToKorea: parseDate(findVal(row, ['paidDateToKorea', 'paidKorea', 'date to korea'])),
-                                    paidDateFromClient: parseDate(findVal(row, ['paidDateFromClient', 'paidClient', 'date from client', 'paid date'])),
-                                    invoiceId: findVal(row, ['invoiceId', 'invoice']),
-                                    createdAt: new Date().toISOString()
-                                })) as CarSale[];
-                            };
-
-                            let importedSales = mapStandardImport(jsonData);
-                            if (apiKey && confirm('Use OpenAI for enhanced import?')) {
-                                try {
-                                    setImportStatus('AI Analysis...');
-                                    importedSales = await processImportedData(apiKey, jsonData, setImportStatus);
-                                } catch (e) { importedSales = mapStandardImport(jsonData); }
-                            }
-                            updateSalesAndSave([...sales, ...importedSales]);
-                            setImportStatus('');
-
-                        } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
-                    }
+                } catch (e) {
+                    console.error("Load failed", e);
                 }
             };
-            input.click();
-        } catch (e) { console.error(e); }
-    };
 
-    const deferredSearchTerm = useDeferredValue(searchTerm);
+            const initApp = async () => {
+                await loadSales();
+            };
+            initApp();
 
-    const filteredSales = React.useMemo(() => sales.filter(s => {
-        // Filter out system config rows
-        if (s.id === 'config_profile_avatars') return false;
+            // Auto-sync on focus
+            const onFocus = async () => {
+                // Prevent sync if user is editing
+                if (isFormOpenRef.current) return;
 
-        // Restrict visibility for non-admin users to their own sales
-        if (!isAdmin && s.soldBy !== userProfile) return false;
+                const { value: url } = await Preferences.get({ key: 'supabase_url' });
+                const { value: sbKey } = await Preferences.get({ key: 'supabase_key' });
+                const { value: prof } = await Preferences.get({ key: 'user_profile' });
+                if (url && sbKey && prof) {
+                    console.log("App focused, syncing...", url);
+                    const { value: s } = await Preferences.get({ key: 'car_sales_data' });
+                    const latestSales = s ? JSON.parse(s) : [];
+                    performAutoSync(url, sbKey, prof, latestSales);
+                }
+            };
+            window.addEventListener('focus', onFocus);
+            return () => window.removeEventListener('focus', onFocus);
+        }, []);
 
+        useEffect(() => {
+            if (!userProfile || !supabaseUrl || !supabaseKey) return;
+            const syncOnLogin = async () => {
+                const { value } = await Preferences.get({ key: 'car_sales_data' });
+                const localSales = value ? JSON.parse(value) : salesRef.current;
+                performAutoSync(supabaseUrl, supabaseKey, userProfile, localSales);
+            };
+            syncOnLogin();
+        }, [userProfile, supabaseUrl, supabaseKey]);
 
-        // Category Filter
-        if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
-        if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
-        if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
-        if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+        const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
+            setIsSyncing(true);
+            setSyncError(''); // Clear previous errors
+            console.log("Starting AutoSync to:", url);
 
-        const term = deferredSearchTerm.toLowerCase().trim();
-        if (!term) return true;
-        return JSON.stringify(s).toLowerCase().includes(term);
-    }).sort((a, b) => {
-        // Apply sorting
-        let aVal: any = '';
-        let bVal: any = '';
+            try {
+                let localSalesToSync = currentLocalSales;
+                if (!localSalesToSync) {
+                    const { value } = await Preferences.get({ key: 'car_sales_data' });
+                    localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
+                }
+                if (!localSalesToSync) localSalesToSync = [];
 
-        if (sortBy === 'koreaBalance') {
-            aVal = (a.costToBuy || 0) - (a.amountPaidToKorea || 0);
-            bVal = (b.costToBuy || 0) - (b.amountPaidToKorea || 0);
-        } else if (sortBy === 'dueBalance') {
-            aVal = calculateBalance(a);
-            bVal = calculateBalance(b);
-        } else if (sortBy === 'nameAlphabetic') {
-            aVal = ((a.brand || '') + ' ' + (a.model || '')).trim();
-            bVal = ((b.brand || '') + ' ' + (b.model || '')).trim();
-        } else {
-            aVal = a[sortBy as keyof CarSale];
-            bVal = b[sortBy as keyof CarSale];
-        }
+                const client = createSupabaseClient(url.trim(), key.trim());
 
-        // Handle undefined/null (treat as 0 for numbers, empty for strings)
-        if (aVal === undefined || aVal === null) aVal = typeof aVal === 'number' ? 0 : '';
-        if (bVal === undefined || bVal === null) bVal = typeof bVal === 'number' ? 0 : '';
+                // 1. Identify Dirty Items to Push
+                const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
+                if (localSalesToSync.length > 0 && dirtyIds.current.size === 0) {
+                    console.log("No local changes to push (Clean Sync)");
+                }
 
-        // Handle string sorting
-        if (typeof aVal === 'string' && typeof bVal === 'string') {
-            return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        }
-        // Handle number sorting
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-        }
-        return 0;
-    }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir]);
-    const selectedInvoices = React.useMemo(
-        () => filteredSales.filter(sale => selectedIds.has(sale.id)),
-        [filteredSales, selectedIds]
-    );
+                // 2. Sync (Upsert Dirty -> Fetch All)
+                const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim());
 
-    // Toggle sort column
-    const toggleSort = (column: string) => {
-        if (sortBy === column) {
-            setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortBy(column);
-            setSortDir(column === 'year' || column === 'createdAt' ? 'desc' : 'asc'); // Newest first for year/date
-        }
-    };
+                // 3. Clear Dirty IDs on success
+                if (salesRes.success) {
+                    const failedIds = new Set(salesRes.failedIds || []);
+                    dirtyItems.forEach(s => {
+                        if (!failedIds.has(s.id)) {
+                            dirtyIds.current.delete(s.id);
+                        }
+                    });
+                }
+                if (salesRes.success) {
+                    console.log("Sales Sync Success - content synced");
+                    if (salesRes.data) {
+                        // Aggressive Deduplication: Filter by ID, VIN, and Plate Number
+                        const seenIds = new Set<string>();
+                        const seenVins = new Set<string>();
+                        const seenPlates = new Set<string>();
 
-    const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
-    const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
-    const totalPaid = filteredSales.reduce((acc, s) => acc + ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)), 0);
-    const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
-    const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
-    const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
-    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+                        const uniqueSales = salesRes.data.filter((s: CarSale) => {
+                            // 1. Check ID
+                            if (seenIds.has(s.id)) return false;
 
-    const groupedSales = React.useMemo(() => {
-        const groups: Record<string, CarSale[]> = {};
-        filteredSales.forEach(s => {
-            const groupKey = s.group?.trim() || 'Ungrouped';
-            if (!groups[groupKey]) groups[groupKey] = [];
-            groups[groupKey].push(s);
-        });
-        return groups;
-    }, [filteredSales]);
+                            // 2. Check VIN (if present and valid length > 5 to avoid short garbage)
+                            if (s.vin && s.vin.trim().length > 5) {
+                                const normalizedVin = s.vin.trim().toUpperCase();
+                                if (seenVins.has(normalizedVin)) return false;
+                                seenVins.add(normalizedVin);
+                            }
 
-    useEffect(() => {
-        if (sales.length === 0) return;
-        const groupNames = new Set(sales.map(s => s.group).filter(Boolean) as string[]);
-        if (groupNames.size === 0) return;
-        const missing = Array.from(groupNames).filter(name => !groupMeta.some(g => g.name === name));
-        if (missing.length === 0) return;
-        const nextMeta = [...groupMeta];
-        missing.forEach(name => {
-            nextMeta.push({ name, order: nextMeta.length, archived: false });
-        });
-        persistGroupMeta(nextMeta);
-    }, [sales, groupMeta]);
+                            // 3. Check Plate (if present)
+                            if (s.plateNumber && s.plateNumber.trim().length > 3) {
+                                const normalizedPlate = s.plateNumber.trim().toUpperCase().replace(/\s+/g, '');
+                                if (seenPlates.has(normalizedPlate)) return false;
+                                seenPlates.add(normalizedPlate);
+                            }
 
-    const orderedGroupMeta = useMemo(() => {
-        return [...groupMeta].sort((a, b) => a.order - b.order);
-    }, [groupMeta]);
+                            seenIds.add(s.id);
+                            return true;
+                        });
 
-    const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
-    const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
+                        const normalizedSales = uniqueSales.map(normalizeSaleProfiles);
+                        const hasAdminOwnership = uniqueSales.some(sale => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
+                        if (hasAdminOwnership) {
+                            uniqueSales.forEach(sale => {
+                                if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
+                                    dirtyIds.current.add(sale.id);
+                                }
+                            });
+                        }
+                        setSales(normalizedSales);
+                        await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
+                        localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+                    }
+                } else if (salesRes.error) {
+                    console.error("Sales Sync Failed:", salesRes.error);
+                    setSyncError(`Sales Sync Failed: ${salesRes.error} `);
+                }
+                if (salesRes.success && salesRes.error) {
+                    console.warn("Sales Sync Partial Failure:", salesRes.error);
+                    setSyncError(`Sales Sync Warning: ${salesRes.error} `);
+                }
 
-    useEffect(() => {
-        if (hasInitializedGroups.current) return;
-        const initialGroups = activeGroups.map(g => g.name);
-        if (groupedSales.Ungrouped?.length) {
-            initialGroups.push('Ungrouped');
-        }
-        if (initialGroups.length > 0) {
-            setExpandedGroups(initialGroups);
-            hasInitializedGroups.current = true;
-        }
-    }, [activeGroups, groupedSales.Ungrouped?.length]);
+                // Sync Transactions
+                const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
+                let localTxs = [];
+                try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
 
+                const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim());
+                if (txRes.success && txRes.data) {
+                    console.log("TX Sync Success:", txRes.data.length);
+                    setTransactions(txRes.data);
+                    await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
+                } else if (txRes.error) {
+                    console.error("TX Sync Failed:", txRes.error);
+                    setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
+                }
 
+            } catch (e: any) {
+                console.error("Auto Sync Exception", e);
+                setSyncError(`Sync Exception: ${e.message} `);
+            }
+            finally { setIsSyncing(false); }
+        };
 
-    if (isLoading) {
-        return (
-            <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
-                <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
-                <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
-            </div>
-        );
-    }
+        const handleAddSale = async (sale: CarSale): Promise<{ success: boolean; error?: string }> => {
+            if (!sale.id) {
+                console.error("Attempted to save sale without ID");
+                return { success: false, error: 'Missing sale ID.' };
+            }
+            setIsSyncing(true);
+            dirtyIds.current.add(sale.id);
 
-    if (!userProfile) {
-        return <ProfileSelector
-            profiles={availableProfiles}
-            onSelect={(p, remember) => {
-                const normalizedProfile = normalizeProfileName(p);
-                if (!normalizedProfile) return;
-                setUserProfile(normalizedProfile);
-                setView('landing');
-                setRememberProfile(remember);
-                persistUserProfile(normalizedProfile, remember);
-            }}
-            onAdd={(name, remember) => {
-                const normalizedName = normalizeProfileName(name);
-                if (!normalizedName) return;
-                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-                setAvailableProfiles(updated);
-                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-                setUserProfile(normalizedName);
-                setRememberProfile(remember);
-                persistUserProfile(normalizedName, remember);
-                syncProfilesToCloud(updated);
-            }}
-            onDelete={handleDeleteProfile}
-            onEdit={handleEditProfile}
-            avatars={profileAvatars}
-            onEditAvatar={handleEditAvatar}
-            rememberDefault={rememberProfile}
-        />;
-    }
+            try {
+                const currentSales = salesRef.current;
+                const index = currentSales.findIndex(s => s.id === sale.id);
+                let newSales;
 
-    if (view === 'landing') {
-        return (
-            <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
+                if (index >= 0) {
+                    // UPDATE
+                    const currentSoldBy = currentSales[index].soldBy;
+                    newSales = [...currentSales];
+                    newSales[index] = { ...sale, soldBy: resolveSoldBy(sale, currentSoldBy) };
+                } else {
+                    // CREATE
+                    newSales = [...currentSales, { ...sale, soldBy: resolveSoldBy(sale, userProfile || 'Unknown') }];
+                }
 
-                <div className="z-10 text-center mb-8">
-                    <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
-                    <p className="text-slate-500 text-lg">Select an operation to proceed</p>
-                </div>
+                await updateSalesAndSave(newSales);
+                const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
+                closeSaleForm(nextView);
+                return { success: true };
+            } catch (e) {
+                console.error("Save Error", e);
+                return { success: false, error: 'Error saving sale. Data is saved locally but might not be synced.' };
+            } finally {
+                setIsSyncing(false);
+            }
+        };
 
-                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
-                    <button
-                        id="btn-add-sale"
-                        onClick={() => openSaleForm(null, 'landing')}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
-                            <Plus className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
-                            <div className="text-slate-500">Record a new vehicle sale</div>
-                        </div>
-                    </button>
+        const saveSettings = async () => {
+            await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
+            await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
+            await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
+            await persistUserProfile((userProfile || '').trim());
+            alert('Settings Saved!');
+        };
 
-                    <button
-                        id="btn-view-sales"
-                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
-                            <Clipboard className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
-                            <div className="text-slate-500">Access dashboard & history</div>
-                        </div>
-                    </button>
-                </div>
+        const handleDelete = (id: string, e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
+        };
 
-                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
-                    <LogOut className="w-4 h-4" /> Switch Profile
-                </button>
-            </div>
-        );
-    }
+        const handleDeleteAll = async () => {
+            if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
+                if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
+                    // Delete from Supabase immediately
+                    if (supabaseUrl && supabaseKey) {
+                        try {
+                            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                            // Delete all records
+                            const { data: allSales } = await client.from('sales').select('id');
+                            if (allSales && allSales.length > 0) {
+                                for (const sale of allSales) {
+                                    await client.from('sales').delete().eq('id', sale.id);
+                                }
+                                console.log("Deleted all from Supabase:", allSales.length, "records");
+                            }
+                        } catch (e) {
+                            console.error("Supabase delete all error:", e);
+                        }
+                    }
 
-    const navItems = [
-        { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
-        { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
-        { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
-        { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
-        { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
-    ] as const;
+                    // Delete locally
+                    updateSalesAndSave([]);
+                    try {
+                        await Preferences.remove({ key: 'car_sales_data' });
+                        localStorage.removeItem('car_sales_data');
+                        alert('All data has been deleted from local and database.');
+                    } catch (e) { console.error('Error clearing data', e); }
+                }
+            }
+        };
 
-    const currentNavId = useMemo(() => {
-        if (view === 'settings') return 'SETTINGS';
-        if (view === 'invoices') return 'INVOICES';
-        return activeCategory as string;
-    }, [view, activeCategory]);
+        const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false) => {
+            e.stopPropagation();
+            setDocumentPreview({ sale, type: 'invoice', withDogane });
+        };
 
-    const SidebarContent = () => (
-        <div className="flex flex-col h-full bg-slate-900 text-slate-400">
-            <div className="p-6 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-200 p-[2px] shadow-lg">
-                    <img src="/logo_new.jpg" alt="Logo" className="w-full h-full rounded-lg object-cover" />
-                </div>
-                <span className="text-xl font-bold text-white tracking-tight">KORAUTO</span>
-            </div>
+        const handleFullBackup = async () => {
+            const backupData = {
+                version: 1,
+                timestamp: new Date().toISOString(),
+                type: 'full_backup',
+                sales,
+                transactions,
+                settings: {
+                    apiKey,
+                    supabaseUrl,
+                    supabaseKey,
+                    userProfile
+                }
+            };
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rg_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
 
-            <nav className="flex-1 px-4 space-y-1 mt-4">
-                {navItems.map((item) => {
-                    if (item.adminOnly && !isAdmin) return null;
-                    const isActive = currentNavId === item.id;
-                    return (
-                        <button
-                            key={item.id}
-                            onClick={() => {
-                                setView(item.view);
-                                if (item.category) setActiveCategory(item.category as any);
-                                setIsMobileMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                : 'hover:bg-slate-800 hover:text-white'
-                                }`}
-                        >
-                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
-                            {item.label}
-                        </button>
-                    );
-                })}
-            </nav>
+        const handleImport = async () => {
+            try {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json, .xlsx';
+                input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                        setImportStatus('Reading file...');
+                        await new Promise(r => setTimeout(r, 100));
 
-            <div className="p-4 mt-auto border-t border-slate-800">
-                <button
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
-                >
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
-                        {userProfile ? userProfile[0].toUpperCase() : 'U'}
-                    </div>
-                    <div className="flex-1 text-left overflow-hidden">
-                        <div className="text-sm font-bold text-white truncate">{userProfile}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
-                    </div>
-                    <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
-                </button>
+                        if (file.name.endsWith('.json')) {
+                            const text = await file.text();
+                            try {
+                                const data = JSON.parse(text);
 
-                {showProfileMenu && (
-                    <div className="absolute bottom-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-bottom-2">
-                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
-                        <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
-                            {availableProfiles.map(p => (
-                                <button key={p} onClick={() => {
-                                    if (p === ADMIN_PROFILE && userProfile !== p) {
-                                        setPendingProfile(p);
-                                        setPasswordInput('');
-                                        setIsPasswordVisible(false);
-                                        setShowPasswordModal(true);
-                                        return;
+                                // Check for Full Backup Structure
+                                if (data.type === 'full_backup' && data.sales) {
+                                    if (confirm('Restoring Full Backup! This will OVERWRITE current data. Continue?')) {
+                                        // 1. Restore Operations
+                                        await updateSalesAndSave(data.sales || []);
+                                        await saveTransactions(data.transactions || []);
+
+                                        // 2. Restore Settings
+                                        if (data.settings) {
+                                            if (data.settings.apiKey) { setApiKey(data.settings.apiKey); await Preferences.set({ key: 'openai_api_key', value: data.settings.apiKey }); }
+                                            if (data.settings.supabaseUrl) { setSupabaseUrl(data.settings.supabaseUrl); await Preferences.set({ key: 'supabase_url', value: data.settings.supabaseUrl }); }
+                                            if (data.settings.supabaseKey) { setSupabaseKey(data.settings.supabaseKey); await Preferences.set({ key: 'supabase_key', value: data.settings.supabaseKey }); }
+                                            if (data.settings.userProfile) {
+                                                const normalizedProfile = normalizeProfileName(data.settings.userProfile);
+                                                setUserProfile(normalizedProfile);
+                                                await persistUserProfile(normalizedProfile);
+                                            }
+                                        }
+
+                                        setImportStatus('Full Backup Restored Successfully!');
+                                        setTimeout(() => window.location.reload(), 1500); // Reload to apply settings fresh
                                     }
-                                    setShowProfileMenu(false);
-                                    startTransition(() => { setUserProfile(p); });
-                                    persistUserProfile(p);
-                                    setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
-                                }}
-                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
-                                    <span>{p}</span>
-                                    {userProfile === p && <CheckSquare className="w-4 h-4" />}
+                                    return;
+                                }
+
+                                // Fallback to legacy JSON array import
+                                if (Array.isArray(data)) {
+                                    // Assume it's just sales list
+                                    if (confirm(`Import ${data.length} sales ? `)) {
+                                        await updateSalesAndSave([...data, ...sales]); // Merge
+                                        setImportStatus('Imported JSON successfully');
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(e);
+                                setImportStatus('Invalid JSON File');
+                            }
+                            return;
+                        }
+
+                        if (file.name.endsWith('.xlsx')) {
+                            try {
+                                const XLSX = await import('xlsx');
+                                const arrayBuffer = await file.arrayBuffer();
+                                const workbook = XLSX.read(arrayBuffer);
+                                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                                const jsonData = XLSX.utils.sheet_to_json(sheet);
+                                setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
+
+                                // Helper for standard mapping
+                                const mapStandardImport = (data: any[]) => {
+                                    const findVal = (row: any, keys: string[]) => {
+                                        const rowKeys = Object.keys(row);
+                                        for (const key of keys) {
+                                            if (row[key] !== undefined) return row[key];
+                                            const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                                            const foundKey = rowKeys.find(k => k.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanKey));
+                                            if (foundKey && row[foundKey] !== undefined) return row[foundKey];
+                                        }
+                                        return undefined;
+                                    };
+                                    const parseNum = (val: any) => {
+                                        if (typeof val === 'number') return val;
+                                        if (typeof val === 'string') return parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
+                                        return 0;
+                                    };
+                                    const parseDate = (val: any) => {
+                                        if (!val) return undefined;
+                                        if (val instanceof Date) return val.toISOString().split('T')[0];
+                                        if (typeof val === 'number') return new Date(Math.round((val - 25569) * 86400 * 1000)).toISOString().split('T')[0];
+                                        return String(val);
+                                    };
+
+                                    return data.map((row: any) => ({
+                                        id: findVal(row, ['id', 'ID', 'uuid']) || crypto.randomUUID(),
+                                        brand: findVal(row, ['brand', 'item', 'make', 'car model']) || 'Unknown',
+                                        model: findVal(row, ['model', 'car model', 'type']) || 'Unknown',
+                                        year: parseInt(findVal(row, ['year', 'yr']) || new Date().getFullYear()),
+                                        km: parseNum(findVal(row, ['km', 'mileage', 'odometer', 'kilometers'])),
+                                        vin: findVal(row, ['vin', 'vin number', 'chassis']) || 'N/A',
+                                        costToBuy: parseNum(findVal(row, ['costToBuy', 'cost', 'buyPrice', 'purchasePrice'])),
+                                        soldPrice: parseNum(findVal(row, ['soldPrice', 'sold', 'salePrice'])),
+                                        amountPaidCash: parseNum(findVal(row, ['amountPaidCash', 'cash', 'paid-cash'])),
+                                        amountPaidBank: parseNum(findVal(row, ['amountPaidBank', 'bank', 'paid-check', 'paid check'])),
+                                        deposit: parseNum(findVal(row, ['deposit', 'downPayment'])),
+                                        servicesCost: parseNum(findVal(row, ['services', 'serviceCost'])),
+                                        tax: parseNum(findVal(row, ['tax', 'taxes', 'vat', 'faturat'])),
+                                        color: findVal(row, ['color', 'paint']),
+                                        buyerName: findVal(row, ['buyerName', 'buyer name', 'client']),
+                                        sellerName: findVal(row, ['sellerName', 'seller name', 'seller']),
+                                        shippingName: findVal(row, ['shippingName', 'ship name', 'shipper']),
+                                        shippingDate: parseDate(findVal(row, ['shippingDate', 'ship date', 'date'])),
+                                        plateNumber: findVal(row, ['plateNumber', 'plate', 'registration']),
+                                        status: findVal(row, ['status', 'state']) || 'In Progress',
+                                        paymentMethod: findVal(row, ['paymentMethod', 'method']),
+                                        paidDateToKorea: parseDate(findVal(row, ['paidDateToKorea', 'paidKorea', 'date to korea'])),
+                                        paidDateFromClient: parseDate(findVal(row, ['paidDateFromClient', 'paidClient', 'date from client', 'paid date'])),
+                                        invoiceId: findVal(row, ['invoiceId', 'invoice']),
+                                        createdAt: new Date().toISOString()
+                                    })) as CarSale[];
+                                };
+
+                                let importedSales = mapStandardImport(jsonData);
+                                if (apiKey && confirm('Use OpenAI for enhanced import?')) {
+                                    try {
+                                        setImportStatus('AI Analysis...');
+                                        importedSales = await processImportedData(apiKey, jsonData, setImportStatus);
+                                    } catch (e) { importedSales = mapStandardImport(jsonData); }
+                                }
+                                updateSalesAndSave([...sales, ...importedSales]);
+                                setImportStatus('');
+
+                            } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
+                        }
+                    }
+                };
+                input.click();
+            } catch (e) { console.error(e); }
+        };
+
+        const deferredSearchTerm = useDeferredValue(searchTerm);
+
+        const filteredSales = React.useMemo(() => sales.filter(s => {
+            // Filter out system config rows
+            if (s.id === 'config_profile_avatars') return false;
+
+            // Restrict visibility for non-admin users to their own sales
+            if (!isAdmin && s.soldBy !== userProfile) return false;
+
+
+            // Category Filter
+            if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
+            if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
+            if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
+            if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+
+            const term = deferredSearchTerm.toLowerCase().trim();
+            if (!term) return true;
+            return JSON.stringify(s).toLowerCase().includes(term);
+        }).sort((a, b) => {
+            // Apply sorting
+            let aVal: any = '';
+            let bVal: any = '';
+
+            if (sortBy === 'koreaBalance') {
+                aVal = (a.costToBuy || 0) - (a.amountPaidToKorea || 0);
+                bVal = (b.costToBuy || 0) - (b.amountPaidToKorea || 0);
+            } else if (sortBy === 'dueBalance') {
+                aVal = calculateBalance(a);
+                bVal = calculateBalance(b);
+            } else if (sortBy === 'nameAlphabetic') {
+                aVal = ((a.brand || '') + ' ' + (a.model || '')).trim();
+                bVal = ((b.brand || '') + ' ' + (b.model || '')).trim();
+            } else {
+                aVal = a[sortBy as keyof CarSale];
+                bVal = b[sortBy as keyof CarSale];
+            }
+
+            // Handle undefined/null (treat as 0 for numbers, empty for strings)
+            if (aVal === undefined || aVal === null) aVal = typeof aVal === 'number' ? 0 : '';
+            if (bVal === undefined || bVal === null) bVal = typeof bVal === 'number' ? 0 : '';
+
+            // Handle string sorting
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+                return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            }
+            // Handle number sorting
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+            return 0;
+        }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir]);
+        const selectedInvoices = React.useMemo(
+            () => filteredSales.filter(sale => selectedIds.has(sale.id)),
+            [filteredSales, selectedIds]
+        );
+
+        // Toggle sort column
+        const toggleSort = (column: string) => {
+            if (sortBy === column) {
+                setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+            } else {
+                setSortBy(column);
+                setSortDir(column === 'year' || column === 'createdAt' ? 'desc' : 'asc'); // Newest first for year/date
+            }
+        };
+
+        const totalCost = filteredSales.reduce((acc, s) => acc + (s.costToBuy || 0), 0);
+        const totalSold = filteredSales.reduce((acc, s) => acc + (s.soldPrice || 0), 0);
+        const totalPaid = filteredSales.reduce((acc, s) => acc + ((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)), 0);
+        const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
+        const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
+        const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
+        const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+
+        const groupedSales = React.useMemo(() => {
+            const groups: Record<string, CarSale[]> = {};
+            filteredSales.forEach(s => {
+                const groupKey = s.group?.trim() || 'Ungrouped';
+                if (!groups[groupKey]) groups[groupKey] = [];
+                groups[groupKey].push(s);
+            });
+            return groups;
+        }, [filteredSales]);
+
+        useEffect(() => {
+            if (sales.length === 0) return;
+            const groupNames = new Set(sales.map(s => s.group).filter(Boolean) as string[]);
+            if (groupNames.size === 0) return;
+            const missing = Array.from(groupNames).filter(name => !groupMeta.some(g => g.name === name));
+            if (missing.length === 0) return;
+            const nextMeta = [...groupMeta];
+            missing.forEach(name => {
+                nextMeta.push({ name, order: nextMeta.length, archived: false });
+            });
+            persistGroupMeta(nextMeta);
+        }, [sales, groupMeta]);
+
+        const orderedGroupMeta = useMemo(() => {
+            return [...groupMeta].sort((a, b) => a.order - b.order);
+        }, [groupMeta]);
+
+        const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
+        const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
+
+        useEffect(() => {
+            if (hasInitializedGroups.current) return;
+            const initialGroups = activeGroups.map(g => g.name);
+            if (groupedSales.Ungrouped?.length) {
+                initialGroups.push('Ungrouped');
+            }
+            if (initialGroups.length > 0) {
+                setExpandedGroups(initialGroups);
+                hasInitializedGroups.current = true;
+            }
+        }, [activeGroups, groupedSales.Ungrouped?.length]);
+
+
+
+        if (isLoading) {
+            return (
+                <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
+                    <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
+                </div>
+            );
+        }
+
+        if (!userProfile) {
+            return <ProfileSelector
+                profiles={availableProfiles}
+                onSelect={(p, remember) => {
+                    const normalizedProfile = normalizeProfileName(p);
+                    if (!normalizedProfile) return;
+                    setUserProfile(normalizedProfile);
+                    setView('landing');
+                    setRememberProfile(remember);
+                    persistUserProfile(normalizedProfile, remember);
+                }}
+                onAdd={(name, remember) => {
+                    const normalizedName = normalizeProfileName(name);
+                    if (!normalizedName) return;
+                    const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+                    setAvailableProfiles(updated);
+                    Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                    setUserProfile(normalizedName);
+                    setRememberProfile(remember);
+                    persistUserProfile(normalizedName, remember);
+                    syncProfilesToCloud(updated);
+                }}
+                onDelete={handleDeleteProfile}
+                onEdit={handleEditProfile}
+                avatars={profileAvatars}
+                onEditAvatar={handleEditAvatar}
+                rememberDefault={rememberProfile}
+            />;
+        }
+
+        if (view === 'landing') {
+            return (
+                <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
+                    <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
+
+                    <div className="z-10 text-center mb-8">
+                        <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
+                        <p className="text-slate-500 text-lg">Select an operation to proceed</p>
+                    </div>
+
+                    <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
+                        <button
+                            id="btn-add-sale"
+                            onClick={() => openSaleForm(null, 'landing')}
+                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        >
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
+                                <Plus className="w-12 h-12" />
+                            </div>
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
+                                <div className="text-slate-500">Record a new vehicle sale</div>
+                            </div>
+                        </button>
+
+                        <button
+                            id="btn-view-sales"
+                            onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
+                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        >
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
+                                <Clipboard className="w-12 h-12" />
+                            </div>
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
+                                <div className="text-slate-500">Access dashboard & history</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                        <LogOut className="w-4 h-4" /> Switch Profile
+                    </button>
+                </div>
+            );
+        }
+
+
+        return (
+            <div className="flex h-screen w-full bg-slate-50 relative overflow-hidden font-sans text-slate-900">
+                {importStatus && (
+                    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
+                        <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
+                            <div className="w-12 h-12 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-slate-700 font-medium">{importStatus}</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Global Sync Error Toast */}
+                {syncError && (
+                    <div className="fixed top-20 right-4 z-[90] bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl shadow-lg max-w-md">
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                <strong className="text-red-700 text-sm font-semibold">Sync Issues Detected</strong>
+                            </div>
+                            <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors"><X className="w-4 h-4 text-red-500" /></button>
+                        </div>
+                        <p className="text-xs font-mono text-red-600 break-words leading-relaxed">{syncError}</p>
+                    </div>
+                )}
+
+                {/* Desktop Sidebar */}
+                <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0">
+                    <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+                        <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover ring-2 ring-white/10" />
+                        <div>
+                            <h1 className="text-xl font-bold tracking-tight text-white">KORAUTO</h1>
+                            <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Management</div>
+                        </div>
+                    </div>
+
+                    <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+                        {[
+                            { key: 'dashboard', label: 'Dashboard', icon: Clipboard },
+                            { key: 'invoices', label: 'Invoices', icon: FileText },
+                            ...(isAdmin ? [{ key: 'settings', label: 'Settings', icon: GripVertical }] : [])
+                        ].map((item) => (
+                            <button
+                                key={item.key}
+                                onClick={() => setView(item.key)}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${view === item.key
+                                    ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/5'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                {item.icon && <item.icon className={`w-4 h-4 ${view === item.key ? 'text-white' : 'text-slate-400'}`} />}
+                                {item.label}
+                            </button>
+                        ))}
+
+                        <div className="my-6 border-t border-slate-800 mx-3" />
+
+                        <div className="px-3 pb-2">
+                            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">Kategoritë</div>
+                            {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => {
+                                        setView('dashboard');
+                                        setActiveCategory(cat as any);
+                                    }}
+                                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${view === 'dashboard' && activeCategory === cat
+                                        ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    <span>{cat}</span>
+                                    {view === 'dashboard' && activeCategory === cat && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />}
                                 </button>
                             ))}
                         </div>
-                        <div className="h-px bg-slate-100 my-2" />
-                        <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
-                            <Plus className="w-4 h-4" /> Add Profile
-                        </button>
-                        <div className="h-px bg-slate-100 my-2" />
-                        <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
-                            <LogOut className="w-4 h-4" /> Log Out
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+                    </nav>
 
-    return (
-        <div className="flex h-screen w-full bg-slate-50 relative overflow-hidden font-sans text-slate-900">
-            {importStatus && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
-                    <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
-                        <div className="w-12 h-12 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-slate-700 font-medium">{importStatus}</p>
-                    </div>
-                </div>
-            )}
-
-            {/* Global Sync Error Toast */}
-            {syncError && (
-                <div className="fixed top-20 right-4 z-[90] bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl shadow-lg max-w-md">
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <strong className="text-red-700 text-sm font-semibold">Sync Issues Detected</strong>
-                        </div>
-                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors"><X className="w-4 h-4 text-red-500" /></button>
-                    </div>
-                    <p className="text-xs font-mono text-red-600 break-words leading-relaxed">{syncError}</p>
-                </div>
-            )}
-
-            {/* Desktop Sidebar */}
-            <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0">
-                <SidebarContent />
-            </aside>
-
-            {/* Mobile Drawer */}
-            <AnimatePresence>
-                {isMobileMenuOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden"
-                        />
-                        <motion.div
-                            initial={{ x: '-100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] md:hidden shadow-2xl"
+                    <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+                        <button
+                            onClick={() => setShowProfileMenu(!showProfileMenu)}
+                            className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-slate-800 transition-colors group relative"
                         >
-                            <SidebarContent />
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 p-[2px] shadow-sm group-hover:shadow-md transition-all">
+                                <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center text-sm font-bold text-emerald-100">
+                                    {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                                </div>
+                            </div>
+                            <div className="flex-1 text-left">
+                                <div className="text-sm font-medium text-white truncate">{userProfile}</div>
+                                <div className="text-xs text-slate-500">View Profile</div>
+                            </div>
+                            <ChevronUp className="w-4 h-4 text-slate-500" />
 
-            <div className="flex-1 flex flex-col min-w-0 relative">
-                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sticky top-0 z-40">
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 md:hidden text-slate-600"
+                            {showProfileMenu && (
+                                <div className="absolute bottom-full left-0 mb-2 w-56 bg-white border border-slate-200 rounded-xl p-2 shadow-xl z-[100] animate-in slide-in-from-bottom-2 fade-in duration-200 origin-bottom-left text-slate-900">
+                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
+                                    <div className="max-h-48 overflow-y-auto scroll-container space-y-0.5 custom-scrollbar">
+                                        {availableProfiles.map(p => (
+                                            <button key={p} onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (p === ADMIN_PROFILE && userProfile !== p) {
+                                                    setPendingProfile(p);
+                                                    setPasswordInput('');
+                                                    setIsPasswordVisible(false);
+                                                    setShowPasswordModal(true);
+                                                    setShowProfileMenu(false);
+                                                    return;
+                                                }
+                                                setShowProfileMenu(false);
+                                                startTransition(() => { setUserProfile(p); });
+                                                persistUserProfile(p);
+                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
+                                            }}
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                                                <span>{p}</span>
+                                                {userProfile === p && <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="h-px bg-slate-100 my-2" />
+                                    <button onClick={(e) => { e.stopPropagation(); quickAddProfile(); }} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
+                                        <Plus className="w-4 h-4" /> Add Profile
+                                    </button>
+                                    <div className="h-px bg-slate-100 my-2" />
+                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                                        <LogOut className="w-4 h-4" /> Log Out
+                                    </button>
+                                </div>
+                            )}
+                        </button>
+                    </div>
+                </aside>
+
+                {/* Mobile Drawer (AnimatePresence) */}
+                <AnimatePresence>
+                    {showMobileMenu && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowMobileMenu(false)}
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] md:hidden"
+                            />
+                            <motion.div
+                                initial={{ x: '-100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '-100%' }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="fixed top-0 left-0 bottom-0 w-72 bg-slate-900 text-white shadow-2xl z-[100] md:hidden flex flex-col"
                             >
+                                <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <img src="/logo_new.jpg" alt="Korauto" className="w-9 h-9 rounded-xl object-cover ring-2 ring-white/10" />
+                                        <span className="font-bold text-lg tracking-tight">KORAUTO</span>
+                                    </div>
+                                    <button onClick={() => setShowMobileMenu(false)} className="p-2 -mr-2 text-slate-400 hover:text-white">
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">Navigation</div>
+                                    {[
+                                        { key: 'dashboard', label: 'Dashboard', icon: Clipboard },
+                                        { key: 'invoices', label: 'Invoices', icon: FileText },
+                                        ...(isAdmin ? [{ key: 'settings', label: 'Settings', icon: GripVertical }] : [])
+                                    ].map((item) => (
+                                        <button
+                                            key={item.key}
+                                            onClick={() => { setView(item.key); setShowMobileMenu(false); }}
+                                            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${view === item.key
+                                                ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/5'
+                                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                                }`}
+                                        >
+                                            {item.icon && <item.icon className="w-5 h-5" />}
+                                            {item.label}
+                                        </button>
+                                    ))}
+
+                                    <div className="my-6 border-t border-slate-800 mx-2" />
+
+                                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">Categories</div>
+                                    {['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON'].map(cat => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => {
+                                                setView('dashboard');
+                                                setActiveCategory(cat as any);
+                                                setShowMobileMenu(false);
+                                            }}
+                                            className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-colors ${view === 'dashboard' && activeCategory === cat
+                                                ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
+                                                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                                }`}
+                                        >
+                                            <span>{cat}</span>
+                                            {view === 'dashboard' && activeCategory === cat && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />}
+                                        </button>
+                                    ))}
+                                </nav>
+
+                                <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+                                    <button className="flex items-center gap-3 w-full p-2 rounded-xl" onClick={() => { }}>
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 p-[2px]">
+                                            <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center font-bold text-emerald-100">
+                                                {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                                            </div>
+                                        </div>
+                                        <div className="text-left flex-1 min-w-0">
+                                            <div className="font-medium text-white truncate">{userProfile}</div>
+                                            <div className="text-xs text-slate-500">Logged in</div>
+                                        </div>
+                                        <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-red-400">
+                                            <LogOut className="w-5 h-5" />
+                                        </button>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+
+                <main className="flex-1 flex flex-col h-full relative w-full md:w-auto overflow-hidden">
+                    {/* Mobile Header (Hamburger + Search + Actions) */}
+                    <div className="md:hidden bg-white border-b border-slate-200 p-4 flex flex-col gap-3 shrink-0">
+                        <div className="flex items-center justify-between">
+                            <button onClick={() => setShowMobileMenu(true)} className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg">
                                 <Menu className="w-6 h-6" />
                             </button>
-                            <h2 className="text-lg font-bold text-slate-900 hidden sm:block">
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : activeCategory}
-                            </h2>
+                            <span className="font-bold text-slate-900 tracking-tight">KORAUTO</span>
+                            <button onClick={() => openSaleForm(null)} className="p-2 -mr-2 text-white bg-slate-900 rounded-lg shadow-sm hover:bg-slate-800">
+                                <Plus className="w-5 h-5" />
+                            </button>
                         </div>
-
-                        <div className="flex-1 max-w-xl hidden md:block">
-                            <div className="relative group">
-                                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
-                                    placeholder="Search sales..."
-                                    className="w-full bg-slate-100 border-transparent rounded-2xl pl-11 pr-4 py-2 text-sm focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5 transition-all outline-none"
+                                    placeholder="Search..."
+                                    className="w-full bg-slate-100 border-0 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500/20 text-slate-900 placeholder:text-slate-500"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <div className="relative shrink-0">
+                                <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
+                                    className="bg-slate-100 border-0 rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500/20 appearance-none w-[50px]"
+                                >
+                                    <option value="createdAt">Date</option>
+                                    <option value="nameAlphabetic">Name</option>
+                                    <option value="dueBalance">Balance</option>
+                                    <option value="year">Year</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop Top Bar (Search + Actions) */}
+                    <div className="hidden md:flex items-center justify-between px-8 py-5 shrink-0">
+                        <div className="flex items-center gap-4 flex-1 max-w-xl">
+                            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                                {view === 'dashboard' ? 'Dashboard' :
+                                    view === 'invoices' ? 'Invoices' :
+                                        view === 'settings' ? 'Settings' : 'Kora Management'}
+                            </h2>
+                            <div className="h-6 w-px bg-slate-300 mx-2" />
+                            <div className="relative flex-1 group">
+                                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                                <input
+                                    placeholder="Search cars, buyers, VIN..."
+                                    className="bg-white border-0 ring-1 ring-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm w-full focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all shadow-sm"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <ArrowUpDown className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
+                                    className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-medium rounded-xl pl-9 pr-8 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/10 appearance-none cursor-pointer transition-all shadow-sm"
+                                >
+                                    <option value="createdAt">Date Added</option>
+                                    <option value="nameAlphabetic">Name (A-Z)</option>
+                                    <option value="dueBalance">Balance</option>
+                                    {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
+                                    <option value="year">Year</option>
+                                </select>
+                            </div>
+
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2.5 rounded-xl hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}
-                                title="Sync Now"
+                                className={`p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all shadow-sm ${isSyncing ? 'animate-spin text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                title="Force Sync"
                             >
-                                <RefreshCw className="w-5 h-5" />
+                                <RefreshCw className="w-4.5 h-4.5" />
                             </button>
 
-                            <div className="flex gap-2">
-                                <div className="relative hidden sm:block">
-                                    <ArrowUpDown className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                        className="bg-slate-100 border-transparent text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none focus:bg-white focus:border-slate-300 transition-all appearance-none cursor-pointer text-slate-700 font-medium"
-                                    >
-                                        <option value="createdAt">Date Added</option>
-                                        <option value="nameAlphabetic">Name (A-Z)</option>
-                                        <option value="dueBalance">Balance (Client)</option>
-                                        {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
-                                        <option value="year">Year</option>
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                </div>
-
-                                <button
-                                    onClick={() => openSaleForm(null)}
-                                    className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="hidden lg:inline">New Sale</span>
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => openSaleForm(null)}
+                                className="bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 active:scale-95"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add New Sale</span>
+                            </button>
                         </div>
                     </div>
 
-                    {/* Mobile Search - Visible only on mobile */}
-                    <div className="mt-3 md:hidden">
-                        <div className="relative group">
-                            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                placeholder="Search sales..."
-                                className="w-full bg-slate-100 border-transparent rounded-xl pl-11 pr-4 py-2.5 text-sm focus:bg-white focus:border-slate-300 transition-all outline-none"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                </header>
-
-                <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
                     {view !== 'sale_form' && (
                         <>
 
-                        {view === 'dashboard' ? (<>
-                            <div
-                                ref={scrollContainerRef}
-                                className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
-                            >
-                                <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
-                                    style={{
-                                        gridTemplateColumns: gridTemplateColumns
-                                    }}>
-                                    <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900 border-r border-slate-200 resizable-header" onClick={() => toggleAll(filteredSales)}>
-                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('selection', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('brand')}>
-                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('carInfo', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('year')}>
-                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('year', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('km')}>
-                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('km', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('plateNumber')}>
-                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('plateVin', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('buyerName')}>
-                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('buyer', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('sellerName')}>
-                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('seller', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('shippingName')}>
-                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('shipping', e)} />
-                                        </div>
-                                        {isAdmin && (
-                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('costToBuy')}>
-                                                Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('cost', e)} />
+
+
+                            {view === 'dashboard' ? (<>
+                                <div
+                                    ref={scrollContainerRef}
+                                    className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
+                                >
+                                    <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
+                                        style={{
+                                            gridTemplateColumns: gridTemplateColumns
+                                        }}>
+                                        <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                            <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900 border-r border-slate-200 resizable-header" onClick={() => toggleAll(filteredSales)}>
+                                                {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('selection', e)} />
                                             </div>
-                                        )}
-                                        <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldPrice')}>
-                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('sold', e)} />
+                                            <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('brand')}>
+                                                Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('carInfo', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('year')}>
+                                                Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('year', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('km')}>
+                                                KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('km', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('plateNumber')}>
+                                                Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('plateVin', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('buyerName')}>
+                                                Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('buyer', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('sellerName')}>
+                                                Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('seller', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('shippingName')}>
+                                                Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('shipping', e)} />
+                                            </div>
+                                            {isAdmin && (
+                                                <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('costToBuy')}>
+                                                    Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                    <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('cost', e)} />
+                                                </div>
+                                            )}
+                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldPrice')}>
+                                                Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('sold', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Paid
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('paid', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Bank Fee
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('bankFee', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Tax
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('tax', e)} />
+                                            </div>
+                                            {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold border-r border-slate-200 resizable-header">
+                                                Profit
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('profit', e)} />
+                                            </div>}
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Balance
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('balance', e)} />
+                                            </div>
+                                            {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('koreaBalance')}>
+                                                Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('korea', e)} />
+                                            </div>}
+                                            <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('status')}>
+                                                Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('status', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldBy')}>
+                                                Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('soldBy', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3"></div>
                                         </div>
-                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
-                                            Paid
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('paid', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
-                                            Bank Fee
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('bankFee', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
-                                            Tax
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('tax', e)} />
-                                        </div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold border-r border-slate-200 resizable-header">
-                                            Profit
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('profit', e)} />
-                                        </div>}
-                                        <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
-                                            Balance
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('balance', e)} />
-                                        </div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('koreaBalance')}>
-                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('korea', e)} />
-                                        </div>}
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('status')}>
-                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('status', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldBy')}>
-                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('soldBy', e)} />
-                                        </div>
-                                        <div className="p-2 xl:p-3"></div>
-                                    </div>
-                                    {/* Render Rows */}
-                                    {groupingEnabled ? (
-                                        <Reorder.Group
-                                            axis="y"
-                                            values={activeGroups.map(g => g.name)}
-                                            onReorder={(newOrder) => {
-                                                const updated = newOrder.map((name, index) => {
-                                                    const match = groupMeta.find(g => g.name === name);
-                                                    return match ? { ...match, order: index } : { name, order: index, archived: false };
-                                                });
-                                                const archived = groupMeta.filter(g => g.archived);
-                                                persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
-                                            }}
-                                            className="grid grid-cols-subgrid"
-                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                        >
-                                            {activeGroups.map(group => {
-                                                const groupSales = groupedSales[group.name] || [];
-                                                if (groupSales.length === 0) return null;
-                                                return (
-                                                    <Reorder.Item key={group.name} value={group.name} className="contents">
+                                        {/* Render Rows */}
+                                        {groupingEnabled ? (
+                                            <Reorder.Group
+                                                axis="y"
+                                                values={activeGroups.map(g => g.name)}
+                                                onReorder={(newOrder) => {
+                                                    const updated = newOrder.map((name, index) => {
+                                                        const match = groupMeta.find(g => g.name === name);
+                                                        return match ? { ...match, order: index } : { name, order: index, archived: false };
+                                                    });
+                                                    const archived = groupMeta.filter(g => g.archived);
+                                                    persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
+                                                }}
+                                                className="grid grid-cols-subgrid"
+                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                            >
+                                                {activeGroups.map(group => {
+                                                    const groupSales = groupedSales[group.name] || [];
+                                                    if (groupSales.length === 0) return null;
+                                                    return (
+                                                        <Reorder.Item key={group.name} value={group.name} className="contents">
+                                                            <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                                    <button
+                                                                        onClick={() => toggleGroup(group.name)}
+                                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                                                                    >
+                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                        <span>{group.name}</span>
+                                                                        <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                    </button>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button
+                                                                            onClick={() => moveGroup(group.name, 'up')}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group up"
+                                                                        >
+                                                                            <ChevronUp className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => moveGroup(group.name, 'down')}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group down"
+                                                                        >
+                                                                            <ChevronDown className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <div className="relative">
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                                }}
+                                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                                title="Move group to tab"
+                                                                            >
+                                                                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            {activeGroupMoveMenu === group.name && (
+                                                                                <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Sales
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Shipped
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Inspections
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Autosallon
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleRenameGroup(group.name)}
+                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Rename group"
+                                                                        >
+                                                                            <Edit className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleArchiveGroup(group.name, true)}
+                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Archive group"
+                                                                        >
+                                                                            <Archive className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {expandedGroups.includes(group.name) && (
+                                                                <Reorder.Group
+                                                                    axis="y"
+                                                                    values={groupSales}
+                                                                    onReorder={(newOrder) => {
+                                                                        setSales(prev => {
+                                                                            const next = [...prev];
+                                                                            newOrder.forEach((newItem, newIndex) => {
+                                                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                            });
+                                                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                        });
+                                                                    }}
+                                                                    className="grid grid-cols-subgrid"
+                                                                    style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                >
+                                                                    {groupSales.map(s => (
+                                                                        <SortableSaleItem
+                                                                            key={s.id}
+                                                                            s={s}
+                                                                            userProfile={userProfile}
+                                                                            canViewPrices={canViewPrices}
+                                                                            toggleSelection={toggleSelection}
+                                                                            isSelected={selectedIds.has(s.id)}
+                                                                            openInvoice={openInvoice}
+                                                                            onInlineUpdate={handleInlineUpdate}
+                                                                            onClick={() => {
+                                                                                if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                    alert("You do not have permission to edit this sale.");
+                                                                                    return;
+                                                                                }
+                                                                                requestEditChoice(s);
+                                                                            }}
+                                                                            onDelete={handleDeleteSingle}
+                                                                            onRemoveFromGroup={handleRemoveFromGroup}
+                                                                        />
+                                                                    ))}
+                                                                </Reorder.Group>
+                                                            )}
+                                                        </Reorder.Item>
+                                                    );
+                                                })}
+                                                {groupedSales.Ungrouped?.length > 0 && (
+                                                    <div className="contents">
                                                         <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                             <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                 <button
-                                                                    onClick={() => toggleGroup(group.name)}
+                                                                    onClick={() => toggleGroup('Ungrouped')}
                                                                     className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                                 >
-                                                                    {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                    <span>{group.name}</span>
-                                                                    <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                    {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>Ungrouped</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
                                                                 </button>
-                                                                <div className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={() => moveGroup(group.name, 'up')}
-                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group up"
-                                                                    >
-                                                                        <ChevronUp className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => moveGroup(group.name, 'down')}
-                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group down"
-                                                                    >
-                                                                        <ChevronDown className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <div className="relative">
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                            }}
-                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Move group to tab"
-                                                                        >
-                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        {activeGroupMoveMenu === group.name && (
-                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        handleMoveGroupStatus(group.name, 'In Progress');
-                                                                                        setActiveGroupMoveMenu(null);
-                                                                                    }}
-                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                                >
-                                                                                    Sales
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        handleMoveGroupStatus(group.name, 'Shipped');
-                                                                                        setActiveGroupMoveMenu(null);
-                                                                                    }}
-                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                                >
-                                                                                    Shipped
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        handleMoveGroupStatus(group.name, 'Inspection');
-                                                                                        setActiveGroupMoveMenu(null);
-                                                                                    }}
-                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                                >
-                                                                                    Inspections
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => {
-                                                                                        handleMoveGroupStatus(group.name, 'Autosallon');
-                                                                                        setActiveGroupMoveMenu(null);
-                                                                                    }}
-                                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                                >
-                                                                                    Autosallon
-                                                                                </button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <button
-                                                                        onClick={() => handleRenameGroup(group.name)}
-                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Rename group"
-                                                                    >
-                                                                        <Edit className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleArchiveGroup(group.name, true)}
-                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Archive group"
-                                                                    >
-                                                                        <Archive className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                </div>
                                                             </div>
                                                         </div>
-                                                        {expandedGroups.includes(group.name) && (
+                                                        {expandedGroups.includes('Ungrouped') && (
                                                             <Reorder.Group
                                                                 axis="y"
-                                                                values={groupSales}
+                                                                values={groupedSales.Ungrouped}
                                                                 onReorder={(newOrder) => {
                                                                     setSales(prev => {
                                                                         const next = [...prev];
@@ -2607,7 +2767,7 @@ export default function Dashboard() {
                                                                 className="grid grid-cols-subgrid"
                                                                 style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
                                                             >
-                                                                {groupSales.map(s => (
+                                                                {groupedSales.Ungrouped.map(s => (
                                                                     <SortableSaleItem
                                                                         key={s.id}
                                                                         s={s}
@@ -2630,122 +2790,127 @@ export default function Dashboard() {
                                                                 ))}
                                                             </Reorder.Group>
                                                         )}
-                                                    </Reorder.Item>
-                                                );
-                                            })}
-                                            {groupedSales.Ungrouped?.length > 0 && (
-                                                <div className="contents">
-                                                    <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                            <button
-                                                                onClick={() => toggleGroup('Ungrouped')}
-                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                            >
-                                                                {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                <span>Ungrouped</span>
-                                                                <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
-                                                            </button>
-                                                        </div>
                                                     </div>
-                                                    {expandedGroups.includes('Ungrouped') && (
-                                                        <Reorder.Group
-                                                            axis="y"
-                                                            values={groupedSales.Ungrouped}
-                                                            onReorder={(newOrder) => {
-                                                                setSales(prev => {
-                                                                    const next = [...prev];
-                                                                    newOrder.forEach((newItem, newIndex) => {
-                                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                                    });
-                                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                                });
-                                                            }}
-                                                            className="grid grid-cols-subgrid"
-                                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                        >
-                                                            {groupedSales.Ungrouped.map(s => (
-                                                                <SortableSaleItem
-                                                                    key={s.id}
-                                                                    s={s}
-                                                                    userProfile={userProfile}
-                                                                    canViewPrices={canViewPrices}
-                                                                    toggleSelection={toggleSelection}
-                                                                    isSelected={selectedIds.has(s.id)}
-                                                                    openInvoice={openInvoice}
-                                                                    onInlineUpdate={handleInlineUpdate}
-                                                                    onClick={() => {
-                                                                        if (!isAdmin && s.soldBy !== userProfile) {
-                                                                            alert("You do not have permission to edit this sale.");
-                                                                            return;
-                                                                        }
-                                                                        requestEditChoice(s);
-                                                                    }}
-                                                                    onDelete={handleDeleteSingle}
-                                                                    onRemoveFromGroup={handleRemoveFromGroup}
-                                                                />
-                                                            ))}
-                                                        </Reorder.Group>
-                                                    )}
-                                                </div>
-                                            )}
-                                            {archivedGroups.length > 0 && (
-                                                <div className="contents">
-                                                    <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                            <button
-                                                                onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-600"
-                                                            >
-                                                                {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                <span>Archived Groups</span>
-                                                                <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
-                                                            </button>
+                                                )}
+                                                {archivedGroups.length > 0 && (
+                                                    <div className="contents">
+                                                        <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                                <button
+                                                                    onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                                    className="flex items-center gap-2 text-sm font-semibold text-slate-600"
+                                                                >
+                                                                    {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>Archived Groups</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    {showArchivedGroups && archivedGroups.map(group => {
-                                                        const groupSales = groupedSales[group.name] || [];
-                                                        return (
-                                                            <div key={group.name} className="contents">
-                                                                <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                                        <button
-                                                                            onClick={() => toggleGroup(group.name)}
-                                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                                        >
-                                                                            {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                            <span>{group.name}</span>
-                                                                            <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                                        </button>
-                                                                        <div className="flex items-center gap-2">
+                                                        {showArchivedGroups && archivedGroups.map(group => {
+                                                            const groupSales = groupedSales[group.name] || [];
+                                                            return (
+                                                                <div key={group.name} className="contents">
+                                                                    <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                             <button
-                                                                                onClick={() => handleArchiveGroup(group.name, false)}
-                                                                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                                title="Unarchive group"
+                                                                                onClick={() => toggleGroup(group.name)}
+                                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                                             >
-                                                                                <Eye className="w-3.5 h-3.5" />
+                                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                                <span>{group.name}</span>
+                                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                                             </button>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => handleArchiveGroup(group.name, false)}
+                                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                                    title="Unarchive group"
+                                                                                >
+                                                                                    <Eye className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
+                                                                    {expandedGroups.includes(group.name) && (
+                                                                        <Reorder.Group
+                                                                            axis="y"
+                                                                            values={groupSales}
+                                                                            onReorder={(newOrder) => {
+                                                                                setSales(prev => {
+                                                                                    const next = [...prev];
+                                                                                    newOrder.forEach((newItem, newIndex) => {
+                                                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                                    });
+                                                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                                });
+                                                                            }}
+                                                                            className="grid grid-cols-subgrid"
+                                                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                        >
+                                                                            {groupSales.map(s => (
+                                                                                <SortableSaleItem
+                                                                                    key={s.id}
+                                                                                    s={s}
+                                                                                    userProfile={userProfile}
+                                                                                    canViewPrices={canViewPrices}
+                                                                                    toggleSelection={toggleSelection}
+                                                                                    isSelected={selectedIds.has(s.id)}
+                                                                                    openInvoice={openInvoice}
+                                                                                    onInlineUpdate={handleInlineUpdate}
+                                                                                    onClick={() => {
+                                                                                        if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                            alert("You do not have permission to edit this sale.");
+                                                                                            return;
+                                                                                        }
+                                                                                        requestEditChoice(s);
+                                                                                    }}
+                                                                                    onDelete={handleDeleteSingle}
+                                                                                    onRemoveFromGroup={handleRemoveFromGroup}
+                                                                                />
+                                                                            ))}
+                                                                        </Reorder.Group>
+                                                                    )}
                                                                 </div>
-                                                                {expandedGroups.includes(group.name) && (
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                                {/* Ungrouped Items */}
+                                                {groupedSales['Ungrouped']?.length > 0 && (
+                                                    <div className="contents">
+                                                        <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="col-span-full px-3 py-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                                <button onClick={() => toggleGroup('Ungrouped')} className="flex items-center gap-2">
+                                                                    {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>Ungrouped</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupedSales['Ungrouped'].length})</span>
+                                                                </button>
+                                                            </div>
+                                                            {expandedGroups.includes('Ungrouped') && (
+                                                                <div className="contents">
                                                                     <Reorder.Group
                                                                         axis="y"
-                                                                        values={groupSales}
+                                                                        values={groupedSales['Ungrouped']}
                                                                         onReorder={(newOrder) => {
+                                                                            // For ungrouped, we don't persist order strictly or we treat it as default order?
+                                                                            // Since we are sorting by drag, we should update state.
+                                                                            // But original logic updates sales state.
                                                                             setSales(prev => {
                                                                                 const next = [...prev];
                                                                                 newOrder.forEach((newItem, newIndex) => {
                                                                                     const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex + 900000 }; // High sort order for ungrouped?
+                                                                                    // Actually, just updating sortOrder locally is tricky if we mix grouped/ungrouped.
+                                                                                    // For now, let's just allow reorder visually or update basic sortOrder.
                                                                                     if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
                                                                                 });
-                                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                                return next;
                                                                             });
                                                                         }}
-                                                                        className="grid grid-cols-subgrid"
-                                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                        className="contents" // Grid subgrid behavior
                                                                     >
-                                                                        {groupSales.map(s => (
+                                                                        {groupedSales['Ungrouped'].map(s => (
                                                                             <SortableSaleItem
                                                                                 key={s.id}
                                                                                 s={s}
@@ -2763,953 +2928,903 @@ export default function Dashboard() {
                                                                                     requestEditChoice(s);
                                                                                 }}
                                                                                 onDelete={handleDeleteSingle}
-                                                                                onRemoveFromGroup={handleRemoveFromGroup}
+                                                                                onRemoveFromGroup={undefined}
                                                                             />
                                                                         ))}
                                                                     </Reorder.Group>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </Reorder.Group>
-                                    ) : (
-                                        <Reorder.Group
-                                            axis="y"
-                                            values={filteredSales}
-                                            onReorder={(newOrder) => {
-                                                setSales(prev => {
-                                                    const next = [...prev];
-                                                    newOrder.forEach((newItem, newIndex) => {
-                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                    });
-                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                });
-                                            }}
-                                            className="grid grid-cols-subgrid"
-                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                        >
-                                            {filteredSales.map(s => (
-                                                <SortableSaleItem
-                                                    key={s.id}
-                                                    s={s}
-                                                    userProfile={userProfile}
-                                                    canViewPrices={canViewPrices}
-                                                    toggleSelection={toggleSelection}
-                                                    isSelected={selectedIds.has(s.id)}
-                                                    openInvoice={openInvoice}
-                                                    onInlineUpdate={handleInlineUpdate}
-                                                    onClick={() => {
-                                                        if (!isAdmin && s.soldBy !== userProfile) {
-                                                            alert("You do not have permission to edit this sale.");
-                                                            return;
-                                                        }
-                                                        requestEditChoice(s);
-                                                    }}
-                                                    onDelete={handleDeleteSingle}
-                                                />
-                                            ))}
-                                        </Reorder.Group>
-                                    )}
-
-                                    {/* Footer Totals */}
-                                    <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
-                                        {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
-                                        <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
-                                        <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
-                                        {isAdmin && <>
-                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
-                                        </>}
-                                        <div className="p-3 col-span-3"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Mobile Card View */}
-                            {/* Mobile Compact List View - Swipeable */}
-                            <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
-                                    {groupingEnabled ? (
-                                        <>
-                                            {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
-                                                const groupSales = groupedSales[group.name] || [];
-                                                if (groupSales.length === 0) return null;
-                                                return (
-                                                    <div key={group.name} className="border-b border-slate-200">
-                                                        <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
-                                                            <button
-                                                                onClick={() => toggleGroup(group.name)}
-                                                                className="flex items-center gap-2 text-left"
-                                                            >
-                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                {group.name}
-                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                            </button>
-                                                            <div className="relative">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                    }}
-                                                                    className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group to tab"
-                                                                >
-                                                                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                {activeGroupMoveMenu === group.name && (
-                                                                    <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'In Progress');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Sales
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Shipped');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Shipped
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Inspection');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Inspections
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Autosallon');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Autosallon
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {expandedGroups.includes(group.name) && (
-                                                            <div>
-                                                                {groupSales.map(sale => (
-                                                                    <motion.div
-                                                                        key={sale.id}
-                                                                        initial={{ opacity: 0 }}
-                                                                        animate={{ opacity: 1 }}
-                                                                        className="relative border-b border-slate-200"
-                                                                    >
-                                                                        {/* Background Action (Delete) */}
-                                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                            <Trash2 className="text-white w-5 h-5" />
-                                                                        </div>
-
-                                                                        {/* Foreground Card */}
-                                                                        <motion.div
-                                                                            layout
-                                                                            drag="x"
-                                                                            dragDirectionLock
-                                                                            dragConstraints={{ left: 0, right: 0 }}
-                                                                            dragElastic={{ left: 0.8, right: 0 }}
-                                                                            dragSnapToOrigin
-                                                                            onDragEnd={(e, { offset }) => {
-                                                                                if (offset.x < -100) {
-                                                                                    const shouldDelete = confirm('Delete this item?');
-                                                                                    if (shouldDelete) {
-                                                                                        handleDeleteSingle(sale.id);
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                            className="p-2 flex items-center gap-2 relative z-10 transition-colors"
-                                                                            onClick={() => {
-                                                                                if (selectedIds.size > 0) {
-                                                                                    toggleSelection(sale.id);
-                                                                                } else {
-                                                                                    if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                                        alert("You do not have permission to edit this sale.");
-                                                                                        return;
-                                                                                    }
-                                                                                    requestEditChoice(sale);
-                                                                                }
-                                                                            }}
-                                                                            onContextMenu={(e) => {
-                                                                                e.preventDefault();
-                                                                                toggleSelection(sale.id);
-                                                                            }}
-                                                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                                        >
-                                                                            {selectedIds.size > 0 && (
-                                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                                    {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                                                </div>
-                                                                            )}
-
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="flex justify-between items-start">
-                                                                                    <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                    <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                'bg-slate-100 text-slate-500'
-                                                                                        }`}>{sale.status}</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
-                                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="font-mono text-slate-400">-</span>
-                                                                                    )}
-                                                                                </div>
-                                                                                {isAdmin && (
-                                                                                    <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                        <span className="text-slate-400">Korea:</span>
-                                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                )}
-                                                                                {groupingEnabled && sale.group && (
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                        className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                    >
-                                                                                        Remove from group
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        </motion.div>
-                                                                    </motion.div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                            {archivedGroups.length > 0 && (
-                                                <div className="border-b border-slate-200">
-                                                    <button
-                                                        onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                        className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
-                                                    >
-                                                        <span className="flex items-center gap-2">
-                                                            {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            Archived Groups
-                                                        </span>
-                                                        <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
-                                                    </button>
-                                                    {showArchivedGroups && archivedGroups.map(group => {
-                                                        const groupSales = groupedSales[group.name] || [];
-                                                        if (groupSales.length === 0) return null;
-                                                        return (
-                                                            <div key={group.name} className="border-b border-slate-200">
-                                                                <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
-                                                                    <button
-                                                                        onClick={() => toggleGroup(group.name)}
-                                                                        className="flex items-center gap-2"
-                                                                    >
-                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                        {group.name}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleArchiveGroup(group.name, false)}
-                                                                        className="text-xs text-slate-900 font-semibold"
-                                                                    >
-                                                                        Unarchive
-                                                                    </button>
-                                                                </div>
-                                                                {expandedGroups.includes(group.name) && (
-                                                                    <div>
-                                                                        {groupSales.map(sale => (
-                                                                            <motion.div
-                                                                                key={sale.id}
-                                                                                initial={{ opacity: 0 }}
-                                                                                animate={{ opacity: 1 }}
-                                                                                className="relative border-b border-slate-200"
-                                                                            >
-                                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                                    <Trash2 className="text-white w-5 h-5" />
-                                                                                </div>
-                                                                                <motion.div
-                                                                                    layout
-                                                                                    drag="x"
-                                                                                    dragDirectionLock
-                                                                                    dragConstraints={{ left: 0, right: 0 }}
-                                                                                    dragElastic={{ left: 0.8, right: 0 }}
-                                                                                    dragSnapToOrigin
-                                                                                    onDragEnd={(e, { offset }) => {
-                                                                                        if (offset.x < -100) {
-                                                                                            const shouldDelete = confirm('Delete this item?');
-                                                                                            if (shouldDelete) {
-                                                                                                handleDeleteSingle(sale.id);
-                                                                                            }
-                                                                                        }
-                                                                                    }}
-                                                                                    className="p-2 flex items-center gap-2 relative z-10 transition-colors"
-                                                                                    onClick={() => {
-                                                                                        if (selectedIds.size > 0) {
-                                                                                            toggleSelection(sale.id);
-                                                                                        } else {
-                                                                                            if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                                                alert("You do not have permission to edit this sale.");
-                                                                                                return;
-                                                                                            }
-                                                                                            requestEditChoice(sale);
-                                                                                        }
-                                                                                    }}
-                                                                                    onContextMenu={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        toggleSelection(sale.id);
-                                                                                    }}
-                                                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                                                >
-                                                                                    {selectedIds.size > 0 && (
-                                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                                                        </div>
-                                                                                    )}
-                                                                                    <div className="flex-1 min-w-0">
-                                                                                        <div className="flex justify-between items-start">
-                                                                                            <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                            <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                                (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                                    sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                        'bg-slate-100 text-slate-500'
-                                                                                                }`}>{sale.status}</span>
-                                                                                        </div>
-                                                                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
-                                                                                            <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                            {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                                <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                    {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                                </span>
-                                                                                            ) : (
-                                                                                                <span className="font-mono text-slate-400">-</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        {isAdmin && (
-                                                                                            <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                                <span className="text-slate-400">Korea:</span>
-                                                                                                <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                    {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        {groupingEnabled && sale.group && (
-                                                                                            <button
-                                                                                                onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                                className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                            >
-                                                                                                Remove from group
-                                                                                            </button>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </motion.div>
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {filteredSales.map(sale => (
-                                                <motion.div
-                                                    key={sale.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className="relative border-b border-slate-200"
-                                                >
-                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                        <Trash2 className="text-white w-5 h-5" />
-                                                    </div>
-                                                    <motion.div
-                                                        layout
-                                                        drag="x"
-                                                        dragDirectionLock
-                                                        dragConstraints={{ left: 0, right: 0 }}
-                                                        dragElastic={{ left: 0.8, right: 0 }}
-                                                        dragSnapToOrigin
-                                                        onDragEnd={(e, { offset }) => {
-                                                            if (offset.x < -100) {
-                                                                const shouldDelete = confirm('Delete this item?');
-                                                                if (shouldDelete) {
-                                                                    handleDeleteSingle(sale.id);
-                                                                }
-                                                            }
-                                                        }}
-                                                        className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
-                                                        onClick={() => {
-                                                            if (selectedIds.size > 0) {
-                                                                toggleSelection(sale.id);
-                                                            } else {
-                                                                if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                    alert("You do not have permission to edit this sale.");
-                                                                    return;
-                                                                }
-                                                                requestEditChoice(sale);
-                                                            }
-                                                        }}
-                                                        onContextMenu={(e) => {
-                                                            e.preventDefault();
-                                                            toggleSelection(sale.id);
-                                                        }}
-                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                    >
-                                                        {selectedIds.size > 0 && (
-                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                            'bg-slate-100 text-slate-500'
-                                                                    }`}>{sale.status}</span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
-                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="font-mono text-slate-400">-</span>
-                                                                )}
-                                                            </div>
-                                                            {isAdmin && (
-                                                                <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
-                                                                    <span className="text-slate-400">Korea:</span>
-                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                    </span>
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </motion.div>
-                                                </motion.div>
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </>) : view === 'settings' ? (
-                            <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-                                <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
-                                <div className="space-y-3 md:space-y-4">
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+                                                    </div>
+                                                )}
+                                            </Reorder.Group>
+                                        ) : (
+                                            <Reorder.Group
+                                                axis="y"
+                                                values={filteredSales}
+                                                onReorder={(newOrder) => {
+                                                    setSales(prev => {
+                                                        const next = [...prev];
+                                                        newOrder.forEach((newItem, newIndex) => {
+                                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                        });
+                                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                    });
+                                                }}
+                                                className="grid grid-cols-subgrid"
+                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                            >
+                                                {filteredSales.map(s => (
+                                                    <SortableSaleItem
+                                                        key={s.id}
+                                                        s={s}
+                                                        userProfile={userProfile}
+                                                        canViewPrices={canViewPrices}
+                                                        toggleSelection={toggleSelection}
+                                                        isSelected={selectedIds.has(s.id)}
+                                                        openInvoice={openInvoice}
+                                                        onInlineUpdate={handleInlineUpdate}
+                                                        onClick={() => {
+                                                            if (!isAdmin && s.soldBy !== userProfile) {
+                                                                alert("You do not have permission to edit this sale.");
+                                                                return;
+                                                            }
+                                                            requestEditChoice(s);
+                                                        }}
+                                                        onDelete={handleDeleteSingle}
+                                                    />
+                                                ))}
+                                            </Reorder.Group>
+                                        )}
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-slate-500">User Profile</label>
-                                        <div className="flex gap-2">
-                                            <select value={userProfile} onChange={e => {
-                                                setUserProfile(e.target.value);
-                                                persistUserProfile(e.target.value);
-                                            }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
-                                                <option value="">Select Profile</option>
-                                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
-                                            </select>
-                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                        {/* Footer Totals */}
+                                        <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                            <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
+                                            {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
+                                            <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
+                                            {isAdmin && <>
+                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
+                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
+                                                <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
+                                            </>}
+                                            <div className="p-3 col-span-3"></div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
-                                            <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
-                                        </div>
-                                        {!isAdmin && (
-                                            <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
+                                    </div>
+                                </div>
+                                {/* Mobile Card View */}
+                                {/* Mobile Compact List View - Swipeable */}
+                                <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
+                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
+                                        {groupingEnabled ? (
+                                            <>
+                                                {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
+                                                    const groupSales = groupedSales[group.name] || [];
+                                                    if (groupSales.length === 0) return null;
+                                                    return (
+                                                        <div key={group.name} className="border-b border-slate-200">
+                                                            <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                                <button
+                                                                    onClick={() => toggleGroup(group.name)}
+                                                                    className="flex items-center gap-2 text-left"
+                                                                >
+                                                                    {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    {group.name}
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                </button>
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                        }}
+                                                                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group to tab"
+                                                                    >
+                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    {activeGroupMoveMenu === group.name && (
+                                                                        <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Sales
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Shipped
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Inspections
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Autosallon
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {expandedGroups.includes(group.name) && (
+                                                                <div>
+                                                                    {groupSales.map(sale => (
+                                                                        <motion.div
+                                                                            key={sale.id}
+                                                                            initial={{ opacity: 0 }}
+                                                                            animate={{ opacity: 1 }}
+                                                                            className="relative border-b border-slate-200"
+                                                                        >
+                                                                            {/* Background Action (Delete) */}
+                                                                            <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                                                <Trash2 className="text-white w-5 h-5" />
+                                                                            </div>
+
+                                                                            {/* Foreground Card */}
+                                                                            <motion.div
+                                                                                layout
+                                                                                drag="x"
+                                                                                dragDirectionLock
+                                                                                dragConstraints={{ left: 0, right: 0 }}
+                                                                                dragElastic={{ left: 0.8, right: 0 }}
+                                                                                dragSnapToOrigin
+                                                                                onDragEnd={(e, { offset }) => {
+                                                                                    if (offset.x < -100) {
+                                                                                        const shouldDelete = confirm('Delete this item?');
+                                                                                        if (shouldDelete) {
+                                                                                            handleDeleteSingle(sale.id);
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                                className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                onClick={() => {
+                                                                                    if (selectedIds.size > 0) {
+                                                                                        toggleSelection(sale.id);
+                                                                                    } else {
+                                                                                        if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                                            alert("You do not have permission to edit this sale.");
+                                                                                            return;
+                                                                                        }
+                                                                                        requestEditChoice(sale);
+                                                                                    }
+                                                                                }}
+                                                                                onContextMenu={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    toggleSelection(sale.id);
+                                                                                }}
+                                                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                            >
+                                                                                {selectedIds.size > 0 && (
+                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                        {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex justify-between items-start">
+                                                                                        <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            }`}>{sale.status}</span>
+                                                                                    </div>
+                                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="font-mono text-slate-400">-</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    {isAdmin && (
+                                                                                        <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                            <span className="text-slate-400">Korea:</span>
+                                                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {groupingEnabled && sale.group && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                        >
+                                                                                            Remove from group
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </motion.div>
+                                                                        </motion.div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                                {archivedGroups.length > 0 && (
+                                                    <div className="border-b border-slate-200">
+                                                        <button
+                                                            onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                            className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                Archived Groups
+                                                            </span>
+                                                            <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
+                                                        </button>
+                                                        {showArchivedGroups && archivedGroups.map(group => {
+                                                            const groupSales = groupedSales[group.name] || [];
+                                                            if (groupSales.length === 0) return null;
+                                                            return (
+                                                                <div key={group.name} className="border-b border-slate-200">
+                                                                    <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                                        <button
+                                                                            onClick={() => toggleGroup(group.name)}
+                                                                            className="flex items-center gap-2"
+                                                                        >
+                                                                            {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                            {group.name}
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleArchiveGroup(group.name, false)}
+                                                                            className="text-xs text-slate-900 font-semibold"
+                                                                        >
+                                                                            Unarchive
+                                                                        </button>
+                                                                    </div>
+                                                                    {expandedGroups.includes(group.name) && (
+                                                                        <div>
+                                                                            {groupSales.map(sale => (
+                                                                                <motion.div
+                                                                                    key={sale.id}
+                                                                                    initial={{ opacity: 0 }}
+                                                                                    animate={{ opacity: 1 }}
+                                                                                    className="relative border-b border-slate-200"
+                                                                                >
+                                                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                                                        <Trash2 className="text-white w-5 h-5" />
+                                                                                    </div>
+                                                                                    <motion.div
+                                                                                        layout
+                                                                                        drag="x"
+                                                                                        dragDirectionLock
+                                                                                        dragConstraints={{ left: 0, right: 0 }}
+                                                                                        dragElastic={{ left: 0.8, right: 0 }}
+                                                                                        dragSnapToOrigin
+                                                                                        onDragEnd={(e, { offset }) => {
+                                                                                            if (offset.x < -100) {
+                                                                                                const shouldDelete = confirm('Delete this item?');
+                                                                                                if (shouldDelete) {
+                                                                                                    handleDeleteSingle(sale.id);
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                        className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                        onClick={() => {
+                                                                                            if (selectedIds.size > 0) {
+                                                                                                toggleSelection(sale.id);
+                                                                                            } else {
+                                                                                                if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                                                    alert("You do not have permission to edit this sale.");
+                                                                                                    return;
+                                                                                                }
+                                                                                                requestEditChoice(sale);
+                                                                                            }
+                                                                                        }}
+                                                                                        onContextMenu={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            toggleSelection(sale.id);
+                                                                                        }}
+                                                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                                    >
+                                                                                        {selectedIds.size > 0 && (
+                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="flex justify-between items-start">
+                                                                                                <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                            'bg-slate-100 text-slate-500'
+                                                                                                    }`}>{sale.status}</span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                                {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                                    </span>
+                                                                                                ) : (
+                                                                                                    <span className="font-mono text-slate-400">-</span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            {isAdmin && (
+                                                                                                <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                                    <span className="text-slate-400">Korea:</span>
+                                                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {groupingEnabled && sale.group && (
+                                                                                                <button
+                                                                                                    onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                                >
+                                                                                                    Remove from group
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </motion.div>
+                                                                                </motion.div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {filteredSales.map(sale => (
+                                                    <motion.div
+                                                        key={sale.id}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        className="relative border-b border-slate-200"
+                                                    >
+                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                            <Trash2 className="text-white w-5 h-5" />
+                                                        </div>
+                                                        <motion.div
+                                                            layout
+                                                            drag="x"
+                                                            dragDirectionLock
+                                                            dragConstraints={{ left: 0, right: 0 }}
+                                                            dragElastic={{ left: 0.8, right: 0 }}
+                                                            dragSnapToOrigin
+                                                            onDragEnd={(e, { offset }) => {
+                                                                if (offset.x < -100) {
+                                                                    const shouldDelete = confirm('Delete this item?');
+                                                                    if (shouldDelete) {
+                                                                        handleDeleteSingle(sale.id);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                            onClick={() => {
+                                                                if (selectedIds.size > 0) {
+                                                                    toggleSelection(sale.id);
+                                                                } else {
+                                                                    if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                        alert("You do not have permission to edit this sale.");
+                                                                        return;
+                                                                    }
+                                                                    requestEditChoice(sale);
+                                                                }
+                                                            }}
+                                                            onContextMenu={(e) => {
+                                                                e.preventDefault();
+                                                                toggleSelection(sale.id);
+                                                            }}
+                                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                        >
+                                                            {selectedIds.size > 0 && (
+                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                    {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                'bg-slate-100 text-slate-500'
+                                                                        }`}>{sale.status}</span>
+                                                                </div>
+                                                                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
+                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="font-mono text-slate-400">-</span>
+                                                                    )}
+                                                                </div>
+                                                                {isAdmin && (
+                                                                    <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
+                                                                        <span className="text-slate-400">Korea:</span>
+                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </motion.div>
+                                                    </motion.div>
+                                                ))}
+                                            </>
                                         )}
                                     </div>
-
-                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-
-                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                    <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
-                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
                                 </div>
-                            </div>
-                        ) : view === 'invoices' ? (
-                            <div className="flex-1 overflow-auto scroll-container p-3 md:p-6">
-                                <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
-                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleAll(filteredSales)}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                                        disabled={filteredSales.length === 0}
-                                    >
-                                        {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.length ? (
-                                            <CheckSquare className="w-4 h-4 text-slate-700" />
-                                        ) : (
-                                            <Square className="w-4 h-4" />
-                                        )}
-                                        Select all
-                                    </button>
-                                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                        {selectedInvoices.length > 0 && (
-                                            <span>{selectedInvoices.length} selected</span>
-                                        )}
+                            </>) : view === 'settings' ? (
+                                <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+                                    <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
+                                    <div className="space-y-3 md:space-y-4">
+                                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm text-slate-500">User Profile</label>
+                                            <div className="flex gap-2">
+                                                <select value={userProfile} onChange={e => {
+                                                    setUserProfile(e.target.value);
+                                                    persistUserProfile(e.target.value);
+                                                }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
+                                                    <option value="">Select Profile</option>
+                                                    {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                                </select>
+                                                <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
+                                                <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
+                                            </div>
+                                            {!isAdmin && (
+                                                <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
+                                            )}
+                                        </div>
+
+                                        <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+                                        <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+
+                                        <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                        <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
+                                        <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                        <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
+                                    </div>
+                                </div>
+                            ) : view === 'invoices' ? (
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-6">
+                                    <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
+                                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                                         <button
                                             type="button"
-                                            onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
-                                            disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                            onClick={() => toggleAll(filteredSales)}
+                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                                            disabled={filteredSales.length === 0}
                                         >
-                                            {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                            {isDownloadingInvoices ? 'Preparing...' : 'Download Selected'}
+                                            {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.length ? (
+                                                <CheckSquare className="w-4 h-4 text-slate-700" />
+                                            ) : (
+                                                <Square className="w-4 h-4" />
+                                            )}
+                                            Select all
                                         </button>
-                                        {isDownloadingInvoices && invoiceDownloadStatus && (
-                                            <span className="text-xs text-slate-400">{invoiceDownloadStatus}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                {filteredSales.length === 0 ? (
-                                    <div className="text-center text-slate-500 py-20">
-                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                        <p>No invoices to display</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                                        {filteredSales.map(s => (
-                                            <div
-                                                key={s.id}
-                                                className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-slate-200 ring-2 ring-slate-200' : 'border-slate-100'}`}
-                                                onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
+                                        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                                            {selectedInvoices.length > 0 && (
+                                                <span>{selectedInvoices.length} selected</span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
+                                                disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
+                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                                             >
-                                                <div className="absolute top-3 left-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}
-                                                    >
-                                                        <CheckSquare className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                                <div className="flex justify-between items-start mb-2 md:mb-3">
-                                                    <div>
+                                                {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                                {isDownloadingInvoices ? 'Preparing...' : 'Download Selected'}
+                                            </button>
+                                            {isDownloadingInvoices && invoiceDownloadStatus && (
+                                                <span className="text-xs text-slate-400">{invoiceDownloadStatus}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {filteredSales.length === 0 ? (
+                                        <div className="text-center text-slate-500 py-20">
+                                            <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                            <p>No invoices to display</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                                            {filteredSales.map(s => (
+                                                <div
+                                                    key={s.id}
+                                                    className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-slate-200 ring-2 ring-slate-200' : 'border-slate-100'}`}
+                                                    onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
+                                                >
+                                                    <div className="absolute top-3 left-3">
                                                         <button
                                                             type="button"
-                                                            onClick={(e) => { e.stopPropagation(); openSaleForm(s, 'invoices'); }}
-                                                            className="font-bold text-slate-900 text-lg text-left hover:text-slate-900 transition-colors"
+                                                            onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}
                                                         >
-                                                            {s.brand} {s.model}
+                                                            <CheckSquare className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <div className="text-xs text-slate-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
                                                     </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                        s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-                                                            s.status === 'Shipped' ? 'bg-slate-100 text-slate-700' :
-                                                                'bg-slate-100 text-slate-500'
-                                                        }`}>{s.status}</span>
+                                                    <div className="flex justify-between items-start mb-2 md:mb-3">
+                                                        <div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); openSaleForm(s, 'invoices'); }}
+                                                                className="font-bold text-slate-900 text-lg text-left hover:text-slate-900 transition-colors"
+                                                            >
+                                                                {s.brand} {s.model}
+                                                            </button>
+                                                            <div className="text-xs text-slate-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
+                                                        </div>
+                                                        <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                            s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
+                                                                s.status === 'Shipped' ? 'bg-slate-100 text-slate-700' :
+                                                                    'bg-slate-100 text-slate-500'
+                                                            }`}>{s.status}</span>
+                                                    </div>
+                                                    <div className="space-y-1.5 md:space-y-2 text-sm">
+                                                        <div className="flex justify-between text-slate-500">
+                                                            <span>Buyer</span>
+                                                            <span className="text-slate-800 truncate ml-2">{s.buyerName || '-'}</span>
+                                                        </div>
+                                                        <div className="flex justify-between text-slate-500">
+                                                            <span>VIN</span>
+                                                            <span className="font-mono text-xs text-slate-500">{(s.vin || '').slice(-8)}</span>
+                                                        </div>
+                                                        <div className="h-px bg-slate-200 my-1.5 md:my-2" />
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-500">Sold Price</span>
+                                                            <span className="text-emerald-600 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-slate-500">Balance</span>
+                                                            <span className={calculateBalance(s) > 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold'}>
+                                                                €{calculateBalance(s).toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-3 md:mt-4 pt-2.5 md:pt-3 border-t border-slate-200 block">
+                                                        <div className="flex justify-between items-center mb-2 md:mb-3">
+                                                            <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'deposit' }); }}
+                                                                className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            >
+                                                                <FileText className="w-4 h-4 text-amber-500" />
+                                                                View Deposit
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_marreveshje' }); }}
+                                                                className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            >
+                                                                <FileText className="w-4 h-4 text-slate-700" />
+                                                                Marrëveshje
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_shitblerje' }); }}
+                                                                className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            >
+                                                                <FileText className="w-4 h-4 text-slate-600" />
+                                                                Shitblerje
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
+                                                                className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
+                                                            >
+                                                                <FileText className="w-4 h-4 text-emerald-600" />
+                                                                View Invoice
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-1.5 md:space-y-2 text-sm">
-                                                    <div className="flex justify-between text-slate-500">
-                                                        <span>Buyer</span>
-                                                        <span className="text-slate-800 truncate ml-2">{s.buyerName || '-'}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-slate-500">
-                                                        <span>VIN</span>
-                                                        <span className="font-mono text-xs text-slate-500">{(s.vin || '').slice(-8)}</span>
-                                                    </div>
-                                                    <div className="h-px bg-slate-200 my-1.5 md:my-2" />
-                                                    <div className="flex justify-between">
-                                                        <span className="text-slate-500">Sold Price</span>
-                                                        <span className="text-emerald-600 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-slate-500">Balance</span>
-                                                        <span className={calculateBalance(s) > 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold'}>
-                                                            €{calculateBalance(s).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-3 md:mt-4 pt-2.5 md:pt-3 border-t border-slate-200 block">
-                                                    <div className="flex justify-between items-center mb-2 md:mb-3">
-                                                        <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'deposit' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-amber-500" />
-                                                            View Deposit
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_marreveshje' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-slate-700" />
-                                                            Marrëveshje
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_shitblerje' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-slate-600" />
-                                                            Shitblerje
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-emerald-600" />
-                                                            View Invoice
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
-
-                        {/* Floating Bulk Action Bar */}
-                        <AnimatePresence>
-                            {selectedIds.size > 0 && (
-                                <motion.div
-                                    initial={{ y: 100, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 100, opacity: 0 }}
-                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
-                                >
-                                    <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
-                                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
-                                        <span className="font-mono text-xl font-bold text-slate-900 leading-none">{selectedIds.size}</span>
-                                    </div>
-
-                                    {selectedIds.size === 1 && (
-                                        <button
-                                            onClick={() => {
-                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                                if (sale) { openSaleForm(sale); }
-                                            }}
-                                            className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
-                                        >
-                                            <Edit className="w-5 h-5 text-slate-500" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Edit</span>
-                                        </button>
+                                            ))}
+                                        </div>
                                     )}
+                                </div>
+                            ) : null}
 
-                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <Copy className="w-5 h-5 text-emerald-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
-                                    </button>
+                            {/* Floating Bulk Action Bar */}
+                            <AnimatePresence>
+                                {selectedIds.size > 0 && (
+                                    <motion.div
+                                        initial={{ y: 100, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: 100, opacity: 0 }}
+                                        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
+                                    >
+                                        <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
+                                            <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
+                                            <span className="font-mono text-xl font-bold text-slate-900 leading-none">{selectedIds.size}</span>
+                                        </div>
 
-                                    {groupingEnabled && (
-                                        <div className="relative">
-                                            <button onClick={() => setShowGroupMenu(!showGroupMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                                <FolderPlus className="w-5 h-5 text-slate-600" />
-                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Group</span>
+                                        {selectedIds.size === 1 && (
+                                            <button
+                                                onClick={() => {
+                                                    const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                                    if (sale) { openSaleForm(sale); }
+                                                }}
+                                                className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
+                                            >
+                                                <Edit className="w-5 h-5 text-slate-500" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Edit</span>
                                             </button>
-                                            {showGroupMenu && (
-                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-48 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-1.5 border-b border-slate-50 mb-1">Move to Group</div>
-                                                    <div className="max-h-48 overflow-y-auto scroll-container py-1">
-                                                        {activeGroups.map(g => (
-                                                            <button
-                                                                key={g.name}
-                                                                onClick={() => {
-                                                                    handleAddToGroup(g.name, Array.from(selectedIds));
-                                                                    setShowGroupMenu(false);
-                                                                    setSelectedIds(new Set());
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between"
-                                                            >
-                                                                <span>{g.name}</span>
-                                                                <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{groupedSales[g.name]?.length || 0}</span>
-                                                            </button>
-                                                        ))}
-                                                        {groupedSales.Ungrouped?.length > 0 && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    const ids = Array.from(selectedIds);
-                                                                    const newSales = sales.map(s => ids.includes(s.id) ? { ...s, group: undefined } : s);
-                                                                    updateSalesAndSave(newSales);
-                                                                    setShowGroupMenu(false);
-                                                                    setSelectedIds(new Set());
-                                                                }}
-                                                                className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-                                                            >
-                                                                Ungrouped
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    <div className="h-px bg-slate-100 my-1" />
-                                                    <button
-                                                        onClick={() => {
-                                                            setShowGroupMenu(false);
-                                                            handleCreateGroup();
-                                                        }}
-                                                        className="w-full px-3 py-2.5 text-left text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-2"
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5" />
-                                                        Create New Group
-                                                    </button>
+                                        )}
+
+                                        <button onClick={handleBulkCopy} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <Copy className="w-5 h-5 text-emerald-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
+                                        </button>
+
+                                        {groupingEnabled && (
+                                            <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                                <FolderPlus className="w-5 h-5 text-slate-600" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
+                                            </button>
+                                        )}
+
+                                        <div className="relative">
+                                            <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                                <ArrowRight className="w-5 h-5 text-amber-500" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
+                                            </button>
+                                            {showMoveMenu && (
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                    <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
+                                                    <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
+                                                    <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
+                                                    <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
                                                 </div>
                                             )}
                                         </div>
-                                    )}
 
-                                    <div className="relative">
-                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                            <ArrowRight className="w-5 h-5 text-amber-500" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
+                                        <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <CheckSquare className="w-5 h-5 text-slate-700" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
                                         </button>
-                                        {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
-                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
-                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
-                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
-                                            </div>
-                                        )}
-                                    </div>
 
-                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <CheckSquare className="w-5 h-5 text-slate-700" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
-                                    </button>
+                                        <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <Trash2 className="w-5 h-5 text-red-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
+                                        </button>
 
-                                    <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
-                                    </button>
+                                        <div className="w-px h-8 bg-slate-200 mx-1" />
 
-                                    <div className="w-px h-8 bg-slate-200 mx-1" />
+                                        <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-slate-100 rounded-xl text-slate-500">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </>
+                    )}
 
-                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-slate-100 rounded-xl text-slate-500">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </>
-                )}
-
-            </main>
-        </div> {/* Close flex-1 */}
-            <AnimatePresence>
-                {editChoiceSale && (
-                    <motion.div
-                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={() => setEditChoiceSale(null)}
-                    >
+                </main>
+                <AnimatePresence>
+                    {editChoiceSale && (
                         <motion.div
-                            className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
+                            className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             transition={{ duration: 0.2 }}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={() => setEditChoiceSale(null)}
                         >
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <h3 className="text-base font-semibold text-slate-900">What do you want to edit?</h3>
-                                    <p className="text-xs text-slate-500 mt-1">{editChoiceSale.brand} {editChoiceSale.model}</p>
-                                </div>
-                                <button
-                                    onClick={() => setEditChoiceSale(null)}
-                                    className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                                    aria-label="Close"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <div className="mt-4 flex flex-col gap-2">
-                                <button
-                                    onClick={() => {
-                                        const sale = editChoiceSale;
-                                        setEditChoiceSale(null);
-                                        setViewSaleModalItem(sale);
-                                    }}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 flex items-center justify-center gap-2"
-                                >
-                                    <Eye className="w-4 h-4" />
-                                    View Sale
-                                </button>
-                                <button
-                                    onClick={handleEditSaleChoice}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                                >
-                                    Edit Sale
-                                </button>
-                                <button
-                                    onClick={handleEditShitblerjeChoice}
-                                    className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                                >
-                                    Edit Shitblerje
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {view === 'sale_form' && (
-                    <motion.div
-                        className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <motion.div
-                            className="relative w-full max-w-5xl max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-                            initial={{ opacity: 0, y: 24 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 24 }}
-                            transition={{ duration: 0.25 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button
-                                onClick={() => closeSaleForm()}
-                                className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-white/95 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
-                                aria-label="Close sale form"
-                                type="button"
+                            <motion.div
+                                className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5"
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.2 }}
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                <X className="w-5 h-5 mx-auto" />
-                            </button>
-                            <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 bg-slate-50/80">
-                                <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
-                                    <ArrowRight className="w-4 h-4 rotate-180" />
-                                    {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
-                                </button>
-                                <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                                <div className="flex items-center gap-2">
-                                    {editingSale && (
-                                        <button
-                                            onClick={() => setViewSaleModalItem(editingSale)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                            <span>View Sale</span>
-                                        </button>
-                                    )}
-                                    <div className="w-10 sm:w-20" />
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h3 className="text-base font-semibold text-slate-900">What do you want to edit?</h3>
+                                        <p className="text-xs text-slate-500 mt-1">{editChoiceSale.brand} {editChoiceSale.model}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setEditChoiceSale(null)}
+                                        className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                        aria-label="Close"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            </div>
-                            <div className="flex-1 overflow-y-auto scroll-container bg-white">
-                                <SaleModal
-                                    isOpen={true}
-                                    inline={true}
-                                    hideHeader={true}
-                                    onClose={() => closeSaleForm()}
-                                    onSave={handleAddSale}
-                                    existingSale={editingSale}
-                                    defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
-                                    isAdmin={isAdmin}
-                                    availableProfiles={profileOptions}
-                                />
-                            </div>
+                                <div className="mt-4 flex flex-col gap-2">
+                                    <button
+                                        onClick={() => {
+                                            const sale = editChoiceSale;
+                                            setEditChoiceSale(null);
+                                            setViewSaleModalItem(sale);
+                                        }}
+                                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 flex items-center justify-center gap-2"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                        View Sale
+                                    </button>
+                                    <button
+                                        onClick={handleEditSaleChoice}
+                                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                    >
+                                        Edit Sale
+                                    </button>
+                                    <button
+                                        onClick={handleEditShitblerjeChoice}
+                                        className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                                    >
+                                        Edit Shitblerje
+                                    </button>
+                                </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            <EditShitblerjeModal
-                isOpen={!!editShitblerjeSale}
-                sale={editShitblerjeSale}
-                onClose={() => setEditShitblerjeSale(null)}
-                onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
-            />
-
-            {/* Contextual FAB for Inspections/Autosallon */}
-            {documentPreview && (
-                <EditablePreviewModal
-                    isOpen={!!documentPreview}
-                    onClose={() => setDocumentPreview(null)}
-                    sale={documentPreview.sale}
-                    documentType={documentPreview.type}
-                    withDogane={documentPreview.withDogane}
-                    onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
-                />
-            )}
-
-            {viewSaleModalItem && (
-                <ViewSaleModal
-                    isOpen={!!viewSaleModalItem}
-                    sale={viewSaleModalItem}
-                    onClose={() => setViewSaleModalItem(null)}
-                    isAdmin={isAdmin}
-                />
-            )}
-            {
-                showPasswordModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
-                        <div className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
-                            <div className="relative mb-6">
-                                <input
-                                    type={isPasswordVisible ? 'text' : 'password'}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors"
-                                    placeholder="Password"
-                                    value={passwordInput}
-                                    onChange={e => setPasswordInput(e.target.value)}
-                                    autoFocus
-                                    onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
-                                />
+                    )}
+                </AnimatePresence>
+                <AnimatePresence>
+                    {view === 'sale_form' && (
+                        <motion.div
+                            className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <motion.div
+                                className="relative w-full max-w-5xl max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 24 }}
+                                transition={{ duration: 0.25 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <button
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                    onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                    onClick={() => closeSaleForm()}
+                                    className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-white/95 border border-slate-200 text-slate-600 shadow-sm hover:text-slate-900 hover:border-slate-300 hover:shadow-md transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                                    aria-label="Close sale form"
+                                    type="button"
                                 >
-                                    {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    <X className="w-5 h-5 mx-auto" />
                                 </button>
-                            </div>
-                            <label className="mb-5 flex items-center justify-center gap-3 text-sm text-slate-600 font-semibold">
-                                <input
-                                    type="checkbox"
-                                    checked={rememberProfile}
-                                    onChange={(e) => setRememberProfile(e.target.checked)}
-                                    className="h-4 w-4 accent-slate-900"
-                                />
-                                Remember me on this device
-                            </label>
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
-                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-colors shadow-sm">Submit</button>
+                                <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 bg-slate-50/80">
+                                    <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
+                                        <ArrowRight className="w-4 h-4 rotate-180" />
+                                        {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
+                                    </button>
+                                    <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
+                                    <div className="flex items-center gap-2">
+                                        {editingSale && (
+                                            <button
+                                                onClick={() => setViewSaleModalItem(editingSale)}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                <span>View Sale</span>
+                                            </button>
+                                        )}
+                                        <div className="w-10 sm:w-20" />
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto scroll-container bg-white">
+                                    <SaleModal
+                                        isOpen={true}
+                                        inline={true}
+                                        hideHeader={true}
+                                        onClose={() => closeSaleForm()}
+                                        onSave={handleAddSale}
+                                        existingSale={editingSale}
+                                        defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
+                                        isAdmin={isAdmin}
+                                        availableProfiles={profileOptions}
+                                    />
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                <EditShitblerjeModal
+                    isOpen={!!editShitblerjeSale}
+                    sale={editShitblerjeSale}
+                    onClose={() => setEditShitblerjeSale(null)}
+                    onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
+                />
+
+                {/* Contextual FAB for Inspections/Autosallon */}
+                {documentPreview && (
+                    <EditablePreviewModal
+                        isOpen={!!documentPreview}
+                        onClose={() => setDocumentPreview(null)}
+                        sale={documentPreview.sale}
+                        documentType={documentPreview.type}
+                        withDogane={documentPreview.withDogane}
+                        onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
+                    />
+                )}
+
+                {viewSaleModalItem && (
+                    <ViewSaleModal
+                        isOpen={!!viewSaleModalItem}
+                        sale={viewSaleModalItem}
+                        onClose={() => setViewSaleModalItem(null)}
+                        isAdmin={isAdmin}
+                    />
+                )}
+                {
+                    showPasswordModal && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
+                            <div className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
+                                <div className="relative mb-6">
+                                    <input
+                                        type={isPasswordVisible ? 'text' : 'password'}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors"
+                                        placeholder="Password"
+                                        value={passwordInput}
+                                        onChange={e => setPasswordInput(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
+                                    />
+                                    <button
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                    >
+                                        {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
+                                <label className="mb-5 flex items-center justify-center gap-3 text-sm text-slate-600 font-semibold">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberProfile}
+                                        onChange={(e) => setRememberProfile(e.target.checked)}
+                                        className="h-4 w-4 accent-slate-900"
+                                    />
+                                    Remember me on this device
+                                </label>
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                                    <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-colors shadow-sm">Submit</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )
-            }
-            {view !== 'sale_form' && (
-                <button
-                    onClick={() => openSaleForm(null)}
-                    className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-[60] h-12 w-12 rounded-full border border-slate-200 bg-white/90 text-slate-900 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
-                    aria-label="Add sale"
-                    type="button"
-                >
-                    <Plus className="w-5 h-5 mx-auto" />
-                </button>
-            )}
-        </div>
-    );
-}
+                    )
+                }
+                {view !== 'sale_form' && (
+                    <button
+                        onClick={() => openSaleForm(null)}
+                        className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-6 z-[60] h-12 w-12 rounded-full border border-slate-200 bg-white/90 text-slate-900 shadow-lg shadow-slate-900/10 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                        aria-label="Add sale"
+                        type="button"
+                    >
+                        <Plus className="w-5 h-5 mx-auto" />
+                    </button>
+                )}
+            </div >
+        );
+    }
