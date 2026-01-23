@@ -67,6 +67,86 @@ type GroupMeta = {
     archived: boolean;
 };
 
+const normalizeGroupName = (name?: string | null) => {
+    if (!name) return '';
+    return name.trim();
+};
+
+const groupKeyForName = (name?: string | null) => normalizeGroupName(name).toLowerCase();
+
+const normalizeGroupMetaList = (meta: GroupMeta[]) => {
+    const normalized: GroupMeta[] = [];
+    const indexByKey = new Map<string, number>();
+    meta.forEach(group => {
+        const name = normalizeGroupName(group.name);
+        if (!name) return;
+        const key = groupKeyForName(name);
+        const existingIndex = indexByKey.get(key);
+        if (existingIndex !== undefined) {
+            const existing = normalized[existingIndex];
+            normalized[existingIndex] = {
+                ...existing,
+                archived: existing.archived || group.archived,
+                order: Math.min(existing.order, group.order)
+            };
+            return;
+        }
+        indexByKey.set(key, normalized.length);
+        normalized.push({
+            name,
+            order: typeof group.order === 'number' ? group.order : normalized.length,
+            archived: Boolean(group.archived)
+        });
+    });
+    return normalized;
+};
+
+const mergeGroupMetaLists = (primary: GroupMeta[], secondary: GroupMeta[]) => {
+    const merged: GroupMeta[] = [];
+    const indexByKey = new Map<string, number>();
+    const addGroup = (group: GroupMeta) => {
+        const name = normalizeGroupName(group.name);
+        if (!name) return;
+        const key = groupKeyForName(name);
+        const existingIndex = indexByKey.get(key);
+        if (existingIndex !== undefined) {
+            const existing = merged[existingIndex];
+            merged[existingIndex] = {
+                ...existing,
+                archived: existing.archived || group.archived
+            };
+            return;
+        }
+        indexByKey.set(key, merged.length);
+        merged.push({
+            name,
+            order: typeof group.order === 'number' ? group.order : merged.length,
+            archived: Boolean(group.archived)
+        });
+    };
+    normalizeGroupMetaList(primary).sort((a, b) => a.order - b.order).forEach(addGroup);
+    normalizeGroupMetaList(secondary).sort((a, b) => a.order - b.order).forEach(addGroup);
+    return merged;
+};
+
+const ensureGroupMetaIncludesNames = (meta: GroupMeta[], names: string[]) => {
+    const next = [...meta];
+    const keys = new Set(next.map(group => groupKeyForName(group.name)));
+    names.forEach(name => {
+        const normalized = normalizeGroupName(name);
+        if (!normalized) return;
+        const key = groupKeyForName(normalized);
+        if (keys.has(key)) return;
+        keys.add(key);
+        next.push({ name: normalized, order: next.length, archived: false });
+    });
+    return next;
+};
+
+const serializeGroupMeta = (meta: GroupMeta[]) => JSON.stringify(
+    normalizeGroupMetaList(meta).sort((a, b) => a.order - b.order)
+);
+
 type UserStatus = 'active' | 'pending';
 
 type UserAccount = {
@@ -405,6 +485,9 @@ export default function Dashboard() {
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
+    const [pendingEditingSaleId, setPendingEditingSaleId] = useState<string | null>(null);
+    const [pendingViewSaleId, setPendingViewSaleId] = useState<string | null>(null);
+    const [pendingNewSaleDraft, setPendingNewSaleDraft] = useState(false);
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
     const [editShitblerjeSale, setEditShitblerjeSale] = useState<CarSale | null>(null);
@@ -413,6 +496,7 @@ export default function Dashboard() {
     const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
+    const groupMetaRef = useRef<GroupMeta[]>([]);
     const [showArchivedGroups, setShowArchivedGroups] = useState(false);
     const [groupViewEnabled, setGroupViewEnabled] = useState(true);
     const hasInitializedGroups = useRef(false);
@@ -451,6 +535,10 @@ export default function Dashboard() {
     const [sellerReassignTarget, setSellerReassignTarget] = useState('');
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
+
+    useEffect(() => {
+        groupMetaRef.current = groupMeta;
+    }, [groupMeta]);
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
@@ -644,7 +732,7 @@ export default function Dashboard() {
             }
         };
         syncAvatars();
-    }, [supabaseUrl, supabaseKey]);
+    }, [supabaseUrl, supabaseKey, userProfile]);
 
     const handleEditAvatar = async (name: string, base64: string) => {
         const normalizedName = normalizeProfileName(name);
@@ -770,6 +858,53 @@ export default function Dashboard() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [supabaseUrl, supabaseKey, normalizeUserAccounts]);
+
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey) return;
+
+        const syncGroupsFromCloud = async () => {
+            try {
+                const client = createClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_group_meta').single();
+                const cloudGroups = Array.isArray(data?.attachments?.groups) ? (data?.attachments?.groups as GroupMeta[]) : [];
+                const localMeta = groupMetaRef.current || [];
+                const groupNamesFromSales = Array.from(new Set(
+                    salesRef.current
+                        .map(sale => normalizeGroupName(sale.group))
+                        .filter(Boolean)
+                ));
+                const merged = ensureGroupMetaIncludesNames(
+                    mergeGroupMetaLists(cloudGroups, localMeta),
+                    groupNamesFromSales
+                );
+                const mergedSignature = serializeGroupMeta(merged);
+                const localSignature = serializeGroupMeta(localMeta);
+                const cloudSignature = serializeGroupMeta(cloudGroups);
+                if (mergedSignature !== localSignature) {
+                    await persistGroupMeta(merged, { skipCloud: true });
+                }
+                if (mergedSignature !== cloudSignature) {
+                    await syncGroupMetaToCloud(merged);
+                }
+            } catch (e) {
+                console.error('Group meta cloud sync error', e);
+            }
+        };
+
+        syncGroupsFromCloud();
+        const interval = setInterval(syncGroupsFromCloud, 30000);
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncGroupsFromCloud();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -777,6 +912,7 @@ export default function Dashboard() {
     const selectionHydrated = useRef(false);
     const uiStateKey = 'dashboard_ui_state_v1';
     const selectionKey = 'dashboard_selected_ids_v1';
+    const uiStateViewRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -787,12 +923,20 @@ export default function Dashboard() {
         }
         try {
             const parsed = JSON.parse(raw);
+            if (typeof parsed.view === 'string') {
+                uiStateViewRef.current = parsed.view;
+                setView(parsed.view);
+            }
             if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
             if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
             if (typeof parsed.sortBy === 'string') setSortBy(parsed.sortBy);
             if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') setSortDir(parsed.sortDir);
             if (typeof parsed.groupViewEnabled === 'boolean') setGroupViewEnabled(parsed.groupViewEnabled);
             if (Array.isArray(parsed.expandedGroups)) setExpandedGroups(parsed.expandedGroups);
+            if (typeof parsed.editingSaleId === 'string') setPendingEditingSaleId(parsed.editingSaleId);
+            if (typeof parsed.viewSaleRecordId === 'string') setPendingViewSaleId(parsed.viewSaleRecordId);
+            if (typeof parsed.pendingNewSaleDraft === 'boolean') setPendingNewSaleDraft(parsed.pendingNewSaleDraft);
+            if (typeof parsed.formReturnView === 'string') setFormReturnView(parsed.formReturnView);
         } catch (e) {
             console.warn('Failed to restore dashboard UI state', e);
         } finally {
@@ -803,15 +947,20 @@ export default function Dashboard() {
     useEffect(() => {
         if (!uiStateHydrated.current || typeof window === 'undefined') return;
         const payload = {
+            view,
             activeCategory,
             searchTerm,
             sortBy,
             sortDir,
             groupViewEnabled,
-            expandedGroups
+            expandedGroups,
+            editingSaleId: editingSale?.id || null,
+            viewSaleRecordId: viewSaleRecord?.id || null,
+            pendingNewSaleDraft: view === 'sale_form' && !editingSale?.id,
+            formReturnView
         };
         window.localStorage.setItem(uiStateKey, JSON.stringify(payload));
-    }, [activeCategory, searchTerm, sortBy, sortDir, groupViewEnabled, expandedGroups]);
+    }, [activeCategory, searchTerm, sortBy, sortDir, groupViewEnabled, expandedGroups, view, editingSale, viewSaleRecord, formReturnView]);
 
     useEffect(() => {
         if (selectionHydrated.current || typeof window === 'undefined') return;
@@ -836,6 +985,33 @@ export default function Dashboard() {
         if (!selectionHydrated.current || typeof window === 'undefined') return;
         window.localStorage.setItem(selectionKey, JSON.stringify(Array.from(selectedIds)));
     }, [selectedIds]);
+
+    useEffect(() => {
+        if (!uiStateHydrated.current) return;
+        if (pendingEditingSaleId && sales.length > 0) {
+            const sale = sales.find(item => item.id === pendingEditingSaleId);
+            if (sale) {
+                setEditingSale(sale);
+            }
+            setPendingEditingSaleId(null);
+        }
+        if (pendingViewSaleId && sales.length > 0) {
+            const sale = sales.find(item => item.id === pendingViewSaleId);
+            if (sale) {
+                setViewSaleRecord(sale);
+            }
+            setPendingViewSaleId(null);
+        }
+        if (pendingNewSaleDraft && !pendingEditingSaleId) {
+            setEditingSale(null);
+        }
+    }, [pendingEditingSaleId, pendingNewSaleDraft, pendingViewSaleId, sales]);
+
+    useEffect(() => {
+        if (view !== 'sale_form' && pendingNewSaleDraft) {
+            setPendingNewSaleDraft(false);
+        }
+    }, [pendingNewSaleDraft, view]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -1473,10 +1649,43 @@ export default function Dashboard() {
     };
 
     // Group management functions
-    const persistGroupMeta = async (next: GroupMeta[]) => {
-        setGroupMeta(next);
-        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(next) });
-        localStorage.setItem('sale_group_meta', JSON.stringify(next));
+    const syncGroupMetaToCloud = async (next: GroupMeta[]) => {
+        if (!supabaseUrl || !supabaseKey) return;
+        try {
+            const client = createClient(supabaseUrl, supabaseKey);
+            await client.from('sales').upsert({
+                id: 'config_group_meta',
+                brand: 'CONFIG',
+                model: 'GROUPS',
+                status: 'Completed',
+                year: new Date().getFullYear(),
+                km: 0,
+                cost_to_buy: 0,
+                sold_price: 0,
+                amount_paid_cash: 0,
+                amount_paid_bank: 0,
+                deposit: 0,
+                attachments: {
+                    groups: next,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: userProfile || 'Unknown'
+                }
+            });
+        } catch (e) {
+            console.error('Group meta sync error', e);
+        }
+    };
+
+    const persistGroupMeta = async (next: GroupMeta[], options?: { skipCloud?: boolean }) => {
+        const normalized = normalizeGroupMetaList(next)
+            .sort((a, b) => a.order - b.order)
+            .map((group, index) => ({ ...group, order: index }));
+        setGroupMeta(normalized);
+        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(normalized) });
+        localStorage.setItem('sale_group_meta', JSON.stringify(normalized));
+        if (!options?.skipCloud) {
+            await syncGroupMetaToCloud(normalized);
+        }
     };
 
     const toggleGroup = (groupName: string) => {
@@ -1487,10 +1696,18 @@ export default function Dashboard() {
         );
     };
 
+    const groupNameExists = (name: string) => {
+        const key = groupKeyForName(name);
+        if (!key) return false;
+        const inMeta = groupMeta.some(group => groupKeyForName(group.name) === key);
+        if (inMeta) return true;
+        return sales.some(sale => groupKeyForName(sale.group) === key);
+    };
+
     const createGroupWithName = async (name: string, saleIds: string[]) => {
         if (!name?.trim() || saleIds.length === 0) return;
         const trimmed = name.trim();
-        if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+        if (groupNameExists(trimmed)) {
             alert('Group already exists.');
             return;
         }
@@ -1530,7 +1747,7 @@ export default function Dashboard() {
         if (!newName || !newName.trim()) return;
         const trimmed = newName.trim();
         if (trimmed === groupName) return;
-        if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+        if (groupNameExists(trimmed)) {
             alert('Group name already exists.');
             return;
         }
@@ -1602,21 +1819,23 @@ export default function Dashboard() {
 
     const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
         if (saleIds.length === 0) return;
+        const normalizedGroup = normalizeGroupName(groupName);
+        if (!normalizedGroup) return;
         const saleIdSet = new Set(saleIds);
         const newSales = sales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
-            return { ...s, group: groupName };
+            return { ...s, group: normalizedGroup };
         });
         await updateSalesAndSave(newSales);
-        setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
+        setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
         setSelectedIds(new Set());
     };
 
     const handleBulkGroupMove = async (groupName?: string) => {
         if (selectedIds.size === 0) return;
         const saleIdSet = new Set(selectedIds);
-        const normalizedGroup = groupName?.trim();
+        const normalizedGroup = normalizeGroupName(groupName);
         const newSales = sales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
@@ -1890,7 +2109,7 @@ export default function Dashboard() {
                 }
                 if (storedProfile && shouldRemember) {
                     setUserProfile(storedProfile);
-                    setView('landing');
+                    setView(uiStateViewRef.current || 'landing');
                 } else if (storedProfile && !shouldRemember) {
                     await Preferences.remove({ key: 'user_profile' });
                 }
@@ -1919,11 +2138,11 @@ export default function Dashboard() {
                 const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
                 if (groupMetaValue) {
                     const parsed = JSON.parse(groupMetaValue) as GroupMeta[];
-                    setGroupMeta(parsed);
+                    setGroupMeta(normalizeGroupMetaList(parsed));
                 } else {
                     const stored = localStorage.getItem('sale_group_meta');
                     if (stored) {
-                        setGroupMeta(JSON.parse(stored));
+                        setGroupMeta(normalizeGroupMetaList(JSON.parse(stored)));
                     }
                 }
             } catch (e) {
@@ -2445,36 +2664,61 @@ export default function Dashboard() {
     const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
     const groupingEnabled = groupingAvailable && groupViewEnabled;
 
+    const normalizedGroupMeta = useMemo(() => normalizeGroupMetaList(groupMeta), [groupMeta]);
+    const groupNamesFromSales = useMemo(() => {
+        const unique = new Set<string>();
+        sales.forEach(sale => {
+            const name = normalizeGroupName(sale.group);
+            if (name) unique.add(name);
+        });
+        return Array.from(unique);
+    }, [sales]);
+    const resolvedGroupMeta = useMemo(
+        () => ensureGroupMetaIncludesNames(normalizedGroupMeta, groupNamesFromSales),
+        [normalizedGroupMeta, groupNamesFromSales]
+    );
+    const groupDisplayNameByKey = useMemo(() => {
+        const map = new Map<string, string>();
+        resolvedGroupMeta.forEach(group => {
+            map.set(groupKeyForName(group.name), group.name);
+        });
+        return map;
+    }, [resolvedGroupMeta]);
+
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
-        groupMeta.forEach(group => {
+        resolvedGroupMeta.forEach(group => {
             groups[group.name] = [];
         });
         groups.Ungrouped = [];
         filteredSales.forEach(s => {
-            const groupKey = s.group?.trim() || 'Ungrouped';
+            const normalized = normalizeGroupName(s.group);
+            const key = normalized ? groupKeyForName(normalized) : '';
+            const groupKey = normalized ? (groupDisplayNameByKey.get(key) || normalized) : 'Ungrouped';
             if (!groups[groupKey]) groups[groupKey] = [];
             groups[groupKey].push(s);
         });
         return groups;
-    }, [filteredSales, groupMeta]);
+    }, [filteredSales, resolvedGroupMeta, groupDisplayNameByKey]);
 
     useEffect(() => {
         if (sales.length === 0) return;
-        const groupNames = new Set(sales.map(s => s.group).filter(Boolean) as string[]);
+        const groupNames = new Set(sales.map(s => normalizeGroupName(s.group)).filter(Boolean) as string[]);
         if (groupNames.size === 0) return;
-        const missing = Array.from(groupNames).filter(name => !groupMeta.some(g => g.name === name));
+        const missing = Array.from(groupNames).filter(name => !normalizedGroupMeta.some(g => groupKeyForName(g.name) === groupKeyForName(name)));
         if (missing.length === 0) return;
-        const nextMeta = [...groupMeta];
+        const nextMeta = [...normalizedGroupMeta];
         missing.forEach(name => {
-            nextMeta.push({ name, order: nextMeta.length, archived: false });
+            const trimmed = normalizeGroupName(name);
+            if (!trimmed) return;
+            nextMeta.push({ name: trimmed, order: nextMeta.length, archived: false });
         });
         persistGroupMeta(nextMeta);
-    }, [sales, groupMeta]);
+    }, [sales, normalizedGroupMeta]);
 
     const orderedGroupMeta = useMemo(() => {
-        return [...groupMeta].sort((a, b) => a.order - b.order);
-    }, [groupMeta]);
+        return [...resolvedGroupMeta].sort((a, b) => a.order - b.order);
+    }, [resolvedGroupMeta]);
 
     const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
     const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
@@ -2836,10 +3080,11 @@ export default function Dashboard() {
                                         values={activeGroups.map(g => g.name)}
                                         onReorder={(newOrder) => {
                                             const updated = newOrder.map((name, index) => {
-                                                const match = groupMeta.find(g => g.name === name);
+                                                const match = resolvedGroupMeta.find(g => groupKeyForName(g.name) === groupKeyForName(name));
                                                 return match ? { ...match, order: index } : { name, order: index, archived: false };
                                             });
-                                            const archived = groupMeta.filter(g => g.archived);
+                                            const updatedKeys = new Set(updated.map(group => groupKeyForName(group.name)));
+                                            const archived = resolvedGroupMeta.filter(g => g.archived && !updatedKeys.has(groupKeyForName(g.name)));
                                             persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
                                         }}
                                         className="grid grid-cols-subgrid"
