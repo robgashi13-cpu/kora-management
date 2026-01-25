@@ -521,6 +521,7 @@ export default function Dashboard() {
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
+    const userAccountsRef = useRef<UserAccount[]>([]);
     const [pendingSetupToken, setPendingSetupToken] = useState<string | null>(null);
     const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
     const [setupPassword, setSetupPassword] = useState('');
@@ -538,6 +539,10 @@ export default function Dashboard() {
     useEffect(() => {
         groupMetaRef.current = groupMeta;
     }, [groupMeta]);
+
+    useEffect(() => {
+        userAccountsRef.current = userAccounts;
+    }, [userAccounts]);
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
@@ -601,6 +606,11 @@ export default function Dashboard() {
             }
         }
     }, [normalizeUserAccounts, supabaseKey, supabaseUrl]);
+
+    const cacheUserAccounts = useCallback(async (accounts: UserAccount[]) => {
+        setUserAccounts(accounts);
+        await Preferences.set({ key: 'user_accounts', value: JSON.stringify(accounts) });
+    }, []);
 
     const buildSetupLink = useCallback((token: string) => {
         if (typeof window === 'undefined') return token;
@@ -832,17 +842,40 @@ export default function Dashboard() {
         const syncUsersFromCloud = async () => {
             try {
                 const client = createClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_user_accounts').single();
-                if (data?.attachments?.users) {
-                    const cloudUsers: UserAccount[] = normalizeUserAccounts(data.attachments.users);
-                    setUserAccounts(cloudUsers);
-                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(cloudUsers) });
+                const { data, error } = await client
+                    .from('sales')
+                    .select('attachments')
+                    .eq('id', 'config_user_accounts')
+                    .maybeSingle();
+                if (error) {
+                    console.error('User account cloud sync error', error);
+                    return;
+                }
+                if (!data?.attachments?.users || !Array.isArray(data.attachments.users)) return;
+                const cloudUsers: UserAccount[] = normalizeUserAccounts(data.attachments.users);
+                if (isAdmin) {
+                    await cacheUserAccounts(cloudUsers);
+                    return;
+                }
+
+                const normalizedProfile = normalizeProfileName(userProfile || '');
+                const filteredUsers = cloudUsers.filter(account => (
+                    (normalizedProfile && account.name === normalizedProfile) ||
+                    (pendingSetupToken && account.setupToken === pendingSetupToken)
+                ));
+                if (filteredUsers.length > 0) {
+                    await cacheUserAccounts(filteredUsers);
+                    return;
+                }
+                if (userAccountsRef.current.length === 0 && cloudUsers.length > 0) {
+                    await cacheUserAccounts(cloudUsers);
                 }
             } catch (e) {
                 console.error('User account cloud sync error', e);
             }
         };
 
+        if (!isAdmin && !userProfile && !pendingSetupToken) return;
         syncUsersFromCloud();
         const interval = setInterval(syncUsersFromCloud, 30000);
         const handleVisibilityChange = () => {
@@ -856,7 +889,7 @@ export default function Dashboard() {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
-    }, [supabaseUrl, supabaseKey, normalizeUserAccounts]);
+    }, [cacheUserAccounts, isAdmin, normalizeUserAccounts, pendingSetupToken, supabaseKey, supabaseUrl, userProfile]);
 
     useEffect(() => {
         if (!supabaseUrl || !supabaseKey) return;
@@ -1558,7 +1591,7 @@ export default function Dashboard() {
 
         const timestamp = new Date().toISOString();
         const actor = userProfile || 'Unknown';
-        const newSales = sales.map(sale => {
+        const newSales: CarSale[] = sales.map(sale => {
             if (!selectedIds.has(sale.id)) return sale;
             dirtyIds.current.add(sale.id);
             const wasArchived = sale.status === 'Archived';
@@ -1567,7 +1600,7 @@ export default function Dashboard() {
                 archivedAt: timestamp,
                 archivedBy: actor,
                 archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
-                status: 'Archived'
+                status: 'Archived' as SaleStatus
             };
         });
         await updateSalesAndSave(newSales);
@@ -1575,12 +1608,12 @@ export default function Dashboard() {
     };
 
     const handleBulkMove = async (status: SaleStatus) => {
-        const newSales = sales.map(s => {
+        const newSales: CarSale[] = sales.map(s => {
             if (selectedIds.has(s.id)) {
                 dirtyIds.current.add(s.id);
                 return {
                     ...s,
-                    status,
+                    status: status as SaleStatus,
                     archivedAt: status === 'Archived' ? s.archivedAt : undefined,
                     archivedBy: status === 'Archived' ? s.archivedBy : undefined,
                     archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
@@ -1596,7 +1629,7 @@ export default function Dashboard() {
         if (!confirm('Archive this car?')) return;
         const timestamp = new Date().toISOString();
         const actor = userProfile || 'Unknown';
-        const newSales = sales.map(sale => {
+        const newSales: CarSale[] = sales.map(sale => {
             if (sale.id !== id) return sale;
             dirtyIds.current.add(sale.id);
             const wasArchived = sale.status === 'Archived';
@@ -1605,7 +1638,7 @@ export default function Dashboard() {
                 archivedAt: timestamp,
                 archivedBy: actor,
                 archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
-                status: 'Archived'
+                status: 'Archived' as SaleStatus
             };
         });
         await updateSalesAndSave(newSales);
@@ -1613,13 +1646,13 @@ export default function Dashboard() {
 
     const handleBulkRestore = async () => {
         if (!confirm(`Restore ${selectedIds.size} archived items?`)) return;
-        const newSales = sales.map(sale => {
+        const newSales: CarSale[] = sales.map(sale => {
             if (!selectedIds.has(sale.id)) return sale;
             if (sale.status !== 'Archived') return sale;
             dirtyIds.current.add(sale.id);
             return {
                 ...sale,
-                status: sale.archivedFromStatus || 'New',
+                status: (sale.archivedFromStatus || 'New') as SaleStatus,
                 archivedAt: undefined,
                 archivedBy: undefined,
                 archivedFromStatus: undefined
@@ -1632,8 +1665,8 @@ export default function Dashboard() {
     const handleRestoreSingle = async (id: string) => {
         const sale = salesRef.current.find(s => s.id === id);
         if (!sale || sale.status !== 'Archived') return;
-        const nextStatus = sale.archivedFromStatus || 'New';
-        const newSales = sales.map(s => {
+        const nextStatus = (sale.archivedFromStatus || 'New') as SaleStatus;
+        const newSales: CarSale[] = sales.map(s => {
             if (s.id !== id) return s;
             dirtyIds.current.add(s.id);
             return {
@@ -2393,12 +2426,12 @@ export default function Dashboard() {
             if (confirm('Please confirm again: ARCHIVE ALL NON-SOLD DATA?')) {
                 const timestamp = new Date().toISOString();
                 const actor = userProfile || 'Unknown';
-                const updated = salesRef.current.map(sale => {
+                const updated: CarSale[] = salesRef.current.map(sale => {
                     if (sale.status === 'Completed') return sale;
                     if (sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts') return sale;
                     return {
                         ...sale,
-                        status: 'Archived',
+                        status: 'Archived' as SaleStatus,
                         archivedAt: timestamp,
                         archivedBy: actor,
                         archivedFromStatus: sale.status
