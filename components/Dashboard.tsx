@@ -1162,7 +1162,11 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey && userProfile) {
                 await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
             }
-        } catch (e) { console.error("Save failed", e); }
+            return true;
+        } catch (e) {
+            console.error("Save failed", e);
+            return false;
+        }
     };
 
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
@@ -1720,6 +1724,21 @@ export default function Dashboard() {
         }
     };
 
+    const getSalesInGroup = (groupName: string, sourceSales: CarSale[]) => {
+        const key = groupKeyForName(groupName);
+        if (!key) return [];
+        return sourceSales.filter(sale => groupKeyForName(sale.group) === key);
+    };
+
+    const applySalesUpdateWithRollback = async (nextSales: CarSale[], previousSales: CarSale[], errorMessage: string) => {
+        const success = await updateSalesAndSave(nextSales);
+        if (!success) {
+            setSales(previousSales);
+            alert(errorMessage);
+        }
+        return success;
+    };
+
     const toggleGroup = (groupName: string) => {
         setExpandedGroups(prev =>
             prev.includes(groupName)
@@ -1744,7 +1763,8 @@ export default function Dashboard() {
             return;
         }
 
-        const salesById = new Map(sales.map(s => [s.id, s]));
+        const currentSales = salesRef.current;
+        const salesById = new Map(currentSales.map(s => [s.id, s]));
         const ungroupedIds = saleIds.filter(id => {
             const sale = salesById.get(id);
             return !sale?.group || !sale.group.trim();
@@ -1759,12 +1779,16 @@ export default function Dashboard() {
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
         const saleIdSet = new Set(ungroupedIds);
-        const newSales = sales.map(s => {
+        const newSales = currentSales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
             return { ...s, group: trimmed };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to create group and assign cars. Please try again.'
+        );
         setSelectedIds(new Set());
     };
 
@@ -1786,12 +1810,17 @@ export default function Dashboard() {
 
         const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
         await persistGroupMeta(nextMeta);
-        const newSales = sales.map(s => {
+        const currentSales = salesRef.current;
+        const newSales = currentSales.map(s => {
             if (s.group !== groupName) return s;
             dirtyIds.current.add(s.id);
             return { ...s, group: trimmed };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to rename the group. Please try again.'
+        );
         setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
     };
 
@@ -1802,13 +1831,45 @@ export default function Dashboard() {
     };
 
     const handleArchiveGroup = async (groupName: string, archived: boolean) => {
-        const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, archived } : g);
+        const currentSales = salesRef.current;
+        const groupSales = getSalesInGroup(groupName, currentSales);
+        if (archived && groupSales.length > 0) {
+            const confirmArchive = confirm(`Archive "${groupName}"? ${groupSales.length} car${groupSales.length === 1 ? '' : 's'} will move to Ungrouped.`);
+            if (!confirmArchive) return;
+        }
+        const nextMeta = groupMetaRef.current.map(g => g.name === groupName ? { ...g, archived } : g);
         await persistGroupMeta(nextMeta);
         if (archived) {
             setExpandedGroups(prev => prev.filter(g => g !== groupName));
         } else {
             setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
         }
+        if (archived && groupSales.length > 0) {
+            const nextSales = currentSales.map(sale => {
+                if (groupKeyForName(sale.group) !== groupKeyForName(groupName)) return sale;
+                dirtyIds.current.add(sale.id);
+                return { ...sale, group: undefined };
+            });
+            await applySalesUpdateWithRollback(
+                nextSales,
+                currentSales,
+                'Failed to archive group and move cars. Please try again.'
+            );
+        }
+    };
+
+    const handleDeleteGroup = async (groupName: string) => {
+        const currentSales = salesRef.current;
+        const groupSales = getSalesInGroup(groupName, currentSales);
+        if (groupSales.length > 0) {
+            alert('This group has cars assigned. Archive it instead to safely move cars to Ungrouped.');
+            return;
+        }
+        const confirmation = prompt(`Type the group name to permanently delete "${groupName}". This cannot be undone.`);
+        if (!confirmation || confirmation.trim() !== groupName) return;
+        const nextMeta = groupMetaRef.current.filter(g => g.name !== groupName);
+        await persistGroupMeta(nextMeta);
+        setExpandedGroups(prev => prev.filter(g => g !== groupName));
     };
 
     const moveGroup = async (groupName: string, direction: 'up' | 'down') => {
@@ -1826,7 +1887,8 @@ export default function Dashboard() {
     };
 
     const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
-        const newSales = sales.map(s => {
+        const currentSales = salesRef.current;
+        const newSales = currentSales.map(s => {
             if (s.group?.trim() !== groupName) return s;
             dirtyIds.current.add(s.id);
             return {
@@ -1837,43 +1899,62 @@ export default function Dashboard() {
                 archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
             };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to move cars to the selected tab. Please try again.'
+        );
     };
 
     const handleRemoveFromGroup = async (id: string) => {
-        const newSales = sales.map(s => {
+        const currentSales = salesRef.current;
+        const newSales = currentSales.map(s => {
             if (s.id !== id) return s;
             dirtyIds.current.add(s.id);
             return { ...s, group: undefined };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to remove the car from the group. Please try again.'
+        );
     };
 
     const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
         if (saleIds.length === 0) return;
         const normalizedGroup = normalizeGroupName(groupName);
         if (!normalizedGroup) return;
+        const currentSales = salesRef.current;
         const saleIdSet = new Set(saleIds);
-        const newSales = sales.map(s => {
+        const newSales = currentSales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
             return { ...s, group: normalizedGroup };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to move cars to the group. Please try again.'
+        );
         setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
         setSelectedIds(new Set());
     };
 
     const handleBulkGroupMove = async (groupName?: string) => {
         if (selectedIds.size === 0) return;
+        const currentSales = salesRef.current;
         const saleIdSet = new Set(selectedIds);
         const normalizedGroup = normalizeGroupName(groupName);
-        const newSales = sales.map(s => {
+        const newSales = currentSales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
             return { ...s, group: normalizedGroup || undefined };
         });
-        await updateSalesAndSave(newSales);
+        await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to move cars to the group. Please try again.'
+        );
         if (normalizedGroup) {
             setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
         }
@@ -2609,7 +2690,14 @@ export default function Dashboard() {
         } catch (e) { console.error(e); }
     };
 
-    const deferredSearchTerm = useDeferredValue(searchTerm);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+    useEffect(() => {
+        const handle = window.setTimeout(() => setDebouncedSearchTerm(searchTerm), 200);
+        return () => window.clearTimeout(handle);
+    }, [searchTerm]);
+
+    const deferredSearchTerm = useDeferredValue(debouncedSearchTerm);
 
     const filteredSales = React.useMemo(() => sales.filter(s => {
         // Filter out system config rows
@@ -3214,6 +3302,13 @@ export default function Dashboard() {
                                                                 >
                                                                     <Archive className="w-3.5 h-3.5" />
                                                                 </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteGroup(group.name)}
+                                                                    className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                    title="Delete group"
+                                                                >
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3350,6 +3445,13 @@ export default function Dashboard() {
                                                                         >
                                                                             <Eye className="w-3.5 h-3.5" />
                                                                         </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteGroup(group.name)}
+                                                                            className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                            title="Delete group"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -3473,7 +3575,26 @@ export default function Dashboard() {
                                                                 {group.name}
                                                                 <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                             </button>
-                                                            <div className="relative">
+                                                            <div className="flex items-center gap-1.5">
+                                                                {group.name !== 'Ungrouped' && (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleArchiveGroup(group.name, true)}
+                                                                            className="p-1.5 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Archive group"
+                                                                        >
+                                                                            <Archive className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteGroup(group.name)}
+                                                                            className="p-1.5 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                            title="Delete group"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                                <div className="relative">
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
@@ -3524,6 +3645,7 @@ export default function Dashboard() {
                                                                         </button>
                                                                     </div>
                                                                 )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         {expandedGroups.includes(group.name) && (
@@ -3661,13 +3783,19 @@ export default function Dashboard() {
                                                                         {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                                                                         {group.name}
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => handleArchiveGroup(group.name, false)}
-                                                                        className="text-xs text-slate-900 font-semibold"
-                                                                    >
-                                                                        Unarchive
-                                                                    </button>
-                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleArchiveGroup(group.name, false)}
+                                                                    className="text-xs text-slate-900 font-semibold"
+                                                                >
+                                                                    Unarchive
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteGroup(group.name)}
+                                                                    className="text-xs text-red-600 font-semibold"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </div>
                                                                 {expandedGroups.includes(group.name) && (
                                                                     groupSales.length > 0 ? (
                                                                         <div>
@@ -4103,13 +4231,13 @@ export default function Dashboard() {
                                                 <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
                                                 <div className="px-3 pt-2 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Move to group</div>
                                                 <button onClick={() => { handleBulkGroupMove(); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Ungrouped</button>
-                                                {orderedGroupMeta.map(group => (
+                                                {activeGroups.map(group => (
                                                     <button
                                                         key={group.name}
                                                         onClick={() => { handleBulkGroupMove(group.name); setShowMoveMenu(false); }}
                                                         className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
                                                     >
-                                                        {group.name}{group.archived ? ' (Archived)' : ''}
+                                                        {group.name}
                                                     </button>
                                                 ))}
                                             </div>
