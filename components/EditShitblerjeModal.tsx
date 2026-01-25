@@ -150,7 +150,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     </div>
                     <form 
                         onSubmit={handleSubmit} 
-                        className="p-5 space-y-5 overflow-y-auto flex-1"
+                        className="p-5 space-y-5 overflow-y-auto flex-1 scroll-container"
                         style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
                     >
                         {/* Buyer Info Section */}

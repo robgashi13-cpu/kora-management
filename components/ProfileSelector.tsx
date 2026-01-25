@@ -147,7 +147,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     }
 
     return (
-        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto scroll-container">
             <div className="min-h-full flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight text-slate-900">Who is working?</h1>
 

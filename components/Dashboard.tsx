@@ -497,7 +497,6 @@ export default function Dashboard() {
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
     const groupMetaRef = useRef<GroupMeta[]>([]);
-    const [showArchivedGroups, setShowArchivedGroups] = useState(false);
     const [groupViewEnabled, setGroupViewEnabled] = useState(true);
     const hasInitializedGroups = useRef(false);
     const [documentPreview, setDocumentPreview] = useState<{
@@ -2725,15 +2724,12 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (hasInitializedGroups.current) return;
-        const initialGroups = activeGroups.map(g => g.name);
-        if (groupedSales.Ungrouped?.length) {
-            initialGroups.push('Ungrouped');
-        }
+        const initialGroups = [...activeGroups.map(g => g.name), 'Ungrouped'];
         if (initialGroups.length > 0) {
             setExpandedGroups(initialGroups);
             hasInitializedGroups.current = true;
         }
-    }, [activeGroups, groupedSales.Ungrouped?.length]);
+    }, [activeGroups]);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -3293,17 +3289,13 @@ export default function Dashboard() {
                                             <div className="contents">
                                                 <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                     <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                        <button
-                                                            onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                            className="flex items-center gap-2 text-sm font-semibold text-slate-600"
-                                                        >
-                                                            {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
                                                             <span>Archived Groups</span>
                                                             <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
-                                                        </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                {showArchivedGroups && archivedGroups.map(group => {
+                                                {archivedGroups.map(group => {
                                                     const groupSales = groupedSales[group.name] || [];
                                                     return (
                                                         <div key={group.name} className="contents">
@@ -3620,17 +3612,11 @@ export default function Dashboard() {
                                             })}
                                             {archivedGroups.length > 0 && (
                                                 <div className="border-b border-slate-200">
-                                                    <button
-                                                        onClick={() => setShowArchivedGroups(prev => !prev)}
-                                                        className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
-                                                    >
-                                                        <span className="flex items-center gap-2">
-                                                            {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                            Archived Groups
-                                                        </span>
+                                                    <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100">
+                                                        <span>Archived Groups</span>
                                                         <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
-                                                    </button>
-                                                    {showArchivedGroups && archivedGroups.map(group => {
+                                                    </div>
+                                                    {archivedGroups.map(group => {
                                                         const groupSales = groupedSales[group.name] || [];
                                                         return (
                                                             <div key={group.name} className="border-b border-slate-200">
@@ -3759,9 +3745,9 @@ export default function Dashboard() {
                                                                         </div>
                                                                     )
                                                                 )}
-                                                    </div>
-                                                );
-                                            })}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </>
