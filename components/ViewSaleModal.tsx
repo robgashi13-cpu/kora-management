@@ -72,7 +72,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
     const FileList = ({ files, label }: { files: Attachment[] | undefined; label: string }) => (
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 h-full">
             <label className="text-[11px] uppercase text-slate-500 font-bold block mb-2">{label}</label>
-            <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto">
+            <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto scroll-container">
                 {files && files.length > 0 ? (
                     files.map((file, idx) => (
                         <div
@@ -141,7 +141,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-5" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex-1 overflow-y-auto p-5 space-y-5 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {/* Summary */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">

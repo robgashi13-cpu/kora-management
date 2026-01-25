@@ -361,7 +361,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 </label>
             </div>
 
-            <div className="flex-1 flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="flex-1 flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar scroll-container">
                 {files && files.length > 0 ? (
                     files.map((file, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 group cursor-pointer hover:bg-slate-50 transition-all" onClick={() => viewFile(file)}>
@@ -427,7 +427,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             )}
 
             <div
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2 min-h-0"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2 min-h-0 scroll-container"
             >
                 <form
                     onSubmit={handleSubmit}
