@@ -3207,6 +3207,15 @@ export default function Dashboard() {
     }, [searchTerm]);
 
     const deferredSearchTerm = useDeferredValue(debouncedSearchTerm);
+    const groupTabByKey = useMemo(() => {
+        const map = new Map<string, GroupTab>();
+        groupMeta.forEach(group => {
+            const key = groupKeyForName(group.name);
+            if (!key) return;
+            map.set(key, group.tab ?? 'SALES');
+        });
+        return map;
+    }, [groupMeta]);
 
     const filteredSales = React.useMemo(() => sales.filter(s => {
         // Filter out system config rows
@@ -3223,6 +3232,13 @@ export default function Dashboard() {
         if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
         if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
         if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
+
+        const currentTab = tabFromCategory(activeCategory);
+        if (currentTab && s.group) {
+            const key = groupKeyForName(s.group);
+            const groupTab = key ? groupTabByKey.get(key) : null;
+            if (groupTab && groupTab !== currentTab) return false;
+        }
 
         const term = deferredSearchTerm.toLowerCase().trim();
         if (!term) return true;
@@ -4168,39 +4184,41 @@ export default function Dashboard() {
                                                                         </button>
                                                                     </>
                                                                 )}
-                                                                <div className="relative">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                    }}
-                                                                    className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group to tab"
-                                                                >
-                                                                    <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                {activeGroupMoveMenu === group.name && (
-                                                                    <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                        {groupMoveTargets.map(target => {
-                                                                            const isCurrent = (group.tab ?? 'SALES') === target.tab;
-                                                                            return (
-                                                                                <button
-                                                                                    key={target.tab}
-                                                                                    onClick={() => {
-                                                                                        if (isCurrent) return;
-                                                                                        handleMoveGroupStatus(group.name, target.status);
-                                                                                        setActiveGroupMoveMenu(null);
-                                                                                    }}
-                                                                                    disabled={isCurrent}
-                                                                                    className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
-                                                                                >
-                                                                                    {target.label}
-                                                                                </button>
-                                                                            );
-                                                                        })}
+                                                                {group.name !== 'Ungrouped' && (
+                                                                    <div className="relative">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                            }}
+                                                                            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group to tab"
+                                                                        >
+                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        {activeGroupMoveMenu === group.name && (
+                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                                {groupMoveTargets.map(target => {
+                                                                                    const isCurrent = ('tab' in group ? group.tab ?? 'SALES' : 'SALES') === target.tab;
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={target.tab}
+                                                                                            onClick={() => {
+                                                                                                if (isCurrent) return;
+                                                                                                handleMoveGroupStatus(group.name, target.status);
+                                                                                                setActiveGroupMoveMenu(null);
+                                                                                            }}
+                                                                                            disabled={isCurrent}
+                                                                                            className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        >
+                                                                                            {target.label}
+                                                                                        </button>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 )}
-                                                                </div>
                                                             </div>
                                                         </div>
                                                         {expandedGroups.includes(group.name) && (
