@@ -227,6 +227,7 @@ type ProfileEntry = {
     name: string;
     archived: boolean;
     updatedAt?: string;
+    archivedAt?: string | null;
 };
 
 const profileTimestamp = (entry?: ProfileEntry) => {
@@ -686,14 +687,19 @@ export default function Dashboard() {
     const normalizeProfileEntries = useCallback((profiles: Array<string | ProfileEntry>) => {
         const merged = new Map<string, ProfileEntry>();
         profiles.forEach(profile => {
-            const entry = typeof profile === 'string' ? { name: profile, archived: false } : profile;
+            const entry = typeof profile === 'string'
+                ? { name: profile, archived: false, archivedAt: null }
+                : profile;
             const normalizedName = normalizeProfileName(entry.name);
             if (!normalizedName) return;
+            const archived = Boolean((entry as ProfileEntry).archived ?? (entry as { isArchived?: boolean }).isArchived);
+            const archivedAt = archived ? (entry.archivedAt ?? entry.updatedAt ?? new Date().toISOString()) : null;
             const existing = merged.get(normalizedName);
             const nextEntry: ProfileEntry = {
                 name: normalizedName,
-                archived: Boolean(entry.archived),
-                updatedAt: entry.updatedAt
+                archived,
+                updatedAt: entry.updatedAt,
+                archivedAt
             };
             if (!existing) {
                 merged.set(normalizedName, nextEntry);
@@ -703,12 +709,13 @@ export default function Dashboard() {
             merged.set(normalizedName, {
                 name: existing.name,
                 archived: resolved.archived,
-                updatedAt: resolved.updatedAt
+                updatedAt: resolved.updatedAt,
+                archivedAt: resolved.archivedAt ?? null
             });
         });
         REQUIRED_PROFILES.forEach(profile => {
             if (!merged.has(profile)) {
-                merged.set(profile, { name: profile, archived: false });
+                merged.set(profile, { name: profile, archived: false, archivedAt: null });
             }
         });
         const ordered: ProfileEntry[] = [];
@@ -728,7 +735,9 @@ export default function Dashboard() {
             .map(profile => ({
                 name: profile.name,
                 archived: profile.archived,
-                updatedAt: profile.updatedAt ?? null
+                isArchived: profile.archived,
+                updatedAt: profile.updatedAt ?? null,
+                archivedAt: profile.archived ? (profile.archivedAt ?? profile.updatedAt ?? null) : null
             }))
     ), [normalizeProfileEntries]);
 
@@ -958,6 +967,18 @@ export default function Dashboard() {
         if (!supabaseUrl || !supabaseKey) return;
         try {
             const client = createClient(supabaseUrl, supabaseKey);
+            let mergedProfiles = normalizeProfileEntries(profiles);
+            const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
+            if (data?.attachments?.profiles) {
+                const cloudProfiles = normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>);
+                mergedProfiles = normalizeProfileEntries([...mergedProfiles, ...cloudProfiles]);
+            }
+            const incomingSignature = serializeProfileEntries(profiles);
+            const mergedSignature = serializeProfileEntries(mergedProfiles);
+            if (incomingSignature !== mergedSignature) {
+                setAvailableProfiles(mergedProfiles);
+                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(mergedProfiles) });
+            }
             await client.from('sales').upsert({
                 id: 'config_profile_avatars',
                 brand: 'CONFIG',
@@ -970,7 +991,7 @@ export default function Dashboard() {
                 amount_paid_cash: 0,
                 amount_paid_bank: 0,
                 deposit: 0,
-                attachments: { avatars: profileAvatars, profiles: profiles }
+                attachments: { avatars: profileAvatars, profiles: mergedProfiles }
             });
         } catch (e) { console.error("Profile Sync Error", e); }
     };
@@ -2456,11 +2477,11 @@ export default function Dashboard() {
                 return;
             }
             await persistProfiles(availableProfiles.map(profile => profile.name === normalizedName
-                ? stampProfileEntry({ ...profile, archived: false })
+                ? stampProfileEntry({ ...profile, archived: false, archivedAt: null })
                 : profile
             ));
         } else {
-            await persistProfiles([...availableProfiles, stampProfileEntry({ name: normalizedName, archived: false })]);
+            await persistProfiles([...availableProfiles, stampProfileEntry({ name: normalizedName, archived: false, archivedAt: null })]);
         }
         const setupToken = generateSetupToken();
         setUserProfile(normalizedName);
@@ -2522,7 +2543,7 @@ export default function Dashboard() {
         const normalizedName = normalizeProfileName(name);
         if (!normalizedName) return;
         const updated = availableProfiles.map(profile => profile.name === normalizedName
-            ? stampProfileEntry({ ...profile, archived: true })
+            ? stampProfileEntry({ ...profile, archived: true, archivedAt: profile.archivedAt ?? new Date().toISOString() })
             : profile
         );
         await persistProfiles(updated);
@@ -2553,7 +2574,7 @@ export default function Dashboard() {
         const normalizedName = normalizeProfileName(name);
         if (!normalizedName) return;
         const updated = availableProfiles.map(profile => profile.name === normalizedName
-            ? stampProfileEntry({ ...profile, archived: false })
+            ? stampProfileEntry({ ...profile, archived: false, archivedAt: null })
             : profile
         );
         await persistProfiles(updated);
@@ -3453,7 +3474,7 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
+            <div className="min-h-[100dvh] bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
                 <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
                 <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
             </div>
@@ -3490,7 +3511,7 @@ export default function Dashboard() {
 
     if (view === 'landing') {
         return (
-            <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
+            <div className="min-h-[100dvh] bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative font-sans">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
                 <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
 
@@ -3538,7 +3559,7 @@ export default function Dashboard() {
 
 
     return (
-        <div className="h-screen flex flex-col bg-white text-slate-800 font-sans">
+        <div className="min-h-[100dvh] flex flex-col bg-white text-slate-800 font-sans overflow-y-auto scroll-container">
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
