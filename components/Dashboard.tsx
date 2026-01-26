@@ -730,6 +730,15 @@ export default function Dashboard() {
         return [...ordered, ...remaining];
     }, []);
 
+    const mergeProfilesWithAccounts = useCallback((profiles: ProfileEntry[], accounts: UserAccount[]) => {
+        const accountProfiles: ProfileEntry[] = accounts.map(account => ({
+            name: account.name,
+            archived: false,
+            updatedAt: account.createdAt
+        }));
+        return normalizeProfileEntries([...profiles, ...accountProfiles]);
+    }, [normalizeProfileEntries]);
+
     const serializeProfileEntries = useCallback((profiles: ProfileEntry[]) => JSON.stringify(
         normalizeProfileEntries(profiles)
             .map(profile => ({
@@ -1003,18 +1012,29 @@ export default function Dashboard() {
         const syncProfilesFromCloud = async () => {
             try {
                 const client = createClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                const [{ data: profileData }, { data: userData }] = await Promise.all([
+                    client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle(),
+                    client.from('sales').select('attachments').eq('id', 'config_user_accounts').maybeSingle()
+                ]);
                 const { value: localProfilesRaw } = await Preferences.get({ key: 'available_profiles' });
+                const { value: localUsersRaw } = await Preferences.get({ key: 'user_accounts' });
                 const localProfiles = localProfilesRaw
                     ? normalizeProfileEntries(JSON.parse(localProfilesRaw) as Array<string | ProfileEntry>)
                     : [];
-                const cloudProfiles = data?.attachments?.profiles
-                    ? normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>)
+                const localUsers = localUsersRaw
+                    ? normalizeUserAccounts(JSON.parse(localUsersRaw))
                     : [];
-                const hasSeedProfiles = Boolean(localProfilesRaw) || Boolean(data?.attachments?.profiles);
-                const mergedProfiles = hasSeedProfiles
+                const cloudProfiles = profileData?.attachments?.profiles
+                    ? normalizeProfileEntries(profileData.attachments.profiles as Array<string | ProfileEntry>)
+                    : [];
+                const cloudUsers = userData?.attachments?.users && Array.isArray(userData.attachments.users)
+                    ? normalizeUserAccounts(userData.attachments.users)
+                    : [];
+                const hasSeedProfiles = Boolean(localProfilesRaw) || Boolean(profileData?.attachments?.profiles);
+                const baseProfiles = hasSeedProfiles
                     ? normalizeProfileEntries([...localProfiles, ...cloudProfiles])
                     : normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                const mergedProfiles = mergeProfilesWithAccounts(baseProfiles, [...localUsers, ...cloudUsers]);
                 const mergedSignature = serializeProfileEntries(mergedProfiles);
                 const cloudSignature = serializeProfileEntries(cloudProfiles);
                 const localSignature = serializeProfileEntries(localProfiles);
@@ -2734,25 +2754,27 @@ export default function Dashboard() {
                     await Preferences.remove({ key: 'user_profile' });
                 }
 
+                const { value: storedUsers } = await Preferences.get({ key: 'user_accounts' });
+                const loadedUsers = storedUsers ? normalizeUserAccounts(JSON.parse(storedUsers)) : [];
+                if (storedUsers) {
+                    setUserAccounts(loadedUsers);
+                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(loadedUsers) });
+                }
+
                 const { value: profiles } = await Preferences.get({ key: 'available_profiles' });
                 if (profiles) {
                     const loaded = normalizeProfileEntries(JSON.parse(profiles) as Array<string | ProfileEntry>);
-                    setAvailableProfiles(loaded);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
-                    syncProfilesToCloud(loaded);
+                    const merged = mergeProfilesWithAccounts(loaded, loadedUsers);
+                    setAvailableProfiles(merged);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
+                    syncProfilesToCloud(merged);
                 } else {
                     const defaults = normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
-                    setAvailableProfiles(defaults);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
+                    const merged = mergeProfilesWithAccounts(defaults, loadedUsers);
+                    setAvailableProfiles(merged);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
                     // Also sync to cloud on first run
-                    syncProfilesToCloud(defaults);
-                }
-
-                const { value: storedUsers } = await Preferences.get({ key: 'user_accounts' });
-                if (storedUsers) {
-                    const loadedUsers = normalizeUserAccounts(JSON.parse(storedUsers));
-                    setUserAccounts(loadedUsers);
-                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(loadedUsers) });
+                    syncProfilesToCloud(merged);
                 }
 
                 const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
