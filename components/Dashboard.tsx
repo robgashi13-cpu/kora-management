@@ -87,6 +87,14 @@ const tabFromStatus = (status: SaleStatus): GroupTab => {
     return 'SALES';
 };
 
+const statusFromTab = (tab: GroupTab): SaleStatus => {
+    if (tab === 'SHIPPED') return 'Shipped';
+    if (tab === 'INSPECTIONS') return 'Inspection';
+    if (tab === 'AUTOSALLON') return 'Autosallon';
+    if (tab === 'ARCHIVE') return 'Archived';
+    return 'In Progress';
+};
+
 const tabFromCategory = (
     category: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'
 ): GroupTab | null => {
@@ -199,6 +207,7 @@ const serializeGroupMeta = (meta: GroupMeta[]) => JSON.stringify(
         .map(group => ({ ...group, tab: group.tab ?? 'SALES' }))
 );
 
+
 type UserStatus = 'active' | 'pending';
 
 type UserAccount = {
@@ -217,6 +226,25 @@ type UserAccount = {
 type ProfileEntry = {
     name: string;
     archived: boolean;
+    updatedAt?: string;
+};
+
+const profileTimestamp = (entry?: ProfileEntry) => {
+    if (!entry?.updatedAt) return 0;
+    const parsed = Date.parse(entry.updatedAt);
+    return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const resolveProfileConflict = (current: ProfileEntry, candidate: ProfileEntry) => {
+    const currentTime = profileTimestamp(current);
+    const candidateTime = profileTimestamp(candidate);
+    if (currentTime !== candidateTime) {
+        return currentTime > candidateTime ? current : candidate;
+    }
+    if (current.archived !== candidate.archived) {
+        return current.archived ? current : candidate;
+    }
+    return current;
 };
 
 const scoreUserAccount = (account: UserAccount) => {
@@ -664,15 +692,18 @@ export default function Dashboard() {
             const existing = merged.get(normalizedName);
             const nextEntry: ProfileEntry = {
                 name: normalizedName,
-                archived: Boolean(entry.archived)
+                archived: Boolean(entry.archived),
+                updatedAt: entry.updatedAt
             };
             if (!existing) {
                 merged.set(normalizedName, nextEntry);
                 return;
             }
+            const resolved = resolveProfileConflict(existing, nextEntry);
             merged.set(normalizedName, {
                 name: existing.name,
-                archived: existing.archived && nextEntry.archived
+                archived: resolved.archived,
+                updatedAt: resolved.updatedAt
             });
         });
         REQUIRED_PROFILES.forEach(profile => {
@@ -688,8 +719,23 @@ export default function Dashboard() {
                 merged.delete(profile);
             }
         });
-        return [...ordered, ...Array.from(merged.values())];
+        const remaining = Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name));
+        return [...ordered, ...remaining];
     }, []);
+
+    const serializeProfileEntries = useCallback((profiles: ProfileEntry[]) => JSON.stringify(
+        normalizeProfileEntries(profiles)
+            .map(profile => ({
+                name: profile.name,
+                archived: profile.archived,
+                updatedAt: profile.updatedAt ?? null
+            }))
+    ), [normalizeProfileEntries]);
+
+    const stampProfileEntry = useCallback((entry: ProfileEntry) => ({
+        ...entry,
+        updatedAt: new Date().toISOString()
+    }), []);
 
     const activeProfileEntries = useMemo(() => availableProfiles.filter(profile => !profile.archived), [availableProfiles]);
 
@@ -937,18 +983,24 @@ export default function Dashboard() {
             try {
                 const client = createClient(supabaseUrl, supabaseKey);
                 const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
-                if (data?.attachments?.profiles) {
-                    const cloudProfiles = normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>);
-                    // Use cloud as source of truth - don't merge with defaults
-                    setAvailableProfiles(cloudProfiles);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(cloudProfiles) });
-                    syncProfilesToCloud(cloudProfiles);
-                } else {
-                    // Only set defaults if cloud has no data
-                    const systemDefaults = normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
-                    setAvailableProfiles(systemDefaults);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(systemDefaults) });
-                    syncProfilesToCloud(systemDefaults);
+                const { value: localProfilesRaw } = await Preferences.get({ key: 'available_profiles' });
+                const localProfiles = localProfilesRaw
+                    ? normalizeProfileEntries(JSON.parse(localProfilesRaw) as Array<string | ProfileEntry>)
+                    : [];
+                const cloudProfiles = data?.attachments?.profiles
+                    ? normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>)
+                    : [];
+                const hasSeedProfiles = Boolean(localProfilesRaw) || Boolean(data?.attachments?.profiles);
+                const mergedProfiles = hasSeedProfiles
+                    ? normalizeProfileEntries([...localProfiles, ...cloudProfiles])
+                    : normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                const mergedSignature = serializeProfileEntries(mergedProfiles);
+                const cloudSignature = serializeProfileEntries(cloudProfiles);
+                const localSignature = serializeProfileEntries(localProfiles);
+                setAvailableProfiles(mergedProfiles);
+                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(mergedProfiles) });
+                if (mergedSignature !== cloudSignature || mergedSignature !== localSignature) {
+                    syncProfilesToCloud(mergedProfiles);
                 }
             } catch (e) { console.error("Profile Cloud Sync Error", e); }
         };
@@ -2298,10 +2350,21 @@ export default function Dashboard() {
         if (!normalizedGroup) return;
         const currentSales = salesRef.current;
         const saleIdSet = new Set(saleIds);
+        const groupTab = groupMetaRef.current.find(group => groupKeyForName(group.name) === groupKeyForName(normalizedGroup))?.tab;
+        const targetStatus = groupTab ? statusFromTab(groupTab) : null;
+        const shouldArchive = targetStatus === 'Archived';
+        const shouldClearArchive = Boolean(targetStatus && !shouldArchive);
         const newSales = currentSales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
-            return { ...s, group: normalizedGroup };
+            return {
+                ...s,
+                group: normalizedGroup,
+                status: targetStatus ?? s.status,
+                archivedAt: shouldArchive ? (s.archivedAt ?? new Date().toISOString()) : (shouldClearArchive ? undefined : s.archivedAt),
+                archivedBy: shouldArchive ? (s.archivedBy ?? (userProfile || 'Unknown')) : (shouldClearArchive ? undefined : s.archivedBy),
+                archivedFromStatus: shouldArchive ? (s.archivedFromStatus ?? s.status) : (shouldClearArchive ? undefined : s.archivedFromStatus)
+            };
         });
         await applySalesUpdateWithRollback(
             newSales,
@@ -2317,10 +2380,23 @@ export default function Dashboard() {
         const currentSales = salesRef.current;
         const saleIdSet = new Set(selectedIds);
         const normalizedGroup = normalizeGroupName(groupName);
+        const groupTab = normalizedGroup
+            ? groupMetaRef.current.find(group => groupKeyForName(group.name) === groupKeyForName(normalizedGroup))?.tab
+            : null;
+        const targetStatus = groupTab ? statusFromTab(groupTab) : null;
+        const shouldArchive = targetStatus === 'Archived';
+        const shouldClearArchive = Boolean(targetStatus && !shouldArchive);
         const newSales = currentSales.map(s => {
             if (!saleIdSet.has(s.id)) return s;
             dirtyIds.current.add(s.id);
-            return { ...s, group: normalizedGroup || undefined };
+            return {
+                ...s,
+                group: normalizedGroup || undefined,
+                status: targetStatus ?? s.status,
+                archivedAt: shouldArchive ? (s.archivedAt ?? new Date().toISOString()) : (shouldClearArchive ? undefined : s.archivedAt),
+                archivedBy: shouldArchive ? (s.archivedBy ?? (userProfile || 'Unknown')) : (shouldClearArchive ? undefined : s.archivedBy),
+                archivedFromStatus: shouldArchive ? (s.archivedFromStatus ?? s.status) : (shouldClearArchive ? undefined : s.archivedFromStatus)
+            };
         });
         await applySalesUpdateWithRollback(
             newSales,
@@ -2379,9 +2455,12 @@ export default function Dashboard() {
                 alert('Profile already exists!');
                 return;
             }
-            await persistProfiles(availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: false } : profile));
+            await persistProfiles(availableProfiles.map(profile => profile.name === normalizedName
+                ? stampProfileEntry({ ...profile, archived: false })
+                : profile
+            ));
         } else {
-            await persistProfiles([...availableProfiles, { name: normalizedName, archived: false }]);
+            await persistProfiles([...availableProfiles, stampProfileEntry({ name: normalizedName, archived: false })]);
         }
         const setupToken = generateSetupToken();
         setUserProfile(normalizedName);
@@ -2407,7 +2486,7 @@ export default function Dashboard() {
             });
             setShowSetupLinkModal(true);
         }
-    }, [availableProfiles, buildSetupLink, getUserAccount, persistProfiles, persistUserAccounts, persistUserProfile, rememberProfile, userProfile]);
+    }, [availableProfiles, buildSetupLink, getUserAccount, persistProfiles, persistUserAccounts, persistUserProfile, rememberProfile, stampProfileEntry, userProfile]);
 
     const handleAddProfile = async () => {
         if (!isAdmin) {
@@ -2442,7 +2521,10 @@ export default function Dashboard() {
         }
         const normalizedName = normalizeProfileName(name);
         if (!normalizedName) return;
-        const updated = availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: true } : profile);
+        const updated = availableProfiles.map(profile => profile.name === normalizedName
+            ? stampProfileEntry({ ...profile, archived: true })
+            : profile
+        );
         await persistProfiles(updated);
         if (userProfile === name) setUserProfile('');
     };
@@ -2450,7 +2532,10 @@ export default function Dashboard() {
     const handleEditProfile = async (oldName: string, newName: string) => {
         const normalizedName = normalizeProfileName(newName);
         if (!normalizedName || (normalizedName !== oldName && availableProfiles.some(profile => profile.name === normalizedName))) return;
-        const updated = availableProfiles.map(profile => profile.name === oldName ? { ...profile, name: normalizedName } : profile);
+        const updated = availableProfiles.map(profile => profile.name === oldName
+            ? stampProfileEntry({ ...profile, name: normalizedName })
+            : profile
+        );
         await persistProfiles(updated);
         if (userProfile === oldName) {
             setUserProfile(normalizedName);
@@ -2467,7 +2552,10 @@ export default function Dashboard() {
         }
         const normalizedName = normalizeProfileName(name);
         if (!normalizedName) return;
-        const updated = availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: false } : profile);
+        const updated = availableProfiles.map(profile => profile.name === normalizedName
+            ? stampProfileEntry({ ...profile, archived: false })
+            : profile
+        );
         await persistProfiles(updated);
     };
 
@@ -3281,6 +3369,43 @@ export default function Dashboard() {
         persistGroupMeta(nextMeta);
     }, [normalizedGroupMeta, groupTabByName]);
 
+    useEffect(() => {
+        if (sales.length === 0 || groupMeta.length === 0) return;
+        const currentSales = salesRef.current;
+        const currentMeta = groupMetaRef.current;
+        const tabByGroup = new Map<string, GroupTab>();
+        currentMeta.forEach(group => {
+            const key = groupKeyForName(group.name);
+            if (!key) return;
+            tabByGroup.set(key, group.tab ?? 'SALES');
+        });
+        let hasChanges = false;
+        const nextSales = currentSales.map(sale => {
+            if (!sale.group) return sale;
+            const key = groupKeyForName(sale.group);
+            if (!key) return sale;
+            const tab = tabByGroup.get(key);
+            if (!tab) return sale;
+            if (tabFromStatus(sale.status) === tab) return sale;
+            hasChanges = true;
+            dirtyIds.current.add(sale.id);
+            const nextStatus = statusFromTab(tab);
+            const shouldArchive = nextStatus === 'Archived';
+            return {
+                ...sale,
+                status: nextStatus,
+                archivedAt: shouldArchive ? (sale.archivedAt ?? new Date().toISOString()) : undefined,
+                archivedBy: shouldArchive ? (sale.archivedBy ?? (userProfile || 'System')) : undefined,
+                archivedFromStatus: shouldArchive ? (sale.archivedFromStatus ?? sale.status) : undefined
+            };
+        });
+        if (!hasChanges) return;
+        const reconcile = async () => {
+            await updateSalesAndSave(nextSales);
+        };
+        reconcile();
+    }, [groupMeta, sales, userProfile]);
+
     const orderedGroupMeta = useMemo(() => {
         return [...groupsForView].sort((a, b) => a.order - b.order);
     }, [groupsForView]);
@@ -3655,10 +3780,20 @@ export default function Dashboard() {
                                         className="grid grid-cols-subgrid"
                                         style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
                                     >
+                                        <AnimatePresence initial={false}>
                                         {activeGroups.map(group => {
                                             const groupSales = groupedSales[group.name] || [];
                                             return (
-                                                <Reorder.Item key={group.name} value={group.name} className="contents">
+                                                <Reorder.Item
+                                                    key={group.name}
+                                                    value={group.name}
+                                                    className="contents"
+                                                    layout
+                                                    initial={{ opacity: 0, y: 8 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: -8 }}
+                                                    transition={{ duration: 0.2 }}
+                                                >
                                                     <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                         <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                             <button
@@ -3786,6 +3921,7 @@ export default function Dashboard() {
                                                 </Reorder.Item>
                                             );
                                         })}
+                                        </AnimatePresence>
                                         <div className="contents">
                                             <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                                 <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
@@ -3991,10 +4127,19 @@ export default function Dashboard() {
                                 <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
                                     {groupingEnabled ? (
                                         <>
-                                            {[...activeGroups, { name: 'Ungrouped', order: 9999, archived: false }].map(group => {
-                                                const groupSales = groupedSales[group.name] || [];
-                                                return (
-                                                    <div key={group.name} className="border-b border-slate-200">
+                                            <AnimatePresence initial={false}>
+                                                {[...activeGroups, { name: 'Ungrouped', order: 9999, archived: false }].map(group => {
+                                                    const groupSales = groupedSales[group.name] || [];
+                                                    return (
+                                                        <motion.div
+                                                            key={group.name}
+                                                            layout
+                                                            initial={{ opacity: 0, y: 8 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -8 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="border-b border-slate-200"
+                                                        >
                                                         <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50 border-l-4 border-l-slate-300">
                                                             <button
                                                                 onClick={() => toggleGroup(group.name)}
@@ -4172,9 +4317,10 @@ export default function Dashboard() {
                                                                 </div>
                                                             )
                                                         )}
-                                                    </div>
-                                                );
-                                            })}
+                                                        </motion.div>
+                                                    );
+                                                })}
+                                            </AnimatePresence>
                                             {archivedGroups.length > 0 && (
                                                 <div className="border-b border-slate-200">
                                                     <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100">
