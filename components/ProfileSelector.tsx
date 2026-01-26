@@ -19,7 +19,7 @@ interface ProfileSelectorProps {
     rememberDefault?: boolean;
 }
 
-export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
+export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
     const ADMIN_PASSWORD = 'Robertoo1396$';
     const [isAdding, setIsAdding] = useState(false);
