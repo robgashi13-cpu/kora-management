@@ -162,6 +162,50 @@ type UserAccount = {
     createdBy?: string;
 };
 
+const scoreUserAccount = (account: UserAccount) => {
+    let score = 0;
+    if (account.status === 'active') score += 3;
+    if (account.passwordHash) score += 3;
+    if (account.setupToken) score += 1;
+    if (account.email) score += 1;
+    if (account.createdAt) score += 1;
+    return score;
+};
+
+const choosePreferredAccount = (current: UserAccount, candidate: UserAccount) => {
+    const currentScore = scoreUserAccount(current);
+    const candidateScore = scoreUserAccount(candidate);
+    if (candidateScore !== currentScore) return candidateScore > currentScore ? candidate : current;
+    const currentDate = current.createdAt ? Date.parse(current.createdAt) : 0;
+    const candidateDate = candidate.createdAt ? Date.parse(candidate.createdAt) : 0;
+    return candidateDate > currentDate ? candidate : current;
+};
+
+const mergeUserAccounts = (local: UserAccount[], remote: UserAccount[]) => {
+    const merged = new Map<string, UserAccount>();
+    [...local, ...remote].forEach(account => {
+        const normalizedName = normalizeProfileName(account.name);
+        if (!normalizedName) return;
+        const existing = merged.get(normalizedName);
+        const nextAccount = { ...account, name: normalizedName };
+        if (!existing) {
+            merged.set(normalizedName, nextAccount);
+        } else {
+            merged.set(normalizedName, choosePreferredAccount(existing, nextAccount));
+        }
+    });
+    return Array.from(merged.values());
+};
+
+const userAccountSignature = (accounts: UserAccount[]) => JSON.stringify(
+    [...accounts]
+        .map(account => ({
+            ...account,
+            name: normalizeProfileName(account.name)
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name))
+);
+
 type SellerReassignmentAudit = {
     id: string;
     saleId: string;
@@ -605,6 +649,7 @@ export default function Dashboard() {
                 console.error('User account sync error', e);
             }
         }
+        return normalized;
     }, [normalizeUserAccounts, supabaseKey, supabaseUrl]);
 
     const cacheUserAccounts = useCallback(async (accounts: UserAccount[]) => {
@@ -853,13 +898,28 @@ export default function Dashboard() {
                 }
                 if (!data?.attachments?.users || !Array.isArray(data.attachments.users)) return;
                 const cloudUsers: UserAccount[] = normalizeUserAccounts(data.attachments.users);
+                const localUsers = userAccountsRef.current;
+                const mergedUsers = mergeUserAccounts(localUsers, cloudUsers);
+                const mergedSignature = userAccountSignature(mergedUsers);
+                const cloudSignature = userAccountSignature(cloudUsers);
+                if (cloudUsers.length === 0 && localUsers.length > 0) {
+                    if (isAdmin) {
+                        await persistUserAccounts(mergedUsers);
+                    } else {
+                        await cacheUserAccounts(mergedUsers);
+                    }
+                    return;
+                }
                 if (isAdmin) {
-                    await cacheUserAccounts(cloudUsers);
+                    await cacheUserAccounts(mergedUsers);
+                    if (mergedSignature !== cloudSignature) {
+                        await persistUserAccounts(mergedUsers);
+                    }
                     return;
                 }
 
                 const normalizedProfile = normalizeProfileName(userProfile || '');
-                const filteredUsers = cloudUsers.filter(account => (
+                const filteredUsers = mergedUsers.filter(account => (
                     (normalizedProfile && account.name === normalizedProfile) ||
                     (pendingSetupToken && account.setupToken === pendingSetupToken)
                 ));
@@ -867,8 +927,8 @@ export default function Dashboard() {
                     await cacheUserAccounts(filteredUsers);
                     return;
                 }
-                if (userAccountsRef.current.length === 0 && cloudUsers.length > 0) {
-                    await cacheUserAccounts(cloudUsers);
+                if (userAccountsRef.current.length === 0 && mergedUsers.length > 0) {
+                    await cacheUserAccounts(mergedUsers);
                 }
             } catch (e) {
                 console.error('User account cloud sync error', e);
@@ -2015,7 +2075,8 @@ export default function Dashboard() {
             createdAt: new Date().toISOString(),
             createdBy: userProfile || undefined
         };
-        await persistUserAccounts([...userAccounts, newAccount]);
+        const nextAccounts = [...userAccountsRef.current, newAccount];
+        await persistUserAccounts(nextAccounts);
         setSetupLinkData({
             token: setupToken,
             url: buildSetupLink(setupToken),
@@ -4023,9 +4084,12 @@ export default function Dashboard() {
                                         </div>
                                         <div className="flex gap-2">
                                             <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
-                                            <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
+                                            <button onClick={handleAddProfile} className="bg-slate-900 text-white font-semibold px-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-60 shadow-sm" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
                                         </div>
                                         <input value={newProfileEmail} onChange={e => setNewProfileEmail(e.target.value)} placeholder="Email for setup link (optional)" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
+                                        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs text-slate-500">
+                                            New users don’t need a password at creation. Share the setup link to let them create one securely on first login.
+                                        </div>
                                         {!isAdmin && (
                                             <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
                                         )}
@@ -4396,13 +4460,13 @@ export default function Dashboard() {
                 <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">Send password setup link</h3>
+                            <h3 className="text-lg font-bold text-slate-900">Invite link</h3>
                             <button onClick={() => setShowSetupLinkModal(false)} className="text-slate-400 hover:text-slate-600">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
                         <p className="text-sm text-slate-600 mb-4">
-                            Share this link with <span className="font-semibold text-slate-900">{setupLinkData.name}</span> so they can create their password.
+                            Share this link with <span className="font-semibold text-slate-900">{setupLinkData.name}</span> so they can set a password securely on first login.
                         </p>
                         <div className="flex items-center gap-2">
                             <input
