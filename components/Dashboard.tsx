@@ -63,10 +63,13 @@ const normalizeAvatarMap = (avatars: Record<string, string>) => {
     return normalized;
 };
 
+type GroupTab = 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE';
+
 type GroupMeta = {
     name: string;
     order: number;
     archived: boolean;
+    tab?: GroupTab;
 };
 
 const normalizeGroupName = (name?: string | null) => {
@@ -75,6 +78,24 @@ const normalizeGroupName = (name?: string | null) => {
 };
 
 const groupKeyForName = (name?: string | null) => normalizeGroupName(name).toLowerCase();
+
+const tabFromStatus = (status: SaleStatus): GroupTab => {
+    if (status === 'Shipped') return 'SHIPPED';
+    if (status === 'Inspection') return 'INSPECTIONS';
+    if (status === 'Autosallon') return 'AUTOSALLON';
+    if (status === 'Archived') return 'ARCHIVE';
+    return 'SALES';
+};
+
+const tabFromCategory = (
+    category: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'
+): GroupTab | null => {
+    if (category === 'SALES' || category === 'SHIPPED' || category === 'INSPECTIONS' || category === 'AUTOSALLON' || category === 'ARCHIVE') {
+        return category;
+    }
+    return null;
+};
+
 
 const normalizeGroupMetaList = (meta: GroupMeta[]) => {
     const normalized: GroupMeta[] = [];
@@ -89,7 +110,8 @@ const normalizeGroupMetaList = (meta: GroupMeta[]) => {
             normalized[existingIndex] = {
                 ...existing,
                 archived: existing.archived || group.archived,
-                order: Math.min(existing.order, group.order)
+                order: Math.min(existing.order, group.order),
+                tab: existing.tab ?? group.tab
             };
             return;
         }
@@ -97,7 +119,8 @@ const normalizeGroupMetaList = (meta: GroupMeta[]) => {
         normalized.push({
             name,
             order: typeof group.order === 'number' ? group.order : normalized.length,
-            archived: Boolean(group.archived)
+            archived: Boolean(group.archived),
+            tab: group.tab
         });
     });
     return normalized;
@@ -115,7 +138,8 @@ const mergeGroupMetaLists = (primary: GroupMeta[], secondary: GroupMeta[]) => {
             const existing = merged[existingIndex];
             merged[existingIndex] = {
                 ...existing,
-                archived: existing.archived || group.archived
+                archived: existing.archived || group.archived,
+                tab: existing.tab ?? group.tab
             };
             return;
         }
@@ -123,7 +147,8 @@ const mergeGroupMetaLists = (primary: GroupMeta[], secondary: GroupMeta[]) => {
         merged.push({
             name,
             order: typeof group.order === 'number' ? group.order : merged.length,
-            archived: Boolean(group.archived)
+            archived: Boolean(group.archived),
+            tab: group.tab
         });
     };
     normalizeGroupMetaList(primary).sort((a, b) => a.order - b.order).forEach(addGroup);
@@ -131,7 +156,19 @@ const mergeGroupMetaLists = (primary: GroupMeta[], secondary: GroupMeta[]) => {
     return merged;
 };
 
-const ensureGroupMetaIncludesNames = (meta: GroupMeta[], names: string[]) => {
+const buildGroupTabLookup = (sales: CarSale[]) => {
+    const map = new Map<string, GroupTab>();
+    sales.forEach(sale => {
+        const name = normalizeGroupName(sale.group);
+        if (!name) return;
+        const key = groupKeyForName(name);
+        if (map.has(key)) return;
+        map.set(key, tabFromStatus(sale.status));
+    });
+    return map;
+};
+
+const ensureGroupMetaIncludesNames = (meta: GroupMeta[], names: string[], tabByName?: Map<string, GroupTab>) => {
     const next = [...meta];
     const keys = new Set(next.map(group => groupKeyForName(group.name)));
     names.forEach(name => {
@@ -140,13 +177,26 @@ const ensureGroupMetaIncludesNames = (meta: GroupMeta[], names: string[]) => {
         const key = groupKeyForName(normalized);
         if (keys.has(key)) return;
         keys.add(key);
-        next.push({ name: normalized, order: next.length, archived: false });
+        next.push({
+            name: normalized,
+            order: next.length,
+            archived: false,
+            tab: tabByName?.get(key) ?? 'SALES'
+        });
     });
-    return next;
+    return next.map(group => {
+        const key = groupKeyForName(group.name);
+        return {
+            ...group,
+            tab: group.tab ?? tabByName?.get(key) ?? 'SALES'
+        };
+    });
 };
 
 const serializeGroupMeta = (meta: GroupMeta[]) => JSON.stringify(
-    normalizeGroupMetaList(meta).sort((a, b) => a.order - b.order)
+    normalizeGroupMetaList(meta)
+        .sort((a, b) => a.order - b.order)
+        .map(group => ({ ...group, tab: group.tab ?? 'SALES' }))
 );
 
 type UserStatus = 'active' | 'pending';
@@ -162,6 +212,11 @@ type UserAccount = {
     passwordSalt?: string | null;
     createdAt: string;
     createdBy?: string;
+};
+
+type ProfileEntry = {
+    name: string;
+    archived: boolean;
 };
 
 const scoreUserAccount = (account: UserAccount) => {
@@ -507,7 +562,12 @@ export default function Dashboard() {
     useEffect(() => { salesRef.current = sales; }, [sales]);
     const [view, setView] = useState('profile_select');
     const [userProfile, setUserProfile] = useState<string | null>(null);
-    const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+    const [availableProfiles, setAvailableProfiles] = useState<ProfileEntry[]>([
+        { name: 'Robert Gashi', archived: false },
+        { name: ADMIN_PROFILE, archived: false },
+        { name: 'User', archived: false },
+        { name: 'Leonit', archived: false }
+    ]);
     const [isLoading, setIsLoading] = useState(true);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [pendingProfile, setPendingProfile] = useState('');
@@ -595,19 +655,43 @@ export default function Dashboard() {
         userAccountsRef.current = userAccounts;
     }, [userAccounts]);
 
-    const normalizeProfiles = useCallback((profiles: string[]) => {
-        const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
-        const unique = new Set(normalized);
-        REQUIRED_PROFILES.forEach(profile => unique.add(profile));
-        const ordered: string[] = [];
+    const normalizeProfileEntries = useCallback((profiles: Array<string | ProfileEntry>) => {
+        const merged = new Map<string, ProfileEntry>();
+        profiles.forEach(profile => {
+            const entry = typeof profile === 'string' ? { name: profile, archived: false } : profile;
+            const normalizedName = normalizeProfileName(entry.name);
+            if (!normalizedName) return;
+            const existing = merged.get(normalizedName);
+            const nextEntry: ProfileEntry = {
+                name: normalizedName,
+                archived: Boolean(entry.archived)
+            };
+            if (!existing) {
+                merged.set(normalizedName, nextEntry);
+                return;
+            }
+            merged.set(normalizedName, {
+                name: existing.name,
+                archived: existing.archived && nextEntry.archived
+            });
+        });
         REQUIRED_PROFILES.forEach(profile => {
-            if (unique.has(profile)) {
-                ordered.push(profile);
-                unique.delete(profile);
+            if (!merged.has(profile)) {
+                merged.set(profile, { name: profile, archived: false });
             }
         });
-        return [...ordered, ...Array.from(unique)];
+        const ordered: ProfileEntry[] = [];
+        REQUIRED_PROFILES.forEach(profile => {
+            const entry = merged.get(profile);
+            if (entry) {
+                ordered.push(entry);
+                merged.delete(profile);
+            }
+        });
+        return [...ordered, ...Array.from(merged.values())];
     }, []);
+
+    const activeProfileEntries = useMemo(() => availableProfiles.filter(profile => !profile.archived), [availableProfiles]);
 
     const normalizeUserAccounts = useCallback((accounts: UserAccount[]) => {
         const normalized = accounts
@@ -679,9 +763,9 @@ export default function Dashboard() {
 
     const profileOptions = useMemo(() => {
         const profileMap = new Map<string, string>();
-        availableProfiles.forEach(name => {
-            const normalized = normalizeProfileName(name);
-            if (normalized) profileMap.set(normalized, name);
+        availableProfiles.forEach(profile => {
+            const normalized = normalizeProfileName(profile.name);
+            if (normalized) profileMap.set(normalized, profile.name);
         });
         sales.forEach(sale => {
             const seller = normalizeProfileName(sale.sellerName);
@@ -824,7 +908,7 @@ export default function Dashboard() {
     };
 
     // Sync profiles to Supabase when they change
-    const syncProfilesToCloud = async (profiles: string[]) => {
+    const syncProfilesToCloud = async (profiles: ProfileEntry[]) => {
         if (!supabaseUrl || !supabaseKey) return;
         try {
             const client = createClient(supabaseUrl, supabaseKey);
@@ -854,14 +938,14 @@ export default function Dashboard() {
                 const client = createClient(supabaseUrl, supabaseKey);
                 const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
                 if (data?.attachments?.profiles) {
-                    const cloudProfiles: string[] = normalizeProfiles(data.attachments.profiles);
+                    const cloudProfiles = normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>);
                     // Use cloud as source of truth - don't merge with defaults
                     setAvailableProfiles(cloudProfiles);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(cloudProfiles) });
                     syncProfilesToCloud(cloudProfiles);
                 } else {
                     // Only set defaults if cloud has no data
-                    const systemDefaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                    const systemDefaults = normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
                     setAvailableProfiles(systemDefaults);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(systemDefaults) });
                     syncProfilesToCloud(systemDefaults);
@@ -972,9 +1056,11 @@ export default function Dashboard() {
                         .map(sale => normalizeGroupName(sale.group))
                         .filter(Boolean)
                 ));
+                const tabByName = buildGroupTabLookup(salesRef.current);
                 const merged = ensureGroupMetaIncludesNames(
                     mergeGroupMetaLists(cloudGroups, localMeta),
-                    groupNamesFromSales
+                    groupNamesFromSales,
+                    tabByName
                 );
                 const mergedSignature = serializeGroupMeta(merged);
                 const localSignature = serializeGroupMeta(localMeta);
@@ -1854,8 +1940,24 @@ export default function Dashboard() {
     };
 
     const handleBulkMove = async (status: SaleStatus) => {
-        const newSales: CarSale[] = sales.map(s => {
-            if (selectedIds.has(s.id)) {
+        const currentSales = salesRef.current;
+        const selectedGroupKeys = new Set<string>();
+        currentSales.forEach(sale => {
+            if (!selectedIds.has(sale.id)) return;
+            const key = groupKeyForName(sale.group);
+            if (key) selectedGroupKeys.add(key);
+        });
+        const targetTab = tabFromStatus(status);
+        const previousMeta = groupMetaRef.current;
+        if (selectedGroupKeys.size > 0) {
+            const nextMeta = previousMeta.map(group => (
+                selectedGroupKeys.has(groupKeyForName(group.name)) ? { ...group, tab: targetTab } : group
+            ));
+            await persistGroupMeta(nextMeta);
+        }
+        const newSales: CarSale[] = currentSales.map(s => {
+            const shouldMove = selectedIds.has(s.id) || (s.group && selectedGroupKeys.has(groupKeyForName(s.group)));
+            if (shouldMove) {
                 dirtyIds.current.add(s.id);
                 return {
                     ...s,
@@ -1867,7 +1969,14 @@ export default function Dashboard() {
             }
             return s;
         });
-        await updateSalesAndSave(newSales);
+        const success = await applySalesUpdateWithRollback(
+            newSales,
+            currentSales,
+            'Failed to move cars to the selected tab. Please try again.'
+        );
+        if (!success && selectedGroupKeys.size > 0) {
+            await persistGroupMeta(previousMeta);
+        }
         setSelectedIds(new Set());
     };
 
@@ -1955,14 +2064,24 @@ export default function Dashboard() {
     };
 
     const persistGroupMeta = async (next: GroupMeta[], options?: { skipCloud?: boolean }) => {
-        const normalized = normalizeGroupMetaList(next)
-            .sort((a, b) => a.order - b.order)
-            .map((group, index) => ({ ...group, order: index }));
-        setGroupMeta(normalized);
-        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(normalized) });
-        localStorage.setItem('sale_group_meta', JSON.stringify(normalized));
+        const normalized = normalizeGroupMetaList(next).map(group => ({ ...group, tab: group.tab ?? 'SALES' }));
+        const grouped = new Map<GroupTab, GroupMeta[]>();
+        normalized.forEach(group => {
+            const tab = group.tab ?? 'SALES';
+            if (!grouped.has(tab)) grouped.set(tab, []);
+            grouped.get(tab)!.push(group);
+        });
+        const ordered: GroupMeta[] = [];
+        grouped.forEach(groups => {
+            groups
+                .sort((a, b) => a.order - b.order)
+                .forEach((group, index) => ordered.push({ ...group, order: index }));
+        });
+        setGroupMeta(ordered);
+        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(ordered) });
+        localStorage.setItem('sale_group_meta', JSON.stringify(ordered));
         if (!options?.skipCloud) {
-            await syncGroupMetaToCloud(normalized);
+            await syncGroupMetaToCloud(ordered);
         }
     };
 
@@ -2016,7 +2135,8 @@ export default function Dashboard() {
             return;
         }
 
-        const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
+        const nextTab = tabFromCategory(activeCategory) ?? 'SALES';
+        const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false, tab: nextTab }];
         await persistGroupMeta(nextMeta);
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
@@ -2130,8 +2250,15 @@ export default function Dashboard() {
 
     const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
         const currentSales = salesRef.current;
+        const targetTab = tabFromStatus(status);
+        const previousMeta = groupMetaRef.current;
+        const nextMeta = previousMeta.map(group => {
+            if (groupKeyForName(group.name) !== groupKeyForName(groupName)) return group;
+            return { ...group, tab: targetTab };
+        });
+        await persistGroupMeta(nextMeta);
         const newSales = currentSales.map(s => {
-            if (s.group?.trim() !== groupName) return s;
+            if (groupKeyForName(s.group) !== groupKeyForName(groupName)) return s;
             dirtyIds.current.add(s.id);
             return {
                 ...s,
@@ -2141,11 +2268,14 @@ export default function Dashboard() {
                 archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
             };
         });
-        await applySalesUpdateWithRollback(
+        const success = await applySalesUpdateWithRollback(
             newSales,
             currentSales,
             'Failed to move cars to the selected tab. Please try again.'
         );
+        if (!success) {
+            await persistGroupMeta(previousMeta);
+        }
     };
 
     const handleRemoveFromGroup = async (id: string) => {
@@ -2232,40 +2362,52 @@ export default function Dashboard() {
         setShowProfileMenu(false);
     };
 
+    const persistProfiles = useCallback(async (entries: ProfileEntry[]) => {
+        const normalized = normalizeProfileEntries(entries);
+        setAvailableProfiles(normalized);
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
+        syncProfilesToCloud(normalized);
+        return normalized;
+    }, [normalizeProfileEntries, syncProfilesToCloud]);
+
     const createUserProfile = useCallback(async (profileName: string, email?: string, remember = rememberProfile) => {
         const normalizedName = normalizeProfileName(profileName);
         if (!normalizedName) return;
-        if (availableProfiles.includes(normalizedName)) {
-            alert('Profile already exists!');
-            return;
+        const existingEntry = availableProfiles.find(profile => profile.name === normalizedName);
+        if (existingEntry) {
+            if (!existingEntry.archived) {
+                alert('Profile already exists!');
+                return;
+            }
+            await persistProfiles(availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: false } : profile));
+        } else {
+            await persistProfiles([...availableProfiles, { name: normalizedName, archived: false }]);
         }
         const setupToken = generateSetupToken();
-        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-        setAvailableProfiles(updated);
         setUserProfile(normalizedName);
         setRememberProfile(remember);
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
         await persistUserProfile(normalizedName, remember);
-        syncProfilesToCloud(updated);
-        const newAccount: UserAccount = {
-            id: crypto.randomUUID(),
-            name: normalizedName,
-            email: email?.trim() || undefined,
-            status: 'pending',
-            setupToken,
-            setupTokenCreatedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            createdBy: userProfile || undefined
-        };
-        const nextAccounts = [...userAccountsRef.current, newAccount];
-        await persistUserAccounts(nextAccounts);
-        setSetupLinkData({
-            token: setupToken,
-            url: buildSetupLink(setupToken),
-            name: normalizedName
-        });
-        setShowSetupLinkModal(true);
-    }, [availableProfiles, buildSetupLink, normalizeProfiles, persistUserAccounts, persistUserProfile, rememberProfile, syncProfilesToCloud, userAccounts, userProfile]);
+        if (!getUserAccount(normalizedName)) {
+            const newAccount: UserAccount = {
+                id: crypto.randomUUID(),
+                name: normalizedName,
+                email: email?.trim() || undefined,
+                status: 'pending',
+                setupToken,
+                setupTokenCreatedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                createdBy: userProfile || undefined
+            };
+            const nextAccounts = [...userAccountsRef.current, newAccount];
+            await persistUserAccounts(nextAccounts);
+            setSetupLinkData({
+                token: setupToken,
+                url: buildSetupLink(setupToken),
+                name: normalizedName
+            });
+            setShowSetupLinkModal(true);
+        }
+    }, [availableProfiles, buildSetupLink, getUserAccount, persistProfiles, persistUserAccounts, persistUserProfile, rememberProfile, userProfile]);
 
     const handleAddProfile = async () => {
         if (!isAdmin) {
@@ -2298,29 +2440,35 @@ export default function Dashboard() {
             alert(`Only ${ADMIN_PROFILE} can delete users.`);
             return;
         }
-        const updated = availableProfiles.filter(p => p !== name);
-        const normalized = normalizeProfiles(updated);
-        setAvailableProfiles(normalized);
+        const normalizedName = normalizeProfileName(name);
+        if (!normalizedName) return;
+        const updated = availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: true } : profile);
+        await persistProfiles(updated);
         if (userProfile === name) setUserProfile('');
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
-        syncProfilesToCloud(normalized);
-        const remainingAccounts = userAccounts.filter(account => account.name !== name);
-        await persistUserAccounts(remainingAccounts);
     };
 
     const handleEditProfile = async (oldName: string, newName: string) => {
         const normalizedName = normalizeProfileName(newName);
-        if (!normalizedName || (normalizedName !== oldName && availableProfiles.includes(normalizedName))) return;
-        const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? normalizedName : p));
-        setAvailableProfiles(updated);
+        if (!normalizedName || (normalizedName !== oldName && availableProfiles.some(profile => profile.name === normalizedName))) return;
+        const updated = availableProfiles.map(profile => profile.name === oldName ? { ...profile, name: normalizedName } : profile);
+        await persistProfiles(updated);
         if (userProfile === oldName) {
             setUserProfile(normalizedName);
             await persistUserProfile(normalizedName);
         }
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-        syncProfilesToCloud(updated);
         const updatedAccounts = userAccounts.map(account => account.name === oldName ? { ...account, name: normalizedName } : account);
         await persistUserAccounts(updatedAccounts);
+    };
+
+    const handleRestoreProfile = async (name: string) => {
+        if (!isAdmin) {
+            alert(`Only ${ADMIN_PROFILE} can restore users.`);
+            return;
+        }
+        const normalizedName = normalizeProfileName(name);
+        if (!normalizedName) return;
+        const updated = availableProfiles.map(profile => profile.name === normalizedName ? { ...profile, archived: false } : profile);
+        await persistProfiles(updated);
     };
 
     const openSetupModalForToken = useCallback((token: string) => {
@@ -2477,14 +2625,14 @@ export default function Dashboard() {
                     await Preferences.remove({ key: 'user_profile' });
                 }
 
-                let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
+                const { value: profiles } = await Preferences.get({ key: 'available_profiles' });
                 if (profiles) {
-                    const loaded = normalizeProfiles(JSON.parse(profiles));
+                    const loaded = normalizeProfileEntries(JSON.parse(profiles) as Array<string | ProfileEntry>);
                     setAvailableProfiles(loaded);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
                     syncProfilesToCloud(loaded);
                 } else {
-                    const defaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                    const defaults = normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
                     setAvailableProfiles(defaults);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
                     // Also sync to cloud on first run
@@ -3054,7 +3202,7 @@ export default function Dashboard() {
     const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
-    const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+    const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON';
     const groupingEnabled = groupingAvailable && groupViewEnabled;
 
     const normalizedGroupMeta = useMemo(() => normalizeGroupMetaList(groupMeta), [groupMeta]);
@@ -3066,21 +3214,27 @@ export default function Dashboard() {
         });
         return Array.from(unique);
     }, [sales]);
+    const groupTabByName = useMemo(() => buildGroupTabLookup(sales), [sales]);
     const resolvedGroupMeta = useMemo(
-        () => ensureGroupMetaIncludesNames(normalizedGroupMeta, groupNamesFromSales),
-        [normalizedGroupMeta, groupNamesFromSales]
+        () => ensureGroupMetaIncludesNames(normalizedGroupMeta, groupNamesFromSales, groupTabByName),
+        [normalizedGroupMeta, groupNamesFromSales, groupTabByName]
+    );
+    const currentGroupTab = useMemo(() => tabFromCategory(activeCategory), [activeCategory]);
+    const groupsForView = useMemo(
+        () => currentGroupTab ? resolvedGroupMeta.filter(group => (group.tab ?? 'SALES') === currentGroupTab) : [],
+        [currentGroupTab, resolvedGroupMeta]
     );
     const groupDisplayNameByKey = useMemo(() => {
         const map = new Map<string, string>();
-        resolvedGroupMeta.forEach(group => {
+        groupsForView.forEach(group => {
             map.set(groupKeyForName(group.name), group.name);
         });
         return map;
-    }, [resolvedGroupMeta]);
+    }, [groupsForView]);
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
-        resolvedGroupMeta.forEach(group => {
+        groupsForView.forEach(group => {
             groups[group.name] = [];
         });
         groups.Ungrouped = [];
@@ -3092,7 +3246,14 @@ export default function Dashboard() {
             groups[groupKey].push(s);
         });
         return groups;
-    }, [filteredSales, resolvedGroupMeta, groupDisplayNameByKey]);
+    }, [filteredSales, groupsForView, groupDisplayNameByKey]);
+
+    const groupMoveTargets = useMemo(() => ([
+        { label: 'Sales', status: 'In Progress' as SaleStatus, tab: 'SALES' as GroupTab },
+        { label: 'Shipped', status: 'Shipped' as SaleStatus, tab: 'SHIPPED' as GroupTab },
+        { label: 'Inspections', status: 'Inspection' as SaleStatus, tab: 'INSPECTIONS' as GroupTab },
+        { label: 'Autosallon', status: 'Autosallon' as SaleStatus, tab: 'AUTOSALLON' as GroupTab }
+    ]), []);
 
     useEffect(() => {
         if (sales.length === 0) return;
@@ -3104,14 +3265,25 @@ export default function Dashboard() {
         missing.forEach(name => {
             const trimmed = normalizeGroupName(name);
             if (!trimmed) return;
-            nextMeta.push({ name: trimmed, order: nextMeta.length, archived: false });
+            const key = groupKeyForName(trimmed);
+            nextMeta.push({ name: trimmed, order: nextMeta.length, archived: false, tab: groupTabByName.get(key) ?? 'SALES' });
         });
         persistGroupMeta(nextMeta);
-    }, [sales, normalizedGroupMeta]);
+    }, [sales, normalizedGroupMeta, groupTabByName]);
+
+    useEffect(() => {
+        const needsTabUpdate = normalizedGroupMeta.some(group => !group.tab);
+        if (!needsTabUpdate) return;
+        const nextMeta = normalizedGroupMeta.map(group => ({
+            ...group,
+            tab: group.tab ?? groupTabByName.get(groupKeyForName(group.name)) ?? 'SALES'
+        }));
+        persistGroupMeta(nextMeta);
+    }, [normalizedGroupMeta, groupTabByName]);
 
     const orderedGroupMeta = useMemo(() => {
-        return [...resolvedGroupMeta].sort((a, b) => a.order - b.order);
-    }, [resolvedGroupMeta]);
+        return [...groupsForView].sort((a, b) => a.order - b.order);
+    }, [groupsForView]);
 
     const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
     const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
@@ -3168,6 +3340,7 @@ export default function Dashboard() {
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
+            onRestore={handleRestoreProfile}
             avatars={profileAvatars}
             onEditAvatar={handleEditAvatar}
             rememberDefault={rememberProfile}
@@ -3286,23 +3459,23 @@ export default function Dashboard() {
                                 <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl p-2 w-52 shadow-xl z-[60]">
                                     <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                                     <div className="max-h-40 overflow-y-auto scroll-container space-y-1">
-                                        {availableProfiles.map(p => (
-                                            <button key={p} onClick={() => {
-                                                if (p === ADMIN_PROFILE && userProfile !== p) {
-                                                    setPendingProfile(p);
+                                        {activeProfileEntries.map(profile => (
+                                            <button key={profile.name} onClick={() => {
+                                                if (profile.name === ADMIN_PROFILE && userProfile !== profile.name) {
+                                                    setPendingProfile(profile.name);
                                                     setPasswordInput('');
                                                     setIsPasswordVisible(false);
                                                     setShowPasswordModal(true);
                                                     return;
                                                 }
                                                 setShowProfileMenu(false);
-                                                startTransition(() => { setUserProfile(p); });
-                                                persistUserProfile(p);
-                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
+                                                startTransition(() => { setUserProfile(profile.name); });
+                                                persistUserProfile(profile.name);
+                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, profile.name), 100);
                                             }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
-                                                <span>{p}</span>
-                                                {userProfile === p && <CheckSquare className="w-4 h-4" />}
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === profile.name ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                                <span>{profile.name}</span>
+                                                {userProfile === profile.name && <CheckSquare className="w-4 h-4" />}
                                             </button>
                                         ))}
                                     </div>
@@ -3469,13 +3642,15 @@ export default function Dashboard() {
                                         axis="y"
                                         values={activeGroups.map(g => g.name)}
                                         onReorder={(newOrder) => {
+                                            const currentTab = currentGroupTab ?? 'SALES';
                                             const updated = newOrder.map((name, index) => {
                                                 const match = resolvedGroupMeta.find(g => groupKeyForName(g.name) === groupKeyForName(name));
-                                                return match ? { ...match, order: index } : { name, order: index, archived: false };
+                                                return match ? { ...match, order: index } : { name, order: index, archived: false, tab: currentTab };
                                             });
                                             const updatedKeys = new Set(updated.map(group => groupKeyForName(group.name)));
-                                            const archived = resolvedGroupMeta.filter(g => g.archived && !updatedKeys.has(groupKeyForName(g.name)));
-                                            persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
+                                            const archived = resolvedGroupMeta.filter(g => (g.tab ?? 'SALES') === currentTab && g.archived && !updatedKeys.has(groupKeyForName(g.name)));
+                                            const preserved = resolvedGroupMeta.filter(g => (g.tab ?? 'SALES') !== currentTab);
+                                            persistGroupMeta([...updated, ...archived, ...preserved]);
                                         }}
                                         className="grid grid-cols-subgrid"
                                         style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
@@ -3522,42 +3697,23 @@ export default function Dashboard() {
                                                                     </button>
                                                                     {activeGroupMoveMenu === group.name && (
                                                                         <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'In Progress');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Sales
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Shipped');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Shipped
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Inspection');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Inspections
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => {
-                                                                                    handleMoveGroupStatus(group.name, 'Autosallon');
-                                                                                    setActiveGroupMoveMenu(null);
-                                                                                }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                            >
-                                                                                Autosallon
-                                                                            </button>
+                                                                            {groupMoveTargets.map(target => {
+                                                                                const isCurrent = (group.tab ?? 'SALES') === target.tab;
+                                                                                return (
+                                                                                    <button
+                                                                                        key={target.tab}
+                                                                                        onClick={() => {
+                                                                                            if (isCurrent) return;
+                                                                                            handleMoveGroupStatus(group.name, target.status);
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        disabled={isCurrent}
+                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                    >
+                                                                                        {target.label}
+                                                                                    </button>
+                                                                                );
+                                                                            })}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -3880,42 +4036,23 @@ export default function Dashboard() {
                                                                 </button>
                                                                 {activeGroupMoveMenu === group.name && (
                                                                     <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'In Progress');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Sales
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Shipped');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Shipped
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Inspection');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Inspections
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => {
-                                                                                handleMoveGroupStatus(group.name, 'Autosallon');
-                                                                                setActiveGroupMoveMenu(null);
-                                                                            }}
-                                                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                                                                        >
-                                                                            Autosallon
-                                                                        </button>
+                                                                        {groupMoveTargets.map(target => {
+                                                                            const isCurrent = (group.tab ?? 'SALES') === target.tab;
+                                                                            return (
+                                                                                <button
+                                                                                    key={target.tab}
+                                                                                    onClick={() => {
+                                                                                        if (isCurrent) return;
+                                                                                        handleMoveGroupStatus(group.name, target.status);
+                                                                                        setActiveGroupMoveMenu(null);
+                                                                                    }}
+                                                                                    disabled={isCurrent}
+                                                                                    className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                >
+                                                                                    {target.label}
+                                                                                </button>
+                                                                            );
+                                                                        })}
                                                                     </div>
                                                                 )}
                                                                 </div>
@@ -4290,7 +4427,9 @@ export default function Dashboard() {
                                                 persistUserProfile(e.target.value);
                                             }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
                                                 <option value="">Select Profile</option>
-                                                {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                                {activeProfileEntries.map(profile => (
+                                                    <option key={profile.name} value={profile.name}>{profile.name}</option>
+                                                ))}
                                             </select>
                                             <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
                                         </div>
