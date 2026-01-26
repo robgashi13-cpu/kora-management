@@ -2,10 +2,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { CarSale, ContractType } from '@/app/types';
 import { X, Printer, Loader2, AlertCircle } from 'lucide-react';
 import ContractDocument from './ContractDocument';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
-import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
 
 interface Props {
     sale: CarSale;
@@ -99,42 +96,20 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             // @ts-ignore
             const html2pdf = (await import('html2pdf.js')).default;
 
-            if (!Capacitor.isNativePlatform()) {
-                await waitForImages(element);
-
-                const fieldData = collectPdfTextFields(element);
-                const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-                addPdfFormFields(pdf, fieldData);
-                const pdfBlob = pdf.output('blob');
-                const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
-                if (!downloadResult.opened) {
-                    setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
-                }
-            } else {
-                // Native mobile (iOS/Android) - use Capacitor filesystem
-                const fieldData = collectPdfTextFields(element);
-                const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-                addPdfFormFields(pdf, fieldData);
-                const pdfBase64 = pdf.output('datauristring');
-                const fileName = `Contract_${safeBrand}_${safeModel}_${Date.now()}.pdf`;
-                const base64Data = pdfBase64.split(',')[1];
-
-                if (!base64Data) {
-                    throw new Error('Failed to generate PDF data');
-                }
-
-                const savedFile = await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64Data,
-                    directory: Directory.Documents,
-                });
-
-                await Share.share({
-                    title: `Contract - ${safeBrand} ${safeModel}`,
-                    text: `Contract for ${safeVin}`,
-                    url: savedFile.uri,
-                    dialogTitle: 'Download or Share Contract'
-                });
+            await waitForImages(element);
+            const fieldData = collectPdfTextFields(element);
+            const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+            addPdfFormFields(pdf, fieldData);
+            const pdfBlob = pdf.output('blob');
+            const shareResult = await sharePdfBlob({
+                blob: pdfBlob,
+                filename: opt.filename,
+                title: `Contract - ${safeBrand} ${safeModel}`,
+                text: `Contract for ${safeVin}`,
+                dialogTitle: 'Download or Share Contract'
+            });
+            if (!shareResult.opened) {
+                setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
             }
         } catch (error) {
             console.error('Download failed:', error);

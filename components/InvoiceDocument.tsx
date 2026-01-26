@@ -4,12 +4,15 @@ import React from 'react';
 import { CarSale } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
+import { getInvoicePriceLabel, InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
     withDogane?: boolean;
     withStamp?: boolean;
     taxAmount?: number;
+    priceSource?: InvoicePriceSource;
+    priceValue?: number;
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
@@ -23,7 +26,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, taxAmount, renderField }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, taxAmount, priceSource, priceValue, renderField }, ref) => {
     const displaySale = applyShitblerjeOverrides(sale);
     const renderText = <K extends keyof CarSale>(
         fieldKey: K,
@@ -49,7 +52,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     };
     const normalizeNonNegative = (value: number) => (value >= 0 ? value : 0);
 
-    const soldPriceValue = normalizeNonNegative(toSafeNumber(displaySale.soldPrice));
+    const resolvedPriceValue = resolveInvoicePriceValue(displaySale, priceSource, priceValue);
+    const soldPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
     const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
     const defaultServicesValue = 169.49;
     const defaultTaxValue = 30.51;
@@ -64,10 +68,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const taxLabel = withDogane ? 'Doganë' : 'Tax (TVSH 18%)';
     const formatCurrency = (amount: number) =>
         `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const priceLabel = getInvoicePriceLabel(priceSource);
 
     return (
         <div
-            className="pdf-root invoice-root"
+            className={`pdf-root invoice-root ${priceSource ? 'invoice-root--price-source' : ''} invoice-root--pdf`}
             id="invoice-content"
             ref={ref}
             style={{
@@ -77,7 +82,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 fontSize: '10pt',
                 lineHeight: 1.45,
                 boxSizing: 'border-box',
-                width: '100%',
+                width: '210mm',
                 maxWidth: '210mm',
                 minHeight: '297mm',
                 height: 'auto',
@@ -149,6 +154,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         <td style={{ padding: '14px 0' }}>
                             <div style={{ color: '#000000', fontWeight: 700 }}>
                                 Vehicle Sale Price
+                                <span className="invoice-price-label">{priceLabel}</span>
                             </div>
                             <div className="invoice-subline">
                                 <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
@@ -226,6 +232,10 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <style>{`
                 .invoice-root {
                     padding: 40px;
+                }
+
+                .invoice-root--pdf {
+                    padding: 30px;
                 }
 
                 .invoice-header {
@@ -346,6 +356,16 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     margin-top: 4px;
                 }
 
+                .invoice-price-label {
+                    display: inline-block;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    margin-left: 8px;
+                    color: #475569;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                }
+
                 .invoice-section-title {
                     color: #000000;
                     font-size: 0.75rem;
@@ -441,6 +461,54 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     height: 220px;
                     object-fit: contain;
                     margin-top: -122px;
+                }
+
+                .invoice-root--pdf .invoice-header {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    gap: 18px;
+                }
+
+                .invoice-root--pdf .invoice-header-right,
+                .invoice-root--pdf .invoice-client-right,
+                .invoice-root--pdf .invoice-footer-right {
+                    text-align: right;
+                }
+
+                .invoice-root--pdf .invoice-client {
+                    display: grid;
+                    grid-template-columns: 1fr auto;
+                    gap: 20px;
+                    align-items: flex-start;
+                    background: #f8fafc;
+                    border-top: 1px solid #000000;
+                    border-bottom: 1px solid #000000;
+                    padding: 14px 16px;
+                    margin-bottom: 16px;
+                    break-inside: avoid;
+                }
+
+                .invoice-root--pdf .invoice-summary {
+                    width: 260px;
+                    background: #f8fafc;
+                    border: 1px solid #000000;
+                    padding: 10px 14px;
+                    border-radius: 10px;
+                }
+
+                .invoice-root--pdf .invoice-footer {
+                    border-top: 1px solid;
+                    padding: 16px 24px 12px;
+                    margin-top: 16px;
+                    break-inside: avoid;
+                }
+
+                .invoice-root--pdf .invoice-footer-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 24px;
                 }
 
                 @media (min-width: 768px) {

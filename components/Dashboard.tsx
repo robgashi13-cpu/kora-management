@@ -19,6 +19,8 @@ import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
+import InvoicePriceModal from './InvoicePriceModal';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
@@ -547,7 +549,12 @@ export default function Dashboard() {
         sale: CarSale;
         type: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
         withDogane?: boolean;
+        priceSource?: InvoicePriceSource;
+        priceValue?: number;
     } | null>(null);
+    const [pendingInvoiceSale, setPendingInvoiceSale] = useState<CarSale | null>(null);
+    const [pendingInvoiceWithDogane, setPendingInvoiceWithDogane] = useState(false);
+    const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
     const [invoiceDownloadStatus, setInvoiceDownloadStatus] = useState('');
@@ -1000,11 +1007,17 @@ export default function Dashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const invoiceScrollRef = useRef<HTMLDivElement>(null);
     const uiStateHydrated = useRef(false);
     const selectionHydrated = useRef(false);
     const uiStateKey = 'dashboard_ui_state_v1';
     const selectionKey = 'dashboard_selected_ids_v1';
     const uiStateViewRef = useRef<string | null>(null);
+    const documentPreviewCloseRequested = useRef(false);
+    const viewSaleCloseRequested = useRef(false);
+    const historySyncReady = useRef(false);
+    const historySyncPaused = useRef(false);
+    const lastHistoryStateRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -1055,6 +1068,89 @@ export default function Dashboard() {
     }, [activeCategory, searchTerm, sortBy, sortDir, groupViewEnabled, expandedGroups, view, editingSale, viewSaleRecord, formReturnView]);
 
     useEffect(() => {
+        if (!uiStateHydrated.current || typeof window === 'undefined') return;
+        const payload = {
+            view,
+            activeCategory,
+            searchTerm,
+            sortBy,
+            sortDir,
+            groupViewEnabled,
+            expandedGroups,
+            selectedIds: Array.from(selectedIds)
+        };
+        const serialized = JSON.stringify(payload);
+        const shouldSyncHistory = view !== 'sale_form' && !documentPreview && !viewSaleRecord;
+        if (!historySyncReady.current) {
+            historySyncReady.current = true;
+            lastHistoryStateRef.current = serialized;
+            if (shouldSyncHistory) {
+                window.history.replaceState({ ...window.history.state, uiState: payload }, '');
+            }
+            return;
+        }
+        if (!shouldSyncHistory || historySyncPaused.current || lastHistoryStateRef.current === serialized) {
+            lastHistoryStateRef.current = serialized;
+            return;
+        }
+        lastHistoryStateRef.current = serialized;
+        window.history.pushState({ ...window.history.state, uiState: payload }, '');
+    }, [
+        activeCategory,
+        searchTerm,
+        sortBy,
+        sortDir,
+        groupViewEnabled,
+        expandedGroups,
+        view,
+        selectedIds,
+        documentPreview,
+        viewSaleRecord
+    ]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const handlePopState = (event: PopStateEvent) => {
+            const nextState = (event.state as { uiState?: typeof event.state } | null)?.uiState as
+                | {
+                    view?: string;
+                    activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE';
+                    searchTerm?: string;
+                    sortBy?: string;
+                    sortDir?: 'asc' | 'desc';
+                    groupViewEnabled?: boolean;
+                    expandedGroups?: string[];
+                    selectedIds?: string[];
+                }
+                | undefined;
+            if (!nextState) return;
+            historySyncPaused.current = true;
+            if (typeof nextState.view === 'string') setView(nextState.view);
+            if (nextState.activeCategory) setActiveCategory(nextState.activeCategory);
+            if (typeof nextState.searchTerm === 'string') setSearchTerm(nextState.searchTerm);
+            if (typeof nextState.sortBy === 'string') setSortBy(nextState.sortBy);
+            if (nextState.sortDir === 'asc' || nextState.sortDir === 'desc') setSortDir(nextState.sortDir);
+            if (typeof nextState.groupViewEnabled === 'boolean') setGroupViewEnabled(nextState.groupViewEnabled);
+            if (Array.isArray(nextState.expandedGroups)) setExpandedGroups(nextState.expandedGroups);
+            if (Array.isArray(nextState.selectedIds)) setSelectedIds(new Set(nextState.selectedIds));
+            setTimeout(() => {
+                historySyncPaused.current = false;
+            }, 0);
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (userProfile) {
+            window.sessionStorage.setItem('active_user_profile', userProfile);
+        } else {
+            window.sessionStorage.removeItem('active_user_profile');
+        }
+    }, [userProfile]);
+
+    useEffect(() => {
         if (selectionHydrated.current || typeof window === 'undefined') return;
         if (sales.length === 0) return;
         const raw = window.localStorage.getItem(selectionKey);
@@ -1077,6 +1173,62 @@ export default function Dashboard() {
         if (!selectionHydrated.current || typeof window === 'undefined') return;
         window.localStorage.setItem(selectionKey, JSON.stringify(Array.from(selectedIds)));
     }, [selectedIds]);
+
+    const handleCloseDocumentPreview = useCallback(() => {
+        if (typeof window !== 'undefined' && window.history.state?.documentPreviewOpen) {
+            documentPreviewCloseRequested.current = true;
+            window.history.back();
+        }
+        setDocumentPreview(null);
+    }, []);
+
+    const handleCloseViewSale = useCallback(() => {
+        if (typeof window !== 'undefined' && window.history.state?.viewSaleOpen) {
+            viewSaleCloseRequested.current = true;
+            window.history.back();
+        }
+        setViewSaleRecord(null);
+    }, []);
+
+    useEffect(() => {
+        if (!documentPreview || typeof window === 'undefined') return;
+        const state = { ...window.history.state, documentPreviewOpen: true };
+        window.history.pushState(state, '');
+
+        const handlePopState = () => {
+            if (!documentPreview) return;
+            if (documentPreviewCloseRequested.current) {
+                documentPreviewCloseRequested.current = false;
+                return;
+            }
+            setDocumentPreview(null);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [documentPreview]);
+
+    useEffect(() => {
+        if (!viewSaleRecord || typeof window === 'undefined') return;
+        const state = { ...window.history.state, viewSaleOpen: true };
+        window.history.pushState(state, '');
+
+        const handlePopState = () => {
+            if (!viewSaleRecord) return;
+            if (viewSaleCloseRequested.current) {
+                viewSaleCloseRequested.current = false;
+                return;
+            }
+            setViewSaleRecord(null);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [viewSaleRecord]);
 
     useEffect(() => {
         if (!uiStateHydrated.current) return;
@@ -1134,6 +1286,36 @@ export default function Dashboard() {
             }
         };
     }, [activeCategory, view]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (view !== 'invoices') return;
+        const container = invoiceScrollRef.current;
+        if (!container) return;
+        const key = 'invoices_scroll_position';
+        const stored = window.localStorage.getItem(key);
+        if (stored) {
+            const position = Number(stored);
+            if (!Number.isNaN(position)) {
+                requestAnimationFrame(() => {
+                    if (invoiceScrollRef.current) {
+                        invoiceScrollRef.current.scrollTop = position;
+                    }
+                });
+            }
+        }
+        const handleScroll = () => {
+            if (!invoiceScrollRef.current) return;
+            window.localStorage.setItem(key, String(invoiceScrollRef.current.scrollTop));
+        };
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            if (invoiceScrollRef.current) {
+                window.localStorage.setItem(key, String(invoiceScrollRef.current.scrollTop));
+            }
+        };
+    }, [view]);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -1624,7 +1806,7 @@ export default function Dashboard() {
                 await Share.share({
                     title: 'Invoices',
                     text: `Invoices bundle (${selectedSales.length})`,
-                    url: savedFile.uri,
+                    files: [savedFile.uri],
                     dialogTitle: 'Download invoices'
                 });
             } else {
@@ -2281,8 +2463,15 @@ export default function Dashboard() {
                     storedProfile = normalizedStoredProfile;
                     await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
                 }
+                const sessionProfileRaw = typeof window !== 'undefined'
+                    ? window.sessionStorage.getItem('active_user_profile')
+                    : null;
+                const sessionProfile = normalizeProfileName(sessionProfileRaw);
                 if (storedProfile && shouldRemember) {
                     setUserProfile(storedProfile);
+                    setView(uiStateViewRef.current || 'landing');
+                } else if (sessionProfile) {
+                    setUserProfile(sessionProfile);
                     setView(uiStateViewRef.current || 'landing');
                 } else if (storedProfile && !shouldRemember) {
                     await Preferences.remove({ key: 'user_profile' });
@@ -2587,7 +2776,30 @@ export default function Dashboard() {
 
     const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false) => {
         e.stopPropagation();
-        setDocumentPreview({ sale, type: 'invoice', withDogane });
+        setPendingInvoiceSale(sale);
+        setPendingInvoiceWithDogane(withDogane);
+        setShowInvoicePriceModal(true);
+    };
+
+    const handleInvoicePriceSelect = (source: InvoicePriceSource) => {
+        if (!pendingInvoiceSale) return;
+        const priceValue = resolveInvoicePriceValue(pendingInvoiceSale, source);
+        setDocumentPreview({
+            sale: pendingInvoiceSale,
+            type: 'invoice',
+            withDogane: pendingInvoiceWithDogane,
+            priceSource: source,
+            priceValue
+        });
+        setPendingInvoiceSale(null);
+        setPendingInvoiceWithDogane(false);
+        setShowInvoicePriceModal(false);
+    };
+
+    const handleInvoicePriceCancel = () => {
+        setPendingInvoiceSale(null);
+        setPendingInvoiceWithDogane(false);
+        setShowInvoicePriceModal(false);
     };
 
     const handleFullBackup = async () => {
@@ -4105,7 +4317,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
                         ) : view === 'invoices' ? (
-                            <div className="flex-1 overflow-auto scroll-container p-3 md:p-6">
+                            <div ref={invoiceScrollRef} className="flex-1 overflow-auto scroll-container p-3 md:p-6">
                                 <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
                                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                                     <button
@@ -4570,19 +4782,26 @@ export default function Dashboard() {
                 <ViewSaleModal
                     isOpen={!!viewSaleRecord}
                     sale={viewSaleRecord}
-                    onClose={() => setViewSaleRecord(null)}
+                    onClose={handleCloseViewSale}
                     isAdmin={isAdmin}
                 />
             )}
 
             {/* Contextual FAB for Inspections/Autosallon */}
+            <InvoicePriceModal
+                isOpen={showInvoicePriceModal}
+                sale={pendingInvoiceSale}
+                onSelect={handleInvoicePriceSelect}
+                onCancel={handleInvoicePriceCancel}
+            />
             {documentPreview && (
                 <EditablePreviewModal
                     isOpen={!!documentPreview}
-                    onClose={() => setDocumentPreview(null)}
+                    onClose={handleCloseDocumentPreview}
                     sale={documentPreview.sale}
                     documentType={documentPreview.type}
                     withDogane={documentPreview.withDogane}
+                    priceSource={documentPreview.priceSource}
                     onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
                 />
             )}

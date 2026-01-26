@@ -4,13 +4,11 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
-import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
+import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -20,6 +18,7 @@ interface EditablePreviewModalProps {
   onSaveToSale?: (updatedFields: Partial<CarSale>) => void;
   withDogane?: boolean;
   taxAmount?: number;
+  priceSource?: InvoicePriceSource;
 }
 
 export default function EditablePreviewModal({
@@ -29,7 +28,8 @@ export default function EditablePreviewModal({
   documentType,
   onSaveToSale,
   withDogane = false,
-  taxAmount
+  taxAmount,
+  priceSource
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -178,38 +178,19 @@ export default function EditablePreviewModal({
 
       await waitForImages(element);
 
-      if (!Capacitor.isNativePlatform()) {
-        const fieldData = collectPdfTextFields(element);
-        const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-        addPdfFormFields(pdf, fieldData);
-        const pdfBlob = pdf.output('blob');
-        const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
-        if (!downloadResult.opened) {
-          setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
-        }
-      } else {
-        const fieldData = collectPdfTextFields(element);
-        const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-        addPdfFormFields(pdf, fieldData);
-        const pdfBase64 = pdf.output('datauristring');
-        const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
-        const base64Data = pdfBase64.split(',')[1];
-        if (!base64Data) {
-          throw new Error('Failed to generate PDF data');
-        }
-
-        const savedFile = await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.Documents,
-        });
-
-        await Share.share({
-          title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
-          text: `Document for ${getValue('vin')}`,
-          url: savedFile.uri,
-          dialogTitle: 'Download or Share Document'
-        });
+      const fieldData = collectPdfTextFields(element);
+      const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+      addPdfFormFields(pdf, fieldData);
+      const pdfBlob = pdf.output('blob');
+      const shareResult = await sharePdfBlob({
+        blob: pdfBlob,
+        filename: opt.filename,
+        title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
+        text: `Document for ${getValue('vin')}`,
+        dialogTitle: 'Download or Share Document'
+      });
+      if (!shareResult.opened) {
+        setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
       }
     } catch (err: any) {
       console.error('Download failed:', err);
@@ -233,6 +214,15 @@ export default function EditablePreviewModal({
   // Editable inline field component
   const isInvoice = documentType === 'invoice';
   const canToggleStamp = true;
+  const invoicePriceValue = isInvoice
+    ? resolveInvoicePriceValue(
+      {
+        soldPrice: getValue('soldPrice') as number,
+        amountPaidBank: getValue('amountPaidBank') as number
+      },
+      priceSource
+    )
+    : undefined;
 
   const EditableField = ({ 
     fieldKey, 
@@ -477,6 +467,8 @@ export default function EditablePreviewModal({
                 withDogane={withDogane}
                 withStamp={withStamp}
                 taxAmount={taxAmount}
+                priceSource={priceSource}
+                priceValue={invoicePriceValue}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />

@@ -7,6 +7,8 @@ import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import EditablePreviewModal from './EditablePreviewModal';
 import InvoiceModal from './InvoiceModal';
+import InvoicePriceModal from './InvoicePriceModal';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 interface Props {
     isOpen: boolean;
@@ -29,6 +31,8 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [invoiceTaxAmount, setInvoiceTaxAmount] = useState<number | undefined>(undefined);
+    const [invoicePriceSource, setInvoicePriceSource] = useState<InvoicePriceSource | null>(null);
+    const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
@@ -271,7 +275,11 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setShowDoganeSelection(true); setShowDocumentMenu(false); }}
+                                onClick={() => {
+                                    setInvoicePriceSource(null);
+                                    setShowInvoicePriceModal(true);
+                                    setShowDocumentMenu(false);
+                                }}
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                             >
                                 <div>
@@ -284,6 +292,20 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     </div>
                 </div>
             )}
+
+            <InvoicePriceModal
+                isOpen={showInvoicePriceModal}
+                sale={previewSale}
+                onSelect={(source) => {
+                    setInvoicePriceSource(source);
+                    setShowInvoicePriceModal(false);
+                    setShowDoganeSelection(true);
+                }}
+                onCancel={() => {
+                    setInvoicePriceSource(null);
+                    setShowInvoicePriceModal(false);
+                }}
+            />
 
             {/* Dogane Selection Modal */}
             {showDoganeSelection && (
@@ -414,6 +436,8 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     sale={previewSale}
                     withDogane={invoiceWithDogane}
                     taxAmount={invoiceTaxAmount}
+                    priceSource={invoicePriceSource || 'sold'}
+                    priceValue={resolveInvoicePriceValue(previewSale, invoicePriceSource || 'sold')}
                 />
             )}
 

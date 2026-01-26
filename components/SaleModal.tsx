@@ -6,6 +6,8 @@ import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
+import InvoicePriceModal from './InvoicePriceModal';
+import { InvoicePriceSource } from './invoicePricing';
 
 interface Props {
     isOpen: boolean;
@@ -50,6 +52,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [invoiceTaxAmount, setInvoiceTaxAmount] = useState<number | undefined>(undefined);
+    const [invoicePriceSource, setInvoicePriceSource] = useState<InvoicePriceSource | null>(null);
+    const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
@@ -656,7 +660,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setShowDoganeSelection(true); setShowDocumentMenu(false); }}
+                        onClick={() => { setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                     >
                         <div>
@@ -689,6 +693,22 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         setShowInvoice(true);
         setShowTaxPrompt(false);
     };
+
+    const invoicePriceModal = (
+        <InvoicePriceModal
+            isOpen={showInvoicePriceModal}
+            sale={formData}
+            onSelect={(source) => {
+                setInvoicePriceSource(source);
+                setShowInvoicePriceModal(false);
+                setShowDoganeSelection(true);
+            }}
+            onCancel={() => {
+                setInvoicePriceSource(null);
+                setShowInvoicePriceModal(false);
+            }}
+        />
+    );
 
     const doganeSelectionModal = showDoganeSelection && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
@@ -787,6 +807,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 {previewOverlay}
                 {Content}
                 {documentMenu}
+                {invoicePriceModal}
                 {doganeSelectionModal}
                 {taxPromptModal}
                 {showInvoice && (
@@ -797,6 +818,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         documentType="invoice"
                         withDogane={invoiceWithDogane}
                         taxAmount={invoiceTaxAmount}
+                        priceSource={invoicePriceSource || 'sold'}
                         onSaveToSale={handlePreviewSaveToSale}
                     />
                 )}
@@ -822,6 +844,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             {previewOverlay}
             {Content}
             {documentMenu}
+            {invoicePriceModal}
             {doganeSelectionModal}
             {taxPromptModal}
             {showInvoice && (
@@ -832,6 +855,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     documentType="invoice"
                     withDogane={invoiceWithDogane}
                     taxAmount={invoiceTaxAmount}
+                    priceSource={invoicePriceSource || 'sold'}
                     onSaveToSale={handlePreviewSaveToSale}
                 />
             )}
