@@ -139,6 +139,83 @@ export const downloadPdfBlob = async (
   return { opened };
 };
 
+export const sharePdfBlob = async ({
+  blob,
+  filename,
+  title,
+  text,
+  dialogTitle
+}: {
+  blob: Blob;
+  filename: string;
+  title?: string;
+  text?: string;
+  dialogTitle?: string;
+}): Promise<{ shared: boolean; opened: boolean }> => {
+  const file = new File([blob], filename, { type: 'application/pdf' });
+
+  const { Capacitor } = await import('@capacitor/core');
+
+  if (Capacitor.isNativePlatform()) {
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    const { Share } = await import('@capacitor/share');
+    const base64Data = await blobToBase64(blob);
+    const filePath = filename || `invoice_${Date.now()}.pdf`;
+    const savedFile = await Filesystem.writeFile({
+      path: filePath,
+      data: base64Data,
+      directory: Directory.Documents
+    });
+
+    await Share.share({
+      title,
+      text,
+      files: [savedFile.uri],
+      dialogTitle
+    });
+    return { shared: true, opened: true };
+  }
+
+  if (typeof window !== 'undefined' && 'navigator' in window) {
+    const nav = window.navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+      canShare?: (data: ShareData) => boolean;
+    };
+    if (nav.share && nav.canShare?.({ files: [file] })) {
+      await nav.share({
+        title,
+        text,
+        files: [file]
+      });
+      return { shared: true, opened: true };
+    }
+  }
+
+  const downloadResult = await downloadPdfBlob(blob, filename);
+  return { shared: false, opened: downloadResult.opened };
+};
+
+const blobToBase64 = async (blob: Blob): Promise<string> => {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('Failed to encode file.'));
+        return;
+      }
+      const base64 = result.split(',')[1];
+      if (!base64) {
+        reject(new Error('Failed to encode file.'));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+
 export const openPdfBlob = async (blob: Blob): Promise<{ opened: boolean }> => {
   const blobUrl = URL.createObjectURL(blob);
   let opened = true;

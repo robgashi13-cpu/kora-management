@@ -4,11 +4,9 @@ import React, { useRef, useState } from 'react';
 import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { Capacitor } from '@capacitor/core';
 import InvoiceDocument from './InvoiceDocument';
-import { addPdfFormFields, collectPdfTextFields, downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { InvoicePriceSource } from './invoicePricing';
+import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -16,9 +14,11 @@ interface Props {
     sale: CarSale;
     withDogane?: boolean;
     taxAmount?: number;
+    priceSource?: InvoicePriceSource;
+    priceValue?: number;
 }
 
-export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount }: Props) {
+export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [withStamp, setWithStamp] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -81,31 +81,16 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
             addPdfFormFields(pdf, fieldData);
 
-            if (!Capacitor.isNativePlatform()) {
-                const pdfBlob = pdf.output('blob');
-                const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
-                if (!downloadResult.opened) {
-                    setStatusMessage('Popup blocked. We opened the PDF in this tab so you can save or share it.');
-                }
-            } else {
-                const pdfBase64 = pdf.output('datauristring');
-                const fileName = `Invoice_${sale.vin || Date.now()}.pdf`;
-                const base64Data = pdfBase64.split(',')[1];
-                if (!base64Data) {
-                    throw new Error('Failed to generate PDF data');
-                }
-                const savedFile = await Filesystem.writeFile({
-                    path: fileName,
-                    data: base64Data,
-                    directory: Directory.Documents,
-                });
-
-                await Share.share({
-                    title: `Invoice - ${sale.brand} ${sale.model}`,
-                    text: `Invoice for ${sale.vin}`,
-                    url: savedFile.uri,
-                    dialogTitle: 'Download or Share Invoice'
-                });
+            const pdfBlob = pdf.output('blob');
+            const shareResult = await sharePdfBlob({
+                blob: pdfBlob,
+                filename: opt.filename,
+                title: `Invoice - ${sale.brand} ${sale.model}`,
+                text: `Invoice for ${sale.vin}`,
+                dialogTitle: 'Download or Share Invoice'
+            });
+            if (!shareResult.opened) {
+                setStatusMessage('Popup blocked. We opened the PDF in this tab so you can save or share it.');
             }
 
         } catch (error: any) {
@@ -177,8 +162,16 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 )}
 
                 {/* Invoice Content Area */}
-                <div className="flex-1 overflow-y-auto scroll-container print:overflow-visible">
-                    <InvoiceDocument sale={sale} withDogane={withDogane} withStamp={withStamp} taxAmount={taxAmount} ref={printRef} />
+                <div className="flex-1 overflow-auto scroll-container print:overflow-visible">
+                    <InvoiceDocument
+                        sale={sale}
+                        withDogane={withDogane}
+                        withStamp={withStamp}
+                        taxAmount={taxAmount}
+                        priceSource={priceSource}
+                        priceValue={priceValue}
+                        ref={printRef}
+                    />
                 </div>
             </motion.div>
 
