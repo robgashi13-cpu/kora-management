@@ -116,12 +116,20 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setEditingProfile(null);
     };
 
-    const handleDelete = () => {
+    const editingEntry = editingProfile ? profiles.find(profile => profile.name === editingProfile) : undefined;
+
+    const handleArchive = () => {
         if (!editingProfile) return;
-        if (confirm(`Delete profile "${editingProfile}"?`)) {
+        if (confirm(`Archive profile "${editingProfile}"?`)) {
             onDelete(editingProfile);
             setEditingProfile(null);
         }
+    };
+
+    const handleRestore = () => {
+        if (!editingProfile) return;
+        onRestore(editingProfile);
+        setEditingProfile(null);
     };
 
     if (isAdding) {
@@ -308,6 +316,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
                             <button onClick={() => setEditingProfile(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Edit Profile</h2>
+                            {editingEntry?.archived && (
+                                <p className="mb-4 text-xs uppercase tracking-wide text-amber-600 font-semibold">Archived Profile</p>
+                            )}
 
                             {/* Avatar Upload */}
                             <div className="relative w-24 h-24 mx-auto mb-6 group">
@@ -350,9 +361,17 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             />
 
                             <div className="flex gap-4">
-                                <button onClick={handleDelete} className="px-6 py-3 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 flex items-center gap-2">
-                                    <Trash2 className="w-5 h-5" /> Delete
-                                </button>
+                                {editingProfile !== ADMIN_PROFILE && (
+                                    editingEntry?.archived ? (
+                                        <button onClick={handleRestore} className="px-6 py-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 flex items-center gap-2">
+                                            <RotateCcw className="w-5 h-5" /> Restore
+                                        </button>
+                                    ) : (
+                                        <button onClick={handleArchive} className="px-6 py-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 flex items-center gap-2">
+                                            <Trash2 className="w-5 h-5" /> Archive
+                                        </button>
+                                    )
+                                )}
                                 <button onClick={handleEditSave} className="flex-1 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">
                                     Save Changes
                                 </button>
