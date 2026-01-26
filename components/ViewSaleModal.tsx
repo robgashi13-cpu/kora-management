@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, ArrowLeft, FileText, Download, Eye } from 'lucide-react';
+import { createRoot } from 'react-dom/client';
+import { X, ArrowLeft, FileText, Eye } from 'lucide-react';
 import { CarSale, Attachment } from '@/app/types';
 import { motion } from 'framer-motion';
-import { openPdfBlob } from './pdfUtils';
+import InvoiceDocument from './InvoiceDocument';
+import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, openPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -27,8 +29,84 @@ const calculateProfit = (sale: CarSale) =>
 
 export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }: Props) {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [pdfMessage, setPdfMessage] = useState<string | null>(null);
 
     if (!isOpen || !sale) return null;
+
+    const handleViewPdf = async () => {
+        if (!sale || isGeneratingPdf) return;
+        setPdfMessage(null);
+        setIsGeneratingPdf(true);
+
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '1024px';
+        container.style.zIndex = '-1';
+        document.body.appendChild(container);
+
+        const root = createRoot(container);
+        try {
+            root.render(<InvoiceDocument sale={sale} />);
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
+            if (invoiceElement) {
+                await waitForImages(invoiceElement);
+            }
+
+            // @ts-ignore
+            const html2pdf = (await import('html2pdf.js')).default;
+            const opt = {
+                margin: 0,
+                filename: `Invoice_${sale.vin || sale.id}.pdf`,
+                image: { type: 'jpeg' as const, quality: 0.92 },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    imageTimeout: 10000,
+                    onclone: (clonedDoc: Document) => {
+                        sanitizePdfCloneStyles(clonedDoc);
+                        normalizePdfLayout(clonedDoc);
+                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                            if (invoiceNode && node.closest('#invoice-content')) {
+                                return;
+                            }
+                            node.remove();
+                        });
+                    }
+                },
+                jsPDF: {
+                    unit: 'mm' as const,
+                    format: 'a4' as const,
+                    orientation: 'portrait' as const,
+                    compress: true,
+                    putOnlyUsedFonts: true
+                },
+                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
+            };
+
+            const fieldData = collectPdfTextFields(invoiceElement || container);
+            const pdf = await html2pdf().set(opt).from(invoiceElement || container).toPdf().get('pdf');
+            addPdfFormFields(pdf, fieldData);
+            const pdfBlob = pdf.output('blob');
+            const openResult = await openPdfBlob(pdfBlob);
+            if (!openResult.opened) {
+                setPdfMessage('Popup blocked. The PDF opened in this tab.');
+            }
+        } catch {
+            setPdfMessage('Unable to open PDF right now. Please try again.');
+        } finally {
+            root.unmount();
+            container.remove();
+            setIsGeneratingPdf(false);
+        }
+    };
 
     const viewFile = (file: Attachment) => {
         if (!file.data) return;
@@ -121,6 +199,14 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleViewPdf}
+                                disabled={isGeneratingPdf}
+                                className="px-3 py-2 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {isGeneratingPdf ? 'Preparing PDF...' : 'View PDF'}
+                            </button>
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
                                 sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
                                 sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
@@ -142,6 +228,11 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
 
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto p-5 space-y-5 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
+                        {pdfMessage && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                                {pdfMessage}
+                            </div>
+                        )}
                         {/* Summary */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
