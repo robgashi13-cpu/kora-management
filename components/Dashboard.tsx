@@ -21,7 +21,7 @@ import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
 import InvoicePriceModal from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
-import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { generatePdf } from './pdfUtils';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
@@ -1810,47 +1810,20 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
-        if (invoiceElement) {
-            await waitForImages(invoiceElement);
-        }
 
-        // @ts-ignore
-        const html2pdf = (await import('html2pdf.js')).default;
-        const opt = {
-            margin: 0,
+        const { pdf } = await generatePdf({
+            element: invoiceElement || container,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
-            image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                            if (invoiceNode && node.closest('#invoice-content')) {
-                                return;
-                            }
-                            node.remove();
-                        });
+            onClone: (clonedDoc) => {
+                const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                    if (invoiceNode && node.closest('#invoice-content')) {
+                        return;
                     }
-                },
-            jsPDF: {
-                unit: 'mm' as const,
-                format: 'a4' as const,
-                orientation: 'portrait' as const,
-                compress: true,
-                putOnlyUsedFonts: true
-            },
-            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-        };
-
-        const fieldData = collectPdfTextFields(invoiceElement || container);
-        const pdf = await html2pdf().set(opt).from(invoiceElement || container).toPdf().get('pdf');
-        addPdfFormFields(pdf, fieldData);
+                    node.remove();
+                });
+            }
+        });
         const dataUri = pdf.output('datauristring');
 
         root.unmount();
@@ -1882,41 +1855,12 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const contractElement = container.querySelector('[data-contract-document]') as HTMLElement | null;
-        if (contractElement) {
-            await waitForImages(contractElement);
-        }
 
-        // @ts-ignore
-        const html2pdf = (await import('html2pdf.js')).default;
         const fileName = `Contract_${type}_${sale.vin || sale.id}.pdf`;
-        const opt = {
-            margin: 0,
-            filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                    }
-                },
-            jsPDF: {
-                unit: 'mm' as const,
-                format: 'a4' as const,
-                orientation: 'portrait' as const,
-                compress: true,
-                putOnlyUsedFonts: true
-            },
-            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-        };
-
-        const fieldData = collectPdfTextFields(contractElement || container);
-        const pdf = await html2pdf().set(opt).from(contractElement || container).toPdf().get('pdf');
-        addPdfFormFields(pdf, fieldData);
+        const { pdf } = await generatePdf({
+            element: contractElement || container,
+            filename: fileName
+        });
         const dataUri = pdf.output('datauristring');
 
         root.unmount();

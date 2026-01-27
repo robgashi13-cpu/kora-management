@@ -1,8 +1,8 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { CarSale, ContractType } from '@/app/types';
 import { X, Printer, Loader2, AlertCircle } from 'lucide-react';
 import ContractDocument from './ContractDocument';
-import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
+import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';
 
 interface Props {
     sale: CarSale;
@@ -39,71 +39,84 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [withStamp, setWithStamp] = useState(false);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
     // Validate contract data
     const validation = type === 'deposit' ? validateDepositContract(sale) : { valid: true, missingFields: [] };
 
-    const handleDownload = useCallback(async () => {
-        // Prevent double-click
-        if (isDownloading) return;
-        
+    const buildPdfPreview = useCallback(async () => {
         const element = printRef.current;
         if (!element) {
             setError('Document preview not ready. Please try again.');
-            return;
+            return null;
         }
 
         // Validate before generating
         if (!validation.valid) {
             setError(`Missing required fields: ${validation.missingFields.join(', ')}`);
-            return;
+            return null;
         }
 
+        setIsGeneratingPreview(true);
         try {
-            setIsDownloading(true);
             setError(null);
             setStatusMessage(null);
-            
+
+            const safeBrand = safeString(sale.brand, 'Unknown');
+            const safeModel = safeString(sale.model, 'Car');
+            const result = await generatePdf({
+                element,
+                filename: `Contract_${safeBrand}_${safeModel}.pdf`
+            });
+            setPdfBlob(result.blob);
+            setPdfUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return URL.createObjectURL(result.blob);
+            });
+            return result.blob;
+        } catch (error) {
+            console.error('Download failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setError(`Could not generate PDF: ${errorMessage}. Please try again.`);
+            return null;
+        } finally {
+            setIsGeneratingPreview(false);
+        }
+    }, [sale, validation]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (validation.valid) {
+                buildPdfPreview();
+            }
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [buildPdfPreview, validation.valid, withStamp, type]);
+
+    useEffect(() => {
+        return () => {
+            setPdfUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+            });
+        };
+    }, []);
+
+    const handleDownload = useCallback(async () => {
+        if (isDownloading) return;
+        setIsDownloading(true);
+        setStatusMessage(null);
+        try {
+            const blob = pdfBlob ?? await buildPdfPreview();
+            if (!blob) return;
             const safeBrand = safeString(sale.brand, 'Unknown');
             const safeModel = safeString(sale.model, 'Car');
             const safeVin = safeString(sale.vin, 'N/A');
-            
-            const opt = {
-                margin: 0,
-                filename: `Contract_${safeBrand}_${safeModel}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                    }
-                },
-                jsPDF: {
-                    unit: 'mm' as const,
-                    format: 'a4' as const,
-                    orientation: 'portrait' as const,
-                    compress: true,
-                    putOnlyUsedFonts: true
-                },
-                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-            };
-
-            // @ts-ignore
-            const html2pdf = (await import('html2pdf.js')).default;
-
-            await waitForImages(element);
-            const fieldData = collectPdfTextFields(element);
-            const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-            addPdfFormFields(pdf, fieldData);
-            const pdfBlob = pdf.output('blob');
             const shareResult = await sharePdfBlob({
-                blob: pdfBlob,
-                filename: opt.filename,
+                blob,
+                filename: `Contract_${safeBrand}_${safeModel}.pdf`,
                 title: `Contract - ${safeBrand} ${safeModel}`,
                 text: `Contract for ${safeVin}`,
                 dialogTitle: 'Download or Share Contract'
@@ -111,17 +124,18 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             if (!shareResult.opened) {
                 setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
             }
-        } catch (error) {
-            console.error('Download failed:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            setError(`Could not generate PDF: ${errorMessage}. Please try again.`);
         } finally {
             setIsDownloading(false);
         }
-    }, [isDownloading, sale, validation]);
+    }, [buildPdfPreview, isDownloading, pdfBlob, sale.brand, sale.model, sale.vin]);
 
-    const handlePrint = () => {
-        handleDownload();
+    const handlePrint = async () => {
+        const blob = pdfBlob ?? await buildPdfPreview();
+        if (!blob) return;
+        const printResult = await printPdfBlob(blob);
+        if (!printResult.opened) {
+            setStatusMessage('Popup blocked. The PDF opened in this tab so you can print it.');
+        }
     };
 
     const contractPreviewTitle = type === 'deposit'
@@ -184,12 +198,29 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         </div>
 
                 {/* Document Preview Area */}
-                <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center">
-                    {/* The "Paper" Scaled for Mobile */}
+                <div className="flex-1 overflow-auto bg-slate-100 p-4 md:p-8 flex justify-center relative">
                     <div className="w-full flex justify-center">
-                        <div className="transform scale-[0.45] sm:scale-75 md:scale-100 origin-top h-auto" data-pdf-scale-wrapper>
-                            <ContractDocument sale={sale} type={type} documentRef={printRef} withStamp={withStamp} />
+                        <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden">
+                            {isGeneratingPreview ? (
+                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Generating preview...
+                                </div>
+                            ) : pdfUrl ? (
+                                <iframe
+                                    title="Contract PDF Preview"
+                                    src={pdfUrl}
+                                    className="w-full h-[70vh] border-0"
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm">
+                                    Preview unavailable.
+                                </div>
+                            )}
                         </div>
+                    </div>
+                    <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none" aria-hidden="true">
+                        <ContractDocument sale={sale} type={type} documentRef={printRef} withStamp={withStamp} />
                     </div>
                 </div>
             </div >

@@ -230,6 +230,86 @@ export const openPdfBlob = async (blob: Blob): Promise<{ opened: boolean }> => {
   return { opened };
 };
 
+export const printPdfBlob = async (blob: Blob): Promise<{ opened: boolean }> => {
+  if (isIosSafari()) {
+    return openPdfBlob(blob);
+  }
+
+  const blobUrl = URL.createObjectURL(blob);
+  let opened = true;
+  const popup = window.open(blobUrl, '_blank');
+  if (!popup) {
+    opened = false;
+    window.location.href = blobUrl;
+  } else {
+    const triggerPrint = () => {
+      try {
+        popup.focus();
+        popup.print();
+      } catch {
+        // Ignore print errors.
+      }
+    };
+    popup.addEventListener('load', () => {
+      setTimeout(triggerPrint, 300);
+    });
+    setTimeout(triggerPrint, 1500);
+  }
+
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+  return { opened };
+};
+
+type PdfGenerationOptions = {
+  element: HTMLElement;
+  filename: string;
+  onClone?: (clonedDoc: Document) => void;
+  pagebreakMode?: Array<'css' | 'legacy' | 'avoid-all' | 'avoid'>;
+};
+
+export const generatePdf = async ({
+  element,
+  filename,
+  onClone,
+  pagebreakMode
+}: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
+  await waitForImages(element);
+
+  // @ts-ignore
+  const html2pdf = (await import('html2pdf.js')).default;
+  const opt = {
+    margin: 0,
+    filename,
+    image: { type: 'jpeg' as const, quality: 0.92 },
+    html2canvas: {
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      imageTimeout: 10000,
+      onclone: (clonedDoc: Document) => {
+        sanitizePdfCloneStyles(clonedDoc);
+        normalizePdfLayout(clonedDoc);
+        onClone?.(clonedDoc);
+      }
+    },
+    jsPDF: {
+      unit: 'mm' as const,
+      format: 'a4' as const,
+      orientation: 'portrait' as const,
+      compress: true,
+      putOnlyUsedFonts: true
+    },
+    pagebreak: { mode: pagebreakMode ?? ['css', 'legacy', 'avoid-all'] }
+  };
+
+  const fieldData = collectPdfTextFields(element);
+  const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+  addPdfFormFields(pdf, fieldData);
+  const blob = pdf.output('blob');
+  return { pdf, blob, filename };
+};
+
 type PdfFieldRect = {
   x: number;
   y: number;

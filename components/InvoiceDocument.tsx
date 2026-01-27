@@ -450,15 +450,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-signature-line {
-                    width: 220px;
+                    width: 58mm;
                     border-bottom: 1px solid #000000;
                 }
 
                 .invoice-stamp {
-                    width: 220px;
-                    height: 220px;
+                    width: 58mm;
+                    height: 58mm;
                     object-fit: contain;
-                    margin-top: -122px;
+                    margin-top: -32mm;
                 }
 
                 .invoice-root--pdf .invoice-header {

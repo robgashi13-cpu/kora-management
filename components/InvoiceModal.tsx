@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/app/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { InvoicePriceSource } from './invoicePricing';
-import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
+import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -24,67 +24,86 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const printRef = useRef<HTMLDivElement>(null);
 
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
-    const handlePrint = () => {
-        handleDownload();
+    const buildPdfPreview = useCallback(async () => {
+        const element = printRef.current;
+        if (!element) return null;
+        setIsGeneratingPreview(true);
+        try {
+            const filename = `Invoice_${sale.vin || 'unnamed'}.pdf`;
+            const result = await generatePdf({
+                element,
+                filename,
+                onClone: (clonedDoc) => {
+                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                        if (invoiceNode && node.closest('#invoice-content')) {
+                            return;
+                        }
+                        node.remove();
+                    });
+                }
+            });
+            setPdfBlob(result.blob);
+            setPdfUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return URL.createObjectURL(result.blob);
+            });
+            return result.blob;
+        } catch (error) {
+            console.error('PDF preview failed:', error);
+            setStatusMessage('Unable to generate PDF preview. Please try again.');
+            return null;
+        } finally {
+            setIsGeneratingPreview(false);
+        }
+    }, [sale]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setPdfBlob(null);
+            setPdfUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+            });
+            return;
+        }
+        const timer = setTimeout(() => {
+            buildPdfPreview();
+        }, 150);
+        return () => clearTimeout(timer);
+    }, [isOpen, withStamp, taxAmount, priceSource, priceValue, buildPdfPreview]);
+
+    useEffect(() => {
+        return () => {
+            setPdfUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return null;
+            });
+        };
+    }, []);
+
+    const handlePrint = async () => {
+        const blob = pdfBlob ?? await buildPdfPreview();
+        if (!blob) return;
+        const printResult = await printPdfBlob(blob);
+        if (!printResult.opened) {
+            setStatusMessage('Popup blocked. We opened the PDF in this tab so you can print it.');
+        }
     };
 
     const handleDownload = async () => {
-        const element = printRef.current;
-        if (!element) return;
-
         try {
             setIsDownloading(true);
             setStatusMessage(null);
-
-            // Wait for any UI updates to settle
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            const opt = {
-                margin: 0,
-                filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                            if (invoiceNode && node.closest('#invoice-content')) {
-                                return;
-                            }
-                            node.remove();
-                        });
-                    }
-                },
-                jsPDF: {
-                    unit: 'mm' as const,
-                    format: 'a4' as const,
-                    orientation: 'portrait' as const,
-                    compress: true,
-                    putOnlyUsedFonts: true
-                },
-                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-            };
-
-            // @ts-ignore
-            const html2pdf = (await import('html2pdf.js')).default;
-
-            await waitForImages(element);
-
-            const fieldData = collectPdfTextFields(element);
-            const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-            addPdfFormFields(pdf, fieldData);
-
-            const pdfBlob = pdf.output('blob');
+            const blob = pdfBlob ?? await buildPdfPreview();
+            if (!blob) return;
             const shareResult = await sharePdfBlob({
-                blob: pdfBlob,
-                filename: opt.filename,
+                blob,
+                filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 title: `Invoice - ${sale.brand} ${sale.model}`,
                 text: `Invoice for ${sale.vin}`,
                 dialogTitle: 'Download or Share Invoice'
@@ -162,16 +181,38 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 )}
 
                 {/* Invoice Content Area */}
-                <div className="flex-1 overflow-auto scroll-container print:overflow-visible">
-                    <InvoiceDocument
-                        sale={sale}
-                        withDogane={withDogane}
-                        withStamp={withStamp}
-                        taxAmount={taxAmount}
-                        priceSource={priceSource}
-                        priceValue={priceValue}
-                        ref={printRef}
-                    />
+                <div className="flex-1 overflow-auto scroll-container print:overflow-visible relative">
+                    <div className="flex justify-center bg-slate-100 p-4 md:p-8">
+                        <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden">
+                            {isGeneratingPreview ? (
+                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Generating preview...
+                                </div>
+                            ) : pdfUrl ? (
+                                <iframe
+                                    title="Invoice PDF Preview"
+                                    src={pdfUrl}
+                                    className="w-full h-[70vh] border-0"
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm">
+                                    Preview unavailable.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none" aria-hidden="true">
+                        <InvoiceDocument
+                            sale={sale}
+                            withDogane={withDogane}
+                            withStamp={withStamp}
+                            taxAmount={taxAmount}
+                            priceSource={priceSource}
+                            priceValue={priceValue}
+                            ref={printRef}
+                        />
+                    </div>
                 </div>
             </motion.div>
 
