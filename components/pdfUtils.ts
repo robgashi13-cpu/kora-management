@@ -3,11 +3,25 @@ export const waitForImages = async (container: HTMLElement, timeoutMs = 8000): P
   if (images.length === 0) return;
 
   const loadPromises = images.map((img) => {
-    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    const decodeImage = async () => {
+      if (typeof img.decode === 'function') {
+        await img.decode();
+      }
+    };
+
+    if (img.complete && img.naturalWidth > 0) {
+      return decodeImage();
+    }
+
     return new Promise<void>((resolve, reject) => {
-      const onLoad = () => {
+      const onLoad = async () => {
         cleanup();
-        resolve();
+        try {
+          await decodeImage();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
       };
       const onError = () => {
         cleanup();
@@ -275,6 +289,10 @@ export const generatePdf = async ({
 }: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
   await waitForImages(element);
 
+  const rect = element.getBoundingClientRect();
+  const renderWidth = Math.ceil(rect.width || element.scrollWidth || element.offsetWidth || 0);
+  const renderHeight = Math.ceil(rect.height || element.scrollHeight || element.offsetHeight || 0);
+
   // @ts-ignore
   const html2pdf = (await import('html2pdf.js')).default;
   const opt = {
@@ -283,6 +301,14 @@ export const generatePdf = async ({
     image: { type: 'jpeg' as const, quality: 0.92 },
     html2canvas: {
       scale: 3,
+      ...(renderWidth > 0 && renderHeight > 0
+        ? {
+            width: renderWidth,
+            height: renderHeight,
+            windowWidth: renderWidth,
+            windowHeight: renderHeight
+          }
+        : {}),
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
@@ -305,6 +331,12 @@ export const generatePdf = async ({
 
   const fieldData = collectPdfTextFields(element);
   const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+  if (typeof pdf.viewerPreferences === 'function') {
+    pdf.viewerPreferences({
+      PrintScaling: 'None',
+      PickTrayByPDFSize: true
+    });
+  }
   addPdfFormFields(pdf, fieldData);
   const blob = pdf.output('blob');
   return { pdf, blob, filename };

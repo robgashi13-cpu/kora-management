@@ -50,5 +50,14 @@ export default function StampImage({ className, style, alt = 'Official Stamp' }:
     };
   }, []);
 
-  return <img src={src} alt={alt} className={className} style={style} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      style={style}
+      loading="eager"
+      decoding="sync"
+    />
+  );
 }
