@@ -6,7 +6,7 @@ import { X, ArrowLeft, FileText, Eye } from 'lucide-react';
 import { CarSale, Attachment } from '@/app/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
-import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, openPdfBlob, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { generatePdf, openPdfBlob } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;
@@ -57,44 +57,19 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                 await waitForImages(invoiceElement);
             }
 
-            // @ts-ignore
-            const html2pdf = (await import('html2pdf.js')).default;
-            const opt = {
-                margin: 0,
+            const { blob: pdfBlob } = await generatePdf({
+                element: invoiceElement || container,
                 filename: `Invoice_${sale.vin || sale.id}.pdf`,
-                image: { type: 'jpeg' as const, quality: 0.92 },
-                html2canvas: {
-                    scale: 3,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    imageTimeout: 10000,
-                    onclone: (clonedDoc: Document) => {
-                        sanitizePdfCloneStyles(clonedDoc);
-                        normalizePdfLayout(clonedDoc);
-                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                            if (invoiceNode && node.closest('#invoice-content')) {
-                                return;
-                            }
-                            node.remove();
-                        });
-                    }
-                },
-                jsPDF: {
-                    unit: 'mm' as const,
-                    format: 'a4' as const,
-                    orientation: 'portrait' as const,
-                    compress: true,
-                    putOnlyUsedFonts: true
-                },
-                pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-            };
-
-            const fieldData = collectPdfTextFields(invoiceElement || container);
-            const pdf = await html2pdf().set(opt).from(invoiceElement || container).toPdf().get('pdf');
-            addPdfFormFields(pdf, fieldData);
-            const pdfBlob = pdf.output('blob');
+                onClone: (clonedDoc) => {
+                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                        if (invoiceNode && node.closest('#invoice-content')) {
+                            return;
+                        }
+                        node.remove();
+                    });
+                }
+            });
             const openResult = await openPdfBlob(pdfBlob);
             if (!openResult.opened) {
                 setPdfMessage('Popup blocked. The PDF opened in this tab.');

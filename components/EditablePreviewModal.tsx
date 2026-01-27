@@ -8,7 +8,7 @@ import InvoiceDocument from './InvoiceDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
-import { addPdfFormFields, collectPdfTextFields, normalizePdfLayout, sanitizePdfCloneStyles, sharePdfBlob, waitForImages } from './pdfUtils';
+import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -148,43 +148,13 @@ export default function EditablePreviewModal({
         return;
       }
 
-      const opt = {
-        margin: 0,
-        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.92 },
-        html2canvas: {
-          scale: 3,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          imageTimeout: 10000,
-          onclone: (clonedDoc: Document) => {
-            sanitizePdfCloneStyles(clonedDoc);
-            normalizePdfLayout(clonedDoc);
-          }
-        },
-        jsPDF: {
-          unit: 'mm' as const,
-          format: 'a4' as const,
-          orientation: 'portrait' as const,
-          compress: true,
-          putOnlyUsedFonts: true
-        },
-        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-      };
-
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
-
-      await waitForImages(element);
-
-      const fieldData = collectPdfTextFields(element);
-      const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
-      addPdfFormFields(pdf, fieldData);
-      const pdfBlob = pdf.output('blob');
+      const { blob: pdfBlob } = await generatePdf({
+        element,
+        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`
+      });
       const shareResult = await sharePdfBlob({
         blob: pdfBlob,
-        filename: opt.filename,
+        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
         title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
         text: `Document for ${getValue('vin')}`,
         dialogTitle: 'Download or Share Document'
@@ -200,8 +170,26 @@ export default function EditablePreviewModal({
     }
   };
 
-  const handlePrint = () => {
-    handleDownload();
+  const handlePrint = async () => {
+    const element = printRef.current;
+    if (!element) return;
+    try {
+      setIsDownloading(true);
+      setStatusMessage(null);
+      const { blob: pdfBlob } = await generatePdf({
+        element,
+        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`
+      });
+      const printResult = await printPdfBlob(pdfBlob);
+      if (!printResult.opened) {
+        setStatusMessage('Popup blocked. The PDF opened in this tab so you can print it.');
+      }
+    } catch (err: any) {
+      console.error('Print failed:', err);
+      setError(`Print failed: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const formatCurrency = (val: string | number | undefined | null, fractionDigits = 0): string => {
@@ -980,12 +968,12 @@ export default function EditablePreviewModal({
         }
         .signature-grid {
           display: flex;
-          gap: 64px;
-          width: 664px;
+          gap: 16.9mm;
+          width: 175.7mm;
           margin: 0 auto;
         }
         .signature-column {
-          width: 300px;
+          width: 79.4mm;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
@@ -999,7 +987,7 @@ export default function EditablePreviewModal({
           margin-top: 24px;
         }
         .signature-line {
-          width: 240px;
+          width: 63.5mm;
           border-bottom: 1px solid #000;
           height: 0;
         }
@@ -1009,22 +997,22 @@ export default function EditablePreviewModal({
         }
         .signature-stamp-row {
           position: absolute;
-          top: -66px;
+          top: -17.5mm;
           left: 50%;
           transform: translateX(-50%);
           display: flex;
           justify-content: flex-start;
-          width: 664px;
+          width: 175.7mm;
           margin: 0;
         }
         .signature-stamp {
-          width: 220px;
-          height: 220px;
+          width: 58mm;
+          height: 58mm;
           object-fit: contain;
-          margin-left: calc((240px - 220px) / 2 + 110px);
+          margin-left: 31.8mm;
         }
         .signature-stamp-deposit {
-          margin-left: -40px;
+          margin-left: -10.6mm;
         }
         .label {
           font-weight: bold;
