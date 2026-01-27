@@ -3351,6 +3351,7 @@ export default function Dashboard() {
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
     const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON';
     const groupingEnabled = groupingAvailable && groupViewEnabled;
+    const showGroupConfig = false;
 
     const normalizedGroupMeta = useMemo(() => normalizeGroupMetaList(groupMeta), [groupMeta]);
     const groupNamesFromSales = useMemo(() => {
@@ -3863,76 +3864,78 @@ export default function Dashboard() {
                                                                 <span>{group.name}</span>
                                                                 <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                             </button>
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    onClick={() => moveGroup(group.name, 'up')}
-                                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group up"
-                                                                >
-                                                                    <ChevronUp className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => moveGroup(group.name, 'down')}
-                                                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Move group down"
-                                                                >
-                                                                    <ChevronDown className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <div className="relative">
+                                                            {showGroupConfig && (
+                                                                <div className="flex items-center gap-2">
                                                                     <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                        }}
+                                                                        onClick={() => moveGroup(group.name, 'up')}
                                                                         className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group to tab"
+                                                                        title="Move group up"
                                                                     >
-                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                        <ChevronUp className="w-3.5 h-3.5" />
                                                                     </button>
-                                                                    {activeGroupMoveMenu === group.name && (
-                                                                        <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                            {groupMoveTargets.map(target => {
-                                                                                const isCurrent = (group.tab ?? 'SALES') === target.tab;
-                                                                                return (
-                                                                                    <button
-                                                                                        key={target.tab}
-                                                                                        onClick={() => {
-                                                                                            if (isCurrent) return;
-                                                                                            handleMoveGroupStatus(group.name, target.status);
-                                                                                            setActiveGroupMoveMenu(null);
-                                                                                        }}
-                                                                                        disabled={isCurrent}
-                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
-                                                                                    >
-                                                                                        {target.label}
-                                                                                    </button>
-                                                                                );
-                                                                            })}
-                                                                        </div>
-                                                                    )}
+                                                                    <button
+                                                                        onClick={() => moveGroup(group.name, 'down')}
+                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group down"
+                                                                    >
+                                                                        <ChevronDown className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <div className="relative">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                            }}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group to tab"
+                                                                        >
+                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        {activeGroupMoveMenu === group.name && (
+                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                                {groupMoveTargets.map(target => {
+                                                                                    const isCurrent = (group.tab ?? 'SALES') === target.tab;
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={target.tab}
+                                                                                            onClick={() => {
+                                                                                                if (isCurrent) return;
+                                                                                                handleMoveGroupStatus(group.name, target.status);
+                                                                                                setActiveGroupMoveMenu(null);
+                                                                                            }}
+                                                                                            disabled={isCurrent}
+                                                                                            className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        >
+                                                                                            {target.label}
+                                                                                        </button>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => handleRenameGroup(group.name)}
+                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Rename group"
+                                                                    >
+                                                                        <Edit className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleArchiveGroup(group.name, true)}
+                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Archive group"
+                                                                    >
+                                                                        <Archive className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteGroup(group.name)}
+                                                                        className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                        title="Delete group"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
                                                                 </div>
-                                                                <button
-                                                                    onClick={() => handleRenameGroup(group.name)}
-                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Rename group"
-                                                                >
-                                                                    <Edit className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleArchiveGroup(group.name, true)}
-                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                    title="Archive group"
-                                                                >
-                                                                    <Archive className="w-3.5 h-3.5" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleDeleteGroup(group.name)}
-                                                                    className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                    title="Delete group"
-                                                                >
-                                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     {expandedGroups.includes(group.name) && (
@@ -4061,22 +4064,24 @@ export default function Dashboard() {
                                                                         <span>{group.name}</span>
                                                                         <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                                     </button>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <button
-                                                                            onClick={() => handleArchiveGroup(group.name, false)}
-                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Unarchive group"
-                                                                        >
-                                                                            <Eye className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleDeleteGroup(group.name)}
-                                                                            className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                            title="Delete group"
-                                                                        >
-                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                    </div>
+                                                                    {showGroupConfig && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => handleArchiveGroup(group.name, false)}
+                                                                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                                title="Unarchive group"
+                                                                            >
+                                                                                <Eye className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteGroup(group.name)}
+                                                                                className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                                                title="Delete group"
+                                                                            >
+                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                             {expandedGroups.includes(group.name) && (

@@ -4,7 +4,7 @@ import React from 'react';
 import { CarSale } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
-import { getInvoicePriceLabel, InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
@@ -68,7 +68,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const taxLabel = withDogane ? 'Doganë' : 'Tax (TVSH 18%)';
     const formatCurrency = (amount: number) =>
         `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const priceLabel = getInvoicePriceLabel(priceSource);
+    const vehicleDisplayName = [displaySale.brand, displaySale.model].filter(Boolean).join(' ') || '—';
 
     return (
         <div
@@ -104,7 +104,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     <div className="invoice-title">
                         <div className="invoice-title-label">INVOICE</div>
                         <div className="invoice-title-meta">Ref: {referenceId}</div>
-                        <div className="invoice-title-meta">VIN: {renderText('vin', 'N/A')}</div>
                     </div>
                 </div>
                 <div className="invoice-header-right">
@@ -126,7 +125,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         {renderText('buyerName', '—')}
                     </div>
                     <div className="invoice-client-id">
-                        Client ID: {renderText('buyerPersonalId', 'N/A')}
+                        NUMRI I ID / NUMRI I BIZNESIT: {renderText('buyerPersonalId', 'N/A')}
                     </div>
                 </div>
                 <div className="invoice-client-right">
@@ -153,8 +152,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     <tr>
                         <td style={{ padding: '14px 0' }}>
                             <div style={{ color: '#000000', fontWeight: 700 }}>
-                                Vehicle Sale Price
-                                <span className="invoice-price-label">{priceLabel}</span>
+                                {vehicleDisplayName}
                             </div>
                             <div className="invoice-subline">
                                 <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
