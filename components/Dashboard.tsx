@@ -2090,7 +2090,7 @@ export default function Dashboard() {
 
     if (!userProfile) {
         return <ProfileSelector
-            profiles={availableProfiles.map(p => ({ name: p, archived: false }))}
+            profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
             onSelect={(p, remember) => {
                 const normalizedProfile = normalizeProfileName(p);
                 if (!normalizedProfile) return;
