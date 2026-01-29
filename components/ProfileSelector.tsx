@@ -184,7 +184,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 }`}>
                                 {avatars[profile.name] ? <img src={avatars[profile.name]} alt={profile.name} className="w-full h-full object-cover" /> :
                                     (profile.name === ADMIN_PROFILE) ? <Lock className="w-12 h-12 text-red-500" /> :
-                                        <span className="text-slate-700">{profile.name[0].toUpperCase()}</span>}
+                                        <span className="text-slate-700">{(profile.name && profile.name[0]) ? profile.name[0].toUpperCase() : '?'}</span>}
                             </div>
                             <div className="flex flex-col items-center gap-1">
                                 <span className="text-xl text-slate-600 group-hover:text-slate-900 transition-colors">{profile.name}</span>
@@ -257,7 +257,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     </div>
                 </div>
 
-                    <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-100 bg-white/80 px-5 py-2.5 text-sm text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-100 bg-white/80 px-5 py-2.5 text-sm text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
                     <input
                         id="remember-profile"
                         type="checkbox"
@@ -326,7 +326,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     {avatars[editingProfile] ? (
                                         <img src={avatars[editingProfile]} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        <span className="text-4xl text-slate-400">{editingProfile[0]}</span>
+                                        <span className="text-4xl text-slate-400">{(editingProfile && editingProfile[0]) ? editingProfile[0].toUpperCase() : '?'}</span>
                                     )}
                                 </div>
                                 <label className="absolute bottom-0 right-0 p-2 bg-slate-900 rounded-full cursor-pointer hover:bg-slate-800 transition-colors shadow-lg">
