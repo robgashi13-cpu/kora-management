@@ -10,6 +10,7 @@ export interface InvoiceDocumentProps {
     sale: CarSale;
     withDogane?: boolean;
     withStamp?: boolean;
+    showBankOnly?: boolean;
     taxAmount?: number;
     priceSource?: InvoicePriceSource;
     priceValue?: number;
@@ -26,7 +27,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, taxAmount, priceSource, priceValue, renderField }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, renderField }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,

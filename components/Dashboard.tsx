@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -38,8 +38,8 @@ const ADMIN_PASSWORD = 'Robertoo1396$';
 const LEGACY_ADMIN_PROFILE = 'Admin';
 const REQUIRED_PROFILES = [ADMIN_PROFILE, 'Leonit'];
 
-const normalizeProfileName = (name?: string | null) => {
-    if (!name) return '';
+const normalizeProfileName = (name?: string | null | unknown) => {
+    if (typeof name !== 'string' || !name) return '';
     const trimmed = name.trim();
     if (!trimmed) return '';
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
@@ -2090,7 +2090,7 @@ export default function Dashboard() {
 
     if (!userProfile) {
         return <ProfileSelector
-            profiles={availableProfiles}
+            profiles={availableProfiles.map(p => ({ name: p, archived: false }))}
             onSelect={(p, remember) => {
                 const normalizedProfile = normalizeProfileName(p);
                 if (!normalizedProfile) return;
@@ -2099,7 +2099,7 @@ export default function Dashboard() {
                 setRememberProfile(remember);
                 persistUserProfile(normalizedProfile, remember);
             }}
-            onAdd={(name, remember) => {
+            onAdd={(name, _email, remember) => {
                 const normalizedName = normalizeProfileName(name);
                 if (!normalizedName) return;
                 const updated = normalizeProfiles([...availableProfiles, normalizedName]);
@@ -2112,6 +2112,7 @@ export default function Dashboard() {
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
+            onRestore={() => { }}
             avatars={profileAvatars}
             onEditAvatar={handleEditAvatar}
             rememberDefault={rememberProfile}
@@ -2166,14 +2167,23 @@ export default function Dashboard() {
         );
     }
 
-    const navItems = [
+    type NavItem = {
+        id: string;
+        label: string;
+        icon: any;
+        view: string;
+        category?: string;
+        adminOnly?: boolean;
+    };
+
+    const navItems: NavItem[] = [
         { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
         { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
         { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
         { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
         { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
         { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
-    ] as const;
+    ];
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
