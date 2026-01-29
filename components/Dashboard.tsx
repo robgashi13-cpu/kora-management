@@ -1595,6 +1595,39 @@ export default function Dashboard() {
         return () => window.removeEventListener('focus', onFocus);
     }, []);
 
+    // Auto-migrate profiles from sales history ensuring they are "always there"
+    useEffect(() => {
+        if (sales.length === 0) return;
+
+        const allSellers = new Set(availableProfiles);
+        let hasChanges = false;
+
+        sales.forEach(sale => {
+            const normSeller = normalizeProfileName(sale.sellerName);
+            if (normSeller && !allSellers.has(normSeller)) {
+                allSellers.add(normSeller);
+                hasChanges = true;
+            }
+
+            const normSoldBy = normalizeProfileName(sale.soldBy);
+            if (normSoldBy && !allSellers.has(normSoldBy)) {
+                allSellers.add(normSoldBy);
+                hasChanges = true;
+            }
+        });
+
+        if (hasChanges) {
+            const updated = normalizeProfiles(Array.from(allSellers));
+            setAvailableProfiles(updated);
+            Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+            // Sync to cloud if possible
+            if (supabaseUrl && supabaseKey) {
+                syncProfilesToCloud(updated);
+            }
+            console.log("Auto-migrated missing profiles from sales history:", updated);
+        }
+    }, [sales, availableProfiles, supabaseUrl, supabaseKey]);
+
     useEffect(() => {
         if (!userProfile || !supabaseUrl || !supabaseKey) return;
         const syncOnLogin = async () => {
