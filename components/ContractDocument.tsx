@@ -70,8 +70,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${rootHeightClass} ${rootPaddingClass}`}
             style={{
                 fontFamily: '"Times New Roman", Times, serif',
-                fontSize: type === 'deposit' ? '8pt' : type === 'full_shitblerje' ? '8.5pt' : '9pt',
-                lineHeight: type === 'deposit' ? 1.25 : type === 'full_shitblerje' ? 1.3 : 1.4,
+                fontSize: type === 'deposit' ? '9pt' : type === 'full_shitblerje' ? '9.5pt' : '10pt',
+                lineHeight: 1.4,
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word',
                 boxSizing: 'border-box',
@@ -146,7 +146,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="mb-2">
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 2 – Shuma e Kaparit</div>
                         <p className="text-xs">
-                            Blerësi i dorëzon shitësit kaparin si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
+                            Blerësi i dorëzon shitësit kaparin në shumë prej <strong>{formatCurrency(displaySale.deposit)}€</strong> si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
                         </p>
                     </div>
 

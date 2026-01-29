@@ -278,20 +278,22 @@ export default function EditablePreviewModal({
 
     return (
       <span
-        onClick={() => setActiveEdit(fieldKey)}
+        onClick={() => !isDownloading && setActiveEdit(fieldKey)}
         className={`editable-preview-field ${className}`}
         style={{
-          cursor: 'pointer',
-          borderBottom: '1px dashed transparent', // Invisible placeholder to avoid jump
+          cursor: isDownloading ? 'text' : 'pointer',
+          borderBottom: isDownloading ? 'none' : '1px dashed transparent',
           transition: 'all 0.15s ease',
           display: 'inline-block',
           maxWidth: '100%',
           overflowWrap: 'anywhere',
           wordBreak: 'break-word',
           whiteSpace: 'normal',
-          minWidth: '20px', // Hit area
+          minWidth: isDownloading ? 'auto' : '20px',
+          verticalAlign: 'baseline',
+          color: 'inherit'
         }}
-        title="Click to edit"
+        title={isDownloading ? undefined : "Click to edit"}
       >
         {displayValue || (isInvoice ? '' : '________________')}
       </span>
