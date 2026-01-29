@@ -366,6 +366,7 @@ export default function Dashboard() {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [rememberProfile, setRememberProfile] = useState(false);
     const [viewSaleModalItem, setViewSaleModalItem] = useState<CarSale | null>(null);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canViewPrices = isAdmin;
@@ -1439,6 +1440,31 @@ export default function Dashboard() {
     };
 
     const handleDeleteProfile = async (name: string) => {
+        // Check for sales to reassign
+        const salesToReassign = sales.filter(s => normalizeProfileName(s.soldBy) === normalizeProfileName(name) || normalizeProfileName(s.sellerName) === normalizeProfileName(name));
+
+        if (salesToReassign.length > 0) {
+            if (!confirm(`This profile has ${salesToReassign.length} sales. Deleting it will reassign these sales to '${ADMIN_PROFILE}'. Continue?`)) {
+                return;
+            }
+            // Reassign sales to Admin
+            const updatedSales = sales.map(s => {
+                const sBy = normalizeProfileName(s.soldBy);
+                const sName = normalizeProfileName(s.sellerName);
+                const target = normalizeProfileName(name);
+
+                if (sBy === target || sName === target) {
+                    return {
+                        ...s,
+                        soldBy: sBy === target ? ADMIN_PROFILE : s.soldBy,
+                        sellerName: sName === target ? ADMIN_PROFILE : s.sellerName
+                    };
+                }
+                return s;
+            });
+            await updateSalesAndSave(updatedSales);
+        }
+
         const updated = availableProfiles.filter(p => p !== name);
         const normalized = normalizeProfiles(updated);
         setAvailableProfiles(normalized);
@@ -2338,7 +2364,7 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0">
+            <aside className={`hidden md:flex flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
                 <SidebarContent />
             </aside>
 
@@ -2373,6 +2399,13 @@ export default function Dashboard() {
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
                                 className="p-2 -ml-2 rounded-xl hover:bg-slate-100 md:hidden text-slate-600"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
+                            <button
+                                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 hidden md:block text-slate-600 transition-colors"
+                                title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
