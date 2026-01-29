@@ -330,6 +330,24 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
 const INITIAL_SALES: CarSale[] = [];
 
+type NavItem = {
+    id: string;
+    label: string;
+    icon: any;
+    view: string;
+    category?: string;
+    adminOnly?: boolean;
+};
+
+const navItems: NavItem[] = [
+    { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
+    { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
+    { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
+    { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
+    { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+    { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
+];
+
 export default function Dashboard() {
     const dirtyIds = useRef<Set<string>>(new Set());
     const [, startTransition] = useTransition();
@@ -413,6 +431,12 @@ export default function Dashboard() {
     }, [isAdmin, sortBy]);
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
+
+    const currentNavId = useMemo(() => {
+        if (view === 'settings') return 'SETTINGS';
+        if (view === 'invoices') return 'INVOICES';
+        return activeCategory as string;
+    }, [view, activeCategory]);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
@@ -2200,29 +2224,7 @@ export default function Dashboard() {
         );
     }
 
-    type NavItem = {
-        id: string;
-        label: string;
-        icon: any;
-        view: string;
-        category?: string;
-        adminOnly?: boolean;
-    };
 
-    const navItems: NavItem[] = [
-        { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
-        { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
-        { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
-        { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
-        { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
-        { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
-    ];
-
-    const currentNavId = useMemo(() => {
-        if (view === 'settings') return 'SETTINGS';
-        if (view === 'invoices') return 'INVOICES';
-        return activeCategory as string;
-    }, [view, activeCategory]);
 
     const SidebarContent = () => (
         <div className="flex flex-col h-full bg-slate-900 text-slate-400">
