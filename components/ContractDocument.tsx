@@ -168,6 +168,29 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         </ul>
                     </div>
 
+                    {/* Bank Information */}
+                    <div className="mb-2 p-2 border border-black rounded">
+                        <div className="font-bold text-xs uppercase mb-1 text-center">Të dhënat bankare për pagesë</div>
+                        <div className="text-xs space-y-0.5">
+                            <div className="flex gap-2">
+                                <span className="font-semibold min-w-20">Llogaria:</span>
+                                <strong>RG SH.P.K.</strong>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="font-semibold min-w-20">Banka:</span>
+                                <span>TEB Raiffeisen Bank</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="font-semibold min-w-20">IBAN:</span>
+                                <strong>XK051501000001004890</strong>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="font-semibold min-w-20">Nr. Biznesit:</span>
+                                <span>810062092</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Article 5 */}
                     <div className="mb-3">
                         <div className="font-bold text-xs uppercase mb-1 border-b border-black pb-0.5">Neni 5 – Dispozita të Përgjithshme</div>
@@ -410,14 +433,14 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="signature-section">
                             <div className="signature-grid">
                                 <div className="signature-column">
-                                <div className="signature-label font-bold">Ndërmjetësuesi:</div>
-                                <div className="signature-line-row">
-                                    <div className="signature-line" />
-                                </div>
-                                <div className="signature-name text-xs">
-                                    <div>{fullSellerName}</div>
-                                    <div>(Nënshkrimi dhe Vula)</div>
-                                </div>
+                                    <div className="signature-label font-bold">Ndërmjetësuesi:</div>
+                                    <div className="signature-line-row">
+                                        <div className="signature-line" />
+                                    </div>
+                                    <div className="signature-name text-xs">
+                                        <div>{fullSellerName}</div>
+                                        <div>(Nënshkrimi dhe Vula)</div>
+                                    </div>
                                 </div>
                                 <div className="signature-column">
                                     <div className="signature-label font-bold">Blerësi:</div>
