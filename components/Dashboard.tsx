@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
-import { Attachment, CarSale, ContractType, SaleStatus, SellerAuditEntry, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -13,19 +13,17 @@ import { createRoot } from 'react-dom/client';
 import { zip } from 'fflate';
 import SaleModal from './SaleModal';
 import EditShitblerjeModal from './EditShitblerjeModal';
-import EditablePreviewModal from './EditablePreviewModal';
 import ViewSaleModal from './ViewSaleModal';
+import EditablePreviewModal from './EditablePreviewModal';
 import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
-import InvoicePriceModal from './InvoicePriceModal';
-import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
-import { generatePdf } from './pdfUtils';
+import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
-import { createPasswordRecord, generateSetupToken } from '@/services/userAuth';
 
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -63,255 +61,22 @@ const normalizeAvatarMap = (avatars: Record<string, string>) => {
     return normalized;
 };
 
-type GroupTab = 'SALES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE';
-
 type GroupMeta = {
     name: string;
     order: number;
     archived: boolean;
-    tab?: GroupTab;
 };
 
-const normalizeGroupName = (name?: string | null) => {
-    if (!name) return '';
-    return name.trim();
-};
-
-const groupKeyForName = (name?: string | null) => normalizeGroupName(name).toLowerCase();
-
-const tabFromStatus = (status: SaleStatus): GroupTab => {
-    if (status === 'Shipped') return 'SHIPPED';
-    if (status === 'Inspection') return 'INSPECTIONS';
-    if (status === 'Autosallon') return 'AUTOSALLON';
-    if (status === 'Archived') return 'ARCHIVE';
-    return 'SALES';
-};
-
-const statusFromTab = (tab: GroupTab): SaleStatus => {
-    if (tab === 'SHIPPED') return 'Shipped';
-    if (tab === 'INSPECTIONS') return 'Inspection';
-    if (tab === 'AUTOSALLON') return 'Autosallon';
-    if (tab === 'ARCHIVE') return 'Archived';
-    return 'In Progress';
-};
-
-const tabFromCategory = (
-    category: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'
-): GroupTab | null => {
-    if (category === 'SALES' || category === 'SHIPPED' || category === 'INSPECTIONS' || category === 'AUTOSALLON' || category === 'ARCHIVE') {
-        return category;
-    }
-    return null;
-};
-
-
-const normalizeGroupMetaList = (meta: GroupMeta[]) => {
-    const normalized: GroupMeta[] = [];
-    const indexByKey = new Map<string, number>();
-    meta.forEach(group => {
-        const name = normalizeGroupName(group.name);
-        if (!name) return;
-        const key = groupKeyForName(name);
-        const existingIndex = indexByKey.get(key);
-        if (existingIndex !== undefined) {
-            const existing = normalized[existingIndex];
-            normalized[existingIndex] = {
-                ...existing,
-                archived: existing.archived || group.archived,
-                order: Math.min(existing.order, group.order),
-                tab: existing.tab ?? group.tab
-            };
-            return;
-        }
-        indexByKey.set(key, normalized.length);
-        normalized.push({
-            name,
-            order: typeof group.order === 'number' ? group.order : normalized.length,
-            archived: Boolean(group.archived),
-            tab: group.tab
-        });
-    });
-    return normalized;
-};
-
-const mergeGroupMetaLists = (primary: GroupMeta[], secondary: GroupMeta[]) => {
-    const merged: GroupMeta[] = [];
-    const indexByKey = new Map<string, number>();
-    const addGroup = (group: GroupMeta) => {
-        const name = normalizeGroupName(group.name);
-        if (!name) return;
-        const key = groupKeyForName(name);
-        const existingIndex = indexByKey.get(key);
-        if (existingIndex !== undefined) {
-            const existing = merged[existingIndex];
-            merged[existingIndex] = {
-                ...existing,
-                archived: existing.archived || group.archived,
-                tab: existing.tab ?? group.tab
-            };
-            return;
-        }
-        indexByKey.set(key, merged.length);
-        merged.push({
-            name,
-            order: typeof group.order === 'number' ? group.order : merged.length,
-            archived: Boolean(group.archived),
-            tab: group.tab
-        });
-    };
-    normalizeGroupMetaList(primary).sort((a, b) => a.order - b.order).forEach(addGroup);
-    normalizeGroupMetaList(secondary).sort((a, b) => a.order - b.order).forEach(addGroup);
-    return merged;
-};
-
-const buildGroupTabLookup = (sales: CarSale[]) => {
-    const map = new Map<string, GroupTab>();
-    sales.forEach(sale => {
-        const name = normalizeGroupName(sale.group);
-        if (!name) return;
-        const key = groupKeyForName(name);
-        if (map.has(key)) return;
-        map.set(key, tabFromStatus(sale.status));
-    });
-    return map;
-};
-
-const ensureGroupMetaIncludesNames = (meta: GroupMeta[], names: string[], tabByName?: Map<string, GroupTab>) => {
-    const next = [...meta];
-    const keys = new Set(next.map(group => groupKeyForName(group.name)));
-    names.forEach(name => {
-        const normalized = normalizeGroupName(name);
-        if (!normalized) return;
-        const key = groupKeyForName(normalized);
-        if (keys.has(key)) return;
-        keys.add(key);
-        next.push({
-            name: normalized,
-            order: next.length,
-            archived: false,
-            tab: tabByName?.get(key) ?? 'SALES'
-        });
-    });
-    return next.map(group => {
-        const key = groupKeyForName(group.name);
-        return {
-            ...group,
-            tab: group.tab ?? tabByName?.get(key) ?? 'SALES'
-        };
-    });
-};
-
-const serializeGroupMeta = (meta: GroupMeta[]) => JSON.stringify(
-    normalizeGroupMetaList(meta)
-        .sort((a, b) => a.order - b.order)
-        .map(group => ({ ...group, tab: group.tab ?? 'SALES' }))
-);
-
-
-type UserStatus = 'active' | 'pending';
-
-type UserAccount = {
-    id: string;
-    name: string;
-    email?: string;
-    status: UserStatus;
-    setupToken?: string | null;
-    setupTokenCreatedAt?: string | null;
-    passwordHash?: string | null;
-    passwordSalt?: string | null;
-    createdAt: string;
-    createdBy?: string;
-};
-
-type ProfileEntry = {
-    name: string;
-    archived: boolean;
-    updatedAt?: string;
-    archivedAt?: string | null;
-};
-
-const profileTimestamp = (entry?: ProfileEntry) => {
-    if (!entry?.updatedAt) return 0;
-    const parsed = Date.parse(entry.updatedAt);
-    return Number.isNaN(parsed) ? 0 : parsed;
-};
-
-const resolveProfileConflict = (current: ProfileEntry, candidate: ProfileEntry) => {
-    const currentTime = profileTimestamp(current);
-    const candidateTime = profileTimestamp(candidate);
-    if (currentTime !== candidateTime) {
-        return currentTime > candidateTime ? current : candidate;
-    }
-    if (current.archived !== candidate.archived) {
-        return current.archived ? current : candidate;
-    }
-    return current;
-};
-
-const scoreUserAccount = (account: UserAccount) => {
-    let score = 0;
-    if (account.status === 'active') score += 3;
-    if (account.passwordHash) score += 3;
-    if (account.setupToken) score += 1;
-    if (account.email) score += 1;
-    if (account.createdAt) score += 1;
-    return score;
-};
-
-const choosePreferredAccount = (current: UserAccount, candidate: UserAccount) => {
-    const currentScore = scoreUserAccount(current);
-    const candidateScore = scoreUserAccount(candidate);
-    if (candidateScore !== currentScore) return candidateScore > currentScore ? candidate : current;
-    const currentDate = current.createdAt ? Date.parse(current.createdAt) : 0;
-    const candidateDate = candidate.createdAt ? Date.parse(candidate.createdAt) : 0;
-    return candidateDate > currentDate ? candidate : current;
-};
-
-const mergeUserAccounts = (local: UserAccount[], remote: UserAccount[]) => {
-    const merged = new Map<string, UserAccount>();
-    [...local, ...remote].forEach(account => {
-        const normalizedName = normalizeProfileName(account.name);
-        if (!normalizedName) return;
-        const existing = merged.get(normalizedName);
-        const nextAccount = { ...account, name: normalizedName };
-        if (!existing) {
-            merged.set(normalizedName, nextAccount);
-        } else {
-            merged.set(normalizedName, choosePreferredAccount(existing, nextAccount));
-        }
-    });
-    return Array.from(merged.values());
-};
-
-const userAccountSignature = (accounts: UserAccount[]) => JSON.stringify(
-    [...accounts]
-        .map(account => ({
-            ...account,
-            name: normalizeProfileName(account.name)
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-);
-
-type SellerReassignmentAudit = {
-    id: string;
-    saleId: string;
-    changedAt: string;
-    changedBy: string;
-    fromSeller?: string;
-    toSeller?: string;
-};
-
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, onReassignSeller, onRestore }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
     const statusClass = s.status === 'Completed' ? 'status-completed' :
-        s.status === 'Archived' ? 'status-archived' :
         (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
-        s.status === 'New' ? 'status-new' :
-        s.status === 'Shipped' ? 'status-shipped' :
-        s.status === 'Inspection' ? 'status-inspection' :
-        'bg-slate-100 text-slate-500';
+            s.status === 'New' ? 'status-new' :
+                s.status === 'Shipped' ? 'status-shipped' :
+                    s.status === 'Inspection' ? 'status-inspection' :
+                        'bg-slate-100 text-slate-500';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -541,15 +306,6 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 18. Actions */}
             <div className="px-2 h-full flex items-center justify-center gap-1 bg-white">
-                {s.status === 'Archived' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onRestore?.(s.id); }}
-                        className="text-slate-500 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
-                        title="Restore from archive"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
-                )}
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
@@ -557,15 +313,6 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         title="Remove from group"
                     >
                         <X className="w-4 h-4" />
-                    </button>
-                )}
-                {isAdmin && s.status === 'Completed' && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onReassignSeller?.(s); }}
-                        className="text-slate-500 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg"
-                        title="Reassign seller"
-                    >
-                        <ArrowRightLeft className="w-4 h-4" />
                     </button>
                 )}
                 <button onClick={(e) => openInvoice(s, e)} className="text-slate-600 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg" title="View Invoice">
@@ -591,24 +338,71 @@ export default function Dashboard() {
     useEffect(() => { salesRef.current = sales; }, [sales]);
     const [view, setView] = useState('profile_select');
     const [userProfile, setUserProfile] = useState<string | null>(null);
-    const [availableProfiles, setAvailableProfiles] = useState<ProfileEntry[]>([
-        { name: 'Robert Gashi', archived: false },
-        { name: ADMIN_PROFILE, archived: false },
-        { name: 'User', archived: false },
-        { name: 'Leonit', archived: false }
-    ]);
+    const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
     const [isLoading, setIsLoading] = useState(true);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const [pendingProfile, setPendingProfile] = useState('');
     const [passwordInput, setPasswordInput] = useState('');
     const [newProfileName, setNewProfileName] = useState('');
-    const [newProfileEmail, setNewProfileEmail] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [rememberProfile, setRememberProfile] = useState(false);
+    const [viewSaleModalItem, setViewSaleModalItem] = useState<CarSale | null>(null);
 
-    const canViewPrices = userProfile === ADMIN_PROFILE;
     const isAdmin = userProfile === ADMIN_PROFILE;
+    const canViewPrices = isAdmin;
+
+    const defaultWidths = useMemo(() => ({
+        selection: 30,
+        carInfo: 185,
+        year: 60,
+        km: 80,
+        plateVin: 130,
+        buyer: 150,
+        seller: 120,
+        shipping: 120,
+        cost: 96,
+        sold: 106,
+        paid: 120,
+        bankFee: 66,
+        tax: 76,
+        profit: 96,
+        balance: 120,
+        korea: 110,
+        status: 104,
+        soldBy: 96,
+        actions: 52
+    }), []);
+
+    const { getColumnStyle, handleMouseDown, columnWidths } = useResizableColumns(defaultWidths, {
+        storageKey: isAdmin ? 'table-widths-admin' : 'table-widths-user',
+        minWidth: 30
+    });
+
+    const gridTemplateColumns = useMemo(() => {
+        const cols = [
+            getColumnStyle('selection').width + 'px',
+            getColumnStyle('carInfo').width + 'px',
+            getColumnStyle('year').width + 'px',
+            getColumnStyle('km').width + 'px',
+            getColumnStyle('plateVin').width + 'px',
+            getColumnStyle('buyer').width + 'px',
+            getColumnStyle('seller').width + 'px',
+            getColumnStyle('shipping').width + 'px',
+        ];
+        if (isAdmin) cols.push(getColumnStyle('cost').width + 'px');
+        cols.push(getColumnStyle('sold').width + 'px');
+        cols.push(getColumnStyle('paid').width + 'px');
+        cols.push(getColumnStyle('bankFee').width + 'px');
+        cols.push(getColumnStyle('tax').width + 'px');
+        if (isAdmin) cols.push(getColumnStyle('profit').width + 'px');
+        cols.push(getColumnStyle('balance').width + 'px');
+        if (isAdmin) cols.push(getColumnStyle('korea').width + 'px');
+        cols.push(getColumnStyle('status').width + 'px');
+        cols.push(getColumnStyle('soldBy').width + 'px');
+        cols.push(getColumnStyle('actions').width + 'px');
+        return cols.join(' ');
+    }, [isAdmin, getColumnStyle, columnWidths]);
 
     const [sortBy, setSortBy] = useState<string>('createdAt');
 
@@ -618,32 +412,23 @@ export default function Dashboard() {
         }
     }, [isAdmin, sortBy]);
 
-    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE'>('SALES');
+    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
-    const [pendingEditingSaleId, setPendingEditingSaleId] = useState<string | null>(null);
-    const [pendingViewSaleId, setPendingViewSaleId] = useState<string | null>(null);
-    const [pendingNewSaleDraft, setPendingNewSaleDraft] = useState(false);
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
     const [editShitblerjeSale, setEditShitblerjeSale] = useState<CarSale | null>(null);
-    const [viewSaleRecord, setViewSaleRecord] = useState<CarSale | null>(null);
     const [formReturnView, setFormReturnView] = useState('dashboard');
     const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
-    const groupMetaRef = useRef<GroupMeta[]>([]);
-    const [groupViewEnabled, setGroupViewEnabled] = useState(true);
+    const [showArchivedGroups, setShowArchivedGroups] = useState(false);
     const hasInitializedGroups = useRef(false);
     const [documentPreview, setDocumentPreview] = useState<{
         sale: CarSale;
         type: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje';
         withDogane?: boolean;
-        priceSource?: InvoicePriceSource;
-        priceValue?: number;
+        showBankOnly?: boolean;
     } | null>(null);
-    const [pendingInvoiceSale, setPendingInvoiceSale] = useState<CarSale | null>(null);
-    const [pendingInvoiceWithDogane, setPendingInvoiceWithDogane] = useState(false);
-    const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
     const [invoiceDownloadStatus, setInvoiceDownloadStatus] = useState('');
@@ -660,163 +445,23 @@ export default function Dashboard() {
     const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
-    const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
-    const userAccountsRef = useRef<UserAccount[]>([]);
-    const [pendingSetupToken, setPendingSetupToken] = useState<string | null>(null);
-    const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
-    const [setupPassword, setSetupPassword] = useState('');
-    const [setupPasswordConfirm, setSetupPasswordConfirm] = useState('');
-    const [setupError, setSetupError] = useState('');
-    const [setupSuccess, setSetupSuccess] = useState('');
-    const [showSetupLinkModal, setShowSetupLinkModal] = useState(false);
-    const [setupLinkData, setSetupLinkData] = useState<{ token: string; url: string; name: string } | null>(null);
-    const [showSellerReassignModal, setShowSellerReassignModal] = useState(false);
-    const [sellerReassignSale, setSellerReassignSale] = useState<CarSale | null>(null);
-    const [sellerReassignTarget, setSellerReassignTarget] = useState('');
+    const [showGroupMenu, setShowGroupMenu] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
-    useEffect(() => {
-        groupMetaRef.current = groupMeta;
-    }, [groupMeta]);
-
-    useEffect(() => {
-        userAccountsRef.current = userAccounts;
-    }, [userAccounts]);
-
-    const normalizeProfileEntries = useCallback((profiles: Array<string | ProfileEntry>) => {
-        const merged = new Map<string, ProfileEntry>();
-        profiles.forEach(profile => {
-            const entry = typeof profile === 'string'
-                ? { name: profile, archived: false, archivedAt: null }
-                : profile;
-            const normalizedName = normalizeProfileName(entry.name);
-            if (!normalizedName) return;
-            const archived = Boolean((entry as ProfileEntry).archived ?? (entry as { isArchived?: boolean }).isArchived);
-            const archivedAt = archived ? (entry.archivedAt ?? entry.updatedAt ?? new Date().toISOString()) : null;
-            const existing = merged.get(normalizedName);
-            const nextEntry: ProfileEntry = {
-                name: normalizedName,
-                archived,
-                updatedAt: entry.updatedAt,
-                archivedAt
-            };
-            if (!existing) {
-                merged.set(normalizedName, nextEntry);
-                return;
-            }
-            const resolved = resolveProfileConflict(existing, nextEntry);
-            merged.set(normalizedName, {
-                name: existing.name,
-                archived: resolved.archived,
-                updatedAt: resolved.updatedAt,
-                archivedAt: resolved.archivedAt ?? null
-            });
-        });
+    const normalizeProfiles = useCallback((profiles: string[]) => {
+        const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
+        const unique = new Set(normalized);
+        REQUIRED_PROFILES.forEach(profile => unique.add(profile));
+        const ordered: string[] = [];
         REQUIRED_PROFILES.forEach(profile => {
-            if (!merged.has(profile)) {
-                merged.set(profile, { name: profile, archived: false, archivedAt: null });
+            if (unique.has(profile)) {
+                ordered.push(profile);
+                unique.delete(profile);
             }
         });
-        const ordered: ProfileEntry[] = [];
-        REQUIRED_PROFILES.forEach(profile => {
-            const entry = merged.get(profile);
-            if (entry) {
-                ordered.push(entry);
-                merged.delete(profile);
-            }
-        });
-        const remaining = Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name));
-        return [...ordered, ...remaining];
-    }, []);
-
-    const mergeProfilesWithAccounts = useCallback((profiles: ProfileEntry[], accounts: UserAccount[]) => {
-        const accountProfiles: ProfileEntry[] = accounts.map(account => ({
-            name: account.name,
-            archived: false,
-            updatedAt: account.createdAt
-        }));
-        return normalizeProfileEntries([...profiles, ...accountProfiles]);
-    }, [normalizeProfileEntries]);
-
-    const serializeProfileEntries = useCallback((profiles: ProfileEntry[]) => JSON.stringify(
-        normalizeProfileEntries(profiles)
-            .map(profile => ({
-                name: profile.name,
-                archived: profile.archived,
-                isArchived: profile.archived,
-                updatedAt: profile.updatedAt ?? null,
-                archivedAt: profile.archived ? (profile.archivedAt ?? profile.updatedAt ?? null) : null
-            }))
-    ), [normalizeProfileEntries]);
-
-    const stampProfileEntry = useCallback((entry: ProfileEntry) => ({
-        ...entry,
-        updatedAt: new Date().toISOString()
-    }), []);
-
-    const activeProfileEntries = useMemo(() => availableProfiles.filter(profile => !profile.archived), [availableProfiles]);
-
-    const normalizeUserAccounts = useCallback((accounts: UserAccount[]) => {
-        const normalized = accounts
-            .map(account => ({
-                ...account,
-                name: normalizeProfileName(account.name),
-                status: account.status || 'pending'
-            }))
-            .filter(account => account.name);
-        const unique = new Map<string, UserAccount>();
-        normalized.forEach(account => {
-            if (!unique.has(account.name)) {
-                unique.set(account.name, account);
-            }
-        });
-        return Array.from(unique.values());
-    }, []);
-
-    const getUserAccount = useCallback((name: string) => {
-        const normalized = normalizeProfileName(name);
-        return userAccounts.find(account => account.name === normalized);
-    }, [userAccounts]);
-
-    const persistUserAccounts = useCallback(async (accounts: UserAccount[]) => {
-        const normalized = normalizeUserAccounts(accounts);
-        setUserAccounts(normalized);
-        await Preferences.set({ key: 'user_accounts', value: JSON.stringify(normalized) });
-        if (supabaseUrl && supabaseKey) {
-            try {
-                const client = createClient(supabaseUrl, supabaseKey);
-                await client.from('sales').upsert({
-                    id: 'config_user_accounts',
-                    brand: 'CONFIG',
-                    model: 'USERS',
-                    status: 'Completed',
-                    year: new Date().getFullYear(),
-                    km: 0,
-                    cost_to_buy: 0,
-                    sold_price: 0,
-                    amount_paid_cash: 0,
-                    amount_paid_bank: 0,
-                    deposit: 0,
-                    attachments: { users: normalized }
-                });
-            } catch (e) {
-                console.error('User account sync error', e);
-            }
-        }
-        return normalized;
-    }, [normalizeUserAccounts, supabaseKey, supabaseUrl]);
-
-    const cacheUserAccounts = useCallback(async (accounts: UserAccount[]) => {
-        setUserAccounts(accounts);
-        await Preferences.set({ key: 'user_accounts', value: JSON.stringify(accounts) });
-    }, []);
-
-    const buildSetupLink = useCallback((token: string) => {
-        if (typeof window === 'undefined') return token;
-        const url = new URL(window.location.href);
-        url.searchParams.set('setupToken', token);
-        return url.toString();
+        return [...ordered, ...Array.from(unique)];
     }, []);
 
     const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
@@ -827,9 +472,9 @@ export default function Dashboard() {
 
     const profileOptions = useMemo(() => {
         const profileMap = new Map<string, string>();
-        availableProfiles.forEach(profile => {
-            const normalized = normalizeProfileName(profile.name);
-            if (normalized) profileMap.set(normalized, profile.name);
+        availableProfiles.forEach(name => {
+            const normalized = normalizeProfileName(name);
+            if (normalized) profileMap.set(normalized, name);
         });
         sales.forEach(sale => {
             const seller = normalizeProfileName(sale.sellerName);
@@ -881,18 +526,6 @@ export default function Dashboard() {
         setEditShitblerjeSale(sale);
     };
 
-    const handleSaleClick = (sale: CarSale) => {
-        if (sale.status === 'Completed') {
-            setViewSaleRecord(sale);
-            return;
-        }
-        if (!isAdmin && sale.soldBy !== userProfile) {
-            setViewSaleRecord(sale);
-            return;
-        }
-        requestEditChoice(sale);
-    };
-
     const closeSaleForm = (returnView = formReturnView) => {
         setEditingSale(null);
         setView(returnView);
@@ -941,7 +574,7 @@ export default function Dashboard() {
             }
         };
         syncAvatars();
-    }, [supabaseUrl, supabaseKey, userProfile]);
+    }, [supabaseUrl, supabaseKey]);
 
     const handleEditAvatar = async (name: string, base64: string) => {
         const normalizedName = normalizeProfileName(name);
@@ -972,22 +605,10 @@ export default function Dashboard() {
     };
 
     // Sync profiles to Supabase when they change
-    const syncProfilesToCloud = async (profiles: ProfileEntry[]) => {
+    const syncProfilesToCloud = async (profiles: string[]) => {
         if (!supabaseUrl || !supabaseKey) return;
         try {
             const client = createClient(supabaseUrl, supabaseKey);
-            let mergedProfiles = normalizeProfileEntries(profiles);
-            const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
-            if (data?.attachments?.profiles) {
-                const cloudProfiles = normalizeProfileEntries(data.attachments.profiles as Array<string | ProfileEntry>);
-                mergedProfiles = normalizeProfileEntries([...mergedProfiles, ...cloudProfiles]);
-            }
-            const incomingSignature = serializeProfileEntries(profiles);
-            const mergedSignature = serializeProfileEntries(mergedProfiles);
-            if (incomingSignature !== mergedSignature) {
-                setAvailableProfiles(mergedProfiles);
-                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(mergedProfiles) });
-            }
             await client.from('sales').upsert({
                 id: 'config_profile_avatars',
                 brand: 'CONFIG',
@@ -1000,7 +621,7 @@ export default function Dashboard() {
                 amount_paid_cash: 0,
                 amount_paid_bank: 0,
                 deposit: 0,
-                attachments: { avatars: profileAvatars, profiles: mergedProfiles }
+                attachments: { avatars: profileAvatars, profiles: profiles }
             });
         } catch (e) { console.error("Profile Sync Error", e); }
     };
@@ -1012,36 +633,19 @@ export default function Dashboard() {
         const syncProfilesFromCloud = async () => {
             try {
                 const client = createClient(supabaseUrl, supabaseKey);
-                const [{ data: profileData }, { data: userData }] = await Promise.all([
-                    client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle(),
-                    client.from('sales').select('attachments').eq('id', 'config_user_accounts').maybeSingle()
-                ]);
-                const { value: localProfilesRaw } = await Preferences.get({ key: 'available_profiles' });
-                const { value: localUsersRaw } = await Preferences.get({ key: 'user_accounts' });
-                const localProfiles = localProfilesRaw
-                    ? normalizeProfileEntries(JSON.parse(localProfilesRaw) as Array<string | ProfileEntry>)
-                    : [];
-                const localUsers = localUsersRaw
-                    ? normalizeUserAccounts(JSON.parse(localUsersRaw))
-                    : [];
-                const cloudProfiles = profileData?.attachments?.profiles
-                    ? normalizeProfileEntries(profileData.attachments.profiles as Array<string | ProfileEntry>)
-                    : [];
-                const cloudUsers = userData?.attachments?.users && Array.isArray(userData.attachments.users)
-                    ? normalizeUserAccounts(userData.attachments.users)
-                    : [];
-                const hasSeedProfiles = Boolean(localProfilesRaw) || Boolean(profileData?.attachments?.profiles);
-                const baseProfiles = hasSeedProfiles
-                    ? normalizeProfileEntries([...localProfiles, ...cloudProfiles])
-                    : normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
-                const mergedProfiles = mergeProfilesWithAccounts(baseProfiles, [...localUsers, ...cloudUsers]);
-                const mergedSignature = serializeProfileEntries(mergedProfiles);
-                const cloudSignature = serializeProfileEntries(cloudProfiles);
-                const localSignature = serializeProfileEntries(localProfiles);
-                setAvailableProfiles(mergedProfiles);
-                await Preferences.set({ key: 'available_profiles', value: JSON.stringify(mergedProfiles) });
-                if (mergedSignature !== cloudSignature || mergedSignature !== localSignature) {
-                    syncProfilesToCloud(mergedProfiles);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                if (data?.attachments?.profiles) {
+                    const cloudProfiles: string[] = normalizeProfiles(data.attachments.profiles);
+                    // Use cloud as source of truth - don't merge with defaults
+                    setAvailableProfiles(cloudProfiles);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(cloudProfiles) });
+                    syncProfilesToCloud(cloudProfiles);
+                } else {
+                    // Only set defaults if cloud has no data
+                    const systemDefaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                    setAvailableProfiles(systemDefaults);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(systemDefaults) });
+                    syncProfilesToCloud(systemDefaults);
                 }
             } catch (e) { console.error("Profile Cloud Sync Error", e); }
         };
@@ -1064,437 +668,9 @@ export default function Dashboard() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [supabaseUrl, supabaseKey]);
-
-    useEffect(() => {
-        if (!supabaseUrl || !supabaseKey) return;
-
-        const syncUsersFromCloud = async () => {
-            try {
-                const client = createClient(supabaseUrl, supabaseKey);
-                const { data, error } = await client
-                    .from('sales')
-                    .select('attachments')
-                    .eq('id', 'config_user_accounts')
-                    .maybeSingle();
-                if (error) {
-                    console.error('User account cloud sync error', error);
-                    return;
-                }
-                if (!data?.attachments?.users || !Array.isArray(data.attachments.users)) return;
-                const cloudUsers: UserAccount[] = normalizeUserAccounts(data.attachments.users);
-                const localUsers = userAccountsRef.current;
-                const mergedUsers = mergeUserAccounts(localUsers, cloudUsers);
-                const mergedSignature = userAccountSignature(mergedUsers);
-                const cloudSignature = userAccountSignature(cloudUsers);
-                if (cloudUsers.length === 0 && localUsers.length > 0) {
-                    if (isAdmin) {
-                        await persistUserAccounts(mergedUsers);
-                    } else {
-                        await cacheUserAccounts(mergedUsers);
-                    }
-                    return;
-                }
-                if (isAdmin) {
-                    await cacheUserAccounts(mergedUsers);
-                    if (mergedSignature !== cloudSignature) {
-                        await persistUserAccounts(mergedUsers);
-                    }
-                    return;
-                }
-
-                const normalizedProfile = normalizeProfileName(userProfile || '');
-                const filteredUsers = mergedUsers.filter(account => (
-                    (normalizedProfile && account.name === normalizedProfile) ||
-                    (pendingSetupToken && account.setupToken === pendingSetupToken)
-                ));
-                if (filteredUsers.length > 0) {
-                    await cacheUserAccounts(filteredUsers);
-                    return;
-                }
-                if (userAccountsRef.current.length === 0 && mergedUsers.length > 0) {
-                    await cacheUserAccounts(mergedUsers);
-                }
-            } catch (e) {
-                console.error('User account cloud sync error', e);
-            }
-        };
-
-        if (!isAdmin && !userProfile && !pendingSetupToken) return;
-        syncUsersFromCloud();
-        const interval = setInterval(syncUsersFromCloud, 30000);
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                syncUsersFromCloud();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            clearInterval(interval);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [cacheUserAccounts, isAdmin, normalizeUserAccounts, pendingSetupToken, supabaseKey, supabaseUrl, userProfile]);
-
-    useEffect(() => {
-        if (!supabaseUrl || !supabaseKey) return;
-
-        const syncGroupsFromCloud = async () => {
-            try {
-                const client = createClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_group_meta').single();
-                const cloudGroups = Array.isArray(data?.attachments?.groups) ? (data?.attachments?.groups as GroupMeta[]) : [];
-                const localMeta = groupMetaRef.current || [];
-                const groupNamesFromSales = Array.from(new Set(
-                    salesRef.current
-                        .map(sale => normalizeGroupName(sale.group))
-                        .filter(Boolean)
-                ));
-                const tabByName = buildGroupTabLookup(salesRef.current);
-                const merged = ensureGroupMetaIncludesNames(
-                    mergeGroupMetaLists(cloudGroups, localMeta),
-                    groupNamesFromSales,
-                    tabByName
-                );
-                const mergedSignature = serializeGroupMeta(merged);
-                const localSignature = serializeGroupMeta(localMeta);
-                const cloudSignature = serializeGroupMeta(cloudGroups);
-                if (mergedSignature !== localSignature) {
-                    await persistGroupMeta(merged, { skipCloud: true });
-                }
-                if (mergedSignature !== cloudSignature) {
-                    await syncGroupMetaToCloud(merged);
-                }
-            } catch (e) {
-                console.error('Group meta cloud sync error', e);
-            }
-        };
-
-        syncGroupsFromCloud();
-        const interval = setInterval(syncGroupsFromCloud, 30000);
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                syncGroupsFromCloud();
-            }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            clearInterval(interval);
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const invoiceScrollRef = useRef<HTMLDivElement>(null);
-    const uiStateHydrated = useRef(false);
-    const selectionHydrated = useRef(false);
-    const uiStateKey = 'dashboard_ui_state_v1';
-    const selectionKey = 'dashboard_selected_ids_v1';
-    const uiStateViewRef = useRef<string | null>(null);
-    const documentPreviewCloseRequested = useRef(false);
-    const viewSaleCloseRequested = useRef(false);
-    const historySyncReady = useRef(false);
-    const historySyncPaused = useRef(false);
-    const lastHistoryStateRef = useRef<string | null>(null);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const raw = window.localStorage.getItem(uiStateKey);
-        if (!raw) {
-            uiStateHydrated.current = true;
-            return;
-        }
-        try {
-            const parsed = JSON.parse(raw);
-            if (typeof parsed.view === 'string') {
-                uiStateViewRef.current = parsed.view;
-                setView(parsed.view);
-            }
-            if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
-            if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
-            if (typeof parsed.sortBy === 'string') setSortBy(parsed.sortBy);
-            if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') setSortDir(parsed.sortDir);
-            if (typeof parsed.groupViewEnabled === 'boolean') setGroupViewEnabled(parsed.groupViewEnabled);
-            if (Array.isArray(parsed.expandedGroups)) setExpandedGroups(parsed.expandedGroups);
-            if (typeof parsed.editingSaleId === 'string') setPendingEditingSaleId(parsed.editingSaleId);
-            if (typeof parsed.viewSaleRecordId === 'string') setPendingViewSaleId(parsed.viewSaleRecordId);
-            if (typeof parsed.pendingNewSaleDraft === 'boolean') setPendingNewSaleDraft(parsed.pendingNewSaleDraft);
-            if (typeof parsed.formReturnView === 'string') setFormReturnView(parsed.formReturnView);
-        } catch (e) {
-            console.warn('Failed to restore dashboard UI state', e);
-        } finally {
-            uiStateHydrated.current = true;
-        }
-    }, []);
-
-    useEffect(() => {
-        if (!uiStateHydrated.current || typeof window === 'undefined') return;
-        const payload = {
-            view,
-            activeCategory,
-            searchTerm,
-            sortBy,
-            sortDir,
-            groupViewEnabled,
-            expandedGroups,
-            editingSaleId: editingSale?.id || null,
-            viewSaleRecordId: viewSaleRecord?.id || null,
-            pendingNewSaleDraft: view === 'sale_form' && !editingSale?.id,
-            formReturnView
-        };
-        window.localStorage.setItem(uiStateKey, JSON.stringify(payload));
-    }, [activeCategory, searchTerm, sortBy, sortDir, groupViewEnabled, expandedGroups, view, editingSale, viewSaleRecord, formReturnView]);
-
-    useEffect(() => {
-        if (!uiStateHydrated.current || typeof window === 'undefined') return;
-        const payload = {
-            view,
-            activeCategory,
-            searchTerm,
-            sortBy,
-            sortDir,
-            groupViewEnabled,
-            expandedGroups,
-            selectedIds: Array.from(selectedIds)
-        };
-        const serialized = JSON.stringify(payload);
-        const shouldSyncHistory = view !== 'sale_form' && !documentPreview && !viewSaleRecord;
-        if (!historySyncReady.current) {
-            historySyncReady.current = true;
-            lastHistoryStateRef.current = serialized;
-            if (shouldSyncHistory) {
-                window.history.replaceState({ ...window.history.state, uiState: payload }, '');
-            }
-            return;
-        }
-        if (!shouldSyncHistory || historySyncPaused.current || lastHistoryStateRef.current === serialized) {
-            lastHistoryStateRef.current = serialized;
-            return;
-        }
-        lastHistoryStateRef.current = serialized;
-        window.history.pushState({ ...window.history.state, uiState: payload }, '');
-    }, [
-        activeCategory,
-        searchTerm,
-        sortBy,
-        sortDir,
-        groupViewEnabled,
-        expandedGroups,
-        view,
-        selectedIds,
-        documentPreview,
-        viewSaleRecord
-    ]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const handlePopState = (event: PopStateEvent) => {
-            const nextState = (event.state as { uiState?: typeof event.state } | null)?.uiState as
-                | {
-                    view?: string;
-                    activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'ARCHIVE';
-                    searchTerm?: string;
-                    sortBy?: string;
-                    sortDir?: 'asc' | 'desc';
-                    groupViewEnabled?: boolean;
-                    expandedGroups?: string[];
-                    selectedIds?: string[];
-                }
-                | undefined;
-            if (!nextState) return;
-            historySyncPaused.current = true;
-            if (typeof nextState.view === 'string') setView(nextState.view);
-            if (nextState.activeCategory) setActiveCategory(nextState.activeCategory);
-            if (typeof nextState.searchTerm === 'string') setSearchTerm(nextState.searchTerm);
-            if (typeof nextState.sortBy === 'string') setSortBy(nextState.sortBy);
-            if (nextState.sortDir === 'asc' || nextState.sortDir === 'desc') setSortDir(nextState.sortDir);
-            if (typeof nextState.groupViewEnabled === 'boolean') setGroupViewEnabled(nextState.groupViewEnabled);
-            if (Array.isArray(nextState.expandedGroups)) setExpandedGroups(nextState.expandedGroups);
-            if (Array.isArray(nextState.selectedIds)) setSelectedIds(new Set(nextState.selectedIds));
-            setTimeout(() => {
-                historySyncPaused.current = false;
-            }, 0);
-        };
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (userProfile) {
-            window.sessionStorage.setItem('active_user_profile', userProfile);
-        } else {
-            window.sessionStorage.removeItem('active_user_profile');
-        }
-    }, [userProfile]);
-
-    useEffect(() => {
-        if (selectionHydrated.current || typeof window === 'undefined') return;
-        if (sales.length === 0) return;
-        const raw = window.localStorage.getItem(selectionKey);
-        if (!raw) {
-            selectionHydrated.current = true;
-            return;
-        }
-        try {
-            const parsed = JSON.parse(raw) as string[];
-            const validIds = parsed.filter(id => sales.some(s => s.id === id));
-            setSelectedIds(new Set(validIds));
-        } catch (e) {
-            console.warn('Failed to restore selection state', e);
-        } finally {
-            selectionHydrated.current = true;
-        }
-    }, [sales]);
-
-    useEffect(() => {
-        if (!selectionHydrated.current || typeof window === 'undefined') return;
-        window.localStorage.setItem(selectionKey, JSON.stringify(Array.from(selectedIds)));
-    }, [selectedIds]);
-
-    const handleCloseDocumentPreview = useCallback(() => {
-        if (typeof window !== 'undefined' && window.history.state?.documentPreviewOpen) {
-            documentPreviewCloseRequested.current = true;
-            window.history.back();
-        }
-        setDocumentPreview(null);
-    }, []);
-
-    const handleCloseViewSale = useCallback(() => {
-        if (typeof window !== 'undefined' && window.history.state?.viewSaleOpen) {
-            viewSaleCloseRequested.current = true;
-            window.history.back();
-        }
-        setViewSaleRecord(null);
-    }, []);
-
-    useEffect(() => {
-        if (!documentPreview || typeof window === 'undefined') return;
-        const state = { ...window.history.state, documentPreviewOpen: true };
-        window.history.pushState(state, '');
-
-        const handlePopState = () => {
-            if (!documentPreview) return;
-            if (documentPreviewCloseRequested.current) {
-                documentPreviewCloseRequested.current = false;
-                return;
-            }
-            setDocumentPreview(null);
-        };
-
-        window.addEventListener('popstate', handlePopState);
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, [documentPreview]);
-
-    useEffect(() => {
-        if (!viewSaleRecord || typeof window === 'undefined') return;
-        const state = { ...window.history.state, viewSaleOpen: true };
-        window.history.pushState(state, '');
-
-        const handlePopState = () => {
-            if (!viewSaleRecord) return;
-            if (viewSaleCloseRequested.current) {
-                viewSaleCloseRequested.current = false;
-                return;
-            }
-            setViewSaleRecord(null);
-        };
-
-        window.addEventListener('popstate', handlePopState);
-        return () => {
-            window.removeEventListener('popstate', handlePopState);
-        };
-    }, [viewSaleRecord]);
-
-    useEffect(() => {
-        if (!uiStateHydrated.current) return;
-        if (pendingEditingSaleId && sales.length > 0) {
-            const sale = sales.find(item => item.id === pendingEditingSaleId);
-            if (sale) {
-                setEditingSale(sale);
-            }
-            setPendingEditingSaleId(null);
-        }
-        if (pendingViewSaleId && sales.length > 0) {
-            const sale = sales.find(item => item.id === pendingViewSaleId);
-            if (sale) {
-                setViewSaleRecord(sale);
-            }
-            setPendingViewSaleId(null);
-        }
-        if (pendingNewSaleDraft && !pendingEditingSaleId) {
-            setEditingSale(null);
-        }
-    }, [pendingEditingSaleId, pendingNewSaleDraft, pendingViewSaleId, sales]);
-
-    useEffect(() => {
-        if (view !== 'sale_form' && pendingNewSaleDraft) {
-            setPendingNewSaleDraft(false);
-        }
-    }, [pendingNewSaleDraft, view]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (view !== 'dashboard') return;
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const key = `dashboard_scroll_${activeCategory}`;
-        const stored = window.localStorage.getItem(key);
-        if (stored) {
-            const position = Number(stored);
-            if (!Number.isNaN(position)) {
-                requestAnimationFrame(() => {
-                    if (scrollContainerRef.current) {
-                        scrollContainerRef.current.scrollTop = position;
-                    }
-                });
-            }
-        }
-        const handleScroll = () => {
-            if (!scrollContainerRef.current) return;
-            window.localStorage.setItem(key, String(scrollContainerRef.current.scrollTop));
-        };
-        container.addEventListener('scroll', handleScroll, { passive: true });
-        return () => {
-            container.removeEventListener('scroll', handleScroll);
-            if (scrollContainerRef.current) {
-                window.localStorage.setItem(key, String(scrollContainerRef.current.scrollTop));
-            }
-        };
-    }, [activeCategory, view]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        if (view !== 'invoices') return;
-        const container = invoiceScrollRef.current;
-        if (!container) return;
-        const key = 'invoices_scroll_position';
-        const stored = window.localStorage.getItem(key);
-        if (stored) {
-            const position = Number(stored);
-            if (!Number.isNaN(position)) {
-                requestAnimationFrame(() => {
-                    if (invoiceScrollRef.current) {
-                        invoiceScrollRef.current.scrollTop = position;
-                    }
-                });
-            }
-        }
-        const handleScroll = () => {
-            if (!invoiceScrollRef.current) return;
-            window.localStorage.setItem(key, String(invoiceScrollRef.current.scrollTop));
-        };
-        container.addEventListener('scroll', handleScroll, { passive: true });
-        return () => {
-            container.removeEventListener('scroll', handleScroll);
-            if (invoiceScrollRef.current) {
-                window.localStorage.setItem(key, String(invoiceScrollRef.current.scrollTop));
-            }
-        };
-    }, [view]);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -1556,14 +732,6 @@ export default function Dashboard() {
         }
     }, [sales, documentPreview]);
 
-    useEffect(() => {
-        if (!viewSaleRecord) return;
-        const updated = sales.find(s => s.id === viewSaleRecord.id);
-        if (updated && JSON.stringify(updated) !== JSON.stringify(viewSaleRecord)) {
-            setViewSaleRecord(updated);
-        }
-    }, [sales, viewSaleRecord]);
-
 
     const updateSalesAndSave = async (newSales: CarSale[]) => {
         const normalizedSales = newSales.map(normalizeSaleProfiles);
@@ -1583,11 +751,7 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey && userProfile) {
                 await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
             }
-            return true;
-        } catch (e) {
-            console.error("Save failed", e);
-            return false;
-        }
+        } catch (e) { console.error("Save failed", e); }
     };
 
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
@@ -1795,7 +959,7 @@ export default function Dashboard() {
         return files.filter(file => file?.data);
     };
 
-    const generateInvoicePdfBase64 = async (sale: CarSale) => {
+    const generateInvoicePdfBase64 = async (sale: CarSale, showBankOnly: boolean = false) => {
         const container = document.createElement('div');
         container.style.position = 'fixed';
         container.style.left = '-9999px';
@@ -1805,26 +969,51 @@ export default function Dashboard() {
         document.body.appendChild(container);
 
         const root = createRoot(container);
-        root.render(<InvoiceDocument sale={sale} />);
+        root.render(<InvoiceDocument sale={sale} showBankOnly={showBankOnly} />);
 
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
+        if (invoiceElement) {
+            await waitForImages(invoiceElement);
+        }
 
-        const { pdf } = await generatePdf({
-            element: invoiceElement || container,
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
+        const opt = {
+            margin: 0,
             filename: `Invoice_${sale.vin || sale.id}.pdf`,
-            onClone: (clonedDoc) => {
-                const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                    if (invoiceNode && node.closest('#invoice-content')) {
-                        return;
-                    }
-                    node.remove();
-                });
-            }
-        });
-        const dataUri = pdf.output('datauristring');
+            image: { type: 'jpeg' as const, quality: 0.92 },
+            html2canvas: {
+                scale: 4,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                imageTimeout: 10000,
+                onclone: (clonedDoc: Document) => {
+                    sanitizePdfCloneStyles(clonedDoc);
+                    normalizePdfLayout(clonedDoc);
+                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                        if (invoiceNode && node.closest('#invoice-content')) {
+                            return;
+                        }
+                        node.remove();
+                    });
+                }
+            },
+            jsPDF: {
+                unit: 'mm' as const,
+                format: 'a4' as const,
+                orientation: 'portrait' as const,
+                compress: true,
+                putOnlyUsedFonts: true
+            },
+            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
+        };
+
+        const pdf = html2pdf().set(opt).from(invoiceElement || container);
+        const dataUri = await pdf.outputPdf('datauristring');
 
         root.unmount();
         container.remove();
@@ -1855,13 +1044,40 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const contractElement = container.querySelector('[data-contract-document]') as HTMLElement | null;
+        if (contractElement) {
+            await waitForImages(contractElement);
+        }
 
+        // @ts-ignore
+        const html2pdf = (await import('html2pdf.js')).default;
         const fileName = `Contract_${type}_${sale.vin || sale.id}.pdf`;
-        const { pdf } = await generatePdf({
-            element: contractElement || container,
-            filename: fileName
-        });
-        const dataUri = pdf.output('datauristring');
+        const opt = {
+            margin: 0,
+            filename: fileName,
+            image: { type: 'jpeg' as const, quality: 0.92 },
+            html2canvas: {
+                scale: 4,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                imageTimeout: 10000,
+                onclone: (clonedDoc: Document) => {
+                    sanitizePdfCloneStyles(clonedDoc);
+                    normalizePdfLayout(clonedDoc);
+                }
+            },
+            jsPDF: {
+                unit: 'mm' as const,
+                format: 'a4' as const,
+                orientation: 'portrait' as const,
+                compress: true,
+                putOnlyUsedFonts: true
+            },
+            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
+        };
+
+        const pdf = html2pdf().set(opt).from(contractElement || container);
+        const dataUri = await pdf.outputPdf('datauristring');
 
         root.unmount();
         container.remove();
@@ -1888,26 +1104,35 @@ export default function Dashboard() {
             const fileMap: Record<string, Uint8Array> = {};
 
             let index = 0;
+            let successCount = 0;
             for (const sale of selectedSales) {
                 index += 1;
-                setInvoiceDownloadStatus(`Packaging ${index}/${selectedSales.length}...`);
 
-                const folderName = sanitizeFolderName(`Invoice_${sale.vin || sale.id}`);
-                const invoicePdf = await generateInvoicePdfBase64(sale);
-                fileMap[`Invoices_${dateStamp}/${folderName}/${invoicePdf.fileName}`] = base64ToUint8Array(invoicePdf.base64);
-
-                const contractTypes: ContractType[] = ['deposit', 'full_marreveshje', 'full_shitblerje'];
-                for (const contractType of contractTypes) {
-                    const contractPdf = await generateContractPdfBase64(sale, contractType);
-                    fileMap[`Invoices_${dateStamp}/${folderName}/${contractPdf.fileName}`] = base64ToUint8Array(contractPdf.base64);
+                // Skip sales with no bank payment if that's what user considers "blank" or non-invoiceable for bank purposes
+                // "real invoice and only bank paid price"
+                if (!sale.amountPaidBank || sale.amountPaidBank <= 0) {
+                    console.warn(`Skipping sale ${sale.id} - no bank payment for invoice.`);
+                    continue;
                 }
 
-                collectInvoiceAttachments(sale).forEach(file => {
-                    const base64Data = extractBase64(file.data);
-                    fileMap[`Invoices_${dateStamp}/${folderName}/${file.name}`] = base64ToUint8Array(base64Data);
-                });
+                setInvoiceDownloadStatus(`Packaging ${index}/${selectedSales.length}...`);
+
+                const fileName = sanitizeFolderName(`Invoice_${sale.vin || sale.id}`);
+                try {
+                    // Generate ONLY invoice as requested (only bank paid price)
+                    const invoicePdf = await generateInvoicePdfBase64(sale, true); // true for showBankOnly
+                    fileMap[`Invoices_${dateStamp}/${invoicePdf.fileName}`] = base64ToUint8Array(invoicePdf.base64);
+                    successCount++;
+                } catch (e) {
+                    console.error(`Failed to generate invoice for ${sale.id}`, e);
+                }
 
                 await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            if (successCount === 0) {
+                alert("No valid invoices found to download (requires bank payment info).");
+                return;
             }
 
             const zipData = await new Promise<Uint8Array>((resolve, reject) => {
@@ -1929,7 +1154,7 @@ export default function Dashboard() {
                 await Share.share({
                     title: 'Invoices',
                     text: `Invoices bundle (${selectedSales.length})`,
-                    files: [savedFile.uri],
+                    url: savedFile.uri,
                     dialogTitle: 'Download invoices'
                 });
             } else {
@@ -1955,186 +1180,68 @@ export default function Dashboard() {
         }
     };
 
-    const handleBulkArchive = async () => {
-        if (!confirm(`Archive ${selectedIds.size} items?`)) return;
+    const handleBulkDelete = async () => {
+        if (!confirm(`Delete ${selectedIds.size} items permanently?`)) return;
 
-        const timestamp = new Date().toISOString();
-        const actor = userProfile || 'Unknown';
-        const newSales: CarSale[] = sales.map(sale => {
-            if (!selectedIds.has(sale.id)) return sale;
-            dirtyIds.current.add(sale.id);
-            const wasArchived = sale.status === 'Archived';
-            return {
-                ...sale,
-                archivedAt: timestamp,
-                archivedBy: actor,
-                archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
-                status: 'Archived' as SaleStatus
-            };
-        });
+        // Get IDs to delete
+        const idsToDelete = Array.from(selectedIds);
+
+        // Delete from Supabase immediately
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                for (const id of idsToDelete) {
+                    await client.from('sales').delete().eq('id', id);
+                }
+                console.log("Deleted from Supabase:", idsToDelete.length, "records");
+            } catch (e) {
+                console.error("Supabase delete error:", e);
+            }
+        }
+
+        // Delete locally
+        const newSales = sales.filter(s => !selectedIds.has(s.id));
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
 
     const handleBulkMove = async (status: SaleStatus) => {
-        const currentSales = salesRef.current;
-        const selectedGroupKeys = new Set<string>();
-        currentSales.forEach(sale => {
-            if (!selectedIds.has(sale.id)) return;
-            const key = groupKeyForName(sale.group);
-            if (key) selectedGroupKeys.add(key);
-        });
-        const targetTab = tabFromStatus(status);
-        const previousMeta = groupMetaRef.current;
-        if (selectedGroupKeys.size > 0) {
-            const nextMeta = previousMeta.map(group => (
-                selectedGroupKeys.has(groupKeyForName(group.name)) ? { ...group, tab: targetTab } : group
-            ));
-            await persistGroupMeta(nextMeta);
-        }
-        const newSales: CarSale[] = currentSales.map(s => {
-            const shouldMove = selectedIds.has(s.id) || (s.group && selectedGroupKeys.has(groupKeyForName(s.group)));
-            if (shouldMove) {
+        const newSales = sales.map(s => {
+            if (selectedIds.has(s.id)) {
                 dirtyIds.current.add(s.id);
-                return {
-                    ...s,
-                    status: status as SaleStatus,
-                    archivedAt: status === 'Archived' ? s.archivedAt : undefined,
-                    archivedBy: status === 'Archived' ? s.archivedBy : undefined,
-                    archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
-                };
+                return { ...s, status };
             }
             return s;
         });
-        const success = await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to move cars to the selected tab. Please try again.'
-        );
-        if (!success && selectedGroupKeys.size > 0) {
-            await persistGroupMeta(previousMeta);
+        await updateSalesAndSave(newSales);
+        setSelectedIds(new Set());
+    };
+
+    // Delete a single car immediately
+    const handleDeleteSingle = async (id: string) => {
+        if (!confirm('Delete this car permanently?')) return;
+
+        // Delete from Supabase immediately
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                await client.from('sales').delete().eq('id', id);
+                console.log("Deleted from Supabase:", id);
+            } catch (e) {
+                console.error("Supabase delete error:", e);
+            }
         }
-        setSelectedIds(new Set());
-    };
 
-    const handleArchiveSingle = async (id: string) => {
-        if (!confirm('Archive this car?')) return;
-        const timestamp = new Date().toISOString();
-        const actor = userProfile || 'Unknown';
-        const newSales: CarSale[] = sales.map(sale => {
-            if (sale.id !== id) return sale;
-            dirtyIds.current.add(sale.id);
-            const wasArchived = sale.status === 'Archived';
-            return {
-                ...sale,
-                archivedAt: timestamp,
-                archivedBy: actor,
-                archivedFromStatus: wasArchived ? sale.archivedFromStatus : sale.status,
-                status: 'Archived' as SaleStatus
-            };
-        });
-        await updateSalesAndSave(newSales);
-    };
-
-    const handleBulkRestore = async () => {
-        if (!confirm(`Restore ${selectedIds.size} archived items?`)) return;
-        const newSales: CarSale[] = sales.map(sale => {
-            if (!selectedIds.has(sale.id)) return sale;
-            if (sale.status !== 'Archived') return sale;
-            dirtyIds.current.add(sale.id);
-            return {
-                ...sale,
-                status: (sale.archivedFromStatus || 'New') as SaleStatus,
-                archivedAt: undefined,
-                archivedBy: undefined,
-                archivedFromStatus: undefined
-            };
-        });
-        await updateSalesAndSave(newSales);
-        setSelectedIds(new Set());
-    };
-
-    const handleRestoreSingle = async (id: string) => {
-        const sale = salesRef.current.find(s => s.id === id);
-        if (!sale || sale.status !== 'Archived') return;
-        const nextStatus = (sale.archivedFromStatus || 'New') as SaleStatus;
-        const newSales: CarSale[] = sales.map(s => {
-            if (s.id !== id) return s;
-            dirtyIds.current.add(s.id);
-            return {
-                ...s,
-                status: nextStatus,
-                archivedAt: undefined,
-                archivedBy: undefined,
-                archivedFromStatus: undefined
-            };
-        });
+        // Delete locally
+        const newSales = sales.filter(s => s.id !== id);
         await updateSalesAndSave(newSales);
     };
 
     // Group management functions
-    const syncGroupMetaToCloud = async (next: GroupMeta[]) => {
-        if (!supabaseUrl || !supabaseKey) return;
-        try {
-            const client = createClient(supabaseUrl, supabaseKey);
-            await client.from('sales').upsert({
-                id: 'config_group_meta',
-                brand: 'CONFIG',
-                model: 'GROUPS',
-                status: 'Completed',
-                year: new Date().getFullYear(),
-                km: 0,
-                cost_to_buy: 0,
-                sold_price: 0,
-                amount_paid_cash: 0,
-                amount_paid_bank: 0,
-                deposit: 0,
-                attachments: {
-                    groups: next,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: userProfile || 'Unknown'
-                }
-            });
-        } catch (e) {
-            console.error('Group meta sync error', e);
-        }
-    };
-
-    const persistGroupMeta = async (next: GroupMeta[], options?: { skipCloud?: boolean }) => {
-        const normalized = normalizeGroupMetaList(next).map(group => ({ ...group, tab: group.tab ?? 'SALES' }));
-        const grouped = new Map<GroupTab, GroupMeta[]>();
-        normalized.forEach(group => {
-            const tab = group.tab ?? 'SALES';
-            if (!grouped.has(tab)) grouped.set(tab, []);
-            grouped.get(tab)!.push(group);
-        });
-        const ordered: GroupMeta[] = [];
-        grouped.forEach(groups => {
-            groups
-                .sort((a, b) => a.order - b.order)
-                .forEach((group, index) => ordered.push({ ...group, order: index }));
-        });
-        setGroupMeta(ordered);
-        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(ordered) });
-        localStorage.setItem('sale_group_meta', JSON.stringify(ordered));
-        if (!options?.skipCloud) {
-            await syncGroupMetaToCloud(ordered);
-        }
-    };
-
-    const getSalesInGroup = (groupName: string, sourceSales: CarSale[]) => {
-        const key = groupKeyForName(groupName);
-        if (!key) return [];
-        return sourceSales.filter(sale => groupKeyForName(sale.group) === key);
-    };
-
-    const applySalesUpdateWithRollback = async (nextSales: CarSale[], previousSales: CarSale[], errorMessage: string) => {
-        const success = await updateSalesAndSave(nextSales);
-        if (!success) {
-            setSales(previousSales);
-            alert(errorMessage);
-        }
-        return success;
+    const persistGroupMeta = async (next: GroupMeta[]) => {
+        setGroupMeta(next);
+        await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(next) });
+        localStorage.setItem('sale_group_meta', JSON.stringify(next));
     };
 
     const toggleGroup = (groupName: string) => {
@@ -2145,49 +1252,21 @@ export default function Dashboard() {
         );
     };
 
-    const groupNameExists = (name: string) => {
-        const key = groupKeyForName(name);
-        if (!key) return false;
-        const inMeta = groupMeta.some(group => groupKeyForName(group.name) === key);
-        if (inMeta) return true;
-        return sales.some(sale => groupKeyForName(sale.group) === key);
-    };
-
     const createGroupWithName = async (name: string, saleIds: string[]) => {
         if (!name?.trim() || saleIds.length === 0) return;
         const trimmed = name.trim();
-        if (groupNameExists(trimmed)) {
+        if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
             alert('Group already exists.');
             return;
         }
 
-        const currentSales = salesRef.current;
-        const salesById = new Map(currentSales.map(s => [s.id, s]));
-        const ungroupedIds = saleIds.filter(id => {
-            const sale = salesById.get(id);
-            return !sale?.group || !sale.group.trim();
-        });
-        if (ungroupedIds.length === 0) {
-            alert('Select ungrouped cars to create a new group.');
-            return;
-        }
-
-        const nextTab = tabFromCategory(activeCategory) ?? 'SALES';
-        const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false, tab: nextTab }];
+        const nextMeta = [...groupMeta, { name: trimmed, order: groupMeta.length, archived: false }];
         await persistGroupMeta(nextMeta);
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
-        const saleIdSet = new Set(ungroupedIds);
-        const newSales = currentSales.map(s => {
-            if (!saleIdSet.has(s.id)) return s;
-            dirtyIds.current.add(s.id);
-            return { ...s, group: trimmed };
-        });
-        await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to create group and assign cars. Please try again.'
-        );
+        const saleIdSet = new Set(saleIds);
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
+        await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
 
@@ -2202,24 +1281,15 @@ export default function Dashboard() {
         if (!newName || !newName.trim()) return;
         const trimmed = newName.trim();
         if (trimmed === groupName) return;
-        if (groupNameExists(trimmed)) {
+        if (groupMeta.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
             alert('Group name already exists.');
             return;
         }
 
         const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
         await persistGroupMeta(nextMeta);
-        const currentSales = salesRef.current;
-        const newSales = currentSales.map(s => {
-            if (s.group !== groupName) return s;
-            dirtyIds.current.add(s.id);
-            return { ...s, group: trimmed };
-        });
-        await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to rename the group. Please try again.'
-        );
+        const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
+        await updateSalesAndSave(newSales);
         setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
     };
 
@@ -2230,45 +1300,13 @@ export default function Dashboard() {
     };
 
     const handleArchiveGroup = async (groupName: string, archived: boolean) => {
-        const currentSales = salesRef.current;
-        const groupSales = getSalesInGroup(groupName, currentSales);
-        if (archived && groupSales.length > 0) {
-            const confirmArchive = confirm(`Archive "${groupName}"? ${groupSales.length} car${groupSales.length === 1 ? '' : 's'} will move to Ungrouped.`);
-            if (!confirmArchive) return;
-        }
-        const nextMeta = groupMetaRef.current.map(g => g.name === groupName ? { ...g, archived } : g);
+        const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, archived } : g);
         await persistGroupMeta(nextMeta);
         if (archived) {
             setExpandedGroups(prev => prev.filter(g => g !== groupName));
         } else {
             setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
         }
-        if (archived && groupSales.length > 0) {
-            const nextSales = currentSales.map(sale => {
-                if (groupKeyForName(sale.group) !== groupKeyForName(groupName)) return sale;
-                dirtyIds.current.add(sale.id);
-                return { ...sale, group: undefined };
-            });
-            await applySalesUpdateWithRollback(
-                nextSales,
-                currentSales,
-                'Failed to archive group and move cars. Please try again.'
-            );
-        }
-    };
-
-    const handleDeleteGroup = async (groupName: string) => {
-        const currentSales = salesRef.current;
-        const groupSales = getSalesInGroup(groupName, currentSales);
-        if (groupSales.length > 0) {
-            alert('This group has cars assigned. Archive it instead to safely move cars to Ungrouped.');
-            return;
-        }
-        const confirmation = prompt(`Type the group name to permanently delete "${groupName}". This cannot be undone.`);
-        if (!confirmation || confirmation.trim() !== groupName) return;
-        const nextMeta = groupMetaRef.current.filter(g => g.name !== groupName);
-        await persistGroupMeta(nextMeta);
-        setExpandedGroups(prev => prev.filter(g => g !== groupName));
     };
 
     const moveGroup = async (groupName: string, direction: 'up' | 'down') => {
@@ -2286,111 +1324,21 @@ export default function Dashboard() {
     };
 
     const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
-        const currentSales = salesRef.current;
-        const targetTab = tabFromStatus(status);
-        const previousMeta = groupMetaRef.current;
-        const nextMeta = previousMeta.map(group => {
-            if (groupKeyForName(group.name) !== groupKeyForName(groupName)) return group;
-            return { ...group, tab: targetTab };
-        });
-        await persistGroupMeta(nextMeta);
-        const newSales = currentSales.map(s => {
-            if (groupKeyForName(s.group) !== groupKeyForName(groupName)) return s;
-            dirtyIds.current.add(s.id);
-            return {
-                ...s,
-                status,
-                archivedAt: status === 'Archived' ? s.archivedAt : undefined,
-                archivedBy: status === 'Archived' ? s.archivedBy : undefined,
-                archivedFromStatus: status === 'Archived' ? s.archivedFromStatus : undefined
-            };
-        });
-        const success = await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to move cars to the selected tab. Please try again.'
-        );
-        if (!success) {
-            await persistGroupMeta(previousMeta);
-        }
+        const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
+        await updateSalesAndSave(newSales);
     };
 
     const handleRemoveFromGroup = async (id: string) => {
-        const currentSales = salesRef.current;
-        const newSales = currentSales.map(s => {
-            if (s.id !== id) return s;
-            dirtyIds.current.add(s.id);
-            return { ...s, group: undefined };
-        });
-        await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to remove the car from the group. Please try again.'
-        );
+        const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
+        await updateSalesAndSave(newSales);
     };
 
     const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
         if (saleIds.length === 0) return;
-        const normalizedGroup = normalizeGroupName(groupName);
-        if (!normalizedGroup) return;
-        const currentSales = salesRef.current;
         const saleIdSet = new Set(saleIds);
-        const groupTab = groupMetaRef.current.find(group => groupKeyForName(group.name) === groupKeyForName(normalizedGroup))?.tab;
-        const targetStatus = groupTab ? statusFromTab(groupTab) : null;
-        const shouldArchive = targetStatus === 'Archived';
-        const shouldClearArchive = Boolean(targetStatus && !shouldArchive);
-        const newSales = currentSales.map(s => {
-            if (!saleIdSet.has(s.id)) return s;
-            dirtyIds.current.add(s.id);
-            return {
-                ...s,
-                group: normalizedGroup,
-                status: targetStatus ?? s.status,
-                archivedAt: shouldArchive ? (s.archivedAt ?? new Date().toISOString()) : (shouldClearArchive ? undefined : s.archivedAt),
-                archivedBy: shouldArchive ? (s.archivedBy ?? (userProfile || 'Unknown')) : (shouldClearArchive ? undefined : s.archivedBy),
-                archivedFromStatus: shouldArchive ? (s.archivedFromStatus ?? s.status) : (shouldClearArchive ? undefined : s.archivedFromStatus)
-            };
-        });
-        await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to move cars to the group. Please try again.'
-        );
-        setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
-        setSelectedIds(new Set());
-    };
-
-    const handleBulkGroupMove = async (groupName?: string) => {
-        if (selectedIds.size === 0) return;
-        const currentSales = salesRef.current;
-        const saleIdSet = new Set(selectedIds);
-        const normalizedGroup = normalizeGroupName(groupName);
-        const groupTab = normalizedGroup
-            ? groupMetaRef.current.find(group => groupKeyForName(group.name) === groupKeyForName(normalizedGroup))?.tab
-            : null;
-        const targetStatus = groupTab ? statusFromTab(groupTab) : null;
-        const shouldArchive = targetStatus === 'Archived';
-        const shouldClearArchive = Boolean(targetStatus && !shouldArchive);
-        const newSales = currentSales.map(s => {
-            if (!saleIdSet.has(s.id)) return s;
-            dirtyIds.current.add(s.id);
-            return {
-                ...s,
-                group: normalizedGroup || undefined,
-                status: targetStatus ?? s.status,
-                archivedAt: shouldArchive ? (s.archivedAt ?? new Date().toISOString()) : (shouldClearArchive ? undefined : s.archivedAt),
-                archivedBy: shouldArchive ? (s.archivedBy ?? (userProfile || 'Unknown')) : (shouldClearArchive ? undefined : s.archivedBy),
-                archivedFromStatus: shouldArchive ? (s.archivedFromStatus ?? s.status) : (shouldClearArchive ? undefined : s.archivedFromStatus)
-            };
-        });
-        await applySalesUpdateWithRollback(
-            newSales,
-            currentSales,
-            'Failed to move cars to the group. Please try again.'
-        );
-        if (normalizedGroup) {
-            setExpandedGroups(prev => (prev.includes(normalizedGroup) ? prev : [...prev, normalizedGroup]));
-        }
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
+        await updateSalesAndSave(newSales);
+        setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
         setSelectedIds(new Set());
     };
 
@@ -2423,56 +1371,6 @@ export default function Dashboard() {
         setShowProfileMenu(false);
     };
 
-    const persistProfiles = useCallback(async (entries: ProfileEntry[]) => {
-        const normalized = normalizeProfileEntries(entries);
-        setAvailableProfiles(normalized);
-        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
-        syncProfilesToCloud(normalized);
-        return normalized;
-    }, [normalizeProfileEntries, syncProfilesToCloud]);
-
-    const createUserProfile = useCallback(async (profileName: string, email?: string, remember = rememberProfile) => {
-        const normalizedName = normalizeProfileName(profileName);
-        if (!normalizedName) return;
-        const existingEntry = availableProfiles.find(profile => profile.name === normalizedName);
-        if (existingEntry) {
-            if (!existingEntry.archived) {
-                alert('Profile already exists!');
-                return;
-            }
-            await persistProfiles(availableProfiles.map(profile => profile.name === normalizedName
-                ? stampProfileEntry({ ...profile, archived: false, archivedAt: null })
-                : profile
-            ));
-        } else {
-            await persistProfiles([...availableProfiles, stampProfileEntry({ name: normalizedName, archived: false, archivedAt: null })]);
-        }
-        const setupToken = generateSetupToken();
-        setUserProfile(normalizedName);
-        setRememberProfile(remember);
-        await persistUserProfile(normalizedName, remember);
-        if (!getUserAccount(normalizedName)) {
-            const newAccount: UserAccount = {
-                id: crypto.randomUUID(),
-                name: normalizedName,
-                email: email?.trim() || undefined,
-                status: 'pending',
-                setupToken,
-                setupTokenCreatedAt: new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                createdBy: userProfile || undefined
-            };
-            const nextAccounts = [...userAccountsRef.current, newAccount];
-            await persistUserAccounts(nextAccounts);
-            setSetupLinkData({
-                token: setupToken,
-                url: buildSetupLink(setupToken),
-                name: normalizedName
-            });
-            setShowSetupLinkModal(true);
-        }
-    }, [availableProfiles, buildSetupLink, getUserAccount, persistProfiles, persistUserAccounts, persistUserProfile, rememberProfile, stampProfileEntry, userProfile]);
-
     const handleAddProfile = async () => {
         if (!isAdmin) {
             alert(`Only ${ADMIN_PROFILE} can add users.`);
@@ -2480,9 +1378,17 @@ export default function Dashboard() {
         }
         const normalizedName = normalizeProfileName(newProfileName);
         if (!normalizedName) return;
-        await createUserProfile(normalizedName, newProfileEmail);
+        if (availableProfiles.includes(normalizedName)) {
+            alert('Profile already exists!');
+            return;
+        }
+        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+        setAvailableProfiles(updated);
+        setUserProfile(normalizedName);
         setNewProfileName('');
-        setNewProfileEmail('');
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+        await persistUserProfile(normalizedName);
+        syncProfilesToCloud(updated);
     };
 
     const quickAddProfile = async () => {
@@ -2494,139 +1400,40 @@ export default function Dashboard() {
         if (name && name.trim()) {
             const normalizedName = normalizeProfileName(name);
             if (!normalizedName) return;
-            await createUserProfile(normalizedName);
+            if (availableProfiles.includes(normalizedName)) {
+                alert('Profile already exists!');
+                return;
+            }
+            const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+            setAvailableProfiles(updated);
+            setUserProfile(normalizedName);
+            await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+            await persistUserProfile(normalizedName);
             setShowProfileMenu(false);
+            syncProfilesToCloud(updated);
         }
     };
 
     const handleDeleteProfile = async (name: string) => {
-        if (!isAdmin) {
-            alert(`Only ${ADMIN_PROFILE} can delete users.`);
-            return;
-        }
-        const normalizedName = normalizeProfileName(name);
-        if (!normalizedName) return;
-        const updated = availableProfiles.map(profile => profile.name === normalizedName
-            ? stampProfileEntry({ ...profile, archived: true, archivedAt: profile.archivedAt ?? new Date().toISOString() })
-            : profile
-        );
-        await persistProfiles(updated);
+        const updated = availableProfiles.filter(p => p !== name);
+        const normalized = normalizeProfiles(updated);
+        setAvailableProfiles(normalized);
         if (userProfile === name) setUserProfile('');
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
+        syncProfilesToCloud(normalized);
     };
 
     const handleEditProfile = async (oldName: string, newName: string) => {
         const normalizedName = normalizeProfileName(newName);
-        if (!normalizedName || (normalizedName !== oldName && availableProfiles.some(profile => profile.name === normalizedName))) return;
-        const updated = availableProfiles.map(profile => profile.name === oldName
-            ? stampProfileEntry({ ...profile, name: normalizedName })
-            : profile
-        );
-        await persistProfiles(updated);
+        if (!normalizedName || (normalizedName !== oldName && availableProfiles.includes(normalizedName))) return;
+        const updated = normalizeProfiles(availableProfiles.map(p => p === oldName ? normalizedName : p));
+        setAvailableProfiles(updated);
         if (userProfile === oldName) {
             setUserProfile(normalizedName);
             await persistUserProfile(normalizedName);
         }
-        const updatedAccounts = userAccounts.map(account => account.name === oldName ? { ...account, name: normalizedName } : account);
-        await persistUserAccounts(updatedAccounts);
-    };
-
-    const handleRestoreProfile = async (name: string) => {
-        if (!isAdmin) {
-            alert(`Only ${ADMIN_PROFILE} can restore users.`);
-            return;
-        }
-        const normalizedName = normalizeProfileName(name);
-        if (!normalizedName) return;
-        const updated = availableProfiles.map(profile => profile.name === normalizedName
-            ? stampProfileEntry({ ...profile, archived: false, archivedAt: null })
-            : profile
-        );
-        await persistProfiles(updated);
-    };
-
-    const openSetupModalForToken = useCallback((token: string) => {
-        setPendingSetupToken(token);
-        setSetupPassword('');
-        setSetupPasswordConfirm('');
-        setSetupError('');
-        setSetupSuccess('');
-        setIsSetupModalOpen(true);
-    }, []);
-
-    const handleSetupPasswordSubmit = async () => {
-        if (!pendingSetupToken) return;
-        const account = userAccounts.find(u => u.setupToken === pendingSetupToken);
-        if (!account) {
-            setSetupError('Invalid or expired setup link.');
-            return;
-        }
-        if (!setupPassword || setupPassword.length < 8) {
-            setSetupError('Password must be at least 8 characters.');
-            return;
-        }
-        if (setupPassword !== setupPasswordConfirm) {
-            setSetupError('Passwords do not match.');
-            return;
-        }
-
-        try {
-            const record = await createPasswordRecord(setupPassword);
-            const updatedAccounts = userAccounts.map(u => {
-                if (u.setupToken !== pendingSetupToken) return u;
-                return {
-                    ...u,
-                    status: 'active' as UserStatus,
-                    passwordHash: record.passwordHash,
-                    passwordSalt: record.passwordSalt,
-                    setupToken: null,
-                    setupTokenCreatedAt: null
-                };
-            });
-            await persistUserAccounts(updatedAccounts);
-            setSetupSuccess('Password set successfully. You can now log in.');
-            setSetupError('');
-        } catch (error) {
-            console.error('Setup error', error);
-            setSetupError('Failed to set password. Please try again.');
-        }
-    };
-
-    const handleSellerReassign = async (saleId: string, nextSeller: string) => {
-        const normalizedSeller = normalizeProfileName(nextSeller);
-        if (!normalizedSeller) return;
-        const currentSales = salesRef.current;
-        const saleIndex = currentSales.findIndex(sale => sale.id === saleId);
-        if (saleIndex === -1) return;
-
-        const sale = currentSales[saleIndex];
-        const previousSeller = sale.soldBy;
-        if (previousSeller === normalizedSeller) return;
-
-        const auditEntry: SellerAuditEntry = {
-            id: crypto.randomUUID(),
-            changedAt: new Date().toISOString(),
-            changedBy: userProfile || 'Unknown',
-            fromSeller: previousSeller,
-            toSeller: normalizedSeller
-        };
-
-        const nextAudit = [...(sale.sellerAudit || []), auditEntry];
-        const updatedSale: CarSale = {
-            ...sale,
-            soldBy: normalizedSeller,
-            sellerName: normalizedSeller,
-            sellerAudit: nextAudit
-        };
-        const newSales = [...currentSales];
-        newSales[saleIndex] = updatedSale;
-        dirtyIds.current.add(saleId);
-        await updateSalesAndSave(newSales);
-    };
-
-    const openSellerReassignModal = (sale: CarSale) => {
-        setSellerReassignSale(sale);
-        setSellerReassignTarget(sale.soldBy || '');
-        setShowSellerReassignModal(true);
+        await Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+        syncProfilesToCloud(updated);
     };
 
 
@@ -2684,51 +1491,35 @@ export default function Dashboard() {
                     storedProfile = normalizedStoredProfile;
                     await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
                 }
-                const sessionProfileRaw = typeof window !== 'undefined'
-                    ? window.sessionStorage.getItem('active_user_profile')
-                    : null;
-                const sessionProfile = normalizeProfileName(sessionProfileRaw);
                 if (storedProfile && shouldRemember) {
                     setUserProfile(storedProfile);
-                    setView(uiStateViewRef.current || 'landing');
-                } else if (sessionProfile) {
-                    setUserProfile(sessionProfile);
-                    setView(uiStateViewRef.current || 'landing');
+                    setView('landing');
                 } else if (storedProfile && !shouldRemember) {
                     await Preferences.remove({ key: 'user_profile' });
                 }
 
-                const { value: storedUsers } = await Preferences.get({ key: 'user_accounts' });
-                const loadedUsers = storedUsers ? normalizeUserAccounts(JSON.parse(storedUsers)) : [];
-                if (storedUsers) {
-                    setUserAccounts(loadedUsers);
-                    await Preferences.set({ key: 'user_accounts', value: JSON.stringify(loadedUsers) });
-                }
-
-                const { value: profiles } = await Preferences.get({ key: 'available_profiles' });
+                let { value: profiles } = await Preferences.get({ key: 'available_profiles' });
                 if (profiles) {
-                    const loaded = normalizeProfileEntries(JSON.parse(profiles) as Array<string | ProfileEntry>);
-                    const merged = mergeProfilesWithAccounts(loaded, loadedUsers);
-                    setAvailableProfiles(merged);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
-                    syncProfilesToCloud(merged);
+                    const loaded = normalizeProfiles(JSON.parse(profiles));
+                    setAvailableProfiles(loaded);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
+                    syncProfilesToCloud(loaded);
                 } else {
-                    const defaults = normalizeProfileEntries(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
-                    const merged = mergeProfilesWithAccounts(defaults, loadedUsers);
-                    setAvailableProfiles(merged);
-                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(merged) });
+                    const defaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                    setAvailableProfiles(defaults);
+                    await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
                     // Also sync to cloud on first run
-                    syncProfilesToCloud(merged);
+                    syncProfilesToCloud(defaults);
                 }
 
                 const { value: groupMetaValue } = await Preferences.get({ key: 'sale_group_meta' });
                 if (groupMetaValue) {
                     const parsed = JSON.parse(groupMetaValue) as GroupMeta[];
-                    setGroupMeta(normalizeGroupMetaList(parsed));
+                    setGroupMeta(parsed);
                 } else {
                     const stored = localStorage.getItem('sale_group_meta');
                     if (stored) {
-                        setGroupMeta(normalizeGroupMetaList(JSON.parse(stored)));
+                        setGroupMeta(JSON.parse(stored));
                     }
                 }
             } catch (e) {
@@ -2813,17 +1604,6 @@ export default function Dashboard() {
         };
         syncOnLogin();
     }, [userProfile, supabaseUrl, supabaseKey]);
-
-    useEffect(() => {
-        if (!userProfile) return;
-        const account = getUserAccount(userProfile);
-        if (account && account.status === 'pending') {
-            alert('Password setup required. Use the setup link from your admin.');
-            setUserProfile('');
-            setView('profile_select');
-            persistUserProfile(null, false);
-        }
-    }, [getUserAccount, userProfile]);
 
     const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
         setIsSyncing(true);
@@ -2975,54 +1755,45 @@ export default function Dashboard() {
         alert('Settings Saved!');
     };
 
+    const handleDelete = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm('Are you sure you want to delete this sale?')) { updateSalesAndSave(sales.filter(s => s.id !== id)); }
+    };
+
     const handleDeleteAll = async () => {
-        if (confirm('Archive all non-sold sales data? Sold cars will be kept.')) {
-            if (confirm('Please confirm again: ARCHIVE ALL NON-SOLD DATA?')) {
-                const timestamp = new Date().toISOString();
-                const actor = userProfile || 'Unknown';
-                const updated: CarSale[] = salesRef.current.map(sale => {
-                    if (sale.status === 'Completed') return sale;
-                    if (sale.id === 'config_profile_avatars' || sale.id === 'config_user_accounts') return sale;
-                    return {
-                        ...sale,
-                        status: 'Archived' as SaleStatus,
-                        archivedAt: timestamp,
-                        archivedBy: actor,
-                        archivedFromStatus: sale.status
-                    };
-                });
-                await updateSalesAndSave(updated);
-                alert('All non-sold data has been archived.');
+        if (confirm('DANGER: Are you sure you want to delete ALL sales data? This cannot be undone.')) {
+            if (confirm('Please confirm again: DELETE ALL DATA from local AND database?')) {
+                // Delete from Supabase immediately
+                if (supabaseUrl && supabaseKey) {
+                    try {
+                        const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                        // Delete all records
+                        const { data: allSales } = await client.from('sales').select('id');
+                        if (allSales && allSales.length > 0) {
+                            for (const sale of allSales) {
+                                await client.from('sales').delete().eq('id', sale.id);
+                            }
+                            console.log("Deleted all from Supabase:", allSales.length, "records");
+                        }
+                    } catch (e) {
+                        console.error("Supabase delete all error:", e);
+                    }
+                }
+
+                // Delete locally
+                updateSalesAndSave([]);
+                try {
+                    await Preferences.remove({ key: 'car_sales_data' });
+                    localStorage.removeItem('car_sales_data');
+                    alert('All data has been deleted from local and database.');
+                } catch (e) { console.error('Error clearing data', e); }
             }
         }
     };
 
-    const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false) => {
+    const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false, showBankOnly = false) => {
         e.stopPropagation();
-        setPendingInvoiceSale(sale);
-        setPendingInvoiceWithDogane(withDogane);
-        setShowInvoicePriceModal(true);
-    };
-
-    const handleInvoicePriceSelect = (source: InvoicePriceSource) => {
-        if (!pendingInvoiceSale) return;
-        const priceValue = resolveInvoicePriceValue(pendingInvoiceSale, source);
-        setDocumentPreview({
-            sale: pendingInvoiceSale,
-            type: 'invoice',
-            withDogane: pendingInvoiceWithDogane,
-            priceSource: source,
-            priceValue
-        });
-        setPendingInvoiceSale(null);
-        setPendingInvoiceWithDogane(false);
-        setShowInvoicePriceModal(false);
-    };
-
-    const handleInvoicePriceCancel = () => {
-        setPendingInvoiceSale(null);
-        setPendingInvoiceWithDogane(false);
-        setShowInvoicePriceModal(false);
+        setDocumentPreview({ sale, type: 'invoice', withDogane, showBankOnly });
     };
 
     const handleFullBackup = async () => {
@@ -3186,45 +1957,23 @@ export default function Dashboard() {
         } catch (e) { console.error(e); }
     };
 
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
-
-    useEffect(() => {
-        const handle = window.setTimeout(() => setDebouncedSearchTerm(searchTerm), 200);
-        return () => window.clearTimeout(handle);
-    }, [searchTerm]);
-
-    const deferredSearchTerm = useDeferredValue(debouncedSearchTerm);
-    const groupTabByKey = useMemo(() => {
-        const map = new Map<string, GroupTab>();
-        groupMeta.forEach(group => {
-            const key = groupKeyForName(group.name);
-            if (!key) return;
-            map.set(key, group.tab ?? 'SALES');
-        });
-        return map;
-    }, [groupMeta]);
+    const deferredSearchTerm = useDeferredValue(searchTerm);
 
     const filteredSales = React.useMemo(() => sales.filter(s => {
         // Filter out system config rows
-        if (s.id === 'config_profile_avatars' || s.id === 'config_user_accounts') return false;
+        if (s.id === 'config_profile_avatars') return false;
 
         // Restrict visibility for non-admin users to their own sales
         if (!isAdmin && s.soldBy !== userProfile) return false;
 
 
-        // Category Filter
-        if (activeCategory === 'ARCHIVE' && s.status !== 'Archived') return false;
-        if (activeCategory !== 'ARCHIVE' && s.status === 'Archived') return false;
-        if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
-        if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
-        if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
-        if (activeCategory === 'SALES' && ['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
-
-        const currentTab = tabFromCategory(activeCategory);
-        if (currentTab && s.group) {
-            const key = groupKeyForName(s.group);
-            const groupTab = key ? groupTabByKey.get(key) : null;
-            if (groupTab && groupTab !== currentTab) return false;
+        // In 'Sales' view, we show ALL cars to ensure the user sees all 18 rows as requested.
+        if (activeCategory === 'SALES') {
+            // No status filtering for the main Sales view
+        } else {
+            if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
+            if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
+            if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
         }
 
         const term = deferredSearchTerm.toLowerCase().trim();
@@ -3267,15 +2016,6 @@ export default function Dashboard() {
         () => filteredSales.filter(sale => selectedIds.has(sale.id)),
         [filteredSales, selectedIds]
     );
-    const selectedSales = React.useMemo(
-        () => sales.filter(sale => selectedIds.has(sale.id)),
-        [sales, selectedIds]
-    );
-    const hasArchivedSelection = selectedSales.some(sale => sale.status === 'Archived');
-    const setupAccount = useMemo(() => {
-        if (!pendingSetupToken) return null;
-        return userAccounts.find(account => account.setupToken === pendingSetupToken) || null;
-    }, [pendingSetupToken, userAccounts]);
 
     // Toggle sort column
     const toggleSort = (column: string) => {
@@ -3293,155 +2033,55 @@ export default function Dashboard() {
     const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
-    const groupingAvailable = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'INSPECTIONS' || activeCategory === 'AUTOSALLON';
-    const groupingEnabled = groupingAvailable && groupViewEnabled;
-    const showGroupConfig = false;
-
-    const normalizedGroupMeta = useMemo(() => normalizeGroupMetaList(groupMeta), [groupMeta]);
-    const groupNamesFromSales = useMemo(() => {
-        const unique = new Set<string>();
-        sales.forEach(sale => {
-            const name = normalizeGroupName(sale.group);
-            if (name) unique.add(name);
-        });
-        return Array.from(unique);
-    }, [sales]);
-    const groupTabByName = useMemo(() => buildGroupTabLookup(sales), [sales]);
-    const resolvedGroupMeta = useMemo(
-        () => ensureGroupMetaIncludesNames(normalizedGroupMeta, groupNamesFromSales, groupTabByName),
-        [normalizedGroupMeta, groupNamesFromSales, groupTabByName]
-    );
-    const currentGroupTab = useMemo(() => tabFromCategory(activeCategory), [activeCategory]);
-    const groupsForView = useMemo(
-        () => currentGroupTab ? resolvedGroupMeta.filter(group => (group.tab ?? 'SALES') === currentGroupTab) : [],
-        [currentGroupTab, resolvedGroupMeta]
-    );
-    const groupDisplayNameByKey = useMemo(() => {
-        const map = new Map<string, string>();
-        groupsForView.forEach(group => {
-            map.set(groupKeyForName(group.name), group.name);
-        });
-        return map;
-    }, [groupsForView]);
+    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
-        groupsForView.forEach(group => {
-            groups[group.name] = [];
-        });
-        groups.Ungrouped = [];
         filteredSales.forEach(s => {
-            const normalized = normalizeGroupName(s.group);
-            const key = normalized ? groupKeyForName(normalized) : '';
-            const groupKey = normalized ? (groupDisplayNameByKey.get(key) || normalized) : 'Ungrouped';
+            const groupKey = s.group?.trim() || 'Ungrouped';
             if (!groups[groupKey]) groups[groupKey] = [];
             groups[groupKey].push(s);
         });
         return groups;
-    }, [filteredSales, groupsForView, groupDisplayNameByKey]);
-
-    const groupMoveTargets = useMemo(() => ([
-        { label: 'Sales', status: 'In Progress' as SaleStatus, tab: 'SALES' as GroupTab },
-        { label: 'Shipped', status: 'Shipped' as SaleStatus, tab: 'SHIPPED' as GroupTab },
-        { label: 'Inspections', status: 'Inspection' as SaleStatus, tab: 'INSPECTIONS' as GroupTab },
-        { label: 'Autosallon', status: 'Autosallon' as SaleStatus, tab: 'AUTOSALLON' as GroupTab }
-    ]), []);
+    }, [filteredSales]);
 
     useEffect(() => {
         if (sales.length === 0) return;
-        const groupNames = new Set(sales.map(s => normalizeGroupName(s.group)).filter(Boolean) as string[]);
+        const groupNames = new Set(sales.map(s => s.group).filter(Boolean) as string[]);
         if (groupNames.size === 0) return;
-        const missing = Array.from(groupNames).filter(name => !normalizedGroupMeta.some(g => groupKeyForName(g.name) === groupKeyForName(name)));
+        const missing = Array.from(groupNames).filter(name => !groupMeta.some(g => g.name === name));
         if (missing.length === 0) return;
-        const nextMeta = [...normalizedGroupMeta];
+        const nextMeta = [...groupMeta];
         missing.forEach(name => {
-            const trimmed = normalizeGroupName(name);
-            if (!trimmed) return;
-            const key = groupKeyForName(trimmed);
-            nextMeta.push({ name: trimmed, order: nextMeta.length, archived: false, tab: groupTabByName.get(key) ?? 'SALES' });
+            nextMeta.push({ name, order: nextMeta.length, archived: false });
         });
         persistGroupMeta(nextMeta);
-    }, [sales, normalizedGroupMeta, groupTabByName]);
-
-    useEffect(() => {
-        const needsTabUpdate = normalizedGroupMeta.some(group => !group.tab);
-        if (!needsTabUpdate) return;
-        const nextMeta = normalizedGroupMeta.map(group => ({
-            ...group,
-            tab: group.tab ?? groupTabByName.get(groupKeyForName(group.name)) ?? 'SALES'
-        }));
-        persistGroupMeta(nextMeta);
-    }, [normalizedGroupMeta, groupTabByName]);
-
-    useEffect(() => {
-        if (sales.length === 0 || groupMeta.length === 0) return;
-        const currentSales = salesRef.current;
-        const currentMeta = groupMetaRef.current;
-        const tabByGroup = new Map<string, GroupTab>();
-        currentMeta.forEach(group => {
-            const key = groupKeyForName(group.name);
-            if (!key) return;
-            tabByGroup.set(key, group.tab ?? 'SALES');
-        });
-        let hasChanges = false;
-        const nextSales = currentSales.map(sale => {
-            if (!sale.group) return sale;
-            const key = groupKeyForName(sale.group);
-            if (!key) return sale;
-            const tab = tabByGroup.get(key);
-            if (!tab) return sale;
-            if (tabFromStatus(sale.status) === tab) return sale;
-            hasChanges = true;
-            dirtyIds.current.add(sale.id);
-            const nextStatus = statusFromTab(tab);
-            const shouldArchive = nextStatus === 'Archived';
-            return {
-                ...sale,
-                status: nextStatus,
-                archivedAt: shouldArchive ? (sale.archivedAt ?? new Date().toISOString()) : undefined,
-                archivedBy: shouldArchive ? (sale.archivedBy ?? (userProfile || 'System')) : undefined,
-                archivedFromStatus: shouldArchive ? (sale.archivedFromStatus ?? sale.status) : undefined
-            };
-        });
-        if (!hasChanges) return;
-        const reconcile = async () => {
-            await updateSalesAndSave(nextSales);
-        };
-        reconcile();
-    }, [groupMeta, sales, userProfile]);
+    }, [sales, groupMeta]);
 
     const orderedGroupMeta = useMemo(() => {
-        return [...groupsForView].sort((a, b) => a.order - b.order);
-    }, [groupsForView]);
+        return [...groupMeta].sort((a, b) => a.order - b.order);
+    }, [groupMeta]);
 
     const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
     const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
 
     useEffect(() => {
         if (hasInitializedGroups.current) return;
-        const initialGroups = [...activeGroups.map(g => g.name), 'Ungrouped'];
+        const initialGroups = activeGroups.map(g => g.name);
+        if (groupedSales.Ungrouped?.length) {
+            initialGroups.push('Ungrouped');
+        }
         if (initialGroups.length > 0) {
             setExpandedGroups(initialGroups);
             hasInitializedGroups.current = true;
         }
-    }, [activeGroups]);
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get('setupToken');
-        if (!token) return;
-        openSetupModalForToken(token);
-        params.delete('setupToken');
-        const nextUrl = `${window.location.pathname}?${params.toString()}`.replace(/\?$/, '');
-        window.history.replaceState({}, '', nextUrl);
-    }, [openSetupModalForToken]);
+    }, [activeGroups, groupedSales.Ungrouped?.length]);
 
 
 
     if (isLoading) {
         return (
-            <div className="min-h-[100dvh] bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
+            <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
                 <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
                 <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
             </div>
@@ -3454,22 +2094,24 @@ export default function Dashboard() {
             onSelect={(p, remember) => {
                 const normalizedProfile = normalizeProfileName(p);
                 if (!normalizedProfile) return;
-                const account = getUserAccount(normalizedProfile);
-                if (account && account.status === 'pending') {
-                    alert('Password setup required. Use the setup link from your admin.');
-                    return;
-                }
                 setUserProfile(normalizedProfile);
                 setView('landing');
                 setRememberProfile(remember);
                 persistUserProfile(normalizedProfile, remember);
             }}
-            onAdd={(name, email, remember) => {
-                createUserProfile(name, email, remember);
+            onAdd={(name, remember) => {
+                const normalizedName = normalizeProfileName(name);
+                if (!normalizedName) return;
+                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+                setAvailableProfiles(updated);
+                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                setUserProfile(normalizedName);
+                setRememberProfile(remember);
+                persistUserProfile(normalizedName, remember);
+                syncProfilesToCloud(updated);
             }}
             onDelete={handleDeleteProfile}
             onEdit={handleEditProfile}
-            onRestore={handleRestoreProfile}
             avatars={profileAvatars}
             onEditAvatar={handleEditAvatar}
             rememberDefault={rememberProfile}
@@ -3478,7 +2120,7 @@ export default function Dashboard() {
 
     if (view === 'landing') {
         return (
-            <div className="min-h-[100dvh] bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative font-sans">
+            <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
                 <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
 
@@ -3524,9 +2166,109 @@ export default function Dashboard() {
         );
     }
 
+    const navItems = [
+        { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
+        { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
+        { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
+        { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
+        { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+        { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
+    ] as const;
+
+    const currentNavId = useMemo(() => {
+        if (view === 'settings') return 'SETTINGS';
+        if (view === 'invoices') return 'INVOICES';
+        return activeCategory as string;
+    }, [view, activeCategory]);
+
+    const SidebarContent = () => (
+        <div className="flex flex-col h-full bg-slate-900 text-slate-400">
+            <div className="p-6 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-200 p-[2px] shadow-lg">
+                    <img src="/logo_new.jpg" alt="Logo" className="w-full h-full rounded-lg object-cover" />
+                </div>
+                <span className="text-xl font-bold text-white tracking-tight">KORAUTO</span>
+            </div>
+
+            <nav className="flex-1 px-4 space-y-1 mt-4">
+                {navItems.map((item) => {
+                    if (item.adminOnly && !isAdmin) return null;
+                    const isActive = currentNavId === item.id;
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                setView(item.view);
+                                if (item.category) setActiveCategory(item.category as any);
+                                setIsMobileMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                : 'hover:bg-slate-800 hover:text-white'
+                                }`}
+                        >
+                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                            {item.label}
+                        </button>
+                    );
+                })}
+            </nav>
+
+            <div className="p-4 mt-auto border-t border-slate-800">
+                <button
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
+                >
+                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
+                        {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                    </div>
+                    <div className="flex-1 text-left overflow-hidden">
+                        <div className="text-sm font-bold text-white truncate">{userProfile}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
+                    </div>
+                    <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                </button>
+
+                {showProfileMenu && (
+                    <div className="absolute bottom-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-bottom-2">
+                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
+                        <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
+                            {availableProfiles.map(p => (
+                                <button key={p} onClick={() => {
+                                    if (p === ADMIN_PROFILE && userProfile !== p) {
+                                        setPendingProfile(p);
+                                        setPasswordInput('');
+                                        setIsPasswordVisible(false);
+                                        setShowPasswordModal(true);
+                                        return;
+                                    }
+                                    setShowProfileMenu(false);
+                                    startTransition(() => { setUserProfile(p); });
+                                    persistUserProfile(p);
+                                    setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
+                                }}
+                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                    <span>{p}</span>
+                                    {userProfile === p && <CheckSquare className="w-4 h-4" />}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="h-px bg-slate-100 my-2" />
+                        <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
+                            <Plus className="w-4 h-4" /> Add Profile
+                        </button>
+                        <div className="h-px bg-slate-100 my-2" />
+                        <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                            <LogOut className="w-4 h-4" /> Log Out
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="min-h-[100dvh] flex flex-col bg-white text-slate-800 font-sans overflow-y-auto scroll-container">
+        <div className="flex h-screen w-full bg-slate-50 relative overflow-hidden font-sans text-slate-900">
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
@@ -3550,343 +2292,382 @@ export default function Dashboard() {
                 </div>
             )}
 
-            <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 px-3 py-2 md:px-4 md:py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto flex flex-col gap-2 md:gap-3">
-                    <div className="flex justify-between items-center gap-2">
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <img src="/logo_new.jpg" alt="Korauto Logo" className="w-10 h-10 rounded-xl object-cover shadow-md border border-slate-100" />
-                            <div>
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">KORAUTO</h1>
+            {/* Desktop Sidebar */}
+            <aside className="hidden md:flex w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0">
+                <SidebarContent />
+            </aside>
+
+            {/* Mobile Drawer */}
+            <AnimatePresence>
+                {isMobileMenuOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden"
+                        />
+                        <motion.div
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] md:hidden shadow-2xl"
+                        >
+                            <SidebarContent />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            <div className="flex-1 flex flex-col min-w-0 relative">
+                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sticky top-0 z-40">
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setIsMobileMenuOpen(true)}
+                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 md:hidden text-slate-600"
+                            >
+                                <Menu className="w-6 h-6" />
+                            </button>
+                            <h2 className="text-lg font-bold text-slate-900 hidden sm:flex items-center gap-2">
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : activeCategory}
+                                <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                    {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
+                                </span>
+                            </h2>
+                        </div>
+
+                        <div className="flex-1 max-w-xl hidden md:block">
+                            <div className="relative group">
+                                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                                <input
+                                    placeholder="Search sales..."
+                                    className="w-full bg-slate-100 border-transparent rounded-2xl pl-11 pr-4 py-2 text-sm focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5 transition-all outline-none"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
                             </div>
                         </div>
-                        <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
-                            {[
-                                { key: 'dashboard', label: 'Home' },
-                                { key: 'invoices', label: 'Invoice' },
-                                ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
-                            ].map((tab) => (
-                                <button key={tab.key} onClick={() => setView(tab.key)} className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${view === tab.key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-                                    <span>{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-3 relative">
+
+                        <div className="flex items-center gap-2">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2 rounded-full hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
-                                title="Force Sync"
+                                className={`p-2.5 rounded-xl hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}
+                                title="Sync Now"
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-black p-[2px] shadow-md hover:shadow-lg transition-all hover:scale-105">
-                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-sm font-bold text-slate-900">
-                                    {userProfile ? userProfile[0].toUpperCase() : 'U'}
-                                </div>
-                            </button>
 
-                            {showProfileMenu && (
-                                <div className="absolute right-0 top-12 bg-white border border-slate-200 rounded-xl p-2 w-52 shadow-xl z-[60]">
-                                    <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
-                                    <div className="max-h-40 overflow-y-auto scroll-container space-y-1">
-                                        {activeProfileEntries.map(profile => (
-                                            <button key={profile.name} onClick={() => {
-                                                if (profile.name === ADMIN_PROFILE && userProfile !== profile.name) {
-                                                    setPendingProfile(profile.name);
-                                                    setPasswordInput('');
-                                                    setIsPasswordVisible(false);
-                                                    setShowPasswordModal(true);
-                                                    return;
-                                                }
-                                                setShowProfileMenu(false);
-                                                startTransition(() => { setUserProfile(profile.name); });
-                                                persistUserProfile(profile.name);
-                                                setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, profile.name), 100);
-                                            }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === profile.name ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
-                                                <span>{profile.name}</span>
-                                                {userProfile === profile.name && <CheckSquare className="w-4 h-4" />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="h-px bg-slate-100 my-2" />
-                                    <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
-                                        <Plus className="w-4 h-4" /> Add Profile
-                                    </button>
-                                    <div className="h-px bg-slate-100 my-2" />
-                                    <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
-                                        <LogOut className="w-4 h-4" /> Log Out
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex md:hidden bg-white/80 border border-slate-100 p-1 rounded-full gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                        {[
-                            { key: 'dashboard', label: 'Home' },
-                            { key: 'invoices', label: 'Invoice' },
-                            ...(isAdmin ? [{ key: 'settings', label: 'Settings' }] : [])
-                        ].map((tab) => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setView(tab.key)}
-                                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all whitespace-nowrap ${view === tab.key
-                                    ? 'bg-white text-slate-800 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <span>{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="flex gap-2 md:gap-3 justify-between items-center">
-                        <div className="relative group flex-1 md:flex-none">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input placeholder="Search cars..." className="bg-white border border-slate-200 rounded-full pl-10 pr-4 py-2 text-sm w-full md:w-80 md:py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 text-slate-700 placeholder:text-slate-400 transition-all shadow-[0_1px_2px_rgba(15,23,42,0.04)]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            <div className="relative">
-                                <ArrowUpDown className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                <select value={sortBy} onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                    className="bg-white border border-slate-200 text-slate-700 text-xs md:text-sm rounded-full pl-8 pr-4 py-2 outline-none focus:ring-2 focus:ring-slate-400/15 focus:border-slate-300 appearance-none cursor-pointer w-[120px] md:w-auto truncate transition-all md:py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                                    <option value="createdAt">Date Added</option>
-                                    <option value="nameAlphabetic">Name (A-Z)</option>
-                                    <option value="dueBalance">Balance (Client)</option>
-                                    {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
-                                    <option value="year">Year</option>
-                                </select>
-                            </div>
-                            {groupingAvailable && (
-                                <button
-                                    onClick={() => setGroupViewEnabled((prev) => !prev)}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-full border text-[11px] md:text-xs font-semibold transition-all ${groupViewEnabled
-                                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                                        }`}
-                                    title={`Group view ${groupViewEnabled ? 'on' : 'off'}`}
-                                >
-                                    {groupViewEnabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                                    <span className="hidden sm:inline">Group View</span>
-                                    <span className="text-[9px] uppercase tracking-wide">{groupViewEnabled ? 'On' : 'Off'}</span>
-                                </button>
-                            )}
-                            <button onClick={() => openSaleForm(null)} className="hidden md:flex bg-black hover:bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold items-center gap-2 transition-all shadow-md shadow-slate-900/20 hover:shadow-lg hover:shadow-slate-900/30 active:scale-95">
-                                <Plus className="w-4 h-4" /> Add Sale
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
-                {view !== 'sale_form' && (
-                    <>
-
-                        {/* Global Tabs (Visible on Dashboard and Invoices) */}
-                        {view !== 'settings' && (
-                            <div className="flex gap-1.5 md:gap-2 mb-2 md:mb-4 overflow-x-auto pb-1 md:pb-2 no-scrollbar">
-                                {(['SALES', 'SHIPPED', 'INSPECTIONS', 'AUTOSALLON', 'ARCHIVE'] as const).map(cat => {
-                                    const isActive = (view === 'dashboard' && activeCategory === cat);
-                                    return (
-                                        <button
-                                            key={cat}
-                                            onClick={() => {
-                                                setView('dashboard');
-                                                setActiveCategory(cat as any);
-                                            }}
-                                            className={`px-3 py-1 md:px-3.5 md:py-1.5 rounded-full font-semibold text-[11px] md:text-xs tracking-wide transition-all whitespace-nowrap ${isActive
-                                                ? 'bg-black text-white shadow-sm'
-                                                : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200 hover:border-slate-300'
-                                                }`}
-                                        >
-                                            {cat}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {view === 'dashboard' ? (<>
-                            <div
-                                ref={scrollContainerRef}
-                                className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
-                            >
-                                <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
-                                    style={{
-                                        gridTemplateColumns: isAdmin ? 'var(--cols-admin)' : 'var(--cols-user)'
-                                    }}>
-                                    <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900" onClick={() => toggleAll(filteredSales)}>
-                                            {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('brand')}>
-                                            Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('year')}>
-                                            Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('km')}>
-                                            KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('plateNumber')}>
-                                            Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('buyerName')}>
-                                            Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('sellerName')}>
-                                            Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1" onClick={() => toggleSort('shippingName')}>
-                                            Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        {isAdmin && (
-                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('costToBuy')}>
-                                                Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                            </div>
-                                        )}
-                                        <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1" onClick={() => toggleSort('soldPrice')}>
-                                            Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 text-right">Paid</div>
-                                        <div className="p-2 xl:p-3 text-right">Bank Fee</div>
-                                        <div className="p-2 xl:p-3 text-right">Tax</div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold">Profit</div>}
-                                        <div className="p-2 xl:p-3 text-right">Balance</div>
-                                        {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('koreaBalance')}>
-                                            Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>}
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('status')}>
-                                            Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1" onClick={() => toggleSort('soldBy')}>
-                                            Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
-                                        </div>
-                                        <div className="p-2 xl:p-3"></div>
-                                    </div>
-                                    {/* Render Rows */}
-                                    {groupingEnabled ? (
-                                    <Reorder.Group
-                                        axis="y"
-                                        values={activeGroups.map(g => g.name)}
-                                        onReorder={(newOrder) => {
-                                            const currentTab = currentGroupTab ?? 'SALES';
-                                            const updated = newOrder.map((name, index) => {
-                                                const match = resolvedGroupMeta.find(g => groupKeyForName(g.name) === groupKeyForName(name));
-                                                return match ? { ...match, order: index } : { name, order: index, archived: false, tab: currentTab };
-                                            });
-                                            const updatedKeys = new Set(updated.map(group => groupKeyForName(group.name)));
-                                            const archived = resolvedGroupMeta.filter(g => (g.tab ?? 'SALES') === currentTab && g.archived && !updatedKeys.has(groupKeyForName(g.name)));
-                                            const preserved = resolvedGroupMeta.filter(g => (g.tab ?? 'SALES') !== currentTab);
-                                            persistGroupMeta([...updated, ...archived, ...preserved]);
-                                        }}
-                                        className="grid grid-cols-subgrid"
-                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                            <div className="flex gap-2">
+                                <div className="relative hidden sm:block">
+                                    <ArrowUpDown className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
+                                        className="bg-slate-100 border-transparent text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none focus:bg-white focus:border-slate-300 transition-all appearance-none cursor-pointer text-slate-700 font-medium"
                                     >
-                                        <AnimatePresence initial={false}>
-                                        {activeGroups.map(group => {
-                                            const groupSales = groupedSales[group.name] || [];
-                                            return (
-                                                <Reorder.Item
-                                                    key={group.name}
-                                                    value={group.name}
-                                                    className="contents"
-                                                    layout
-                                                    initial={{ opacity: 0, y: 8 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -8 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                            <button
-                                                                onClick={() => toggleGroup(group.name)}
-                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                            >
-                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                <span>{group.name}</span>
-                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                            </button>
-                                                            {showGroupConfig && (
-                                                                <div className="flex items-center gap-2">
+                                        <option value="createdAt">Date Added</option>
+                                        <option value="nameAlphabetic">Name (A-Z)</option>
+                                        <option value="dueBalance">Balance (Client)</option>
+                                        {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
+                                        <option value="year">Year</option>
+                                    </select>
+                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+
+                                <button
+                                    onClick={() => openSaleForm(null)}
+                                    className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span className="hidden lg:inline">New Sale</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mobile Search - Visible only on mobile */}
+                    <div className="mt-3 md:hidden">
+                        <div className="relative group">
+                            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                placeholder="Search sales..."
+                                className="w-full bg-slate-100 border-transparent rounded-xl pl-11 pr-4 py-2.5 text-sm focus:bg-white focus:border-slate-300 transition-all outline-none"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
+                    {view !== 'sale_form' && (
+                        <>
+
+                            {view === 'dashboard' ? (<>
+                                <div
+                                    ref={scrollContainerRef}
+                                    className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
+                                >
+                                    <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
+                                        style={{
+                                            gridTemplateColumns: gridTemplateColumns
+                                        }}>
+                                        <div className="bg-slate-100 font-semibold text-slate-700 grid grid-cols-subgrid sticky top-0 z-30 border-b border-slate-200 text-xs" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                            <div className="p-2 xl:p-2.5 flex items-center justify-center cursor-pointer hover:text-slate-900 border-r border-slate-200 resizable-header" onClick={() => toggleAll(filteredSales)}>
+                                                {selectedIds.size > 0 && selectedIds.size === filteredSales.length ? <CheckSquare className="w-4 h-4 text-slate-800" /> : <Square className="w-4 h-4" />}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('selection', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-2.5 pl-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('brand')}>
+                                                Car Info {sortBy === 'brand' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('carInfo', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('year')}>
+                                                Year {sortBy === 'year' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('year', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-2.5 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('km')}>
+                                                KM {sortBy === 'km' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('km', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('plateNumber')}>
+                                                Plate/VIN {sortBy === 'plateNumber' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('plateVin', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('buyerName')}>
+                                                Buyer {sortBy === 'buyerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('buyer', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('sellerName')}>
+                                                Seller {sortBy === 'sellerName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('seller', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 cursor-pointer hover:text-slate-900 flex items-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('shippingName')}>
+                                                Shipping {sortBy === 'shippingName' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('shipping', e)} />
+                                            </div>
+                                            {isAdmin && (
+                                                <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('costToBuy')}>
+                                                    Cost {sortBy === 'costToBuy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                    <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('cost', e)} />
+                                                </div>
+                                            )}
+                                            <div className="p-2 xl:p-3 text-right cursor-pointer hover:text-slate-900 flex items-center justify-end gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldPrice')}>
+                                                Sold {sortBy === 'soldPrice' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('sold', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Paid
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('paid', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Bank Fee
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('bankFee', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Tax
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('tax', e)} />
+                                            </div>
+                                            {isAdmin && <div className="p-2 xl:p-3 text-right text-slate-900 font-bold border-r border-slate-200 resizable-header">
+                                                Profit
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('profit', e)} />
+                                            </div>}
+                                            <div className="p-2 xl:p-3 text-right border-r border-slate-200 resizable-header">
+                                                Balance
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('balance', e)} />
+                                            </div>
+                                            {isAdmin && <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('koreaBalance')}>
+                                                Korea {sortBy === 'koreaBalance' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('korea', e)} />
+                                            </div>}
+                                            <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('status')}>
+                                                Status {sortBy === 'status' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('status', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3 text-center cursor-pointer hover:text-slate-900 flex items-center justify-center gap-1 border-r border-slate-200 resizable-header" onClick={() => toggleSort('soldBy')}>
+                                                Sold By {sortBy === 'soldBy' && (sortDir === 'asc' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />)}
+                                                <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('soldBy', e)} />
+                                            </div>
+                                            <div className="p-2 xl:p-3"></div>
+                                        </div>
+                                        {/* Render Rows */}
+                                        {groupingEnabled ? (
+                                            <Reorder.Group
+                                                axis="y"
+                                                values={activeGroups.map(g => g.name)}
+                                                onReorder={(newOrder) => {
+                                                    const updated = newOrder.map((name, index) => {
+                                                        const match = groupMeta.find(g => g.name === name);
+                                                        return match ? { ...match, order: index } : { name, order: index, archived: false };
+                                                    });
+                                                    const archived = groupMeta.filter(g => g.archived);
+                                                    persistGroupMeta([...updated, ...archived.map((g, idx) => ({ ...g, order: updated.length + idx }))]);
+                                                }}
+                                                className="grid grid-cols-subgrid"
+                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                            >
+                                                {activeGroups.map(group => {
+                                                    const groupSales = groupedSales[group.name] || [];
+                                                    if (groupSales.length === 0) return null;
+                                                    return (
+                                                        <Reorder.Item key={group.name} value={group.name} className="contents">
+                                                            <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                     <button
-                                                                        onClick={() => moveGroup(group.name, 'up')}
-                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group up"
+                                                                        onClick={() => toggleGroup(group.name)}
+                                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                                     >
-                                                                        <ChevronUp className="w-3.5 h-3.5" />
+                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                        <span>{group.name}</span>
+                                                                        <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => moveGroup(group.name, 'down')}
-                                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Move group down"
-                                                                    >
-                                                                        <ChevronDown className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <div className="relative">
+                                                                    <div className="flex items-center gap-2">
                                                                         <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                            }}
+                                                                            onClick={() => moveGroup(group.name, 'up')}
                                                                             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Move group to tab"
+                                                                            title="Move group up"
                                                                         >
-                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                            <ChevronUp className="w-3.5 h-3.5" />
                                                                         </button>
-                                                                        {activeGroupMoveMenu === group.name && (
-                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                                {groupMoveTargets.map(target => {
-                                                                                    const isCurrent = (group.tab ?? 'SALES') === target.tab;
-                                                                                    return (
-                                                                                        <button
-                                                                                            key={target.tab}
-                                                                                            onClick={() => {
-                                                                                                if (isCurrent) return;
-                                                                                                handleMoveGroupStatus(group.name, target.status);
-                                                                                                setActiveGroupMoveMenu(null);
-                                                                                            }}
-                                                                                            disabled={isCurrent}
-                                                                                            className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
-                                                                                        >
-                                                                                            {target.label}
-                                                                                        </button>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        )}
+                                                                        <button
+                                                                            onClick={() => moveGroup(group.name, 'down')}
+                                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Move group down"
+                                                                        >
+                                                                            <ChevronDown className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <div className="relative">
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                                }}
+                                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                                title="Move group to tab"
+                                                                            >
+                                                                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                            {activeGroupMoveMenu === group.name && (
+                                                                                <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Sales
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Shipped
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Inspections
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => {
+                                                                                            handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                            setActiveGroupMoveMenu(null);
+                                                                                        }}
+                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                    >
+                                                                                        Autosallon
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => handleRenameGroup(group.name)}
+                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Rename group"
+                                                                        >
+                                                                            <Edit className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleArchiveGroup(group.name, true)}
+                                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                            title="Archive group"
+                                                                        >
+                                                                            <Archive className="w-3.5 h-3.5" />
+                                                                        </button>
                                                                     </div>
-                                                                    <button
-                                                                        onClick={() => handleRenameGroup(group.name)}
-                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Rename group"
-                                                                    >
-                                                                        <Edit className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleArchiveGroup(group.name, true)}
-                                                                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                        title="Archive group"
-                                                                    >
-                                                                        <Archive className="w-3.5 h-3.5" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteGroup(group.name)}
-                                                                        className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                        title="Delete group"
-                                                                    >
-                                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                                    </button>
                                                                 </div>
+                                                            </div>
+                                                            {expandedGroups.includes(group.name) && (
+                                                                <Reorder.Group
+                                                                    axis="y"
+                                                                    values={groupSales}
+                                                                    onReorder={(newOrder) => {
+                                                                        setSales(prev => {
+                                                                            const next = [...prev];
+                                                                            newOrder.forEach((newItem, newIndex) => {
+                                                                                const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                            });
+                                                                            return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                        });
+                                                                    }}
+                                                                    className="grid grid-cols-subgrid"
+                                                                    style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                >
+                                                                    {groupSales.map(s => (
+                                                                        <SortableSaleItem
+                                                                            key={s.id}
+                                                                            s={s}
+                                                                            userProfile={userProfile}
+                                                                            canViewPrices={canViewPrices}
+                                                                            toggleSelection={toggleSelection}
+                                                                            isSelected={selectedIds.has(s.id)}
+                                                                            openInvoice={openInvoice}
+                                                                            onInlineUpdate={handleInlineUpdate}
+                                                                            onClick={() => {
+                                                                                if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                    alert("You do not have permission to edit this sale.");
+                                                                                    return;
+                                                                                }
+                                                                                requestEditChoice(s);
+                                                                            }}
+                                                                            onDelete={handleDeleteSingle}
+                                                                            onRemoveFromGroup={handleRemoveFromGroup}
+                                                                        />
+                                                                    ))}
+                                                                </Reorder.Group>
                                                             )}
+                                                        </Reorder.Item>
+                                                    );
+                                                })}
+                                                {groupedSales.Ungrouped?.length > 0 && (
+                                                    <div className="contents">
+                                                        <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                                <button
+                                                                    onClick={() => toggleGroup('Ungrouped')}
+                                                                    className="flex items-center gap-2 text-sm font-semibold text-slate-700"
+                                                                >
+                                                                    {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>Ungrouped</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
+                                                                </button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    {expandedGroups.includes(group.name) && (
-                                                        groupSales.length > 0 ? (
+                                                        {expandedGroups.includes('Ungrouped') && (
                                                             <Reorder.Group
                                                                 axis="y"
-                                                                values={groupSales}
+                                                                values={groupedSales.Ungrouped}
                                                                 onReorder={(newOrder) => {
                                                                     setSales(prev => {
                                                                         const next = [...prev];
@@ -3900,7 +2681,7 @@ export default function Dashboard() {
                                                                 className="grid grid-cols-subgrid"
                                                                 style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
                                                             >
-                                                                {groupSales.map(s => (
+                                                                {groupedSales.Ungrouped.map(s => (
                                                                     <SortableSaleItem
                                                                         key={s.id}
                                                                         s={s}
@@ -3910,514 +2691,296 @@ export default function Dashboard() {
                                                                         isSelected={selectedIds.has(s.id)}
                                                                         openInvoice={openInvoice}
                                                                         onInlineUpdate={handleInlineUpdate}
-                                                                        onClick={() => handleSaleClick(s)}
-                                                                        onDelete={handleArchiveSingle}
+                                                                        onClick={() => {
+                                                                            if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                alert("You do not have permission to edit this sale.");
+                                                                                return;
+                                                                            }
+                                                                            requestEditChoice(s);
+                                                                        }}
+                                                                        onDelete={handleDeleteSingle}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
-                                                                        onReassignSeller={openSellerReassignModal}
-                                                                        onRestore={handleRestoreSingle}
                                                                     />
                                                                 ))}
                                                             </Reorder.Group>
-                                                        ) : (
-                                                            <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
-                                                                No cars in this group yet.
+                                                        )}
+                                                    </div>
+                                                )}
+                                                {archivedGroups.length > 0 && (
+                                                    <div className="contents">
+                                                        <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                            <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
+                                                                <button
+                                                                    onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                                    className="flex items-center gap-2 text-sm font-semibold text-slate-600"
+                                                                >
+                                                                    {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    <span>Archived Groups</span>
+                                                                    <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
+                                                                </button>
                                                             </div>
-                                                        )
-                                                    )}
-                                                </Reorder.Item>
-                                            );
-                                        })}
-                                        </AnimatePresence>
-                                        <div className="contents">
-                                            <div className="bg-slate-50/80 border-y border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                    <button
-                                                        onClick={() => toggleGroup('Ungrouped')}
-                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                    >
-                                                        {expandedGroups.includes('Ungrouped') ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                        <span>Ungrouped</span>
-                                                        <span className="text-xs text-slate-400 font-medium">({groupedSales.Ungrouped.length})</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            {expandedGroups.includes('Ungrouped') && (
-                                                groupedSales.Ungrouped.length > 0 ? (
-                                                    <Reorder.Group
-                                                        axis="y"
-                                                        values={groupedSales.Ungrouped}
-                                                        onReorder={(newOrder) => {
-                                                            setSales(prev => {
-                                                                const next = [...prev];
-                                                                newOrder.forEach((newItem, newIndex) => {
-                                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                                });
-                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                            });
-                                                        }}
-                                                        className="grid grid-cols-subgrid"
-                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                    >
-                                                        {groupedSales.Ungrouped.map(s => (
-                                                            <SortableSaleItem
-                                                                key={s.id}
-                                                                s={s}
-                                                                userProfile={userProfile}
-                                                                canViewPrices={canViewPrices}
-                                                                toggleSelection={toggleSelection}
-                                                                isSelected={selectedIds.has(s.id)}
-                                                                openInvoice={openInvoice}
-                                                                onInlineUpdate={handleInlineUpdate}
-                                                                onClick={() => handleSaleClick(s)}
-                                                                onDelete={handleArchiveSingle}
-                                                                onRemoveFromGroup={handleRemoveFromGroup}
-                                                                onReassignSeller={openSellerReassignModal}
-                                                                onRestore={handleRestoreSingle}
-                                                            />
-                                                        ))}
-                                                    </Reorder.Group>
-                                                ) : (
-                                                    <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
-                                                        No ungrouped cars.
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                        {archivedGroups.length > 0 && (
-                                            <div className="contents">
-                                                <div className="bg-slate-100 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                    <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
-                                                            <span>Archived Groups</span>
-                                                            <span className="text-xs text-slate-400 font-medium">({archivedGroups.length})</span>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                                {archivedGroups.map(group => {
-                                                    const groupSales = groupedSales[group.name] || [];
-                                                    return (
-                                                        <div key={group.name} className="contents">
-                                                            <div className="bg-slate-50/80 border-b border-slate-200 border-l-4 border-l-slate-300 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                                                <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
-                                                                    <button
-                                                                        onClick={() => toggleGroup(group.name)}
-                                                                        className="flex items-center gap-2 text-sm font-semibold text-slate-700"
-                                                                    >
-                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                        <span>{group.name}</span>
-                                                                        <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                                    </button>
-                                                                    {showGroupConfig && (
-                                                                        <div className="flex items-center gap-2">
+                                                        {showArchivedGroups && archivedGroups.map(group => {
+                                                            const groupSales = groupedSales[group.name] || [];
+                                                            return (
+                                                                <div key={group.name} className="contents">
+                                                                    <div className="bg-slate-50/80 border-b border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                                                        <div className="col-span-full px-3 py-2 flex items-center justify-between gap-3">
                                                                             <button
-                                                                                onClick={() => handleArchiveGroup(group.name, false)}
-                                                                                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                                title="Unarchive group"
+                                                                                onClick={() => toggleGroup(group.name)}
+                                                                                className="flex items-center gap-2 text-sm font-semibold text-slate-700"
                                                                             >
-                                                                                <Eye className="w-3.5 h-3.5" />
+                                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                                <span>{group.name}</span>
+                                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                            </button>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => handleArchiveGroup(group.name, false)}
+                                                                                    className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                                                                                    title="Unarchive group"
+                                                                                >
+                                                                                    <Eye className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    {expandedGroups.includes(group.name) && (
+                                                                        <Reorder.Group
+                                                                            axis="y"
+                                                                            values={groupSales}
+                                                                            onReorder={(newOrder) => {
+                                                                                setSales(prev => {
+                                                                                    const next = [...prev];
+                                                                                    newOrder.forEach((newItem, newIndex) => {
+                                                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                                                    });
+                                                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                                                });
+                                                                            }}
+                                                                            className="grid grid-cols-subgrid"
+                                                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                                                        >
+                                                                            {groupSales.map(s => (
+                                                                                <SortableSaleItem
+                                                                                    key={s.id}
+                                                                                    s={s}
+                                                                                    userProfile={userProfile}
+                                                                                    canViewPrices={canViewPrices}
+                                                                                    toggleSelection={toggleSelection}
+                                                                                    isSelected={selectedIds.has(s.id)}
+                                                                                    openInvoice={openInvoice}
+                                                                                    onInlineUpdate={handleInlineUpdate}
+                                                                                    onClick={() => {
+                                                                                        if (!isAdmin && s.soldBy !== userProfile) {
+                                                                                            alert("You do not have permission to edit this sale.");
+                                                                                            return;
+                                                                                        }
+                                                                                        requestEditChoice(s);
+                                                                                    }}
+                                                                                    onDelete={handleDeleteSingle}
+                                                                                    onRemoveFromGroup={handleRemoveFromGroup}
+                                                                                />
+                                                                            ))}
+                                                                        </Reorder.Group>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </Reorder.Group>
+                                        ) : (
+                                            <Reorder.Group
+                                                axis="y"
+                                                values={filteredSales}
+                                                onReorder={(newOrder) => {
+                                                    setSales(prev => {
+                                                        const next = [...prev];
+                                                        newOrder.forEach((newItem, newIndex) => {
+                                                            const foundIndex = next.findIndex(x => x.id === newItem.id);
+                                                            if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
+                                                        });
+                                                        return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                                                    });
+                                                }}
+                                                className="grid grid-cols-subgrid"
+                                                style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
+                                            >
+                                                {filteredSales.map(s => (
+                                                    <SortableSaleItem
+                                                        key={s.id}
+                                                        s={s}
+                                                        userProfile={userProfile}
+                                                        canViewPrices={canViewPrices}
+                                                        toggleSelection={toggleSelection}
+                                                        isSelected={selectedIds.has(s.id)}
+                                                        openInvoice={openInvoice}
+                                                        onInlineUpdate={handleInlineUpdate}
+                                                        onClick={() => {
+                                                            if (!isAdmin && s.soldBy !== userProfile) {
+                                                                alert("You do not have permission to edit this sale.");
+                                                                return;
+                                                            }
+                                                            requestEditChoice(s);
+                                                        }}
+                                                        onDelete={handleDeleteSingle}
+                                                    />
+                                                ))}
+                                            </Reorder.Group>
+                                        )}
+
+                                        {/* Footer Totals */}
+                                        <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
+                                            <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
+                                            {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
+                                            <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
+                                            {isAdmin && <>
+                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
+                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
+                                                <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
+                                            </>}
+                                            <div className="p-3 col-span-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Mobile Card View */}
+                                {/* Mobile Compact List View - Swipeable */}
+                                <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
+                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
+                                        {groupingEnabled ? (
+                                            <>
+                                                {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
+                                                    const groupSales = groupedSales[group.name] || [];
+                                                    if (groupSales.length === 0) return null;
+                                                    return (
+                                                        <div key={group.name} className="border-b border-slate-200">
+                                                            <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                                <button
+                                                                    onClick={() => toggleGroup(group.name)}
+                                                                    className="flex items-center gap-2 text-left"
+                                                                >
+                                                                    {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                    {group.name}
+                                                                    <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
+                                                                </button>
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                        }}
+                                                                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        title="Move group to tab"
+                                                                    >
+                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    {activeGroupMoveMenu === group.name && (
+                                                                        <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'In Progress');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Sales
                                                                             </button>
                                                                             <button
-                                                                                onClick={() => handleDeleteGroup(group.name)}
-                                                                                className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                                title="Delete group"
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Shipped');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                                                                             >
-                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                                Shipped
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Inspection');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Inspections
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleMoveGroupStatus(group.name, 'Autosallon');
+                                                                                    setActiveGroupMoveMenu(null);
+                                                                                }}
+                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                            >
+                                                                                Autosallon
                                                                             </button>
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             </div>
                                                             {expandedGroups.includes(group.name) && (
-                                                                groupSales.length > 0 ? (
-                                                                    <Reorder.Group
-                                                                        axis="y"
-                                                                        values={groupSales}
-                                                                        onReorder={(newOrder) => {
-                                                                            setSales(prev => {
-                                                                                const next = [...prev];
-                                                                                newOrder.forEach((newItem, newIndex) => {
-                                                                                    const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                                                    if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                                                });
-                                                                                return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                                            });
-                                                                        }}
-                                                                        className="grid grid-cols-subgrid"
-                                                                        style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                                                    >
-                                                                        {groupSales.map(s => (
-                                                                            <SortableSaleItem
-                                                                                key={s.id}
-                                                                                s={s}
-                                                                                userProfile={userProfile}
-                                                                                canViewPrices={canViewPrices}
-                                                                                toggleSelection={toggleSelection}
-                                                                                isSelected={selectedIds.has(s.id)}
-                                                                                openInvoice={openInvoice}
-                                                                                onInlineUpdate={handleInlineUpdate}
-                                                                                onClick={() => {
-                                                                                    handleSaleClick(s);
-                                                                                }}
-                                                                                onDelete={handleArchiveSingle}
-                                                                                onRemoveFromGroup={handleRemoveFromGroup}
-                                                                                onReassignSeller={openSellerReassignModal}
-                                                                                onRestore={handleRestoreSingle}
-                                                                            />
-                                                                        ))}
-                                                                    </Reorder.Group>
-                                                                ) : (
-                                                                    <div className="col-span-full px-6 py-4 text-xs text-slate-400 italic bg-white border-t border-slate-100">
-                                                                        No cars in this archived group.
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </Reorder.Group>
-                                    ) : (
-                                        <Reorder.Group
-                                            axis="y"
-                                            values={filteredSales}
-                                            onReorder={(newOrder) => {
-                                                setSales(prev => {
-                                                    const next = [...prev];
-                                                    newOrder.forEach((newItem, newIndex) => {
-                                                        const foundIndex = next.findIndex(x => x.id === newItem.id);
-                                                        if (foundIndex !== -1) next[foundIndex] = { ...next[foundIndex], sortOrder: newIndex };
-                                                    });
-                                                    return next.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                                                });
-                                            }}
-                                            className="grid grid-cols-subgrid"
-                                            style={{ gridColumn: isAdmin ? 'span 19' : 'span 16', display: 'grid' }}
-                                        >
-                                            {filteredSales.map(s => (
-                                                <SortableSaleItem
-                                                    key={s.id}
-                                                    s={s}
-                                                    userProfile={userProfile}
-                                                    canViewPrices={canViewPrices}
-                                                    toggleSelection={toggleSelection}
-                                                    isSelected={selectedIds.has(s.id)}
-                                                    openInvoice={openInvoice}
-                                                    onInlineUpdate={handleInlineUpdate}
-                                                    onClick={() => handleSaleClick(s)}
-                                                    onDelete={handleArchiveSingle}
-                                                    onReassignSeller={openSellerReassignModal}
-                                                    onRestore={handleRestoreSingle}
-                                                />
-                                            ))}
-                                        </Reorder.Group>
-                                    )}
-
-                                    {/* Footer Totals */}
-                                    <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                        <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
-                                        {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
-                                        <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
-                                        <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
-                                        {isAdmin && <>
-                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
-                                        </>}
-                                        <div className="p-3 col-span-3"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Mobile Card View */}
-                            {/* Mobile Compact List View - Swipeable */}
-                            <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
-                                    {groupingEnabled ? (
-                                        <>
-                                            <AnimatePresence initial={false}>
-                                                {[...activeGroups, { name: 'Ungrouped', order: 9999, archived: false }].map(group => {
-                                                    const groupSales = groupedSales[group.name] || [];
-                                                    return (
-                                                        <motion.div
-                                                            key={group.name}
-                                                            layout
-                                                            initial={{ opacity: 0, y: 8 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: -8 }}
-                                                            transition={{ duration: 0.2 }}
-                                                            className="border-b border-slate-200"
-                                                        >
-                                                        <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50 border-l-4 border-l-slate-300">
-                                                            <button
-                                                                onClick={() => toggleGroup(group.name)}
-                                                                className="flex items-center gap-2 text-left"
-                                                            >
-                                                                {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                {group.name}
-                                                                <span className="text-xs text-slate-400 font-medium">({groupSales.length})</span>
-                                                            </button>
-                                                            <div className="flex items-center gap-1.5">
-                                                                {group.name !== 'Ungrouped' && (
-                                                                    <>
-                                                                        <button
-                                                                            onClick={() => handleArchiveGroup(group.name, true)}
-                                                                            className="p-1.5 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Archive group"
-                                                                        >
-                                                                            <Archive className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => handleDeleteGroup(group.name)}
-                                                                            className="p-1.5 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                                            title="Delete group"
-                                                                        >
-                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                    </>
-                                                                )}
-                                                                {group.name !== 'Ungrouped' && (
-                                                                    <div className="relative">
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
-                                                                            }}
-                                                                            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                                                                            title="Move group to tab"
-                                                                        >
-                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        {activeGroupMoveMenu === group.name && (
-                                                                            <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
-                                                                                {groupMoveTargets.map(target => {
-                                                                                    const isCurrent = ('tab' in group ? group.tab ?? 'SALES' : 'SALES') === target.tab;
-                                                                                    return (
-                                                                                        <button
-                                                                                            key={target.tab}
-                                                                                            onClick={() => {
-                                                                                                if (isCurrent) return;
-                                                                                                handleMoveGroupStatus(group.name, target.status);
-                                                                                                setActiveGroupMoveMenu(null);
-                                                                                            }}
-                                                                                            disabled={isCurrent}
-                                                                                            className={`w-full px-3 py-2 text-left text-xs ${isCurrent ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
-                                                                                        >
-                                                                                            {target.label}
-                                                                                        </button>
-                                                                                    );
-                                                                                })}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        {expandedGroups.includes(group.name) && (
-                                                            groupSales.length > 0 ? (
                                                                 <div>
-                                                                {groupSales.map(sale => (
-                                                                    <motion.div
-                                                                        key={sale.id}
-                                                                        initial={{ opacity: 0 }}
-                                                                        animate={{ opacity: 1 }}
-                                                                        className="relative border-b border-slate-200"
-                                                                    >
-                                                                        {/* Background Action (Archive) */}
-                                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
-                                                                            <Archive className="text-white w-5 h-5" />
-                                                                        </div>
-
-                                                                        {/* Foreground Card */}
+                                                                    {groupSales.map(sale => (
                                                                         <motion.div
-                                                                            layout
-                                                                            drag="x"
-                                                                            dragDirectionLock
-                                                                            dragConstraints={{ left: 0, right: 0 }}
-                                                                            dragElastic={{ left: 0.8, right: 0 }}
-                                                                            dragSnapToOrigin
-                                                                            onDragEnd={(e, { offset }) => {
-                                                                                if (offset.x < -100) {
-                                                                                    const shouldArchive = confirm('Archive this item?');
-                                                                                    if (shouldArchive) {
-                                                                                        handleArchiveSingle(sale.id);
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                            className="p-2 flex items-center gap-2 relative z-10 transition-colors"
-                                                                            onClick={() => {
-                                                                                if (selectedIds.size > 0) {
-                                                                                    toggleSelection(sale.id);
-                                                                                } else {
-                                                                                    handleSaleClick(sale);
-                                                                                }
-                                                                            }}
-                                                                            onContextMenu={(e) => {
-                                                                                e.preventDefault();
-                                                                                toggleSelection(sale.id);
-                                                                            }}
-                                                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                            key={sale.id}
+                                                                            initial={{ opacity: 0 }}
+                                                                            animate={{ opacity: 1 }}
+                                                                            className="relative border-b border-slate-200"
                                                                         >
-                                                                            {selectedIds.size > 0 && (
-                                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                                    {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                                                </div>
-                                                                            )}
+                                                                            {/* Background Action (Delete) */}
+                                                                            <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                                                <Trash2 className="text-white w-5 h-5" />
+                                                                            </div>
 
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <div className="flex justify-between items-start">
-                                                                                    <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                    <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
-                                                                                                    'bg-slate-100 text-slate-500'
-                                                                                        }`}>{sale.status}</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
-                                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="font-mono text-slate-400">-</span>
-                                                                                    )}
-                                                                                </div>
-                                                                                {isAdmin && (
-                                                                                    <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                        <span className="text-slate-400">Korea:</span>
-                                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                                        </span>
+                                                                            {/* Foreground Card */}
+                                                                            <motion.div
+                                                                                layout
+                                                                                drag="x"
+                                                                                dragDirectionLock
+                                                                                dragConstraints={{ left: 0, right: 0 }}
+                                                                                dragElastic={{ left: 0.8, right: 0 }}
+                                                                                dragSnapToOrigin
+                                                                                onDragEnd={(e, { offset }) => {
+                                                                                    if (offset.x < -100) {
+                                                                                        const shouldDelete = confirm('Delete this item?');
+                                                                                        if (shouldDelete) {
+                                                                                            handleDeleteSingle(sale.id);
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                                className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                onClick={() => {
+                                                                                    if (selectedIds.size > 0) {
+                                                                                        toggleSelection(sale.id);
+                                                                                    } else {
+                                                                                        if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                                            alert("You do not have permission to edit this sale.");
+                                                                                            return;
+                                                                                        }
+                                                                                        requestEditChoice(sale);
+                                                                                    }
+                                                                                }}
+                                                                                onContextMenu={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    toggleSelection(sale.id);
+                                                                                }}
+                                                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                            >
+                                                                                {selectedIds.size > 0 && (
+                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                        {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                     </div>
                                                                                 )}
-                                                                                {groupingAvailable && sale.group && (
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                        className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
-                                                                                    >
-                                                                                        Remove from group
-                                                                                    </button>
-                                                                                )}
-                                                                                {sale.status === 'Archived' && (
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
-                                                                                        className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
-                                                                                    >
-                                                                                        Restore
-                                                                                    </button>
-                                                                                )}
-                                                                                {isAdmin && sale.status === 'Completed' && (
-                                                                                    <button
-                                                                                        onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
-                                                                                        className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
-                                                                                    >
-                                                                                        Reassign seller
-                                                                                    </button>
-                                                                                )}
-                                                                        </div>
-                                                                    </motion.div>
-                                                                    </motion.div>
-                                                                ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="px-4 py-3 text-xs text-slate-400 italic bg-white border-t border-slate-100">
-                                                                    No cars in this group yet.
-                                                                </div>
-                                                            )
-                                                        )}
-                                                        </motion.div>
-                                                    );
-                                                })}
-                                            </AnimatePresence>
-                                            {archivedGroups.length > 0 && (
-                                                <div className="border-b border-slate-200">
-                                                    <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100">
-                                                        <span>Archived Groups</span>
-                                                        <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
-                                                    </div>
-                                                    {archivedGroups.map(group => {
-                                                        const groupSales = groupedSales[group.name] || [];
-                                                        return (
-                                                            <div key={group.name} className="border-b border-slate-200">
-                                                                <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
-                                                                    <button
-                                                                        onClick={() => toggleGroup(group.name)}
-                                                                        className="flex items-center gap-2"
-                                                                    >
-                                                                        {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                                                        {group.name}
-                                                                    </button>
-                                                                <button
-                                                                    onClick={() => handleArchiveGroup(group.name, false)}
-                                                                    className="text-xs text-slate-900 font-semibold"
-                                                                >
-                                                                    Unarchive
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleDeleteGroup(group.name)}
-                                                                    className="text-xs text-red-600 font-semibold"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </div>
-                                                                {expandedGroups.includes(group.name) && (
-                                                                    groupSales.length > 0 ? (
-                                                                        <div>
-                                                                            {groupSales.map(sale => (
-                                                                            <motion.div
-                                                                                key={sale.id}
-                                                                                initial={{ opacity: 0 }}
-                                                                                animate={{ opacity: 1 }}
-                                                                                className="relative border-b border-slate-200"
-                                                                            >
-                                                                                <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
-                                                                                    <Archive className="text-white w-5 h-5" />
-                                                                                </div>
-                                                                                <motion.div
-                                                                                    layout
-                                                                                    drag="x"
-                                                                                    dragDirectionLock
-                                                                                    dragConstraints={{ left: 0, right: 0 }}
-                                                                                    dragElastic={{ left: 0.8, right: 0 }}
-                                                                                    dragSnapToOrigin
-                                                                                    onDragEnd={(e, { offset }) => {
-                                                                                        if (offset.x < -100) {
-                                                                                            const shouldArchive = confirm('Archive this item?');
-                                                                                            if (shouldArchive) {
-                                                                                                handleArchiveSingle(sale.id);
-                                                                                            }
-                                                                                        }
-                                                                                    }}
-                                                                                    className="p-2 flex items-center gap-2 relative z-10 transition-colors"
-                                                                                    onClick={() => {
-                                                                                        if (selectedIds.size > 0) {
-                                                                                            toggleSelection(sale.id);
-                                                                                        } else {
-                                                                                            handleSaleClick(sale);
-                                                                                        }
-                                                                                    }}
-                                                                                    onContextMenu={(e) => {
-                                                                                        e.preventDefault();
-                                                                                        toggleSelection(sale.id);
-                                                                                    }}
-                                                                                    style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                                                >
-                                                                                    {selectedIds.size > 0 && (
-                                                                                        <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                                            {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                                                        </div>
-                                                                                    )}
-                                                                                    <div className="flex-1 min-w-0">
-                                                                                        <div className="flex justify-between items-start">
+
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex justify-between items-start">
                                                                                         <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
                                                                                         <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                    sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
-                                                                                                        'bg-slate-100 text-slate-500'
-                                                                                                }`}>{sale.status}</span>
+                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            }`}>{sale.status}</span>
                                                                                     </div>
                                                                                     <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
                                                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
@@ -4437,7 +3000,7 @@ export default function Dashboard() {
                                                                                             </span>
                                                                                         </div>
                                                                                     )}
-                                                                                    {groupingAvailable && sale.group && (
+                                                                                    {groupingEnabled && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
                                                                                             className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
@@ -4445,409 +3008,503 @@ export default function Dashboard() {
                                                                                             Remove from group
                                                                                         </button>
                                                                                     )}
-                                                                                    {sale.status === 'Archived' && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
-                                                                                            className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
-                                                                                        >
-                                                                                            Restore
-                                                                                        </button>
-                                                                                    )}
-                                                                                    {isAdmin && sale.status === 'Completed' && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); openSellerReassignModal(sale); }}
-                                                                                            className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
-                                                                                        >
-                                                                                            Reassign seller
-                                                                                        </button>
-                                                                                    )}
-                                                                                    </div>
-                                                                                </motion.div>
+                                                                                </div>
                                                                             </motion.div>
-                                                                            ))}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="px-4 py-3 text-xs text-slate-400 italic bg-white border-t border-slate-100">
-                                                                            No cars in this archived group.
-                                                                        </div>
-                                                                    )
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {filteredSales.map(sale => (
-                                                <motion.div
-                                                    key={sale.id}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    className="relative border-b border-slate-200"
-                                                >
-                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-slate-700 overflow-hidden">
-                                                        <Archive className="text-white w-5 h-5" />
-                                                    </div>
-                                                    <motion.div
-                                                        layout
-                                                        drag="x"
-                                                        dragDirectionLock
-                                                        dragConstraints={{ left: 0, right: 0 }}
-                                                        dragElastic={{ left: 0.8, right: 0 }}
-                                                        dragSnapToOrigin
-                                                        onDragEnd={(e, { offset }) => {
-                                                            if (offset.x < -100) {
-                                                                const shouldArchive = confirm('Archive this item?');
-                                                                if (shouldArchive) {
-                                                                    handleArchiveSingle(sale.id);
-                                                                }
-                                                            }
-                                                        }}
-                                                        className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
-                                                        onClick={() => {
-                                                            if (selectedIds.size > 0) {
-                                                                toggleSelection(sale.id);
-                                                            } else {
-                                                                handleSaleClick(sale);
-                                                            }
-                                                        }}
-                                                        onContextMenu={(e) => {
-                                                            e.preventDefault();
-                                                            toggleSelection(sale.id);
-                                                        }}
-                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
-                                                    >
-                                                        {selectedIds.size > 0 && (
-                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
-                                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                        )}
-
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                            sale.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
-                                                                                'bg-slate-100 text-slate-500'
-                                                                    }`}>{sale.status}</span>
-                                                            </div>
-                                                            <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
-                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="font-mono text-slate-400">-</span>
-                                                                )}
-                                                            </div>
-                                                            {isAdmin && (
-                                                                <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
-                                                                    <span className="text-slate-400">Korea:</span>
-                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                    </span>
+                                                                        </motion.div>
+                                                                    ))}
                                                                 </div>
                                                             )}
-                                                            {sale.status === 'Archived' && (
+                                                        </div>
+                                                    );
+                                                })}
+                                                {archivedGroups.length > 0 && (
+                                                    <div className="border-b border-slate-200">
+                                                        <button
+                                                            onClick={() => setShowArchivedGroups(prev => !prev)}
+                                                            className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-600 bg-slate-100"
+                                                        >
+                                                            <span className="flex items-center gap-2">
+                                                                {showArchivedGroups ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                Archived Groups
+                                                            </span>
+                                                            <span className="text-xs text-slate-400 font-medium">{archivedGroups.length} groups</span>
+                                                        </button>
+                                                        {showArchivedGroups && archivedGroups.map(group => {
+                                                            const groupSales = groupedSales[group.name] || [];
+                                                            if (groupSales.length === 0) return null;
+                                                            return (
+                                                                <div key={group.name} className="border-b border-slate-200">
+                                                                    <div className="px-4 py-2 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
+                                                                        <button
+                                                                            onClick={() => toggleGroup(group.name)}
+                                                                            className="flex items-center gap-2"
+                                                                        >
+                                                                            {expandedGroups.includes(group.name) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                                                            {group.name}
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleArchiveGroup(group.name, false)}
+                                                                            className="text-xs text-slate-900 font-semibold"
+                                                                        >
+                                                                            Unarchive
+                                                                        </button>
+                                                                    </div>
+                                                                    {expandedGroups.includes(group.name) && (
+                                                                        <div>
+                                                                            {groupSales.map(sale => (
+                                                                                <motion.div
+                                                                                    key={sale.id}
+                                                                                    initial={{ opacity: 0 }}
+                                                                                    animate={{ opacity: 1 }}
+                                                                                    className="relative border-b border-slate-200"
+                                                                                >
+                                                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                                                        <Trash2 className="text-white w-5 h-5" />
+                                                                                    </div>
+                                                                                    <motion.div
+                                                                                        layout
+                                                                                        drag="x"
+                                                                                        dragDirectionLock
+                                                                                        dragConstraints={{ left: 0, right: 0 }}
+                                                                                        dragElastic={{ left: 0.8, right: 0 }}
+                                                                                        dragSnapToOrigin
+                                                                                        onDragEnd={(e, { offset }) => {
+                                                                                            if (offset.x < -100) {
+                                                                                                const shouldDelete = confirm('Delete this item?');
+                                                                                                if (shouldDelete) {
+                                                                                                    handleDeleteSingle(sale.id);
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                        className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                        onClick={() => {
+                                                                                            if (selectedIds.size > 0) {
+                                                                                                toggleSelection(sale.id);
+                                                                                            } else {
+                                                                                                if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                                                    alert("You do not have permission to edit this sale.");
+                                                                                                    return;
+                                                                                                }
+                                                                                                requestEditChoice(sale);
+                                                                                            }
+                                                                                        }}
+                                                                                        onContextMenu={(e) => {
+                                                                                            e.preventDefault();
+                                                                                            toggleSelection(sale.id);
+                                                                                        }}
+                                                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                                    >
+                                                                                        {selectedIds.size > 0 && (
+                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                                {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="flex justify-between items-start">
+                                                                                                <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                            'bg-slate-100 text-slate-500'
+                                                                                                    }`}>{sale.status}</span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                                {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                                    </span>
+                                                                                                ) : (
+                                                                                                    <span className="font-mono text-slate-400">-</span>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            {isAdmin && (
+                                                                                                <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                                    <span className="text-slate-400">Korea:</span>
+                                                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {groupingEnabled && sale.group && (
+                                                                                                <button
+                                                                                                    onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                                >
+                                                                                                    Remove from group
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </motion.div>
+                                                                                </motion.div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {filteredSales.map(sale => (
+                                                    <motion.div
+                                                        key={sale.id}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        className="relative border-b border-slate-200"
+                                                    >
+                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
+                                                            <Trash2 className="text-white w-5 h-5" />
+                                                        </div>
+                                                        <motion.div
+                                                            layout
+                                                            drag="x"
+                                                            dragDirectionLock
+                                                            dragConstraints={{ left: 0, right: 0 }}
+                                                            dragElastic={{ left: 0.8, right: 0 }}
+                                                            dragSnapToOrigin
+                                                            onDragEnd={(e, { offset }) => {
+                                                                if (offset.x < -100) {
+                                                                    const shouldDelete = confirm('Delete this item?');
+                                                                    if (shouldDelete) {
+                                                                        handleDeleteSingle(sale.id);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
+                                                            onClick={() => {
+                                                                if (selectedIds.size > 0) {
+                                                                    toggleSelection(sale.id);
+                                                                } else {
+                                                                    if (!isAdmin && sale.soldBy !== userProfile) {
+                                                                        alert("You do not have permission to edit this sale.");
+                                                                        return;
+                                                                    }
+                                                                    requestEditChoice(sale);
+                                                                }
+                                                            }}
+                                                            onContextMenu={(e) => {
+                                                                e.preventDefault();
+                                                                toggleSelection(sale.id);
+                                                            }}
+                                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                        >
+                                                            {selectedIds.size > 0 && (
+                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                    {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                                                                </div>
+                                                            )}
+
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                'bg-slate-100 text-slate-500'
+                                                                        }`}>{sale.status}</span>
+                                                                </div>
+                                                                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
+                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="font-mono text-slate-400">-</span>
+                                                                    )}
+                                                                </div>
+                                                                {isAdmin && (
+                                                                    <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
+                                                                        <span className="text-slate-400">Korea:</span>
+                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </motion.div>
+                                                    </motion.div>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </>) : view === 'settings' ? (
+                                <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+                                    <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
+                                    <div className="space-y-3 md:space-y-4">
+                                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm text-slate-500">User Profile</label>
+                                            <div className="flex gap-2">
+                                                <select value={userProfile} onChange={e => {
+                                                    setUserProfile(e.target.value);
+                                                    persistUserProfile(e.target.value);
+                                                }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
+                                                    <option value="">Select Profile</option>
+                                                    {availableProfiles.map(p => <option key={p} value={p}>{p}</option>)}
+                                                </select>
+                                                <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
+                                                <button onClick={handleAddProfile} className="bg-emerald-600 text-white font-bold px-4 rounded-xl hover:bg-emerald-500 transition-colors disabled:opacity-60" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
+                                            </div>
+                                            {!isAdmin && (
+                                                <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
+                                            )}
+                                        </div>
+
+                                        <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+                                        <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+
+                                        <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                        <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
+                                        <div className="h-px bg-slate-200 my-3 md:my-4" />
+                                        <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
+                                    </div>
+                                </div>
+                            ) : view === 'invoices' ? (
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-6 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                        <div>
+                                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Invoices</h2>
+                                            <p className="text-sm text-slate-500 mt-1">Manage and download your bank invoices</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleAll(filteredSales.filter(s => (s.amountPaidBank || 0) > 0))}
+                                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                                            >
+                                                {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.filter(s => (s.amountPaidBank || 0) > 0).length ? (
+                                                    <CheckSquare className="w-4 h-4 text-slate-900" />
+                                                ) : (
+                                                    <Square className="w-4 h-4" />
+                                                )}
+                                                Select all valid
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
+                                                disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
+                                                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
+                                            >
+                                                {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                                {isDownloadingInvoices ? 'Generating...' : `Download ${selectedInvoices.length} Invoices`}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {filteredSales.filter(s => (s.amountPaidBank || 0) > 0).length === 0 ? (
+                                        <div className="text-center text-slate-500 py-32 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                                            <FileText className="w-16 h-16 mx-auto mb-4 opacity-20 text-slate-900" />
+                                            <h3 className="text-xl font-bold text-slate-900">No bank invoices found</h3>
+                                            <p className="text-slate-500 max-w-xs mx-auto mt-2">Only sales with bank payments will appear here for invoice generation.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 divide-y divide-slate-100 border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-sm">
+                                            <div className="hidden md:grid grid-cols-[80px_1fr_150px_150px_150px_200px] gap-4 p-4 bg-slate-50/50 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                                                <div className="text-center">Select</div>
+                                                <div>Vehicle Details</div>
+                                                <div>Buyer</div>
+                                                <div className="text-right">Bank Amount</div>
+                                                <div className="text-right">Balance</div>
+                                                <div className="text-center">Actions</div>
+                                            </div>
+
+                                            {filteredSales.filter(s => (s.amountPaidBank || 0) > 0).map(s => {
+                                                const isSelected = selectedIds.has(s.id);
+                                                return (
+                                                    <div
+                                                        key={s.id}
+                                                        className={`group relative grid grid-cols-1 md:grid-cols-[80px_1fr_150px_150px_150px_200px] gap-4 items-center p-4 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                        onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
+                                                    >
+                                                        <div className="flex items-center justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-transparent hover:border-slate-400 bg-white'}`}
+                                                            >
+                                                                <Check className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="font-extrabold text-slate-900 text-base leading-tight truncate">{s.brand} {s.model}</span>
+                                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 mt-1">
+                                                                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="text-sm font-bold text-slate-700 truncate">
+                                                            {s.buyerName || '---'}
+                                                        </div>
+
+                                                        <div className="text-right">
+                                                            <div className="text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Bank Paid</div>
+                                                        </div>
+
+                                                        <div className="text-right">
+                                                            <div className={`text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Due Balance</div>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
+                                                                className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-900 text-white min-w-[100px] hover:bg-slate-800 transition-all shadow-md active:scale-95"
+                                                            >
+                                                                <div className="flex items-center gap-1.5 mb-1">
+                                                                    <FileText className="w-3.5 h-3.5" />
+                                                                    <span className="text-[10px] font-black uppercase tracking-widest">Invoice</span>
+                                                                </div>
+                                                                <span className="text-[9px] opacity-70 font-semibold">View / Print</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
+
+                            {/* Floating Bulk Action Bar */}
+                            <AnimatePresence>
+                                {selectedIds.size > 0 && (
+                                    <motion.div
+                                        initial={{ y: 100, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: 100, opacity: 0 }}
+                                        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
+                                    >
+                                        <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
+                                            <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
+                                            <span className="font-mono text-xl font-bold text-slate-900 leading-none">{selectedIds.size}</span>
+                                        </div>
+
+                                        {selectedIds.size === 1 && (
+                                            <button
+                                                onClick={() => {
+                                                    const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
+                                                    if (sale) { openSaleForm(sale); }
+                                                }}
+                                                className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
+                                            >
+                                                <Edit className="w-5 h-5 text-slate-500" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Edit</span>
+                                            </button>
+                                        )}
+
+                                        <button onClick={handleBulkCopy} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <Copy className="w-5 h-5 text-emerald-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
+                                        </button>
+
+                                        {groupingEnabled && (
+                                            <div className="relative">
+                                                <button onClick={() => setShowGroupMenu(!showGroupMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                                    <FolderPlus className="w-5 h-5 text-slate-600" />
+                                                    <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Group</span>
+                                                </button>
+                                                {showGroupMenu && (
+                                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-48 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-1.5 border-b border-slate-50 mb-1">Move to Group</div>
+                                                        <div className="max-h-48 overflow-y-auto scroll-container py-1">
+                                                            {activeGroups.map(g => (
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleRestoreSingle(sale.id); }}
-                                                                    className="mt-1 text-[9px] text-slate-600 font-semibold hover:text-slate-900"
+                                                                    key={g.name}
+                                                                    onClick={() => {
+                                                                        handleAddToGroup(g.name, Array.from(selectedIds));
+                                                                        setShowGroupMenu(false);
+                                                                        setSelectedIds(new Set());
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors flex items-center justify-between"
                                                                 >
-                                                                    Restore
+                                                                    <span>{g.name}</span>
+                                                                    <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{groupedSales[g.name]?.length || 0}</span>
+                                                                </button>
+                                                            ))}
+                                                            {groupedSales.Ungrouped?.length > 0 && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const ids = Array.from(selectedIds);
+                                                                        const newSales = sales.map(s => ids.includes(s.id) ? { ...s, group: undefined } : s);
+                                                                        updateSalesAndSave(newSales);
+                                                                        setShowGroupMenu(false);
+                                                                        setSelectedIds(new Set());
+                                                                    }}
+                                                                    className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                                                                >
+                                                                    Ungrouped
                                                                 </button>
                                                             )}
                                                         </div>
-                                                    </motion.div>
-                                                </motion.div>
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        </>) : view === 'settings' ? (
-                            <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-                                <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
-                                <div className="space-y-3 md:space-y-4">
-                                    <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="OpenAI API Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm text-slate-500">User Profile</label>
-                                        <div className="flex gap-2">
-                                            <select value={userProfile} onChange={e => {
-                                                setUserProfile(e.target.value);
-                                                persistUserProfile(e.target.value);
-                                            }} className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400">
-                                                <option value="">Select Profile</option>
-                                                {activeProfileEntries.map(profile => (
-                                                    <option key={profile.name} value={profile.name}>{profile.name}</option>
-                                                ))}
-                                            </select>
-                                            <button onClick={() => handleDeleteProfile(userProfile)} disabled={!userProfile} className="p-2.5 md:p-3 bg-red-50 text-red-500 rounded-xl border border-red-200 disabled:opacity-50"><Trash2 className="w-5 h-5" /></button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="Add New Profile" className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
-                                            <button onClick={handleAddProfile} className="bg-slate-900 text-white font-semibold px-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-60 shadow-sm" disabled={!isAdmin}><Plus className="w-5 h-5" /></button>
-                                        </div>
-                                        <input value={newProfileEmail} onChange={e => setNewProfileEmail(e.target.value)} placeholder="Email for setup link (optional)" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400 disabled:opacity-60" disabled={!isAdmin} />
-                                        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs text-slate-500">
-                                            New users don’t need a password at creation. Share the setup link to let them create one securely on first login.
-                                        </div>
-                                        {!isAdmin && (
-                                            <p className="text-xs text-slate-400">Only {ADMIN_PROFILE} can add users.</p>
-                                        )}
-                                    </div>
-
-                                    <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-                                    <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-
-                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                    <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
-                                    <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                    <button onClick={handleDeleteAll} className="w-full border border-slate-200 text-slate-700 py-2.5 md:py-3 rounded-xl hover:bg-slate-50 transition-colors">Archive All Data</button>
-                                </div>
-                            </div>
-                        ) : view === 'invoices' ? (
-                            <div ref={invoiceScrollRef} className="flex-1 overflow-auto scroll-container p-3 md:p-6">
-                                <h2 className="text-2xl font-bold text-slate-900 mb-4 md:mb-6">Invoices</h2>
-                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleAll(filteredSales)}
-                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                                        disabled={filteredSales.length === 0}
-                                    >
-                                        {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.length ? (
-                                            <CheckSquare className="w-4 h-4 text-slate-700" />
-                                        ) : (
-                                            <Square className="w-4 h-4" />
-                                        )}
-                                        Select all
-                                    </button>
-                                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                        {selectedInvoices.length > 0 && (
-                                            <span>{selectedInvoices.length} selected</span>
-                                        )}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
-                                            disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
-                                            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                                        >
-                                            {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                            {isDownloadingInvoices ? 'Preparing...' : 'Download Selected'}
-                                        </button>
-                                        {isDownloadingInvoices && invoiceDownloadStatus && (
-                                            <span className="text-xs text-slate-400">{invoiceDownloadStatus}</span>
-                                        )}
-                                    </div>
-                                </div>
-                                {filteredSales.length === 0 ? (
-                                    <div className="text-center text-slate-500 py-20">
-                                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                        <p>No invoices to display</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-                                        {filteredSales.map(s => (
-                                            <div
-                                                key={s.id}
-                                                className={`relative bg-white border rounded-2xl p-4 md:p-5 hover:border-slate-200 transition-all cursor-pointer group shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${selectedIds.has(s.id) ? 'border-slate-200 ring-2 ring-slate-200' : 'border-slate-100'}`}
-                                                onClick={() => openInvoice(s, { stopPropagation: () => { } } as any)}
-                                            >
-                                                <div className="absolute top-3 left-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${selectedIds.has(s.id) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}
-                                                    >
-                                                        <CheckSquare className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                                <div className="flex justify-between items-start mb-2 md:mb-3">
-                                                    <div>
+                                                        <div className="h-px bg-slate-100 my-1" />
                                                         <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); openSaleForm(s, 'invoices'); }}
-                                                            className="font-bold text-slate-900 text-lg text-left hover:text-slate-900 transition-colors"
+                                                            onClick={() => {
+                                                                setShowGroupMenu(false);
+                                                                handleCreateGroup();
+                                                            }}
+                                                            className="w-full px-3 py-2.5 text-left text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-2"
                                                         >
-                                                            {s.brand} {s.model}
-                                                        </button>
-                                                        <div className="text-xs text-slate-500">{s.year} • {(s.km || 0).toLocaleString()} km</div>
-                                                    </div>
-                                                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                        s.status === 'In Progress' ? 'bg-amber-50 text-amber-700' :
-                                                            s.status === 'Shipped' ? 'bg-slate-100 text-slate-700' :
-                                                                s.status === 'Archived' ? 'bg-slate-200 text-slate-600' :
-                                                                    'bg-slate-100 text-slate-500'
-                                                        }`}>{s.status}</span>
-                                                </div>
-                                                <div className="space-y-1.5 md:space-y-2 text-sm">
-                                                    <div className="flex justify-between text-slate-500">
-                                                        <span>Buyer</span>
-                                                        <span className="text-slate-800 truncate ml-2">{s.buyerName || '-'}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-slate-500">
-                                                        <span>VIN</span>
-                                                        <span className="font-mono text-xs text-slate-500">{(s.vin || '').slice(-8)}</span>
-                                                    </div>
-                                                    <div className="h-px bg-slate-200 my-1.5 md:my-2" />
-                                                    <div className="flex justify-between">
-                                                        <span className="text-slate-500">Sold Price</span>
-                                                        <span className="text-emerald-600 font-bold">€{(s.soldPrice || 0).toLocaleString()}</span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-slate-500">Balance</span>
-                                                        <span className={calculateBalance(s) > 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold'}>
-                                                            €{calculateBalance(s).toLocaleString()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-3 md:mt-4 pt-2.5 md:pt-3 border-t border-slate-200 block">
-                                                    <div className="flex justify-between items-center mb-2 md:mb-3">
-                                                        <span className="text-xs text-slate-500">{s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '-'}</span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'deposit' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-amber-500" />
-                                                            View Deposit
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_marreveshje' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-slate-700" />
-                                                            Marrëveshje
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDocumentPreview({ sale: s, type: 'full_shitblerje' }); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-slate-600" />
-                                                            Shitblerje
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e); }}
-                                                            className="flex flex-col items-center justify-center p-1.5 md:p-2 rounded bg-slate-50 hover:bg-slate-100 text-[10px] text-slate-500 gap-1 transition-colors border border-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-emerald-600" />
-                                                            View Invoice
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            Create New Group
                                                         </button>
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        )}
+
+                                        <div className="relative">
+                                            <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                                <ArrowRight className="w-5 h-5 text-amber-500" />
+                                                <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
+                                            </button>
+                                            {showMoveMenu && (
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
+                                                    <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
+                                                    <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
+                                                    <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
+                                                    <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <CheckSquare className="w-5 h-5 text-slate-700" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
+                                        </button>
+
+                                        <button onClick={handleBulkDelete} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
+                                            <Trash2 className="w-5 h-5 text-red-500" />
+                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-red-500">Delete</span>
+                                        </button>
+
+                                        <div className="w-px h-8 bg-slate-200 mx-1" />
+
+                                        <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-slate-100 rounded-xl text-slate-500">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </motion.div>
                                 )}
-                            </div>
-                        ) : null}
+                            </AnimatePresence>
+                        </>
+                    )}
 
-                        {/* Floating Bulk Action Bar */}
-                        <AnimatePresence>
-                            {selectedIds.size > 0 && (
-                                <motion.div
-                                    initial={{ y: 100, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 100, opacity: 0 }}
-                                    className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
-                                >
-                                    <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
-                                        <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
-                                        <span className="font-mono text-xl font-bold text-slate-900 leading-none">{selectedIds.size}</span>
-                                    </div>
-
-                                    {selectedIds.size === 1 && (
-                                        <button
-                                            onClick={() => {
-                                                const sale = sales.find(s => s.id === Array.from(selectedIds)[0]);
-                                                if (sale) { openSaleForm(sale); }
-                                            }}
-                                            className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 tooltip flex flex-col items-center gap-1 group relative"
-                                        >
-                                            <Edit className="w-5 h-5 text-slate-500" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Edit</span>
-                                        </button>
-                                    )}
-
-                                    <button onClick={handleBulkCopy} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <Copy className="w-5 h-5 text-emerald-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-emerald-500">Copy</span>
-                                    </button>
-
-                                    {groupingAvailable && (
-                                        <button onClick={handleCreateGroup} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                            <FolderPlus className="w-5 h-5 text-slate-600" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-600">Create Group</span>
-                                        </button>
-                                    )}
-
-                                    <div className="relative">
-                                        <button onClick={() => setShowMoveMenu(!showMoveMenu)} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                            <ArrowRight className="w-5 h-5 text-amber-500" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-amber-500">Move</span>
-                                        </button>
-                                        {showMoveMenu && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-48 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                                <div className="px-3 pt-1 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Move to tab</div>
-                                                <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
-                                                <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
-                                                <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
-                                                <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
-                                                <div className="px-3 pt-2 text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Move to group</div>
-                                                <button onClick={() => { handleBulkGroupMove(); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Ungrouped</button>
-                                                {activeGroups.map(group => (
-                                                    <button
-                                                        key={group.name}
-                                                        onClick={() => { handleBulkGroupMove(group.name); setShowMoveMenu(false); }}
-                                                        className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
-                                                    >
-                                                        {group.name}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <button onClick={() => handleBulkMove('Completed')} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                        <CheckSquare className="w-5 h-5 text-slate-700" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Sold</span>
-                                    </button>
-
-                                    {hasArchivedSelection && (
-                                        <button onClick={handleBulkRestore} className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group">
-                                            <RefreshCw className="w-5 h-5 text-slate-600" />
-                                            <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Restore</span>
-                                        </button>
-                                    )}
-
-                                    <button
-                                        onClick={handleBulkArchive}
-                                        title="Archive"
-                                        className="p-3 hover:bg-slate-100 rounded-xl text-slate-700 flex flex-col items-center gap-1 group"
-                                    >
-                                        <Archive className="w-5 h-5 text-slate-500" />
-                                        <span className="text-[9px] uppercase font-bold text-slate-500 group-hover:text-slate-700">Archive</span>
-                                    </button>
-
-                                    <div className="w-px h-8 bg-slate-200 mx-1" />
-
-                                    <button onClick={() => setSelectedIds(new Set())} className="p-3 hover:bg-slate-100 rounded-xl text-slate-500">
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </>
-                )}
-
-            </main>
+                </main>
+            </div> {/* Close flex-1 */}
             <AnimatePresence>
                 {editChoiceSale && (
                     <motion.div
@@ -4879,26 +3536,27 @@ export default function Dashboard() {
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
-                            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="mt-4 flex flex-col gap-2">
                                 <button
                                     onClick={() => {
-                                        if (!editChoiceSale) return;
-                                        setViewSaleRecord(editChoiceSale);
+                                        const sale = editChoiceSale;
                                         setEditChoiceSale(null);
+                                        setViewSaleModalItem(sale);
                                     }}
-                                    className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 shadow-sm"
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 flex items-center justify-center gap-2"
                                 >
+                                    <Eye className="w-4 h-4" />
                                     View Sale
                                 </button>
                                 <button
                                     onClick={handleEditSaleChoice}
-                                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     Edit Sale
                                 </button>
                                 <button
                                     onClick={handleEditShitblerjeChoice}
-                                    className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+                                    className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                                 >
                                     Edit Shitblerje
                                 </button>
@@ -4938,7 +3596,18 @@ export default function Dashboard() {
                                     {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
                                 </button>
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
-                                <div className="w-20" />
+                                <div className="flex items-center gap-2">
+                                    {editingSale && (
+                                        <button
+                                            onClick={() => setViewSaleModalItem(editingSale)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            <span>View Sale</span>
+                                        </button>
+                                    )}
+                                    <div className="w-10 sm:w-20" />
+                                </div>
                             </div>
                             <div className="flex-1 overflow-y-auto scroll-container bg-white">
                                 <SaleModal
@@ -4963,141 +3632,26 @@ export default function Dashboard() {
                 onClose={() => setEditShitblerjeSale(null)}
                 onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
             />
-            {showSetupLinkModal && setupLinkData && (
-                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">Invite link</h3>
-                            <button onClick={() => setShowSetupLinkModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-4">
-                            Share this link with <span className="font-semibold text-slate-900">{setupLinkData.name}</span> so they can set a password securely on first login.
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <input
-                                readOnly
-                                value={setupLinkData.url}
-                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        await navigator.clipboard.writeText(setupLinkData.url);
-                                        alert('Setup link copied.');
-                                    } catch (e) {
-                                        console.error(e);
-                                        alert('Copy failed. Please copy the link manually.');
-                                    }
-                                }}
-                                className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold"
-                            >
-                                Copy
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isSetupModalOpen && (
-                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">Set your password</h3>
-                            <button onClick={() => setIsSetupModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-4">
-                            {setupAccount ? `Account: ${setupAccount.name}` : 'Use your setup link to activate your account.'}
-                        </p>
-                        <div className="space-y-3">
-                            <input
-                                type="password"
-                                value={setupPassword}
-                                onChange={(e) => setSetupPassword(e.target.value)}
-                                placeholder="New password"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                            />
-                            <input
-                                type="password"
-                                value={setupPasswordConfirm}
-                                onChange={(e) => setSetupPasswordConfirm(e.target.value)}
-                                placeholder="Confirm password"
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
-                            />
-                            {setupError && <p className="text-sm text-red-500">{setupError}</p>}
-                            {setupSuccess && <p className="text-sm text-emerald-600">{setupSuccess}</p>}
-                        </div>
-                        <button
-                            onClick={handleSetupPasswordSubmit}
-                            disabled={!setupAccount}
-                            className="w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Save password
-                        </button>
-                    </div>
-                </div>
-            )}
-            {showSellerReassignModal && sellerReassignSale && (
-                <div className="fixed inset-0 z-[95] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">Reassign seller</h3>
-                            <button onClick={() => setShowSellerReassignModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-4">
-                            {sellerReassignSale.brand} {sellerReassignSale.model} ({sellerReassignSale.vin || sellerReassignSale.id})
-                        </p>
-                        <select
-                            value={sellerReassignTarget}
-                            onChange={(e) => setSellerReassignTarget(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700"
-                        >
-                            <option value="">Select seller</option>
-                            {profileOptions.map(option => (
-                                <option key={option.id} value={option.id}>{option.label}</option>
-                            ))}
-                        </select>
-                        <button
-                            onClick={async () => {
-                                await handleSellerReassign(sellerReassignSale.id, sellerReassignTarget);
-                                setShowSellerReassignModal(false);
-                            }}
-                            className="w-full mt-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800"
-                        >
-                            Save reassignment
-                        </button>
-                    </div>
-                </div>
-            )}
-            {viewSaleRecord && (
-                <ViewSaleModal
-                    isOpen={!!viewSaleRecord}
-                    sale={viewSaleRecord}
-                    onClose={handleCloseViewSale}
-                    isAdmin={isAdmin}
-                />
-            )}
 
             {/* Contextual FAB for Inspections/Autosallon */}
-            <InvoicePriceModal
-                isOpen={showInvoicePriceModal}
-                sale={pendingInvoiceSale}
-                onSelect={handleInvoicePriceSelect}
-                onCancel={handleInvoicePriceCancel}
-            />
             {documentPreview && (
                 <EditablePreviewModal
                     isOpen={!!documentPreview}
-                    onClose={handleCloseDocumentPreview}
+                    onClose={() => setDocumentPreview(null)}
                     sale={documentPreview.sale}
                     documentType={documentPreview.type}
                     withDogane={documentPreview.withDogane}
-                    priceSource={documentPreview.priceSource}
+                    showBankOnly={documentPreview.showBankOnly}
                     onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
+                />
+            )}
+
+            {viewSaleModalItem && (
+                <ViewSaleModal
+                    isOpen={!!viewSaleModalItem}
+                    sale={viewSaleModalItem}
+                    onClose={() => setViewSaleModalItem(null)}
+                    isAdmin={isAdmin}
                 />
             )}
             {
@@ -5149,6 +3703,6 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5 mx-auto" />
                 </button>
             )}
-        </div >
+        </div>
     );
 }
