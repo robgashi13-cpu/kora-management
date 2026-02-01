@@ -23,7 +23,7 @@ import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdf
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
-import { createSupabaseClient, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
+import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -1492,35 +1492,58 @@ export default function Dashboard() {
     };
 
     const handleDeleteProfile = async (name: string) => {
+        const normalizedTarget = normalizeProfileName(name);
+        if (!normalizedTarget) return;
+
+        const normalizedAdmin = normalizeProfileName(ADMIN_PROFILE);
+        const hasAdminProfile = availableProfiles.some(profile => normalizeProfileName(profile) === normalizedAdmin);
+        if (!hasAdminProfile) {
+            alert(`Cannot delete "${name}". Admin profile "${ADMIN_PROFILE}" was not found.`);
+            return;
+        }
+
         // Check for sales to reassign
-        const salesToReassign = sales.filter(s => normalizeProfileName(s.soldBy) === normalizeProfileName(name) || normalizeProfileName(s.sellerName) === normalizeProfileName(name));
+        const salesToReassign = sales.filter(s => normalizeProfileName(s.soldBy) === normalizedTarget || normalizeProfileName(s.sellerName) === normalizedTarget);
 
         if (salesToReassign.length > 0) {
             if (!confirm(`This profile has ${salesToReassign.length} sales. Deleting it will reassign these sales to '${ADMIN_PROFILE}'. Continue?`)) {
                 return;
             }
-            // Reassign sales to Admin
-            const updatedSales = sales.map(s => {
-                const sBy = normalizeProfileName(s.soldBy);
-                const sName = normalizeProfileName(s.sellerName);
-                const target = normalizeProfileName(name);
-
-                if (sBy === target || sName === target) {
-                    return {
-                        ...s,
-                        soldBy: sBy === target ? ADMIN_PROFILE : s.soldBy,
-                        sellerName: sName === target ? ADMIN_PROFILE : s.sellerName
-                    };
-                }
-                return s;
-            });
-            await updateSalesAndSave(updatedSales);
         }
 
-        const updated = availableProfiles.filter(p => p !== name);
+        if (supabaseUrl && supabaseKey) {
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+            const reassignResult = await reassignProfileAndDelete(client, normalizedTarget, normalizedAdmin);
+            if (!reassignResult.success) {
+                alert(`Failed to delete profile "${name}". ${reassignResult.error || ''}`.trim());
+                return;
+            }
+        }
+
+        // Reassign sales to Admin locally
+        const updatedSales = sales.map(s => {
+            const sBy = normalizeProfileName(s.soldBy);
+            const sName = normalizeProfileName(s.sellerName);
+
+            if (sBy === normalizedTarget || sName === normalizedTarget) {
+                return {
+                    ...s,
+                    soldBy: sBy === normalizedTarget ? ADMIN_PROFILE : s.soldBy,
+                    sellerName: sName === normalizedTarget ? ADMIN_PROFILE : s.sellerName
+                };
+            }
+            return s;
+        });
+        const saveResult = await updateSalesAndSave(updatedSales);
+        if (!saveResult.success) {
+            alert(`Failed to update sales for "${name}". ${saveResult.error || ''}`.trim());
+            return;
+        }
+
+        const updated = availableProfiles.filter(p => normalizeProfileName(p) !== normalizedTarget);
         const normalized = normalizeProfiles(updated);
         setAvailableProfiles(normalized);
-        if (userProfile === name) setUserProfile('');
+        if (normalizeProfileName(userProfile) === normalizedTarget) setUserProfile('');
         await Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalized) });
         syncProfilesToCloud(normalized);
     };
