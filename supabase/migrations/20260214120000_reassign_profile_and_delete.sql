@@ -1,48 +1,28 @@
-CREATE OR REPLACE FUNCTION public.reassign_profile_and_delete(from_profile TEXT, to_profile TEXT)
+CREATE OR REPLACE FUNCTION public.reassign_profile_and_delete(
+    from_profile UUID,
+    to_profile UUID
+)
 RETURNS void
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
-    UPDATE public.sales
-    SET
-        seller_name = CASE WHEN seller_name = from_profile THEN to_profile ELSE seller_name END,
-        sold_by = CASE WHEN sold_by = from_profile THEN to_profile ELSE sold_by END,
-        attachments = CASE
-            WHEN attachments IS NULL THEN attachments
-            WHEN attachments->>'sellerName' = from_profile OR attachments->>'soldBy' = from_profile THEN
-                jsonb_set(
-                    jsonb_set(
-                        attachments,
-                        '{sellerName}',
-                        to_jsonb(CASE WHEN attachments->>'sellerName' = from_profile THEN to_profile ELSE attachments->>'sellerName' END),
-                        true
-                    ),
-                    '{soldBy}',
-                    to_jsonb(CASE WHEN attachments->>'soldBy' = from_profile THEN to_profile ELSE attachments->>'soldBy' END),
-                    true
-                )
-            ELSE attachments
-        END
-    WHERE
-        seller_name = from_profile
-        OR sold_by = from_profile
-        OR attachments->>'sellerName' = from_profile
-        OR attachments->>'soldBy' = from_profile;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM public.profiles p
+        WHERE p.id = to_profile
+    ) THEN
+        RAISE EXCEPTION 'Target admin profile not found: %', to_profile;
+    END IF;
 
-    UPDATE public.sales
-    SET attachments = jsonb_set(
-        COALESCE(attachments, '{}'::jsonb),
-        '{profiles}',
-        COALESCE(
-            (
-                SELECT jsonb_agg(value)
-                FROM jsonb_array_elements_text(COALESCE(attachments->'profiles', '[]'::jsonb)) AS value
-                WHERE value <> from_profile
-            ),
-            '[]'::jsonb
-        ),
-        true
-    )
-    WHERE id = 'config_profile_avatars';
+    UPDATE public.cars
+    SET profile_id = to_profile
+    WHERE profile_id = from_profile;
+
+    DELETE FROM public.profiles
+    WHERE id = from_profile;
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public.reassign_profile_and_delete(UUID, UUID) TO authenticated;
