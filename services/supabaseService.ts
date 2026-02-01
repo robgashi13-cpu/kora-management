@@ -223,3 +223,23 @@ export const syncTransactionsWithSupabase = async (
         return { success: false, error: e.message || 'Unknown Sync Error' };
     }
 };
+
+export const reassignProfileAndDelete = async (
+    client: SupabaseClient,
+    fromProfile: string,
+    toProfile: string
+): Promise<{ success: boolean; error?: string }> => {
+    try {
+        const { error } = await client.rpc('reassign_profile_and_delete', {
+            from_profile: fromProfile,
+            to_profile: toProfile
+        });
+        if (error) {
+            return { success: false, error: error.message || 'Failed to reassign profile.' };
+        }
+        return { success: true };
+    } catch (e: any) {
+        console.error("Supabase profile reassign exception:", e);
+        return { success: false, error: e?.message || 'Unknown error.' };
+    }
+};
