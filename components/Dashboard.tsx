@@ -36,7 +36,6 @@ const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costTo
 const ADMIN_PROFILE = 'Robert';
 const ADMIN_PASSWORD = 'Robertoo1396$';
 const LEGACY_ADMIN_PROFILE = 'Admin';
-const REQUIRED_PROFILES = [ADMIN_PROFILE, 'Leonit'];
 
 const normalizeProfileName = (name?: string | null | unknown) => {
     if (typeof name !== 'string' || !name) return '';
@@ -44,6 +43,10 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     if (!trimmed) return '';
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
+
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
+const REQUIRED_PROFILES = ALLOWED_PROFILES;
+const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
 
 const isLegacyAdminProfile = (name?: string | null) => {
     if (!name) return false;
@@ -477,7 +480,9 @@ export default function Dashboard() {
     const isFormOpenRef = React.useRef(isFormOpen);
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
-        const normalized = profiles.map(p => normalizeProfileName(p)).filter(Boolean);
+        const normalized = profiles
+            .map(p => normalizeProfileName(p))
+            .filter(profile => profile && ALLOWED_PROFILE_SET.has(profile));
         const unique = new Set(normalized);
         REQUIRED_PROFILES.forEach(profile => unique.add(profile));
         const ordered: string[] = [];
@@ -495,6 +500,28 @@ export default function Dashboard() {
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy)
     }), []);
+
+    const enforceAllowedSalesProfiles = useCallback((currentSales: CarSale[]) => {
+        let hasChanges = false;
+        const updatedSales = currentSales.map((sale) => {
+            const normalizedSeller = normalizeProfileName(sale.sellerName);
+            const normalizedSoldBy = normalizeProfileName(sale.soldBy);
+            const shouldReplaceSeller = normalizedSeller && !ALLOWED_PROFILE_SET.has(normalizedSeller);
+            const shouldReplaceSoldBy = normalizedSoldBy && !ALLOWED_PROFILE_SET.has(normalizedSoldBy);
+
+            if (!shouldReplaceSeller && !shouldReplaceSoldBy) return sale;
+
+            hasChanges = true;
+            dirtyIds.current.add(sale.id);
+            return {
+                ...sale,
+                sellerName: shouldReplaceSeller ? ADMIN_PROFILE : sale.sellerName,
+                soldBy: shouldReplaceSoldBy ? ADMIN_PROFILE : sale.soldBy
+            };
+        });
+
+        return { updatedSales, hasChanges };
+    }, []);
 
     const profileOptions = useMemo(() => {
         const profileMap = new Map<string, string>();
@@ -1630,7 +1657,7 @@ export default function Dashboard() {
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(loaded) });
                     syncProfilesToCloud(loaded);
                 } else {
-                    const defaults = normalizeProfiles(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
+                    const defaults = normalizeProfiles(ALLOWED_PROFILES);
                     setAvailableProfiles(defaults);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(defaults) });
                     // Also sync to cloud on first run
@@ -1671,16 +1698,17 @@ export default function Dashboard() {
                 // Just load the saved data - no auto-import
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
                 const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
-                if (hasAdminOwnership) {
+                const { updatedSales: reassignedSales, hasChanges: hasReassignments } = enforceAllowedSalesProfiles(normalizedSales);
+                if (hasAdminOwnership || hasReassignments) {
                     currentSales.forEach((sale: CarSale) => {
                         if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                             dirtyIds.current.add(sale.id);
                         }
                     });
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(reassignedSales) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(reassignedSales));
                 }
-                setSales(normalizedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+                setSales(reassignedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
                 const { value: key } = await Preferences.get({ key: 'openai_api_key' });
@@ -1720,38 +1748,30 @@ export default function Dashboard() {
         return () => window.removeEventListener('focus', onFocus);
     }, []);
 
-    // Auto-migrate profiles from sales history ensuring they are "always there"
+    // Keep profiles limited to allowed list and reassign any sales owned by deleted profiles
     useEffect(() => {
         if (sales.length === 0) return;
 
-        const allSellers = new Set(availableProfiles);
-        let hasChanges = false;
+        const normalizedProfiles = normalizeProfiles(availableProfiles);
+        const profilesChanged = normalizedProfiles.length !== availableProfiles.length
+            || normalizedProfiles.some((profile, index) => profile !== availableProfiles[index]);
 
-        sales.forEach(sale => {
-            const normSeller = normalizeProfileName(sale.sellerName);
-            if (normSeller && !allSellers.has(normSeller)) {
-                allSellers.add(normSeller);
-                hasChanges = true;
-            }
-
-            const normSoldBy = normalizeProfileName(sale.soldBy);
-            if (normSoldBy && !allSellers.has(normSoldBy)) {
-                allSellers.add(normSoldBy);
-                hasChanges = true;
-            }
-        });
+        const { updatedSales, hasChanges } = enforceAllowedSalesProfiles(sales);
 
         if (hasChanges) {
-            const updated = normalizeProfiles(Array.from(allSellers));
-            setAvailableProfiles(updated);
-            Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-            // Sync to cloud if possible
-            if (supabaseUrl && supabaseKey) {
-                syncProfilesToCloud(updated);
-            }
-            console.log("Auto-migrated missing profiles from sales history:", updated);
+            setSales(updatedSales);
+            Preferences.set({ key: 'car_sales_data', value: JSON.stringify(updatedSales) });
+            localStorage.setItem('car_sales_data', JSON.stringify(updatedSales));
         }
-    }, [sales, availableProfiles, supabaseUrl, supabaseKey]);
+
+        if (profilesChanged) {
+            setAvailableProfiles(normalizedProfiles);
+            Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalizedProfiles) });
+            if (supabaseUrl && supabaseKey) {
+                syncProfilesToCloud(normalizedProfiles);
+            }
+        }
+    }, [sales, availableProfiles, supabaseUrl, supabaseKey, enforceAllowedSalesProfiles, normalizeProfiles]);
 
     useEffect(() => {
         if (!userProfile || !supabaseUrl || !supabaseKey) return;
