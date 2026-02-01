@@ -444,6 +444,7 @@ export default function Dashboard() {
     const [editShitblerjeSale, setEditShitblerjeSale] = useState<CarSale | null>(null);
     const [formReturnView, setFormReturnView] = useState('dashboard');
     const [activeGroupMoveMenu, setActiveGroupMoveMenu] = useState<string | null>(null);
+    const [groupMoveInFlight, setGroupMoveInFlight] = useState<string | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
     const [groupMeta, setGroupMeta] = useState<GroupMeta[]>([]);
     const [showArchivedGroups, setShowArchivedGroups] = useState(false);
@@ -758,25 +759,37 @@ export default function Dashboard() {
     }, [sales, documentPreview]);
 
 
-    const updateSalesAndSave = async (newSales: CarSale[]) => {
+    const persistSalesLocally = async (normalizedSales: CarSale[]) => {
+        await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
+        localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+
+        if (Capacitor.isNativePlatform()) {
+            await Filesystem.writeFile({
+                path: 'sales_backup.json',
+                data: JSON.stringify(normalizedSales, null, 2),
+                directory: Directory.Documents,
+                encoding: Encoding.UTF8
+            });
+        }
+    };
+
+    const updateSalesAndSave = async (newSales: CarSale[]): Promise<{ success: boolean; error?: string }> => {
         const normalizedSales = newSales.map(normalizeSaleProfiles);
         setSales(normalizedSales);
         try {
-            await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-            localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+            await persistSalesLocally(normalizedSales);
 
-            if (Capacitor.isNativePlatform()) {
-                await Filesystem.writeFile({
-                    path: 'sales_backup.json',
-                    data: JSON.stringify(normalizedSales, null, 2),
-                    directory: Directory.Documents,
-                    encoding: Encoding.UTF8
-                });
-            }
             if (supabaseUrl && supabaseKey && userProfile) {
-                await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
+                const syncResult = await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
+                if (!syncResult.success) {
+                    return { success: false, error: syncResult.error || 'Sync failed.' };
+                }
             }
-        } catch (e) { console.error("Save failed", e); }
+            return { success: true };
+        } catch (e: any) {
+            console.error("Save failed", e);
+            return { success: false, error: e?.message || 'Save failed.' };
+        }
     };
 
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
@@ -1349,8 +1362,29 @@ export default function Dashboard() {
     };
 
     const handleMoveGroupStatus = async (groupName: string, status: SaleStatus) => {
-        const newSales = sales.map(s => s.group?.trim() === groupName ? { ...s, status } : s);
-        await updateSalesAndSave(newSales);
+        const trimmedGroup = groupName.trim();
+        if (!trimmedGroup) return;
+        const affectedSales = sales.filter(s => s.group?.trim() === trimmedGroup);
+        if (affectedSales.length === 0) return;
+
+        const previousSales = salesRef.current;
+        const previousDirtyIds = new Set(dirtyIds.current);
+        const newSales = sales.map(s => s.group?.trim() === trimmedGroup ? { ...s, status } : s);
+
+        affectedSales.forEach(sale => dirtyIds.current.add(sale.id));
+        setGroupMoveInFlight(trimmedGroup);
+
+        try {
+            const result = await updateSalesAndSave(newSales);
+            if (!result.success) {
+                dirtyIds.current = previousDirtyIds;
+                setSales(previousSales);
+                await persistSalesLocally(previousSales);
+                alert(`Move failed. ${result.error || 'Please try again.'}`);
+            }
+        } finally {
+            setGroupMoveInFlight(null);
+        }
     };
 
     const handleRemoveFromGroup = async (id: string) => {
@@ -1688,10 +1722,16 @@ export default function Dashboard() {
         syncOnLogin();
     }, [userProfile, supabaseUrl, supabaseKey]);
 
-    const performAutoSync = async (url: string, key: string, profile: string, currentLocalSales?: CarSale[]) => {
+    const performAutoSync = async (
+        url: string,
+        key: string,
+        profile: string,
+        currentLocalSales?: CarSale[]
+    ): Promise<{ success: boolean; error?: string }> => {
         setIsSyncing(true);
         setSyncError(''); // Clear previous errors
         console.log("Starting AutoSync to:", url);
+        let syncErrorMessage = '';
 
         try {
             let localSalesToSync = currentLocalSales;
@@ -1711,6 +1751,9 @@ export default function Dashboard() {
 
             // 2. Sync (Upsert Dirty -> Fetch All)
             const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim());
+            if (!salesRes.success) {
+                syncErrorMessage = salesRes.error || 'Sales sync failed.';
+            }
 
             // 3. Clear Dirty IDs on success
             if (salesRes.success) {
@@ -1790,9 +1833,14 @@ export default function Dashboard() {
 
         } catch (e: any) {
             console.error("Auto Sync Exception", e);
+            syncErrorMessage = e.message || 'Sync Exception';
             setSyncError(`Sync Exception: ${e.message} `);
         }
         finally { setIsSyncing(false); }
+        if (syncErrorMessage) {
+            return { success: false, error: syncErrorMessage };
+        }
+        return { success: true };
     };
 
     const handleAddSale = async (sale: CarSale): Promise<{ success: boolean; error?: string }> => {
@@ -2050,9 +2098,8 @@ export default function Dashboard() {
         if (!isAdmin && s.soldBy !== userProfile) return false;
 
 
-        // In 'Sales' view, we show ALL cars to ensure the user sees all 18 rows as requested.
         if (activeCategory === 'SALES') {
-            // No status filtering for the main Sales view
+            if (['Shipped', 'Inspection', 'Autosallon', 'Archived'].includes(s.status)) return false;
         } else {
             if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
@@ -2589,6 +2636,7 @@ export default function Dashboard() {
                                                 {activeGroups.map(group => {
                                                     const groupSales = groupedSales[group.name] || [];
                                                     if (groupSales.length === 0) return null;
+                                                    const isMovingGroup = groupMoveInFlight === group.name;
                                                     return (
                                                         <Reorder.Item key={group.name} value={group.name} className="contents">
                                                             <div className="bg-slate-50/80 border-y border-slate-200 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
@@ -2620,12 +2668,15 @@ export default function Dashboard() {
                                                                             <button
                                                                                 onClick={(e) => {
                                                                                     e.stopPropagation();
-                                                                                    setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                                    if (!isMovingGroup) {
+                                                                                        setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                                    }
                                                                                 }}
-                                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                                className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 ${isMovingGroup ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                                 title="Move group to tab"
+                                                                                disabled={isMovingGroup}
                                                                             >
-                                                                                <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                                {isMovingGroup ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
                                                                             </button>
                                                                             {activeGroupMoveMenu === group.name && (
                                                                                 <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
@@ -2634,7 +2685,8 @@ export default function Dashboard() {
                                                                                             handleMoveGroupStatus(group.name, 'In Progress');
                                                                                             setActiveGroupMoveMenu(null);
                                                                                         }}
-                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        disabled={isMovingGroup}
                                                                                     >
                                                                                         Sales
                                                                                     </button>
@@ -2643,7 +2695,8 @@ export default function Dashboard() {
                                                                                             handleMoveGroupStatus(group.name, 'Shipped');
                                                                                             setActiveGroupMoveMenu(null);
                                                                                         }}
-                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        disabled={isMovingGroup}
                                                                                     >
                                                                                         Shipped
                                                                                     </button>
@@ -2652,7 +2705,8 @@ export default function Dashboard() {
                                                                                             handleMoveGroupStatus(group.name, 'Inspection');
                                                                                             setActiveGroupMoveMenu(null);
                                                                                         }}
-                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        disabled={isMovingGroup}
                                                                                     >
                                                                                         Inspections
                                                                                     </button>
@@ -2661,7 +2715,8 @@ export default function Dashboard() {
                                                                                             handleMoveGroupStatus(group.name, 'Autosallon');
                                                                                             setActiveGroupMoveMenu(null);
                                                                                         }}
-                                                                                        className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                        className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                        disabled={isMovingGroup}
                                                                                     >
                                                                                         Autosallon
                                                                                     </button>
@@ -2933,6 +2988,7 @@ export default function Dashboard() {
                                                 {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
                                                     const groupSales = groupedSales[group.name] || [];
                                                     if (groupSales.length === 0) return null;
+                                                    const isMovingGroup = groupMoveInFlight === group.name;
                                                     return (
                                                         <div key={group.name} className="border-b border-slate-200">
                                                             <div className="w-full px-4 py-2.5 flex items-center justify-between text-sm font-semibold text-slate-700 bg-slate-50">
@@ -2948,12 +3004,15 @@ export default function Dashboard() {
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                            if (!isMovingGroup) {
+                                                                                setActiveGroupMoveMenu(prev => prev === group.name ? null : group.name);
+                                                                            }
                                                                         }}
-                                                                        className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                                                                        className={`p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 ${isMovingGroup ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                         title="Move group to tab"
+                                                                        disabled={isMovingGroup}
                                                                     >
-                                                                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                        {isMovingGroup ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRightLeft className="w-3.5 h-3.5" />}
                                                                     </button>
                                                                     {activeGroupMoveMenu === group.name && (
                                                                         <div className="absolute right-0 mt-1 w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-20">
@@ -2962,7 +3021,8 @@ export default function Dashboard() {
                                                                                     handleMoveGroupStatus(group.name, 'In Progress');
                                                                                     setActiveGroupMoveMenu(null);
                                                                                 }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                disabled={isMovingGroup}
                                                                             >
                                                                                 Sales
                                                                             </button>
@@ -2971,7 +3031,8 @@ export default function Dashboard() {
                                                                                     handleMoveGroupStatus(group.name, 'Shipped');
                                                                                     setActiveGroupMoveMenu(null);
                                                                                 }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                disabled={isMovingGroup}
                                                                             >
                                                                                 Shipped
                                                                             </button>
@@ -2980,7 +3041,8 @@ export default function Dashboard() {
                                                                                     handleMoveGroupStatus(group.name, 'Inspection');
                                                                                     setActiveGroupMoveMenu(null);
                                                                                 }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                disabled={isMovingGroup}
                                                                             >
                                                                                 Inspections
                                                                             </button>
@@ -2989,7 +3051,8 @@ export default function Dashboard() {
                                                                                     handleMoveGroupStatus(group.name, 'Autosallon');
                                                                                     setActiveGroupMoveMenu(null);
                                                                                 }}
-                                                                                className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                                                                className={`w-full px-3 py-2 text-left text-xs ${isMovingGroup ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'}`}
+                                                                                disabled={isMovingGroup}
                                                                             >
                                                                                 Autosallon
                                                                             </button>
