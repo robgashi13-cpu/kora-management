@@ -792,6 +792,10 @@ export default function Dashboard() {
         }
     };
 
+    const markSalesDirty = (saleIds: string[]) => {
+        saleIds.forEach(id => dirtyIds.current.add(id));
+    };
+
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
     const inlineNumericFields = new Set<keyof CarSale>([
         'year',
@@ -1303,6 +1307,7 @@ export default function Dashboard() {
         setExpandedGroups(prev => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
 
         const saleIdSet = new Set(saleIds);
+        markSalesDirty(saleIds);
         const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
@@ -1326,6 +1331,8 @@ export default function Dashboard() {
 
         const nextMeta = groupMeta.map(g => g.name === groupName ? { ...g, name: trimmed } : g);
         await persistGroupMeta(nextMeta);
+        const affectedIds = sales.filter(s => s.group === groupName).map(s => s.id);
+        markSalesDirty(affectedIds);
         const newSales = sales.map(s => s.group === groupName ? { ...s, group: trimmed } : s);
         await updateSalesAndSave(newSales);
         setExpandedGroups(prev => prev.map(g => g === groupName ? trimmed : g));
@@ -1388,16 +1395,27 @@ export default function Dashboard() {
     };
 
     const handleRemoveFromGroup = async (id: string) => {
+        markSalesDirty([id]);
         const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
         await updateSalesAndSave(newSales);
     };
 
     const handleAddToGroup = async (groupName: string, saleIds: string[]) => {
         if (saleIds.length === 0) return;
+        markSalesDirty(saleIds);
         const saleIdSet = new Set(saleIds);
         const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: groupName } : s);
         await updateSalesAndSave(newSales);
         setExpandedGroups(prev => (prev.includes(groupName) ? prev : [...prev, groupName]));
+        setSelectedIds(new Set());
+    };
+
+    const handleRemoveSelectedFromGroup = async (saleIds: string[]) => {
+        if (saleIds.length === 0) return;
+        markSalesDirty(saleIds);
+        const saleIdSet = new Set(saleIds);
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: undefined } : s);
+        await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
 
@@ -1767,12 +1785,22 @@ export default function Dashboard() {
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
                 if (salesRes.data) {
+                    const mergedById = new Map<string, CarSale>();
+                    salesRes.data.forEach((sale: CarSale) => {
+                        mergedById.set(sale.id, sale);
+                    });
+                    localSalesToSync.forEach((sale: CarSale) => {
+                        if (dirtyIds.current.has(sale.id) || !mergedById.has(sale.id)) {
+                            mergedById.set(sale.id, sale);
+                        }
+                    });
+                    const mergedSales = Array.from(mergedById.values());
                     // Aggressive Deduplication: Filter by ID, VIN, and Plate Number
                     const seenIds = new Set<string>();
                     const seenVins = new Set<string>();
                     const seenPlates = new Set<string>();
 
-                    const uniqueSales = salesRes.data.filter((s: CarSale) => {
+                    const uniqueSales = mergedSales.filter((s: CarSale) => {
                         // 1. Check ID
                         if (seenIds.has(s.id)) return false;
 
@@ -1866,7 +1894,10 @@ export default function Dashboard() {
                 newSales = [...currentSales, { ...sale, soldBy: resolveSoldBy(sale, userProfile || 'Unknown') }];
             }
 
-            await updateSalesAndSave(newSales);
+            const saveResult = await updateSalesAndSave(newSales);
+            if (!saveResult.success) {
+                return { success: false, error: saveResult.error || 'Sync failed. Data saved locally.' };
+            }
             const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
             closeSaleForm(nextView);
             return { success: true };
@@ -1877,6 +1908,28 @@ export default function Dashboard() {
             setIsSyncing(false);
         }
     };
+
+    useEffect(() => {
+        const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
+        const loadSidebarPreference = async () => {
+            const { value } = await Preferences.get({ key: SIDEBAR_COLLAPSED_KEY });
+            if (value !== null && value !== undefined) {
+                setIsSidebarCollapsed(value === 'true');
+                return;
+            }
+            const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+            if (stored !== null) {
+                setIsSidebarCollapsed(stored === 'true');
+            }
+        };
+        loadSidebarPreference();
+    }, []);
+
+    useEffect(() => {
+        const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
+        Preferences.set({ key: SIDEBAR_COLLAPSED_KEY, value: String(isSidebarCollapsed) });
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
+    }, [isSidebarCollapsed]);
 
     const saveSettings = async () => {
         await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
@@ -2411,7 +2464,7 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className={`hidden md:flex flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-all duration-300 ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
+            <aside className={`hidden md:flex flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-[width,opacity] duration-300 ease-in-out ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
                 <SidebarContent />
             </aside>
 
@@ -2439,7 +2492,7 @@ export default function Dashboard() {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col min-w-0 relative">
+            <div className="flex-1 flex flex-col min-w-0 relative transition-[width] duration-300 ease-in-out">
                 <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sticky top-0 z-40">
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -3581,10 +3634,8 @@ export default function Dashboard() {
                                                                 <button
                                                                     onClick={() => {
                                                                         const ids = Array.from(selectedIds);
-                                                                        const newSales = sales.map(s => ids.includes(s.id) ? { ...s, group: undefined } : s);
-                                                                        updateSalesAndSave(newSales);
+                                                                        handleRemoveSelectedFromGroup(ids);
                                                                         setShowGroupMenu(false);
-                                                                        setSelectedIds(new Set());
                                                                     }}
                                                                     className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
                                                                 >
