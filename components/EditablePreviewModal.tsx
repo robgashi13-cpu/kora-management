@@ -12,6 +12,7 @@ import ContractDocument from './ContractDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { InvoicePriceSource } from './invoicePricing';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -21,6 +22,9 @@ interface EditablePreviewModalProps {
   onSaveToSale?: (updatedFields: Partial<CarSale>) => void;
   withDogane?: boolean;
   showBankOnly?: boolean;
+  taxAmount?: number;
+  priceSource?: InvoicePriceSource;
+  priceValue?: number;
 }
 
 export default function EditablePreviewModal({
@@ -30,7 +34,10 @@ export default function EditablePreviewModal({
   documentType,
   onSaveToSale,
   withDogane = false,
-  showBankOnly = false
+  showBankOnly = false,
+  taxAmount,
+  priceSource,
+  priceValue
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -476,6 +483,9 @@ export default function EditablePreviewModal({
                 withDogane={withDogane}
                 withStamp={withStamp}
                 showBankOnly={showBankOnly}
+                taxAmount={taxAmount}
+                priceSource={priceSource}
+                priceValue={priceValue}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />
@@ -485,7 +495,6 @@ export default function EditablePreviewModal({
                 type={documentType as any}
                 withStamp={withStamp}
                 documentRef={printRef}
-                renderField={renderInvoiceField}
               />
             )}
           </div>

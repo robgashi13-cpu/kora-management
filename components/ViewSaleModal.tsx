@@ -6,7 +6,7 @@ import { X, ArrowLeft, FileText, Eye } from 'lucide-react';
 import { CarSale, Attachment } from '@/app/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
-import { generatePdf, openPdfBlob } from './pdfUtils';
+import { generatePdf, openPdfBlob, waitForImages } from './pdfUtils';
 
 interface Props {
     isOpen: boolean;

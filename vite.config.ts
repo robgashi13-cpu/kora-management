@@ -19,5 +19,17 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'CHUNK_SIZE_LIMIT') {
+          return;
+        }
+        if (typeof warning.message === 'string' && warning.message.includes('dynamically imported')) {
+          return;
+        }
+        warn(warning);
+      },
+    },
   },
 }));
