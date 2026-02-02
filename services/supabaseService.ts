@@ -5,6 +5,28 @@ export const createSupabaseClient = (url: string, key: string): SupabaseClient =
     return createClient(url, key);
 };
 
+const tryRefreshSchemaCache = async (client: SupabaseClient) => {
+    try {
+        const { error } = await client.rpc('reload_schema_cache');
+        if (error) {
+            console.warn('Schema cache refresh failed:', error.message || error.details || error.hint || error.code);
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.warn('Schema cache refresh threw an error:', e);
+        return false;
+    }
+};
+
+const getSchemaCacheErrorDetails = (error: any) => {
+    const messageParts = [error?.message, error?.details, error?.hint].filter(Boolean);
+    const message = messageParts.join(' ');
+    const isSchemaCacheIssue = message.includes('schema cache') && message.includes('column');
+    const columnMatch = message.match(/'([^']+)' column/);
+    return { isSchemaCacheIssue, columnToDrop: columnMatch?.[1], message };
+};
+
 // Helper to map Local (camel) to Remote (snake)
 // CRITICAL: Every field that exists as a DB column MUST be mapped here to persist correctly
 const toRemote = (s: CarSale, userProfile: string) => {
@@ -121,9 +143,11 @@ export const syncSalesWithSupabase = async (
         if (salesToPush.length > 0) {
             let payloadToPush = salesToPush;
             const droppedColumns = new Set<string>();
+            let refreshedSchemaCache = false;
             let lastError: any = null;
+            const maxAttempts = Math.max(4, Object.keys(salesToPush[0] ?? {}).length + 2);
 
-            for (let attempt = 0; attempt < 3; attempt += 1) {
+            for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
                 const { error: upsertError } = await client
                     .from('sales')
                     .upsert(payloadToPush, { onConflict: 'id' });
@@ -136,13 +160,21 @@ export const syncSalesWithSupabase = async (
                     break;
                 }
 
-                const messageParts = [upsertError.message, upsertError.details, upsertError.hint].filter(Boolean);
-                const message = messageParts.join(' ');
-                const isSchemaCacheIssue = message.includes('schema cache') && message.includes('column');
-                const columnMatch = message.match(/'([^']+)' column/);
-                const columnToDrop = columnMatch?.[1];
+                const { isSchemaCacheIssue, columnToDrop } = getSchemaCacheErrorDetails(upsertError);
 
-                if (!isSchemaCacheIssue || !columnToDrop || droppedColumns.has(columnToDrop)) {
+                if (!isSchemaCacheIssue) {
+                    lastError = upsertError;
+                    break;
+                }
+
+                if (!refreshedSchemaCache) {
+                    refreshedSchemaCache = await tryRefreshSchemaCache(client);
+                    if (refreshedSchemaCache) {
+                        continue;
+                    }
+                }
+
+                if (!columnToDrop || droppedColumns.has(columnToDrop)) {
                     lastError = upsertError;
                     break;
                 }
