@@ -119,34 +119,42 @@ export const syncSalesWithSupabase = async (
         // 1. Upsert Local to Remote (Single batch to ensure all-or-none behavior)
         const salesToPush = localSales.map(s => toRemote(s, userProfile));
         if (salesToPush.length > 0) {
-            const { error: upsertError } = await client
-                .from('sales')
-                .upsert(salesToPush, { onConflict: 'id' });
+            let payloadToPush = salesToPush;
+            const droppedColumns = new Set<string>();
+            let lastError: any = null;
 
-            if (upsertError) {
-                const message = upsertError.message || '';
-                if (message.includes('schema cache') && message.includes('column')) {
-                    const columnMatch = message.match(/'([^']+)' column/);
-                    const columnToDrop = columnMatch?.[1];
-                    if (columnToDrop) {
-                        const fallbackSalesToPush = salesToPush.map(({ [columnToDrop]: _ignored, ...rest }) => rest);
-                        const { error: retryError } = await client
-                            .from('sales')
-                            .upsert(fallbackSalesToPush, { onConflict: 'id' });
-                        if (!retryError) {
-                            console.warn(`Sales sync retry succeeded after dropping missing column: ${columnToDrop}`);
-                        } else {
-                            console.error("Sync Error Batch (retry):", retryError.message || retryError.code || retryError.details || JSON.stringify(retryError));
-                            return { success: false, error: retryError.message || retryError.code || retryError.details || "Unknown sync error" };
-                        }
-                    } else {
-                        console.error("Sync Error Batch:", message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
-                        return { success: false, error: message || upsertError.code || upsertError.details || "Unknown sync error" };
+            for (let attempt = 0; attempt < 3; attempt += 1) {
+                const { error: upsertError } = await client
+                    .from('sales')
+                    .upsert(payloadToPush, { onConflict: 'id' });
+
+                if (!upsertError) {
+                    if (droppedColumns.size > 0) {
+                        console.warn(`Sales sync retry succeeded after dropping missing columns: ${Array.from(droppedColumns).join(', ')}`);
                     }
-                } else {
-                    console.error("Sync Error Batch:", message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
-                    return { success: false, error: message || upsertError.code || upsertError.details || "Unknown sync error" };
+                    lastError = null;
+                    break;
                 }
+
+                const messageParts = [upsertError.message, upsertError.details, upsertError.hint].filter(Boolean);
+                const message = messageParts.join(' ');
+                const isSchemaCacheIssue = message.includes('schema cache') && message.includes('column');
+                const columnMatch = message.match(/'([^']+)' column/);
+                const columnToDrop = columnMatch?.[1];
+
+                if (!isSchemaCacheIssue || !columnToDrop || droppedColumns.has(columnToDrop)) {
+                    lastError = upsertError;
+                    break;
+                }
+
+                droppedColumns.add(columnToDrop);
+                payloadToPush = payloadToPush.map(({ [columnToDrop]: _ignored, ...rest }) => rest);
+                lastError = upsertError;
+            }
+
+            if (lastError) {
+                console.error("Sync Error Batch:", lastError.message || lastError.code || lastError.details || JSON.stringify(lastError));
+                return { success: false, error: lastError.message || lastError.code || lastError.details || "Unknown sync error" };
             }
         }
 
