@@ -800,6 +800,14 @@ export default function Dashboard() {
         }
     };
 
+    const DIRTY_IDS_KEY = 'dirty_sale_ids';
+
+    const persistDirtyIds = async (ids: Set<string>) => {
+        const payload = JSON.stringify(Array.from(ids));
+        await Preferences.set({ key: DIRTY_IDS_KEY, value: payload });
+        localStorage.setItem(DIRTY_IDS_KEY, payload);
+    };
+
     const updateSalesAndSave = async (newSales: CarSale[]): Promise<{ success: boolean; error?: string }> => {
         const normalizedSales = newSales.map(normalizeSaleProfiles);
         setSales(normalizedSales);
@@ -809,18 +817,26 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey && userProfile) {
                 const syncResult = await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
                 if (!syncResult.success) {
+                    alert(`Save failed: ${syncResult.error || 'Sync failed.'}`);
                     return { success: false, error: syncResult.error || 'Sync failed.' };
                 }
+            } else {
+                const missing = !supabaseUrl || !supabaseKey ? 'Supabase settings' : 'User profile';
+                const message = `Save failed: ${missing} missing.`;
+                alert(message);
+                return { success: false, error: message };
             }
             return { success: true };
         } catch (e: any) {
             console.error("Save failed", e);
+            alert(`Save failed: ${e?.message || 'Unknown error'}`);
             return { success: false, error: e?.message || 'Save failed.' };
         }
     };
 
     const markSalesDirty = (saleIds: string[]) => {
         saleIds.forEach(id => dirtyIds.current.add(id));
+        void persistDirtyIds(dirtyIds.current);
     };
 
     const inlineRequiredFields = new Set<keyof CarSale>(['brand', 'model', 'buyerName', 'soldPrice']);
@@ -1423,7 +1439,7 @@ export default function Dashboard() {
 
     const handleRemoveFromGroup = async (id: string) => {
         markSalesDirty([id]);
-        const newSales = sales.map(s => s.id === id ? { ...s, group: undefined } : s);
+        const newSales = sales.map(s => s.id === id ? { ...s, group: null } : s);
         await updateSalesAndSave(newSales);
     };
 
@@ -1441,7 +1457,7 @@ export default function Dashboard() {
         if (saleIds.length === 0) return;
         markSalesDirty(saleIds);
         const saleIdSet = new Set(saleIds);
-        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: undefined } : s);
+        const newSales = sales.map(s => saleIdSet.has(s.id) ? { ...s, group: null } : s);
         await updateSalesAndSave(newSales);
         setSelectedIds(new Set());
     };
@@ -1674,6 +1690,18 @@ export default function Dashboard() {
                         setGroupMeta(JSON.parse(stored));
                     }
                 }
+
+                const { value: dirtyValue } = await Preferences.get({ key: DIRTY_IDS_KEY });
+                if (dirtyValue) {
+                    const parsed = JSON.parse(dirtyValue) as string[];
+                    dirtyIds.current = new Set(parsed.filter(Boolean));
+                } else {
+                    const storedDirty = localStorage.getItem(DIRTY_IDS_KEY);
+                    if (storedDirty) {
+                        const parsed = JSON.parse(storedDirty) as string[];
+                        dirtyIds.current = new Set(parsed.filter(Boolean));
+                    }
+                }
             } catch (e) {
                 console.error("Initialization Failed:", e);
             } finally {
@@ -1705,6 +1733,7 @@ export default function Dashboard() {
                             dirtyIds.current.add(sale.id);
                         }
                     });
+                    await persistDirtyIds(dirtyIds.current);
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(reassignedSales) });
                     localStorage.setItem('car_sales_data', JSON.stringify(reassignedSales));
                 }
@@ -1824,6 +1853,7 @@ export default function Dashboard() {
                         dirtyIds.current.delete(s.id);
                     }
                 });
+                await persistDirtyIds(dirtyIds.current);
             }
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
@@ -1873,6 +1903,7 @@ export default function Dashboard() {
                                 dirtyIds.current.add(sale.id);
                             }
                         });
+                        await persistDirtyIds(dirtyIds.current);
                     }
                     setSales(normalizedSales);
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });

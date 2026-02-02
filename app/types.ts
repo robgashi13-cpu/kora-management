@@ -79,7 +79,7 @@ export interface CarSale {
     createdAt: string;
     sortOrder?: number;
     soldBy?: string;
-    group?: string; // For grouping (e.g. "15 november SANG SHIN")
+    group?: string | null; // For grouping (e.g. "15 november SANG SHIN")
     invoiceId?: string;
     shitblerjeOverrides?: ShitblerjeOverrides;
     sellerAudit?: SellerAuditEntry[];
