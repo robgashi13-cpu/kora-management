@@ -124,8 +124,29 @@ export const syncSalesWithSupabase = async (
                 .upsert(salesToPush, { onConflict: 'id' });
 
             if (upsertError) {
-                console.error("Sync Error Batch:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
-                return { success: false, error: upsertError.message || upsertError.code || upsertError.details || "Unknown sync error" };
+                const message = upsertError.message || '';
+                if (message.includes('schema cache') && message.includes('column')) {
+                    const columnMatch = message.match(/'([^']+)' column/);
+                    const columnToDrop = columnMatch?.[1];
+                    if (columnToDrop) {
+                        const fallbackSalesToPush = salesToPush.map(({ [columnToDrop]: _ignored, ...rest }) => rest);
+                        const { error: retryError } = await client
+                            .from('sales')
+                            .upsert(fallbackSalesToPush, { onConflict: 'id' });
+                        if (!retryError) {
+                            console.warn(`Sales sync retry succeeded after dropping missing column: ${columnToDrop}`);
+                        } else {
+                            console.error("Sync Error Batch (retry):", retryError.message || retryError.code || retryError.details || JSON.stringify(retryError));
+                            return { success: false, error: retryError.message || retryError.code || retryError.details || "Unknown sync error" };
+                        }
+                    } else {
+                        console.error("Sync Error Batch:", message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
+                        return { success: false, error: message || upsertError.code || upsertError.details || "Unknown sync error" };
+                    }
+                } else {
+                    console.error("Sync Error Batch:", message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
+                    return { success: false, error: message || upsertError.code || upsertError.details || "Unknown sync error" };
+                }
             }
         }
 
