@@ -6,6 +6,7 @@ export const createSupabaseClient = (url: string, key: string): SupabaseClient =
 };
 
 // Helper to map Local (camel) to Remote (snake)
+// CRITICAL: Every field that exists as a DB column MUST be mapped here to persist correctly
 const toRemote = (s: CarSale, userProfile: string) => {
     const payload = {
         id: s.id,
@@ -18,7 +19,7 @@ const toRemote = (s: CarSale, userProfile: string) => {
         vin: s.vin,
         seller_name: s.sellerName,
         buyer_name: s.buyerName,
-        // buyer_personal_id: s.buyerPersonalId, // Schema mismatch: column missing in DB. Saved in attachments.
+        buyer_personal_id: s.buyerPersonalId, // Now mapped to actual column
         shipping_name: s.shippingName,
         shipping_date: s.shippingDate,
         include_transport: s.includeTransport,
@@ -37,7 +38,11 @@ const toRemote = (s: CarSale, userProfile: string) => {
         payment_method: s.paymentMethod,
         status: s.status,
         sort_order: s.sortOrder,
-        // Use attachments JSONB for flexible storage of missing columns and full backup
+        // CRITICAL: These fields MUST be mapped to their DB columns for persistence
+        group: s.group, // Group assignment - MUST persist to column
+        notes: s.notes, // Notes - MUST persist to column
+        sold_by: s.soldBy, // Sold by - MUST persist to column
+        // Use attachments JSONB for flexible storage and full backup
         attachments: {
             ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
             soldBy: s.soldBy,
@@ -47,58 +52,62 @@ const toRemote = (s: CarSale, userProfile: string) => {
         last_edited_by: userProfile,
     } as Record<string, unknown>;
 
+    // Filter out undefined values, but KEEP null values (explicit removal)
     return Object.fromEntries(
         Object.entries(payload).filter(([, value]) => value !== undefined)
     );
 };
 
 // Helper to map Remote (snake) to Local (camel)
+// CRITICAL: Use nullish coalescing (??) to preserve falsy values like 0, false, empty string
+// Only fall back to attachments when the column value is null/undefined
 const fromRemote = (r: any): CarSale => ({
     id: r.id,
-    brand: r.brand || r.attachments?.brand,
-    model: r.model || r.attachments?.model,
-    year: r.year || r.attachments?.year,
-    km: r.km || r.attachments?.km,
-    color: r.color || r.attachments?.color,
-    plateNumber: r.plate_number || r.attachments?.plateNumber,
-    vin: r.vin || r.attachments?.vin,
-    sellerName: r.seller_name || r.attachments?.sellerName,
-    buyerName: r.buyer_name || r.attachments?.buyerName,
-    buyerPersonalId: r.buyer_personal_id || r.attachments?.buyerPersonalId,
-    shippingName: r.shipping_name || r.attachments?.shippingName,
-    shippingDate: r.shipping_date || r.attachments?.shippingDate,
+    brand: r.brand ?? r.attachments?.brand,
+    model: r.model ?? r.attachments?.model,
+    year: r.year ?? r.attachments?.year,
+    km: r.km ?? r.attachments?.km,
+    color: r.color ?? r.attachments?.color,
+    plateNumber: r.plate_number ?? r.attachments?.plateNumber,
+    vin: r.vin ?? r.attachments?.vin,
+    sellerName: r.seller_name ?? r.attachments?.sellerName,
+    buyerName: r.buyer_name ?? r.attachments?.buyerName,
+    buyerPersonalId: r.buyer_personal_id ?? r.attachments?.buyerPersonalId,
+    shippingName: r.shipping_name ?? r.attachments?.shippingName,
+    shippingDate: r.shipping_date ?? r.attachments?.shippingDate,
     includeTransport: r.include_transport ?? r.attachments?.includeTransport,
-    costToBuy: r.cost_to_buy || r.attachments?.costToBuy,
-    soldPrice: r.sold_price || r.attachments?.soldPrice,
-    amountPaidCash: r.amount_paid_cash || r.attachments?.amountPaidCash,
-    amountPaidBank: r.amount_paid_bank || r.attachments?.amountPaidBank,
-    deposit: r.deposit || r.attachments?.deposit,
-    depositDate: r.deposit_date || r.attachments?.depositDate,
-    servicesCost: r.services_cost || r.attachments?.servicesCost,
-    tax: r.tax || r.attachments?.tax,
-    amountPaidByClient: r.amount_paid_by_client || r.attachments?.amountPaidByClient,
-    amountPaidToKorea: r.amount_paid_to_korea || r.attachments?.amountPaidToKorea,
-    paidDateToKorea: r.paid_date_to_korea || r.attachments?.paidDateToKorea,
-    paidDateFromClient: r.paid_date_from_client || r.attachments?.paidDateFromClient,
+    costToBuy: r.cost_to_buy ?? r.attachments?.costToBuy,
+    soldPrice: r.sold_price ?? r.attachments?.soldPrice,
+    amountPaidCash: r.amount_paid_cash ?? r.attachments?.amountPaidCash,
+    amountPaidBank: r.amount_paid_bank ?? r.attachments?.amountPaidBank,
+    deposit: r.deposit ?? r.attachments?.deposit,
+    depositDate: r.deposit_date ?? r.attachments?.depositDate,
+    servicesCost: r.services_cost ?? r.attachments?.servicesCost,
+    tax: r.tax ?? r.attachments?.tax,
+    amountPaidByClient: r.amount_paid_by_client ?? r.attachments?.amountPaidByClient,
+    amountPaidToKorea: r.amount_paid_to_korea ?? r.attachments?.amountPaidToKorea,
+    paidDateToKorea: r.paid_date_to_korea ?? r.attachments?.paidDateToKorea,
+    paidDateFromClient: r.paid_date_from_client ?? r.attachments?.paidDateFromClient,
     isPaid: r.attachments?.isPaid,
-    paymentMethod: (r.payment_method || r.attachments?.paymentMethod) as any,
-    status: (r.status || r.attachments?.status) as any,
-    sortOrder: r.sort_order || r.attachments?.sortOrder,
-    // Extract attachments and extras
+    paymentMethod: (r.payment_method ?? r.attachments?.paymentMethod) as any,
+    status: (r.status ?? r.attachments?.status) as any,
+    sortOrder: r.sort_order ?? r.attachments?.sortOrder,
+    
+    // CRITICAL: These fields MUST read from columns first, then fallback to attachments
+    group: r.group ?? r.attachments?.group, // Group assignment from column
+    notes: r.notes ?? r.attachments?.notes, // Notes from column
+    soldBy: r.sold_by ?? r.attachments?.soldBy, // Sold by from column
+    
+    // Extract attachments and extras (only available in attachments)
     bankReceipt: r.attachments?.bankReceipt,
     bankReceipts: r.attachments?.bankReceipts,
     bankInvoice: r.attachments?.bankInvoice,
     bankInvoices: r.attachments?.bankInvoices,
     depositInvoices: r.attachments?.depositInvoices,
-
-    // Recover fields from attachments if not in columns
-    notes: r.notes || r.attachments?.notes,
-    group: r.group || r.attachments?.group,
     shitblerjeOverrides: r.attachments?.shitblerjeOverrides,
     sellerAudit: r.attachments?.sellerAudit,
 
-    createdAt: r.created_at || r.attachments?.createdAt || new Date().toISOString(),
-    soldBy: r.sold_by || r.attachments?.soldBy,
+    createdAt: r.created_at ?? r.attachments?.createdAt ?? new Date().toISOString(),
 });
 
 export const syncSalesWithSupabase = async (
