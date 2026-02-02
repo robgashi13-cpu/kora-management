@@ -116,38 +116,16 @@ export const syncSalesWithSupabase = async (
     userProfile: string
 ): Promise<{ success: boolean; data?: CarSale[]; error?: string; failedIds?: string[] }> => {
     try {
-        // 1. Upsert Local to Remote (Row-by-Row to isolate huge payloads)
+        // 1. Upsert Local to Remote (Single batch to ensure all-or-none behavior)
         const salesToPush = localSales.map(s => toRemote(s, userProfile));
-        let errorCount = 0;
-        let lastError = "";
-        const failedIds: string[] = [];
+        if (salesToPush.length > 0) {
+            const { error: upsertError } = await client
+                .from('sales')
+                .upsert(salesToPush, { onConflict: 'id' });
 
-        for (const item of salesToPush) {
-            try {
-                const itemId = typeof item.id === 'string' ? item.id : undefined;
-                if (!itemId) {
-                    console.warn("Skipping sync item without id:", item);
-                    errorCount++;
-                    lastError = "Missing sale id.";
-                    failedIds.push("unknown-id");
-                    continue;
-                }
-                const { error: upsertError } = await client
-                    .from('sales')
-                    .upsert(item, { onConflict: 'id' });
-
-                if (upsertError) {
-                    console.error("Sync Error Item:", itemId, "Error:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
-                    errorCount++;
-                    lastError = upsertError.message || upsertError.code || upsertError.details || "Unknown sync error";
-                    failedIds.push(itemId);
-                }
-            } catch (e: any) {
-                const itemId = typeof item.id === 'string' ? item.id : "unknown-id";
-                console.error("Network Sync Error Item:", itemId, e);
-                errorCount++;
-                lastError = e.message || "Network Error";
-                failedIds.push(itemId);
+            if (upsertError) {
+                console.error("Sync Error Batch:", upsertError.message || upsertError.code || upsertError.details || JSON.stringify(upsertError));
+                return { success: false, error: upsertError.message || upsertError.code || upsertError.details || "Unknown sync error" };
             }
         }
 
@@ -163,10 +141,8 @@ export const syncSalesWithSupabase = async (
 
         // 3. Map Remote to Local
         const syncedSales = remoteSales ? remoteSales.map(r => fromRemote(r)) : localSales;
-        const partialError = errorCount > 0 ? `Failed to sync ${errorCount} sale(s). Last error: ${lastError}` : undefined;
-
         // Return latest remote state (which includes our just-pushed changes generally, unless race condition)
-        return { success: true, data: syncedSales, error: partialError, failedIds: failedIds.length ? failedIds : undefined };
+        return { success: true, data: syncedSales };
 
     } catch (e: any) {
         console.error("Supabase Sync Exception:", e);
