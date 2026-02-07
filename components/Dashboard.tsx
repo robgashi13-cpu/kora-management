@@ -1097,6 +1097,15 @@ export default function Dashboard() {
         return true;
     };
 
+    const handleMobileSaleClick = (sale: CarSale, isSoldSale: boolean) => {
+        if (shouldIgnoreMobileRowTap(sale.id)) return;
+        if (selectedIds.size > 0 && !isSoldSale) {
+            toggleSelection(sale.id);
+            return;
+        }
+        handleSaleInteraction(sale);
+    };
+
     const sanitizeFolderName = (name: string) => {
         const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim();
         return cleaned || 'Invoice';
@@ -3528,31 +3537,24 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
+                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                 onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
-                                                                                onClick={() => {
-                                                                                    if (shouldIgnoreMobileRowTap(sale.id)) return;
-                                                                                    if (selectedIds.size > 0) {
-                                                                                        toggleSelection(sale.id);
-                                                                                    } else {
-                                                                                        handleSaleInteraction(sale);
-                                                                                    }
-                                                                                }}
+                                                                                onClick={() => handleMobileSaleClick(sale, isSoldSale)}
                                                                                 onContextMenu={(e) => {
-                                                                                    if (selectedIds.size > 0) {
+                                                                                    if (selectedIds.size > 0 && !isSoldSale) {
                                                                                         e.preventDefault();
                                                                                         toggleSelection(sale.id);
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: 'pan-y',
-                                                                                    backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                                                    touchAction: 'pan-x pan-y',
+                                                                                    backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
-                                                                                {selectedIds.size > 0 && (
+                                                                                {selectedIds.size > 0 && !isSoldSale && (
                                                                                     <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                         {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                     </div>
@@ -3684,31 +3686,24 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
+                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                         onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
-                                                                                        onClick={() => {
-                                                                                            if (shouldIgnoreMobileRowTap(sale.id)) return;
-                                                                                            if (selectedIds.size > 0) {
-                                                                                                toggleSelection(sale.id);
-                                                                                            } else {
-                                                                                                handleSaleInteraction(sale);
-                                                                                            }
-                                                                                        }}
+                                                                                        onClick={() => handleMobileSaleClick(sale, isSoldSale)}
                                                                                         onContextMenu={(e) => {
-                                                                                            if (selectedIds.size > 0) {
+                                                                                            if (selectedIds.size > 0 && !isSoldSale) {
                                                                                                 e.preventDefault();
                                                                                                 toggleSelection(sale.id);
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: 'pan-y',
-                                                                                            backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                                                            touchAction: 'pan-x pan-y',
+                                                                                            backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
-                                                                                        {selectedIds.size > 0 && (
+                                                                                        {selectedIds.size > 0 && !isSoldSale && (
                                                                                             <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                                 {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                             </div>
@@ -3801,26 +3796,24 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                            className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
-                                                            onClick={() => {
-                                                                if (selectedIds.size > 0) {
-                                                                    toggleSelection(sale.id);
-                                                                } else {
-                                                                    handleSaleInteraction(sale);
-                                                                }
-                                                            }}
+                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
+                                                            onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                            onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
+                                                            onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
+                                                            onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
+                                                            onClick={() => handleMobileSaleClick(sale, isSoldSale)}
                                                             onContextMenu={(e) => {
-                                                                if (selectedIds.size > 0) {
+                                                                if (selectedIds.size > 0 && !isSoldSale) {
                                                                     e.preventDefault();
                                                                     toggleSelection(sale.id);
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: 'pan-y',
-                                                                backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                                touchAction: 'pan-x pan-y',
+                                                                backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
-                                                            {selectedIds.size > 0 && (
+                                                            {selectedIds.size > 0 && !isSoldSale && (
                                                                 <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                     {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                 </div>
