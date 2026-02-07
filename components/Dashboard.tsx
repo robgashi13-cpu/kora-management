@@ -81,6 +81,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     s.status === 'Inspection' ? 'status-inspection' :
                         'bg-slate-100 text-slate-500';
     const isSoldRow = s.status === 'Completed';
+    const rowClassName = isSoldRow ? 'contents group table-row-compact' : 'contents group table-row-hover table-row-compact';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -92,7 +93,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
         <Reorder.Item
             value={s}
             id={s.id}
-            className="contents group table-row-hover table-row-compact"
+            className={rowClassName}
             dragListener={false}
             dragControls={controls}
         >
@@ -130,7 +131,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); e.preventDefault(); toggleSelection(s.id); }}
-                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 bg-transparent hover:border-slate-500 hover:bg-slate-50'}`}
+                    className={`w-4 h-4 border rounded flex items-center justify-center transition-all cursor-pointer relative z-20 ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : `border-slate-300 bg-transparent ${isSoldRow ? '' : 'hover:border-slate-500 hover:bg-slate-50'}`}`}
                 >
                     {isSelected && <CheckSquare className="w-3 h-3" />}
                 </button>
@@ -141,7 +142,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 <button
                     type="button"
                     onClick={onClick}
-                    className="inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight hover:text-slate-700 transition-colors text-[11px] xl:text-xs"
+                    className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${isSoldRow ? 'text-slate-900' : 'hover:text-slate-700'}`}
                     title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
@@ -319,13 +320,13 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
-                        className="text-slate-500 hover:text-red-600 transition-colors p-1.5 hover:bg-red-50 rounded-lg"
+                        className={`text-slate-500 transition-colors p-1.5 rounded-lg ${isSoldRow ? '' : 'hover:text-red-600 hover:bg-red-50'}`}
                         title="Remove from group"
                     >
                         <X className="w-4 h-4" />
                     </button>
                 )}
-                <button onClick={(e) => openInvoice(s, e)} className="text-slate-600 hover:text-slate-900 transition-colors p-1.5 hover:bg-slate-100 rounded-lg" title="View Invoice">
+                <button onClick={(e) => openInvoice(s, e)} className={`text-slate-600 transition-colors p-1.5 rounded-lg ${isSoldRow ? '' : 'hover:text-slate-900 hover:bg-slate-100'}`} title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
             </div>
