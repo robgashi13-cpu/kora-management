@@ -1270,11 +1270,12 @@ export default function Dashboard() {
 
                 setInvoiceDownloadStatus(`Packaging ${index}/${selectedSales.length}...`);
 
-                const fileName = sanitizeFolderName(`Invoice_${sale.vin || sale.id}`);
                 try {
                     // Generate ONLY invoice as requested (only bank paid price)
                     const invoicePdf = await generateInvoicePdfBase64(sale, true); // true for showBankOnly
-                    fileMap[`Invoices_${dateStamp}/${invoicePdf.fileName}`] = base64ToUint8Array(invoicePdf.base64);
+                    const normalizedName = sanitizeFolderName(invoicePdf.fileName.replace(/\.pdf$/i, ''));
+                    const uniqueName = `${normalizedName}_${sanitizeFolderName(sale.id)}.pdf`;
+                    fileMap[`Invoices_${dateStamp}/${uniqueName}`] = base64ToUint8Array(invoicePdf.base64);
                     successCount++;
                 } catch (e) {
                     console.error(`Failed to generate invoice for ${sale.id}`, e);
