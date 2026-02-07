@@ -80,6 +80,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 s.status === 'Shipped' ? 'status-shipped' :
                     s.status === 'Inspection' ? 'status-inspection' :
                         'bg-slate-100 text-slate-500';
+    const isSoldRow = s.status === 'Completed';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -282,7 +283,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     {canEdit && (
                         <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] xl:text-[11px] font-bold text-slate-700" />
                     )}
-                    <span className={`text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'}`}>
+                    <span className={`text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? (isSoldRow ? 'text-amber-700' : 'bg-amber-100 text-amber-700 border border-amber-300') : (isSoldRow ? 'text-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300')}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
@@ -297,7 +298,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <span className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
+                        <span className={`text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${isSoldRow ? 'text-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'}`}>
                             Paid
                         </span>
                     )}
@@ -2379,7 +2380,7 @@ export default function Dashboard() {
     const totalBankFee = filteredSales.reduce((acc, s) => acc + getBankFee(s.soldPrice || 0), 0);
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
-    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED';
+    const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON';
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
@@ -3366,7 +3367,7 @@ export default function Dashboard() {
                                                                                             <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
-                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
                                                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                     'bg-slate-100 text-slate-500'
@@ -3509,7 +3510,7 @@ export default function Dashboard() {
                                                                                         <div className="flex-1 min-w-0">
                                                                                             <div className="flex justify-between items-start">
                                                                                                 <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                                     (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
                                                                                                         sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                             'bg-slate-100 text-slate-500'
@@ -3621,7 +3622,7 @@ export default function Dashboard() {
                                                                                             <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
-                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
                                                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                     'bg-slate-100 text-slate-500'
@@ -3797,7 +3798,7 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
                                                                                             <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
