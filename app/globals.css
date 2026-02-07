@@ -511,6 +511,39 @@ select:focus-visible {
   background-color: hsl(220 10% 96%);
 }
 
+/* Cars Sold rows are click-only: no hover/over/press visuals across pointer types */
+.cars-sold-row,
+.cars-sold-row > div,
+.cars-sold-row button,
+.cars-sold-row [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cars-sold-row:hover,
+  .cars-sold-row:hover > div,
+  .cars-sold-row *:hover,
+  .cars-sold-row *:active {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .cars-sold-row:hover,
+  .cars-sold-row:hover > div,
+  .cars-sold-row *:hover,
+  .cars-sold-row *:active,
+  .cars-sold-row *:focus {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+  }
+}
+
 /* Attractive Gradients */
 .gradient-primary {
   background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));
