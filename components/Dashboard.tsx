@@ -64,6 +64,16 @@ const normalizeAvatarMap = (avatars: Record<string, string>) => {
     return normalized;
 };
 
+const isIpadTouchDevice = () => {
+    if (typeof navigator === 'undefined') return false;
+
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+    return /iPad/i.test(ua) || (platform === 'MacIntel' && maxTouchPoints > 1);
+};
+
 type GroupMeta = {
     name: string;
     order: number;
@@ -516,6 +526,7 @@ export default function Dashboard() {
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [forceMobileLayout, setForceMobileLayout] = useState(false);
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
@@ -791,6 +802,10 @@ export default function Dashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setForceMobileLayout(isIpadTouchDevice());
+    }, []);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -2619,7 +2634,7 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="flex min-h-[100dvh] md:h-screen w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900">
+        <div className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900`}>
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
@@ -2644,7 +2659,7 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className={`hidden md:flex flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-[width,opacity] duration-300 ease-in-out ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
+            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-[width,opacity] duration-300 ease-in-out ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
                 <SidebarContent />
             </aside>
 
@@ -2657,14 +2672,14 @@ export default function Dashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden"
+                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
                             initial={{ x: '-100%' }}
                             animate={{ x: 0 }}
                             exit={{ x: '-100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] md:hidden shadow-2xl"
+                            className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl`}
                         >
                             <SidebarContent />
                         </motion.div>
@@ -2678,13 +2693,13 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 md:hidden text-slate-600"
+                                className={`p-2 -ml-2 rounded-xl hover:bg-slate-100 ${forceMobileLayout ? '' : 'md:hidden'} text-slate-600`}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                className="p-2 -ml-2 rounded-xl hover:bg-slate-100 hidden md:block text-slate-600 transition-colors"
+                                className={`p-2 -ml-2 rounded-xl hover:bg-slate-100 ${forceMobileLayout ? 'hidden' : 'hidden md:block'} text-slate-600 transition-colors`}
                                 title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
                             >
                                 <Menu className="w-6 h-6" />
@@ -2697,7 +2712,7 @@ export default function Dashboard() {
                             </h2>
                         </div>
 
-                        <div className="flex-1 max-w-xl hidden md:block">
+                        <div className={`flex-1 max-w-xl ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}>
                             <div className="relative group">
                                 <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
                                 <input
@@ -2747,7 +2762,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Mobile Search - Visible only on mobile */}
-                    <div className="mt-3 md:hidden">
+                    <div className={`mt-3 ${forceMobileLayout ? '' : 'md:hidden'}`}>
                         <div className="relative group">
                             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
@@ -2760,14 +2775,14 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-visible md:overflow-hidden bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0">
+                <main className={`flex-1 overflow-visible ${forceMobileLayout ? '' : 'md:overflow-hidden'} bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0`}>
                     {view !== 'sale_form' && (
                         <>
 
                             {view === 'dashboard' ? (<>
                                 <div
                                     ref={scrollContainerRef}
-                                    className="border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative hidden md:block overflow-auto scroll-container flex-1"
+                                    className={`border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
                                 >
                                     <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                         style={{
@@ -3198,7 +3213,7 @@ export default function Dashboard() {
                                 </div>
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
-                                <div className="md:hidden flex flex-col flex-1 min-h-0 relative">
+                                <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-20 no-scrollbar">
                                         <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5 mb-1">
                                             <div className="flex items-center justify-between text-[11px] text-slate-600">
