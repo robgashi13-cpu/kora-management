@@ -211,7 +211,7 @@ select:focus-visible {
 .scroll-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: auto;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   scrollbar-gutter: stable both-edges;
 }
 
@@ -516,6 +516,17 @@ select:focus-visible {
 .cars-sold-row button,
 .cars-sold-row [role="button"] {
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.cars-sold-row:active,
+.cars-sold-row > div:active,
+.cars-sold-row button:active,
+.cars-sold-row [role="button"]:active {
+  background-color: inherit !important;
+  box-shadow: none !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
