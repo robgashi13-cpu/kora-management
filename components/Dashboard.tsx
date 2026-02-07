@@ -81,7 +81,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     s.status === 'Inspection' ? 'status-inspection' :
                         'bg-slate-100 text-slate-500';
     const isSoldRow = s.status === 'Completed';
-    const rowClassName = isSoldRow ? 'contents group table-row-compact' : 'contents group table-row-hover table-row-compact';
+    const rowClassName = isSoldRow ? 'contents table-row-compact' : 'contents group table-row-hover table-row-compact';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -116,7 +116,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         Bal: €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>}
-                <div className="absolute top-4 left-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className={`absolute top-4 left-4 z-10 transition-opacity ${isSoldRow ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100'}`}>
                     <button onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-400'}`}>
                         <CheckSquare className="w-3.5 h-3.5" />
                     </button>
@@ -125,7 +125,10 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 1. Checkbox Column */}
             <div className="px-1 h-full flex items-center justify-center relative border-r border-slate-100 z-10 bg-white">
-                <div className="absolute left-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing p-0.5" onPointerDown={(e) => controls.start(e)}>
+                <div
+                    className={`absolute left-0.5 top-1/2 -translate-y-1/2 p-0.5 ${isSoldRow ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing'}`}
+                    onPointerDown={(e) => controls.start(e)}
+                >
                     <GripVertical className="w-3 h-3 text-slate-400" />
                 </div>
                 <button
