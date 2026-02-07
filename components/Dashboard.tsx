@@ -2530,6 +2530,59 @@ export default function Dashboard() {
                 <span className="text-xl font-bold text-white tracking-tight">KORAUTO</span>
             </div>
 
+            <div className="px-4 pb-2">
+                <div className="relative">
+                    <button
+                        onClick={() => setShowProfileMenu(!showProfileMenu)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
+                            {userProfile ? userProfile[0].toUpperCase() : 'U'}
+                        </div>
+                        <div className="flex-1 text-left overflow-hidden">
+                            <div className="text-sm font-bold text-white truncate">{userProfile}</div>
+                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
+                        </div>
+                        <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                    </button>
+
+                    {showProfileMenu && (
+                        <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-top-2">
+                            <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
+                            <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
+                                {availableProfiles.map(p => (
+                                    <button key={p} onClick={() => {
+                                        if (p === ADMIN_PROFILE && userProfile !== p) {
+                                            setPendingProfile(p);
+                                            setPasswordInput('');
+                                            setIsPasswordVisible(false);
+                                            setShowPasswordModal(true);
+                                            return;
+                                        }
+                                        setShowProfileMenu(false);
+                                        startTransition(() => { setUserProfile(p); });
+                                        persistUserProfile(p);
+                                        setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
+                                    }}
+                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                        <span>{p}</span>
+                                        {userProfile === p && <CheckSquare className="w-4 h-4" />}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="h-px bg-slate-100 my-2" />
+                            <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
+                                <Plus className="w-4 h-4" /> Add Profile
+                            </button>
+                            <div className="h-px bg-slate-100 my-2" />
+                            <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                                <LogOut className="w-4 h-4" /> Log Out
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 space-y-1 mt-4 pb-4">
                 {navItems.map((item) => {
                     if (item.adminOnly && !isAdmin) return null;
@@ -2553,57 +2606,6 @@ export default function Dashboard() {
                     );
                 })}
             </nav>
-
-            <div className="p-4 border-t border-slate-800">
-                <button
-                    onClick={() => setShowProfileMenu(!showProfileMenu)}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
-                >
-                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
-                        {userProfile ? userProfile[0].toUpperCase() : 'U'}
-                    </div>
-                    <div className="flex-1 text-left overflow-hidden">
-                        <div className="text-sm font-bold text-white truncate">{userProfile}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
-                    </div>
-                    <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
-                </button>
-
-                {showProfileMenu && (
-                    <div className="absolute bottom-20 left-4 right-4 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-bottom-2">
-                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
-                        <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
-                            {availableProfiles.map(p => (
-                                <button key={p} onClick={() => {
-                                    if (p === ADMIN_PROFILE && userProfile !== p) {
-                                        setPendingProfile(p);
-                                        setPasswordInput('');
-                                        setIsPasswordVisible(false);
-                                        setShowPasswordModal(true);
-                                        return;
-                                    }
-                                    setShowProfileMenu(false);
-                                    startTransition(() => { setUserProfile(p); });
-                                    persistUserProfile(p);
-                                    setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
-                                }}
-                                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
-                                    <span>{p}</span>
-                                    {userProfile === p && <CheckSquare className="w-4 h-4" />}
-                                </button>
-                            ))}
-                        </div>
-                        <div className="h-px bg-slate-100 my-2" />
-                        <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
-                            <Plus className="w-4 h-4" /> Add Profile
-                        </button>
-                        <div className="h-px bg-slate-100 my-2" />
-                        <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
-                            <LogOut className="w-4 h-4" /> Log Out
-                        </button>
-                    </div>
-                )}
-            </div>
         </div>
     );
 
