@@ -3309,7 +3309,7 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag={false}
+                                                                                drag="x"
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
@@ -3452,7 +3452,7 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag={false}
+                                                                                        drag="x"
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
@@ -3556,7 +3556,7 @@ export default function Dashboard() {
                                                         </div>
                                                         <motion.div
                                                             layout
-                                                            drag={false}
+                                                            drag="x"
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
