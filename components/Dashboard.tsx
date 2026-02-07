@@ -3291,7 +3291,7 @@ export default function Dashboard() {
                                                                                         }
                                                                                     }
                                                                                 }}
-                                                                                className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
                                                                                 onClick={() => {
                                                                                     if (selectedIds.size > 0) {
                                                                                         toggleSelection(sale.id);
@@ -3323,8 +3323,8 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[10px] text-slate-500 mt-0.5 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                            <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
@@ -3332,7 +3332,7 @@ export default function Dashboard() {
                                                                                                     'bg-slate-100 text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-600">
+                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-1.5 gap-y-0 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                                                         <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
@@ -3348,7 +3348,7 @@ export default function Dashboard() {
                                                                                             <span className="text-right text-slate-400">-</span>
                                                                                         )}
                                                                                     </div>
-                                                                                    <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+                                                                                    <div className="mt-0.5 flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500">
                                                                                         <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
                                                                                             <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
@@ -3359,9 +3359,10 @@ export default function Dashboard() {
                                                                                     {groupingEnabled && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                            className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
                                                                                         >
-                                                                                            Remove from group
+                                                                                            <X className="w-2.5 h-2.5" />
+                                                                                            <span className="hidden sm:inline">Remove from group</span>
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
@@ -3432,7 +3433,7 @@ export default function Dashboard() {
                                                                                                 }
                                                                                             }
                                                                                         }}
-                                                                                        className="p-2 flex items-center gap-2 relative z-10 transition-colors"
+                                                                                        className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
                                                                                         onClick={() => {
                                                                                             if (selectedIds.size > 0) {
                                                                                                 toggleSelection(sale.id);
@@ -3490,9 +3491,10 @@ export default function Dashboard() {
                                                                                             {groupingEnabled && sale.group && (
                                                                                                 <button
                                                                                                     onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                                    className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                                    className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
                                                                                                 >
-                                                                                                    Remove from group
+                                                                                                    <X className="w-2.5 h-2.5" />
+                                                                                                    <span className="hidden sm:inline">Remove from group</span>
                                                                                                 </button>
                                                                                             )}
                                                                                         </div>
@@ -3566,8 +3568,8 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[10px] text-slate-500 mt-0.5 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                            <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
@@ -3575,7 +3577,7 @@ export default function Dashboard() {
                                                                                                     'bg-slate-100 text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-600">
+                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-1.5 gap-y-0 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
                                                                                         <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
@@ -3591,7 +3593,7 @@ export default function Dashboard() {
                                                                                             <span className="text-right text-slate-400">-</span>
                                                                                         )}
                                                                                     </div>
-                                                                                    <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+                                                                                    <div className="mt-0.5 flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500">
                                                                                         <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
                                                                                             <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
@@ -3602,9 +3604,10 @@ export default function Dashboard() {
                                                                                     {groupingEnabled && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                            className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
                                                                                         >
-                                                                                            Remove from group
+                                                                                            <X className="w-2.5 h-2.5" />
+                                                                                            <span className="hidden sm:inline">Remove from group</span>
                                                                                         </button>
                                                                                     )}
                                                                                 </div>
