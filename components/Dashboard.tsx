@@ -110,7 +110,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     </div>}
                 </div>
                 {canViewPrices && <div className="mt-4 flex justify-end">
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${calculateBalance(s) > 0 ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                    <span className={`text-xs font-semibold ${calculateBalance(s) > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                         Bal: €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>}
@@ -208,9 +208,9 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
             {/* 10. Sold (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
-                <div className="px-2 h-full flex items-center justify-end font-mono text-emerald-700 font-bold border-r border-slate-100 bg-white text-[11px] xl:text-xs">
+                <div className="px-2 h-full flex items-center justify-end text-slate-900 font-semibold border-r border-slate-100 bg-white text-[11px] xl:text-xs">
                     {canEdit ? (
-                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-emerald-700 font-bold" />
+                        <InlineEditableCell value={s.soldPrice || 0} onSave={(v) => handleFieldUpdate('soldPrice', v)} type="number" prefix="€" className="text-slate-900 font-semibold" />
                     ) : `€${(s.soldPrice || 0).toLocaleString()}`}
                 </div>
             ) : (
@@ -268,7 +268,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-2 h-full flex items-center justify-end font-mono font-bold border-r border-slate-100 bg-white">
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] xl:text-xs font-bold ${calculateBalance(s) > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <span className={`text-[11px] xl:text-xs font-semibold ${calculateBalance(s) > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
@@ -2581,7 +2581,7 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="flex h-screen w-full bg-slate-50 relative overflow-hidden font-sans text-slate-900">
+        <div className="flex min-h-[100dvh] md:h-screen w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900">
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
@@ -2722,7 +2722,7 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-hidden bg-slate-50/70 p-3 md:p-6 flex flex-col relative">
+                <main className="flex-1 overflow-visible md:overflow-hidden bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0">
                     {view !== 'sale_form' && (
                         <>
 
@@ -3176,8 +3176,14 @@ export default function Dashboard() {
                                 </div>
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
-                                <div className="md:hidden flex flex-col flex-1 h-full overflow-hidden relative">
-                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-16 no-scrollbar">
+                                <div className="md:hidden flex flex-col flex-1 min-h-0 relative">
+                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-20 no-scrollbar">
+                                        <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5 mb-1">
+                                            <div className="flex items-center justify-between text-[11px] text-slate-600">
+                                                <span className="font-semibold text-slate-900">{activeCategory}</span>
+                                                <span>{filteredSales.length} cars</span>
+                                            </div>
+                                        </div>
                                         {groupingEnabled ? (
                                             <>
                                                 {[...activeGroups, ...(groupedSales.Ungrouped?.length ? [{ name: 'Ungrouped', order: 9999, archived: false }] : [])].map(group => {
@@ -3298,8 +3304,10 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 onContextMenu={(e) => {
-                                                                                    e.preventDefault();
-                                                                                    toggleSelection(sale.id);
+                                                                                    if (selectedIds.size > 0) {
+                                                                                        e.preventDefault();
+                                                                                        toggleSelection(sale.id);
+                                                                                    }
                                                                                 }}
                                                                                 style={{
                                                                                     touchAction: 'pan-y',
@@ -3313,32 +3321,41 @@ export default function Dashboard() {
                                                                                 )}
 
                                                                                 <div className="flex-1 min-w-0">
-                                                                                    <div className="flex justify-between items-start">
-                                                                                        <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                        <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
+                                                                                    <div className="flex justify-between items-start gap-2">
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[10px] text-slate-500 mt-0.5 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                        </div>
+                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
                                                                                                 sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
                                                                                                     'bg-slate-100 text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-600">
                                                                                         <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                        <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                            <span className="font-semibold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                        ) : (
+                                                                                            <span className="text-slate-400">Price hidden</span>
+                                                                                        )}
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`text-right font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                {sale.isPaid ? 'Paid' : `Due: €${calculateBalance(sale).toLocaleString()}`}
                                                                                             </span>
                                                                                         ) : (
-                                                                                            <span className="font-mono text-slate-400">-</span>
+                                                                                            <span className="text-right text-slate-400">-</span>
                                                                                         )}
                                                                                     </div>
-                                                                                    {isAdmin && (
-                                                                                        <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                            <span className="text-slate-400">Korea:</span>
-                                                                                            <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                    <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+                                                                                        <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
+                                                                                        {isAdmin && (
+                                                                                            <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                                                                                             </span>
-                                                                                        </div>
-                                                                                    )}
+                                                                                        )}
+                                                                                    </div>
                                                                                     {groupingEnabled && sale.group && (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
@@ -3428,8 +3445,10 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         onContextMenu={(e) => {
-                                                                                            e.preventDefault();
-                                                                                            toggleSelection(sale.id);
+                                                                                            if (selectedIds.size > 0) {
+                                                                                                e.preventDefault();
+                                                                                                toggleSelection(sale.id);
+                                                                                            }
                                                                                         }}
                                                                                         style={{
                                                                                             touchAction: 'pan-y',
@@ -3528,8 +3547,10 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             onContextMenu={(e) => {
-                                                                e.preventDefault();
-                                                                toggleSelection(sale.id);
+                                                                if (selectedIds.size > 0) {
+                                                                    e.preventDefault();
+                                                                    toggleSelection(sale.id);
+                                                                }
                                                             }}
                                                             style={{
                                                                 touchAction: 'pan-y',
@@ -3542,34 +3563,51 @@ export default function Dashboard() {
                                                                 </div>
                                                             )}
 
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div className="font-bold text-slate-800 text-sm truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
-                                                                        (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                            sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                'bg-slate-100 text-slate-500'
-                                                                        }`}>{sale.status}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center text-[11px] text-slate-500 mt-0.5">
-                                                                    <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                    {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                        <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                            {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="font-mono text-slate-400">-</span>
-                                                                    )}
-                                                                </div>
-                                                                {isAdmin && (
-                                                                    <div className="flex justify-end items-center text-[10px] mt-0.5 gap-1">
-                                                                        <span className="text-slate-400">Korea:</span>
-                                                                        <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                            {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex justify-between items-start gap-2">
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="font-semibold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[10px] text-slate-500 mt-0.5 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                        </div>
+                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
+                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
+                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            }`}>{sale.status}</span>
+                                                                                    </div>
+                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-600">
+                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                        <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className="font-semibold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                        ) : (
+                                                                                            <span className="text-slate-400">Price hidden</span>
+                                                                                        )}
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`text-right font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                {sale.isPaid ? 'Paid' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-right text-slate-400">-</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500">
+                                                                                        <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
+                                                                                        {isAdmin && (
+                                                                                            <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    {groupingEnabled && sale.group && (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
+                                                                                            className="mt-1 text-[9px] text-red-500 font-semibold hover:text-red-600"
+                                                                                        >
+                                                                                            Remove from group
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
                                                         </motion.div>
                                                     </motion.div>
                                                 ))}
