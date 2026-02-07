@@ -397,7 +397,7 @@ export default function Dashboard() {
     const [sales, setSales] = useState<CarSale[]>([]);
     const salesRef = useRef(sales);
     useEffect(() => { salesRef.current = sales; }, [sales]);
-    const [view, setView] = useState('profile_select');
+    const [view, setView] = useState('dashboard');
     const [userProfile, setUserProfile] = useState<string | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
     const [isLoading, setIsLoading] = useState(true);
@@ -621,6 +621,14 @@ export default function Dashboard() {
     const requestEditChoice = (sale: CarSale, returnView = view) => {
         setEditChoiceSale(sale);
         setEditChoiceReturnView(returnView);
+    };
+
+    const handleSaleInteraction = (sale: CarSale, returnView = view) => {
+        if (!isAdmin && sale.soldBy !== userProfile) {
+            setViewSaleModalItem(sale);
+            return;
+        }
+        requestEditChoice(sale, returnView);
     };
 
     const handleEditSaleChoice = () => {
@@ -2993,11 +3001,7 @@ export default function Dashboard() {
                                                                             openInvoice={openInvoice}
                                                                             onInlineUpdate={handleInlineUpdate}
                                                                             onClick={() => {
-                                                                                if (!isAdmin && s.soldBy !== userProfile) {
-                                                                                    alert("You do not have permission to edit this sale.");
-                                                                                    return;
-                                                                                }
-                                                                                requestEditChoice(s);
+                                                                                handleSaleInteraction(s);
                                                                             }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
@@ -3050,11 +3054,7 @@ export default function Dashboard() {
                                                                         openInvoice={openInvoice}
                                                                         onInlineUpdate={handleInlineUpdate}
                                                                         onClick={() => {
-                                                                            if (!isAdmin && s.soldBy !== userProfile) {
-                                                                                alert("You do not have permission to edit this sale.");
-                                                                                return;
-                                                                            }
-                                                                            requestEditChoice(s);
+                                                                            handleSaleInteraction(s);
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
@@ -3131,11 +3131,7 @@ export default function Dashboard() {
                                                                                     openInvoice={openInvoice}
                                                                                     onInlineUpdate={handleInlineUpdate}
                                                                                     onClick={() => {
-                                                                                        if (!isAdmin && s.soldBy !== userProfile) {
-                                                                                            alert("You do not have permission to edit this sale.");
-                                                                                            return;
-                                                                                        }
-                                                                                        requestEditChoice(s);
+                                                                                        handleSaleInteraction(s);
                                                                                     }}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
@@ -3177,11 +3173,7 @@ export default function Dashboard() {
                                                         openInvoice={openInvoice}
                                                         onInlineUpdate={handleInlineUpdate}
                                                         onClick={() => {
-                                                            if (!isAdmin && s.soldBy !== userProfile) {
-                                                                alert("You do not have permission to edit this sale.");
-                                                                return;
-                                                            }
-                                                            requestEditChoice(s);
+                                                            handleSaleInteraction(s);
                                                         }}
                                                         onDelete={handleDeleteSingle}
                                                     />
@@ -3337,11 +3329,7 @@ export default function Dashboard() {
                                                                                     if (selectedIds.size > 0) {
                                                                                         toggleSelection(sale.id);
                                                                                     } else {
-                                                                                        if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                                            alert("You do not have permission to edit this sale.");
-                                                                                            return;
-                                                                                        }
-                                                                                        requestEditChoice(sale);
+                                                                                        handleSaleInteraction(sale);
                                                                                     }
                                                                                 }}
                                                                                 onContextMenu={(e) => {
@@ -3484,11 +3472,7 @@ export default function Dashboard() {
                                                                                             if (selectedIds.size > 0) {
                                                                                                 toggleSelection(sale.id);
                                                                                             } else {
-                                                                                                if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                                                    alert("You do not have permission to edit this sale.");
-                                                                                                    return;
-                                                                                                }
-                                                                                                requestEditChoice(sale);
+                                                                                                handleSaleInteraction(sale);
                                                                                             }
                                                                                         }}
                                                                                         onContextMenu={(e) => {
@@ -3592,11 +3576,7 @@ export default function Dashboard() {
                                                                 if (selectedIds.size > 0) {
                                                                     toggleSelection(sale.id);
                                                                 } else {
-                                                                    if (!isAdmin && sale.soldBy !== userProfile) {
-                                                                        alert("You do not have permission to edit this sale.");
-                                                                        return;
-                                                                    }
-                                                                    requestEditChoice(sale);
+                                                                    handleSaleInteraction(sale);
                                                                 }
                                                             }}
                                                             onContextMenu={(e) => {
