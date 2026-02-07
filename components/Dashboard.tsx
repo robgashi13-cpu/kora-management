@@ -790,7 +790,23 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
+    const [isTouchPrimaryInput, setIsTouchPrimaryInput] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(hover: none) and (pointer: coarse)');
+        const updateTouchPrimaryInput = () => setIsTouchPrimaryInput(mediaQuery.matches);
+
+        updateTouchPrimaryInput();
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', updateTouchPrimaryInput);
+            return () => mediaQuery.removeEventListener('change', updateTouchPrimaryInput);
+        }
+
+        mediaQuery.addListener(updateTouchPrimaryInput);
+        return () => mediaQuery.removeListener(updateTouchPrimaryInput);
+    }, []);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -3308,7 +3324,7 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag="x"
+                                                                                drag={isTouchPrimaryInput ? false : 'x'}
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
@@ -3339,7 +3355,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: 'pan-y',
+                                                                                    touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
                                                                                     backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
@@ -3451,7 +3467,7 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag="x"
+                                                                                        drag={isTouchPrimaryInput ? false : 'x'}
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
@@ -3482,7 +3498,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: 'pan-y',
+                                                                                            touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
                                                                                             backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
@@ -3555,7 +3571,7 @@ export default function Dashboard() {
                                                         </div>
                                                         <motion.div
                                                             layout
-                                                            drag="x"
+                                                            drag={isTouchPrimaryInput ? false : 'x'}
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
@@ -3586,7 +3602,7 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: 'pan-y',
+                                                                touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
                                                                 backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
