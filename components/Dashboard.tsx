@@ -2337,9 +2337,30 @@ export default function Dashboard() {
         }
         return 0;
     }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir]);
+    const soldInvoiceSales = React.useMemo(
+        () => filteredSales.filter(sale => (sale.soldPrice || 0) > 0 || sale.status === 'Completed'),
+        [filteredSales]
+    );
+
+    const groupedInvoiceSales = React.useMemo(() => {
+        const groups: Record<string, CarSale[]> = {};
+        soldInvoiceSales.forEach((sale) => {
+            const groupKey = sale.group?.trim() || 'Ungrouped';
+            if (!groups[groupKey]) groups[groupKey] = [];
+            groups[groupKey].push(sale);
+        });
+        return groups;
+    }, [soldInvoiceSales]);
+
+
     const selectedInvoices = React.useMemo(
-        () => filteredSales.filter(sale => selectedIds.has(sale.id)),
-        [filteredSales, selectedIds]
+        () => soldInvoiceSales.filter(sale => selectedIds.has(sale.id)),
+        [soldInvoiceSales, selectedIds]
+    );
+
+    const selectedDownloadableInvoices = React.useMemo(
+        () => selectedInvoices.filter(sale => (sale.amountPaidBank || 0) > 0),
+        [selectedInvoices]
     );
 
     // Toggle sort column
@@ -2389,6 +2410,12 @@ export default function Dashboard() {
 
     const activeGroups = useMemo(() => orderedGroupMeta.filter(g => !g.archived), [orderedGroupMeta]);
     const archivedGroups = useMemo(() => orderedGroupMeta.filter(g => g.archived), [orderedGroupMeta]);
+
+
+    const invoiceGroupOrder = React.useMemo(
+        () => [...activeGroups.map(g => g.name), ...(groupedInvoiceSales.Ungrouped?.length ? ['Ungrouped'] : [])],
+        [activeGroups, groupedInvoiceSales]
+    );
 
     useEffect(() => {
         if (hasInitializedGroups.current) return;
@@ -2503,7 +2530,7 @@ export default function Dashboard() {
                 <span className="text-xl font-bold text-white tracking-tight">KORAUTO</span>
             </div>
 
-            <nav className="flex-1 px-4 space-y-1 mt-4">
+            <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 space-y-1 mt-4 pb-4">
                 {navItems.map((item) => {
                     if (item.adminOnly && !isAdmin) return null;
                     const isActive = currentNavId === item.id;
@@ -2527,7 +2554,7 @@ export default function Dashboard() {
                 })}
             </nav>
 
-            <div className="p-4 mt-auto border-t border-slate-800">
+            <div className="p-4 border-t border-slate-800">
                 <button
                     onClick={() => setShowProfileMenu(!showProfileMenu)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
@@ -3674,15 +3701,15 @@ export default function Dashboard() {
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-3 md:px-4 md:py-3">
                                         <div>
                                             <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Invoices</h2>
-                                            <p className="text-xs md:text-sm text-slate-500 mt-0.5">Manage and download your bank invoices</p>
+                                            <p className="text-xs md:text-sm text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => toggleAll(filteredSales.filter(s => (s.amountPaidBank || 0) > 0))}
+                                                onClick={() => toggleAll(soldInvoiceSales)}
                                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
                                             >
-                                                {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.filter(s => (s.amountPaidBank || 0) > 0).length ? (
+                                                {selectedInvoices.length > 0 && selectedInvoices.length === soldInvoiceSales.length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
                                                 ) : (
                                                     <Square className="w-4 h-4" />
@@ -3691,95 +3718,117 @@ export default function Dashboard() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
-                                                disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
+                                                onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
+                                                disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
                                                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs md:text-sm font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
                                             >
                                                 {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                                {isDownloadingInvoices ? 'Generating...' : `Download ${selectedInvoices.length} Invoices`}
+                                                {isDownloadingInvoices ? 'Generating...' : `Download ${selectedDownloadableInvoices.length} Invoices`}
                                             </button>
                                         </div>
                                     </div>
 
-                                    {filteredSales.filter(s => (s.amountPaidBank || 0) > 0).length === 0 ? (
+                                    {soldInvoiceSales.length === 0 ? (
                                         <div className="text-center text-slate-500 py-32 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
                                             <FileText className="w-16 h-16 mx-auto mb-4 opacity-20 text-slate-900" />
-                                            <h3 className="text-xl font-bold text-slate-900">No bank invoices found</h3>
-                                            <p className="text-slate-500 max-w-xs mx-auto mt-2">Only sales with bank payments will appear here for invoice generation.</p>
+                                            <h3 className="text-xl font-bold text-slate-900">No sold cars found</h3>
+                                            <p className="text-slate-500 max-w-xs mx-auto mt-2">When a car is sold it will appear here in its group, same as the Sold tab.</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 gap-2 md:gap-0 md:divide-y md:divide-slate-100 md:border md:border-slate-200/70 rounded-2xl overflow-hidden bg-white">
-                                            <div className="hidden md:grid grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 px-4 py-2.5 bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
-                                                <div className="text-center">Select</div>
-                                                <div>Vehicle Details</div>
-                                                <div>Buyer</div>
-                                                <div className="text-right">Bank Amount</div>
-                                                <div className="text-right">Balance</div>
-                                                <div className="text-center">Actions</div>
-                                            </div>
+                                        <div className="space-y-3">
+                                            {invoiceGroupOrder.map((groupName) => {
+                                                const groupSales = groupedInvoiceSales[groupName] || [];
+                                                if (groupSales.length === 0) return null;
 
-                                            {filteredSales.filter(s => (s.amountPaidBank || 0) > 0).map(s => {
-                                                const isSelected = selectedIds.has(s.id);
                                                 return (
-                                                    <div
-                                                        key={s.id}
-                                                        className={`group relative border md:border-0 rounded-xl md:rounded-none grid grid-cols-1 md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 md:gap-3 items-start md:items-center px-3 py-3 md:px-4 md:py-3 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200/80'}`}
-                                                        onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
-                                                    >
-                                                        <div className="absolute top-3 right-3 md:static md:flex md:items-center md:justify-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-500 bg-white'}`}
-                                                            >
-                                                                <Check className="w-4 h-4" />
-                                                            </button>
-                                                        </div>
-
-                                                        <div className="min-w-0 pr-8 md:pr-0">
-                                                            <div className="flex items-start gap-2.5">
-                                                                <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
-                                                                    <FileText className="w-4 h-4" />
-                                                                </div>
-                                                                <div className="min-w-0">
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                        <span className="font-extrabold text-slate-900 text-sm md:text-[15px] leading-tight truncate">{s.brand} {s.model}</span>
-                                                                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                                        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
-                                                                    </div>
-                                                                </div>
+                                                    <div key={groupName} className="rounded-2xl border border-slate-200/70 overflow-hidden bg-white">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleGroup(groupName)}
+                                                            className="w-full px-3 py-2.5 md:px-4 md:py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs md:text-sm font-black uppercase tracking-[0.12em] text-slate-700">{groupName}</span>
+                                                                <span className="text-[10px] md:text-xs text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded-full">{groupSales.length}</span>
                                                             </div>
-                                                        </div>
+                                                            {expandedGroups.includes(groupName) ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                                                        </button>
 
-                                                        <div className="text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2">
-                                                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-black md:hidden">Buyer</span>
-                                                            <div className="truncate">{s.buyerName || '---'}</div>
-                                                        </div>
+                                                        {expandedGroups.includes(groupName) && (
+                                                            <div className="divide-y divide-slate-100">
+                                                                <div className="hidden md:grid grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 px-4 py-2.5 bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
+                                                                    <div className="text-center">Select</div>
+                                                                    <div>Vehicle Details</div>
+                                                                    <div>Buyer</div>
+                                                                    <div className="text-right">Bank Amount</div>
+                                                                    <div className="text-right">Balance</div>
+                                                                    <div className="text-center">Actions</div>
+                                                                </div>
 
-                                                        <div className="text-left md:text-right">
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight md:hidden">Bank Paid</div>
-                                                            <div className="text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
-                                                            <div className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-tight">Bank Paid</div>
-                                                        </div>
+                                                                {groupSales.map(s => {
+                                                                    const isSelected = selectedIds.has(s.id);
+                                                                    return (
+                                                                        <div
+                                                                            key={s.id}
+                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
+                                                                        >
+                                                                            <div className="md:flex md:items-center md:justify-center">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                                                    className={`w-5 h-5 md:w-6 md:h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-500 bg-white'}`}
+                                                                                >
+                                                                                    <Check className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                                                </button>
+                                                                            </div>
 
-                                                        <div className="text-left md:text-right">
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight md:hidden">Due Balance</div>
-                                                            <div className={`text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
-                                                            <div className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-tight">Due Balance</div>
-                                                        </div>
+                                                                            <div className="min-w-0">
+                                                                                <div className="flex items-start gap-2">
+                                                                                    <div className="mt-0.5 h-7 w-7 md:h-8 md:w-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
+                                                                                        <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                                                    </div>
+                                                                                    <div className="min-w-0">
+                                                                                        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                                                                                            <span className="font-extrabold text-slate-900 text-xs md:text-[15px] leading-tight truncate">{s.brand} {s.model}</span>
+                                                                                            <span className="text-[9px] md:text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
+                                                                                            <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
 
-                                                        <div className="flex items-center justify-start md:justify-center gap-2 mt-1 md:mt-0">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white min-w-[110px] text-[11px] font-bold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
-                                                            >
-                                                                <FileText className="w-3.5 h-3.5" />
-                                                                <span className="uppercase tracking-wider">View File</span>
-                                                            </button>
-                                                        </div>
+                                                                            <div className="hidden md:block text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2">
+                                                                                <div className="truncate">{s.buyerName || '---'}</div>
+                                                                            </div>
+
+                                                                            <div className="text-right">
+                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Bank</div>
+                                                                                <div className="text-xs md:text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
+                                                                            </div>
+
+                                                                            <div className="text-right">
+                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Due</div>
+                                                                                <div className={`text-xs md:text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
+                                                                            </div>
+
+                                                                            <div className="flex items-center justify-center">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
+                                                                                    className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
+                                                                                >
+                                                                                    <FileText className="w-3.5 h-3.5" />
+                                                                                    <span className="uppercase tracking-wider">View</span>
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
