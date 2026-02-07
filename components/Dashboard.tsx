@@ -3270,9 +3270,17 @@ export default function Dashboard() {
                                                                             animate={{ opacity: 1 }}
                                                                             className="relative border-b border-slate-200"
                                                                         >
-                                                                            {/* Background Action (Delete) */}
-                                                                            <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                                <Trash2 className="text-white w-5 h-5" />
+                                                                            {/* Background Actions (Swipe Left) */}
+                                                                            <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                                                {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                                    <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                        Remove
+                                                                                    </div>
+                                                                                )}
+                                                                                <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                                    Delete
+                                                                                </div>
                                                                             </div>
 
                                                                             {/* Foreground Card */}
@@ -3284,11 +3292,14 @@ export default function Dashboard() {
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
                                                                                 dragSnapToOrigin
                                                                                 onDragEnd={(e, { offset }) => {
-                                                                                    if (offset.x < -100) {
+                                                                                    const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
+                                                                                    if (offset.x < -165) {
                                                                                         const shouldDelete = confirm('Delete this item?');
                                                                                         if (shouldDelete) {
                                                                                             handleDeleteSingle(sale.id);
                                                                                         }
+                                                                                    } else if (offset.x < -90 && canRemoveFromGroup) {
+                                                                                        handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
                                                                                 className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
@@ -3332,11 +3343,11 @@ export default function Dashboard() {
                                                                                                     'bg-slate-100 text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-1.5 gap-y-0 text-[9px] sm:text-[10px] text-slate-600">
-                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                        <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
+                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
+                                                                                        <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
+                                                                                        <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className="font-semibold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                            <span><span className="text-slate-400">Sold:</span> <span className="font-semibold text-slate-900"> €{(sale.soldPrice || 0).toLocaleString()}</span></span>
                                                                                         ) : (
                                                                                             <span className="text-slate-400">Price hidden</span>
                                                                                         )}
@@ -3356,14 +3367,8 @@ export default function Dashboard() {
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
-                                                                                    {groupingEnabled && sale.group && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                            className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
-                                                                                        >
-                                                                                            <X className="w-2.5 h-2.5" />
-                                                                                            <span className="hidden sm:inline">Remove from group</span>
-                                                                                        </button>
+                                                                                    {groupingEnabled && sale.group && sale.status === 'Completed' && (
+                                                                                        <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
                                                                                     )}
                                                                                 </div>
                                                                             </motion.div>
@@ -3415,8 +3420,16 @@ export default function Dashboard() {
                                                                                     animate={{ opacity: 1 }}
                                                                                     className="relative border-b border-slate-200"
                                                                                 >
-                                                                                    <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                                                        <Trash2 className="text-white w-5 h-5" />
+                                                                                    <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                                                        {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                                            <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                                Remove
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                                            Delete
+                                                                                        </div>
                                                                                     </div>
                                                                                     <motion.div
                                                                                         layout
@@ -3426,11 +3439,14 @@ export default function Dashboard() {
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
                                                                                         dragSnapToOrigin
                                                                                         onDragEnd={(e, { offset }) => {
-                                                                                            if (offset.x < -100) {
+                                                                                            const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
+                                                                                            if (offset.x < -165) {
                                                                                                 const shouldDelete = confirm('Delete this item?');
                                                                                                 if (shouldDelete) {
                                                                                                     handleDeleteSingle(sale.id);
                                                                                                 }
+                                                                                            } else if (offset.x < -90 && canRemoveFromGroup) {
+                                                                                                handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
                                                                                         className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
@@ -3488,14 +3504,8 @@ export default function Dashboard() {
                                                                                                     </span>
                                                                                                 </div>
                                                                                             )}
-                                                                                            {groupingEnabled && sale.group && (
-                                                                                                <button
-                                                                                                    onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                                    className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
-                                                                                                >
-                                                                                                    <X className="w-2.5 h-2.5" />
-                                                                                                    <span className="hidden sm:inline">Remove from group</span>
-                                                                                                </button>
+                                                                                            {groupingEnabled && sale.group && sale.status === 'Completed' && (
+                                                                                                <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
                                                                                             )}
                                                                                         </div>
                                                                                     </motion.div>
@@ -3518,8 +3528,16 @@ export default function Dashboard() {
                                                         animate={{ opacity: 1 }}
                                                         className="relative border-b border-slate-200"
                                                     >
-                                                        <div className="absolute inset-0 flex items-center justify-end px-4 bg-red-600 overflow-hidden">
-                                                            <Trash2 className="text-white w-5 h-5" />
+                                                        <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                            {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                    Remove
+                                                                </div>
+                                                            )}
+                                                            <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                Delete
+                                                            </div>
                                                         </div>
                                                         <motion.div
                                                             layout
@@ -3529,11 +3547,14 @@ export default function Dashboard() {
                                                             dragElastic={{ left: 0.8, right: 0 }}
                                                             dragSnapToOrigin
                                                             onDragEnd={(e, { offset }) => {
-                                                                if (offset.x < -100) {
+                                                                const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
+                                                                if (offset.x < -165) {
                                                                     const shouldDelete = confirm('Delete this item?');
                                                                     if (shouldDelete) {
                                                                         handleDeleteSingle(sale.id);
                                                                     }
+                                                                } else if (offset.x < -90 && canRemoveFromGroup) {
+                                                                    handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
                                                             className="p-2.5 flex items-center gap-2.5 relative z-10 transition-colors"
@@ -3577,11 +3598,11 @@ export default function Dashboard() {
                                                                                                     'bg-slate-100 text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-1.5 gap-y-0 text-[9px] sm:text-[10px] text-slate-600">
-                                                                                        <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                        <span className="text-right">Buyer: <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
+                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
+                                                                                        <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
+                                                                                        <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className="font-semibold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                            <span><span className="text-slate-400">Sold:</span> <span className="font-semibold text-slate-900"> €{(sale.soldPrice || 0).toLocaleString()}</span></span>
                                                                                         ) : (
                                                                                             <span className="text-slate-400">Price hidden</span>
                                                                                         )}
@@ -3601,14 +3622,8 @@ export default function Dashboard() {
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
-                                                                                    {groupingEnabled && sale.group && (
-                                                                                        <button
-                                                                                            onClick={(e) => { e.stopPropagation(); handleRemoveFromGroup(sale.id); }}
-                                                                                            className="mt-0.5 inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2 py-0.5 text-[9px] text-red-600 font-semibold hover:bg-red-100 transition-colors"
-                                                                                        >
-                                                                                            <X className="w-2.5 h-2.5" />
-                                                                                            <span className="hidden sm:inline">Remove from group</span>
-                                                                                        </button>
+                                                                                    {groupingEnabled && sale.group && sale.status === 'Completed' && (
+                                                                                        <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
                                                                                     )}
                                                                                 </div>
                                                         </motion.div>
