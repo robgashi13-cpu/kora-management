@@ -2373,6 +2373,11 @@ export default function Dashboard() {
         [selectedInvoices]
     );
 
+    const validInvoiceSales = React.useMemo(
+        () => soldInvoiceSales.filter(sale => (sale.amountPaidBank || 0) > 0),
+        [soldInvoiceSales]
+    );
+
     // Toggle sort column
     const toggleSort = (column: string) => {
         if (sortBy === column) {
@@ -3690,10 +3695,10 @@ export default function Dashboard() {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
-                                                onClick={() => toggleAll(soldInvoiceSales)}
+                                                onClick={() => toggleAll(validInvoiceSales)}
                                                 className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
                                             >
-                                                {selectedInvoices.length > 0 && selectedInvoices.length === soldInvoiceSales.length ? (
+                                                {selectedDownloadableInvoices.length > 0 && selectedDownloadableInvoices.length === validInvoiceSales.length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
                                                 ) : (
                                                     <Square className="w-4 h-4" />
