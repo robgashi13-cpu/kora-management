@@ -82,6 +82,33 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         'bg-slate-100 text-slate-500';
     const isSoldRow = s.status === 'Completed';
     const rowClassName = isSoldRow ? 'contents table-row-compact cars-sold-row' : 'contents group table-row-hover table-row-compact';
+    const rowTapRef = useRef({ x: 0, y: 0, moved: false, active: false });
+
+    const handleRowPointerDown = (event: React.PointerEvent) => {
+        if (event.pointerType === 'mouse') return;
+        rowTapRef.current = { x: event.clientX, y: event.clientY, moved: false, active: true };
+    };
+
+    const handleRowPointerMove = (event: React.PointerEvent) => {
+        const state = rowTapRef.current;
+        if (event.pointerType === 'mouse' || !state.active || state.moved) return;
+        if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
+            rowTapRef.current.moved = true;
+        }
+    };
+
+    const handleRowPointerEnd = () => {
+        rowTapRef.current.active = false;
+    };
+
+    const handleInfoClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+        if (rowTapRef.current.moved) {
+            event.preventDefault();
+            rowTapRef.current.moved = false;
+            return;
+        }
+        onClick();
+    };
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
@@ -144,7 +171,11 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             <div className="px-2 h-full flex items-center font-semibold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
                 <button
                     type="button"
-                    onClick={onClick}
+                    onPointerDown={handleRowPointerDown}
+                    onPointerMove={handleRowPointerMove}
+                    onPointerUp={handleRowPointerEnd}
+                    onPointerCancel={handleRowPointerEnd}
+                    onClick={handleInfoClick}
                     className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${isSoldRow ? 'text-slate-900' : 'hover:text-slate-700'}`}
                     title={`${s.brand} ${s.model}`}
                 >
@@ -343,6 +374,9 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 ));
 
 const INITIAL_SALES: CarSale[] = [];
+const UI_STATE_STORAGE_KEY = 'dashboard_ui_state_v1';
+const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
+const ROW_TAP_MOVE_THRESHOLD = 10;
 
 const LEGACY_MERCEDES_B200: CarSale = {
     id: 'legacy-mercedes-b200-wddmhojbxgn149268',
@@ -515,7 +549,6 @@ export default function Dashboard() {
     const [analyzing, setAnalyzing] = useState(false);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string>('');
-    const [pullY, setPullY] = useState(0);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
@@ -523,6 +556,10 @@ export default function Dashboard() {
     const forceMobileLayout = false;
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const restoredScrollTopRef = useRef<number | null>(null);
+    const didRestoreUiStateRef = useRef(false);
+    const mobileRowTapStateRef = useRef<Record<string, { x: number; y: number; moved: boolean; active: boolean }>>({});
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles
@@ -608,6 +645,12 @@ export default function Dashboard() {
 
     const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
         const normalizedProfile = profile ? normalizeProfileName(profile) : null;
+        if (normalizedProfile) {
+            localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, normalizedProfile);
+        } else {
+            localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
+        }
+
         if (remember && normalizedProfile) {
             await Preferences.set({ key: 'user_profile', value: normalizedProfile });
             await Preferences.set({ key: 'remember_profile', value: 'true' });
@@ -793,41 +836,6 @@ export default function Dashboard() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [supabaseUrl, supabaseKey]);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [touchStartY, setTouchStartY] = useState(0);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    const handlePullTouchStart = (e: React.TouchEvent) => {
-        if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
-            setTouchStartY(e.targetTouches[0].clientY);
-        }
-    };
-
-    const handlePullTouchMove = (e: React.TouchEvent) => {
-        if (touchStartY === 0) return;
-        const currentY = e.targetTouches[0].clientY;
-        const deltaY = currentY - touchStartY;
-        if (deltaY > 0 && (!scrollContainerRef.current || scrollContainerRef.current.scrollTop === 0)) {
-            // Resistive pull
-            setPullY(Math.min(deltaY * 0.5, 120));
-        }
-    };
-
-    const handlePullTouchEnd = async () => {
-        if (pullY > 60) {
-            setIsRefreshing(true);
-            setPullY(60); // Keep loading spinner visible
-            if (userProfile) await performAutoSync(supabaseUrl, supabaseKey, userProfile);
-            setTimeout(() => {
-                setIsRefreshing(false);
-                setPullY(0);
-            }, 500);
-        } else {
-            setPullY(0);
-        }
-        setTouchStartY(0);
-    };
-
 
 
     const handlePasswordSubmit = () => {
@@ -1058,6 +1066,36 @@ export default function Dashboard() {
             return new Set(visibleSales.map(s => s.id));
         });
     }, []);
+
+    const handleMobileRowPointerDown = (id: string, event: React.PointerEvent) => {
+        if (event.pointerType === 'mouse') return;
+        mobileRowTapStateRef.current[id] = {
+            x: event.clientX,
+            y: event.clientY,
+            moved: false,
+            active: true
+        };
+    };
+
+    const handleMobileRowPointerMove = (id: string, event: React.PointerEvent) => {
+        const state = mobileRowTapStateRef.current[id];
+        if (event.pointerType === 'mouse' || !state?.active || state.moved) return;
+        if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
+            state.moved = true;
+        }
+    };
+
+    const handleMobileRowPointerEnd = (id: string) => {
+        const state = mobileRowTapStateRef.current[id];
+        if (state) state.active = false;
+    };
+
+    const shouldIgnoreMobileRowTap = (id: string) => {
+        const state = mobileRowTapStateRef.current[id];
+        if (!state?.moved) return false;
+        state.moved = false;
+        return true;
+    };
 
     const sanitizeFolderName = (name: string) => {
         const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim();
@@ -1560,6 +1598,7 @@ export default function Dashboard() {
         setUserProfile('');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
+        localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         setRememberProfile(false);
         setShowProfileMenu(false);
     };
@@ -1727,15 +1766,25 @@ export default function Dashboard() {
                 setRememberProfile(shouldRemember);
 
                 let { value: storedProfile } = await Preferences.get({ key: 'user_profile' });
+                const sessionProfile = localStorage.getItem(SESSION_PROFILE_STORAGE_KEY);
+                if ((!storedProfile || !shouldRemember) && sessionProfile) {
+                    storedProfile = sessionProfile;
+                }
+
                 const normalizedStoredProfile = normalizeProfileName(storedProfile);
                 if (normalizedStoredProfile && normalizedStoredProfile !== storedProfile) {
                     storedProfile = normalizedStoredProfile;
-                    await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
+                    localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, normalizedStoredProfile);
+                    if (shouldRemember) {
+                        await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
+                    }
                 }
-                if (storedProfile && shouldRemember) {
+                if (storedProfile) {
                     setUserProfile(storedProfile);
                     setView('landing');
-                } else if (storedProfile && !shouldRemember) {
+                    localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
+                }
+                if (storedProfile && !shouldRemember) {
                     await Preferences.remove({ key: 'user_profile' });
                 }
 
@@ -1775,6 +1824,36 @@ export default function Dashboard() {
                         dirtyIds.current = new Set(parsed.filter(Boolean));
                     }
                 }
+
+                const persistedUiState = localStorage.getItem(UI_STATE_STORAGE_KEY);
+                if (persistedUiState) {
+                    try {
+                        const parsed = JSON.parse(persistedUiState) as {
+                            view?: string;
+                            activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON';
+                            searchTerm?: string;
+                            sortBy?: string;
+                            sortDir?: 'asc' | 'desc';
+                            expandedGroups?: string[];
+                            scrollTop?: number;
+                        };
+                        if (parsed.view) setView(parsed.view);
+                        if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
+                        if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
+                        if (parsed.sortBy) setSortBy(parsed.sortBy);
+                        if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') setSortDir(parsed.sortDir);
+                        if (Array.isArray(parsed.expandedGroups)) {
+                            setExpandedGroups(parsed.expandedGroups.filter(Boolean));
+                            hasInitializedGroups.current = true;
+                        }
+                        if (typeof parsed.scrollTop === 'number' && Number.isFinite(parsed.scrollTop)) {
+                            restoredScrollTopRef.current = parsed.scrollTop;
+                        }
+                        didRestoreUiStateRef.current = true;
+                    } catch (uiErr) {
+                        console.error('Failed to parse UI state:', uiErr);
+                    }
+                }
             } catch (e) {
                 console.error("Initialization Failed:", e);
             } finally {
@@ -1782,6 +1861,113 @@ export default function Dashboard() {
             }
         };
         initSettings();
+    }, []);
+
+    useEffect(() => {
+        if (isLoading) return;
+
+        const uiState = {
+            view,
+            activeCategory,
+            searchTerm,
+            sortBy,
+            sortDir,
+            expandedGroups,
+            scrollTop: scrollContainerRef.current?.scrollTop ?? restoredScrollTopRef.current ?? 0
+        };
+
+        localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(uiState));
+    }, [isLoading, view, activeCategory, searchTerm, sortBy, sortDir, expandedGroups]);
+
+    useEffect(() => {
+        if (isLoading || !didRestoreUiStateRef.current) return;
+        if (restoredScrollTopRef.current === null) return;
+
+        const restoreScroll = () => {
+            if (!scrollContainerRef.current) return;
+            scrollContainerRef.current.scrollTop = restoredScrollTopRef.current ?? 0;
+        };
+
+        requestAnimationFrame(restoreScroll);
+        const timeoutId = window.setTimeout(restoreScroll, 120);
+        return () => window.clearTimeout(timeoutId);
+    }, [isLoading, sales.length, view, activeCategory]);
+
+    useEffect(() => {
+        if (!scrollContainerRef.current) return;
+        const container = scrollContainerRef.current;
+
+        const onScroll = () => {
+            if (isLoading) return;
+            let existing: Record<string, unknown> = {};
+            const existingRaw = localStorage.getItem(UI_STATE_STORAGE_KEY);
+            if (existingRaw) {
+                try {
+                    existing = JSON.parse(existingRaw) as Record<string, unknown>;
+                } catch {
+                    existing = {};
+                }
+            }
+            const nextState = {
+                ...existing,
+                view,
+                activeCategory,
+                searchTerm,
+                sortBy,
+                sortDir,
+                expandedGroups,
+                scrollTop: container.scrollTop
+            };
+            localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(nextState));
+        };
+
+        container.addEventListener('scroll', onScroll, { passive: true });
+        return () => container.removeEventListener('scroll', onScroll);
+    }, [isLoading, view, activeCategory, searchTerm, sortBy, sortDir, expandedGroups]);
+
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            const currentState = {
+                view,
+                activeCategory,
+                searchTerm,
+                sortBy,
+                sortDir,
+                expandedGroups,
+                scrollTop: scrollContainerRef.current?.scrollTop ?? restoredScrollTopRef.current ?? 0
+            };
+            localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(currentState));
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [view, activeCategory, searchTerm, sortBy, sortDir, expandedGroups]);
+
+    useEffect(() => {
+        if (!userProfile) return;
+        localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, userProfile);
+    }, [userProfile]);
+
+    useEffect(() => {
+        if (userProfile) return;
+        const fallbackProfile = localStorage.getItem(SESSION_PROFILE_STORAGE_KEY);
+        const normalizedFallback = normalizeProfileName(fallbackProfile);
+        if (normalizedFallback) {
+            setUserProfile(normalizedFallback);
+            if (view === 'profile_select') {
+                setView('landing');
+            }
+        }
+    }, [userProfile, view]);
+
+    useEffect(() => {
+        const onStorage = (event: StorageEvent) => {
+            if (event.key === SESSION_PROFILE_STORAGE_KEY && !event.newValue) {
+                setUserProfile('');
+            }
+        };
+        window.addEventListener('storage', onStorage);
+        return () => window.removeEventListener('storage', onStorage);
     }, []);
 
     useEffect(() => {
@@ -3343,7 +3529,12 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
+                                                                                onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                                                onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
+                                                                                onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
+                                                                                onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
                                                                                 onClick={() => {
+                                                                                    if (shouldIgnoreMobileRowTap(sale.id)) return;
                                                                                     if (selectedIds.size > 0) {
                                                                                         toggleSelection(sale.id);
                                                                                     } else {
@@ -3357,7 +3548,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
+                                                                                    touchAction: 'pan-y',
                                                                                     backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
@@ -3494,7 +3685,12 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         className="p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors"
+                                                                                        onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                                                        onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
+                                                                                        onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
+                                                                                        onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
                                                                                         onClick={() => {
+                                                                                            if (shouldIgnoreMobileRowTap(sale.id)) return;
                                                                                             if (selectedIds.size > 0) {
                                                                                                 toggleSelection(sale.id);
                                                                                             } else {
@@ -3508,7 +3704,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
+                                                                                            touchAction: 'pan-y',
                                                                                             backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
@@ -3620,7 +3816,7 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
+                                                                touchAction: 'pan-y',
                                                                 backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
