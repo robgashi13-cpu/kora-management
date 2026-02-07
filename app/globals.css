@@ -554,6 +554,17 @@ select:focus-visible {
   }
 }
 
+
+.touch-swipe-only-row,
+.touch-swipe-only-row *,
+.touch-swipe-only-row *::before,
+.touch-swipe-only-row *::after {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* Attractive Gradients */
 .gradient-primary {
   background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));

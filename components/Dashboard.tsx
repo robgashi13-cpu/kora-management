@@ -377,6 +377,7 @@ const INITIAL_SALES: CarSale[] = [];
 const UI_STATE_STORAGE_KEY = 'dashboard_ui_state_v1';
 const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
 const ROW_TAP_MOVE_THRESHOLD = 10;
+type InputMode = 'mouse' | 'touch';
 
 const LEGACY_MERCEDES_B200: CarSale = {
     id: 'legacy-mercedes-b200-wddmhojbxgn149268',
@@ -553,6 +554,7 @@ export default function Dashboard() {
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [inputMode, setInputMode] = useState<InputMode>('mouse');
     const forceMobileLayout = false;
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
@@ -560,6 +562,48 @@ export default function Dashboard() {
     const restoredScrollTopRef = useRef<number | null>(null);
     const didRestoreUiStateRef = useRef(false);
     const mobileRowTapStateRef = useRef<Record<string, { x: number; y: number; moved: boolean; active: boolean }>>({});
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const coarsePointerQuery = window.matchMedia('(any-pointer: coarse)');
+        const updateFromMediaQuery = () => {
+            if (coarsePointerQuery.matches) {
+                setInputMode((prev) => (prev === 'mouse' ? 'touch' : prev));
+            }
+        };
+
+        updateFromMediaQuery();
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (event.pointerType === 'mouse') {
+                setInputMode('mouse');
+                return;
+            }
+
+            if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+                setInputMode('touch');
+            }
+        };
+
+        window.addEventListener('pointerdown', handlePointerDown, { passive: true });
+        if (typeof coarsePointerQuery.addEventListener === 'function') {
+            coarsePointerQuery.addEventListener('change', updateFromMediaQuery);
+        } else {
+            coarsePointerQuery.addListener(updateFromMediaQuery);
+        }
+
+        return () => {
+            window.removeEventListener('pointerdown', handlePointerDown);
+            if (typeof coarsePointerQuery.removeEventListener === 'function') {
+                coarsePointerQuery.removeEventListener('change', updateFromMediaQuery);
+            } else {
+                coarsePointerQuery.removeListener(updateFromMediaQuery);
+            }
+        };
+    }, []);
+
+    const isTouchInputMode = inputMode === 'touch';
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles
@@ -1098,6 +1142,7 @@ export default function Dashboard() {
     };
 
     const handleMobileSaleClick = (sale: CarSale, isSoldSale: boolean) => {
+        if (isTouchInputMode) return;
         if (shouldIgnoreMobileRowTap(sale.id)) return;
         if (selectedIds.size > 0 && !isSoldSale) {
             toggleSelection(sale.id);
@@ -3519,7 +3564,7 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag={isSoldSale ? false : 'x'}
+                                                                                drag={isSoldSale || !isTouchInputMode ? false : 'x'}
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
@@ -3537,7 +3582,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
+                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -3550,7 +3595,11 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: 'pan-x pan-y',
+                                                                                    touchAction: isTouchInputMode ? 'pan-y' : 'auto',
+                                                                                    userSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                                    WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                                    WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
+                                                                                    WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
                                                                                     backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
@@ -3668,7 +3717,7 @@ export default function Dashboard() {
                                                                                     )}
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag={isSoldSale ? false : 'x'}
+                                                                                        drag={isSoldSale || !isTouchInputMode ? false : 'x'}
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
@@ -3686,7 +3735,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
+                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -3699,7 +3748,11 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: 'pan-x pan-y',
+                                                                                            touchAction: isTouchInputMode ? 'pan-y' : 'auto',
+                                                                                            userSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                                            WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                                            WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
+                                                                                            WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
                                                                                             backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
@@ -3778,7 +3831,7 @@ export default function Dashboard() {
                                                         )}
                                                         <motion.div
                                                             layout
-                                                            drag={isSoldSale ? false : 'x'}
+                                                            drag={isSoldSale || !isTouchInputMode ? false : 'x'}
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
@@ -3796,7 +3849,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''}`}
+                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -3809,7 +3862,11 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: 'pan-x pan-y',
+                                                                touchAction: isTouchInputMode ? 'pan-y' : 'auto',
+                                                                userSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
+                                                                WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
+                                                                WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
                                                                 backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
