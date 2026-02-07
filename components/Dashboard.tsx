@@ -3670,17 +3670,17 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ) : view === 'invoices' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-6 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-3 md:px-4 md:py-3">
                                         <div>
-                                            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Invoices</h2>
-                                            <p className="text-sm text-slate-500 mt-1">Manage and download your bank invoices</p>
+                                            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Invoices</h2>
+                                            <p className="text-xs md:text-sm text-slate-500 mt-0.5">Manage and download your bank invoices</p>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAll(filteredSales.filter(s => (s.amountPaidBank || 0) > 0))}
-                                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
                                             >
                                                 {selectedInvoices.length > 0 && selectedInvoices.length === filteredSales.filter(s => (s.amountPaidBank || 0) > 0).length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
@@ -3693,7 +3693,7 @@ export default function Dashboard() {
                                                 type="button"
                                                 onClick={() => handleDownloadSelectedInvoices(selectedInvoices)}
                                                 disabled={selectedInvoices.length === 0 || isDownloadingInvoices}
-                                                className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
+                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs md:text-sm font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
                                             >
                                                 {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                                 {isDownloadingInvoices ? 'Generating...' : `Download ${selectedInvoices.length} Invoices`}
@@ -3708,8 +3708,8 @@ export default function Dashboard() {
                                             <p className="text-slate-500 max-w-xs mx-auto mt-2">Only sales with bank payments will appear here for invoice generation.</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 divide-y divide-slate-100 border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-sm">
-                                            <div className="hidden md:grid grid-cols-[80px_1fr_150px_150px_150px_200px] gap-4 p-4 bg-slate-50/50 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                                        <div className="grid grid-cols-1 gap-2 md:gap-0 md:divide-y md:divide-slate-100 md:border md:border-slate-200/70 rounded-2xl overflow-hidden bg-white">
+                                            <div className="hidden md:grid grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 px-4 py-2.5 bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
                                                 <div className="text-center">Select</div>
                                                 <div>Vehicle Details</div>
                                                 <div>Buyer</div>
@@ -3723,54 +3723,61 @@ export default function Dashboard() {
                                                 return (
                                                     <div
                                                         key={s.id}
-                                                        className={`group relative grid grid-cols-1 md:grid-cols-[80px_1fr_150px_150px_150px_200px] gap-4 items-center p-4 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                        className={`group relative border md:border-0 rounded-xl md:rounded-none grid grid-cols-1 md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 md:gap-3 items-start md:items-center px-3 py-3 md:px-4 md:py-3 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200/80'}`}
                                                         onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                     >
-                                                        <div className="flex items-center justify-center">
+                                                        <div className="absolute top-3 right-3 md:static md:flex md:items-center md:justify-center">
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-200 text-transparent hover:border-slate-400 bg-white'}`}
+                                                                className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-500 bg-white'}`}
                                                             >
                                                                 <Check className="w-4 h-4" />
                                                             </button>
                                                         </div>
 
-                                                        <div className="min-w-0">
-                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                <span className="font-extrabold text-slate-900 text-base leading-tight truncate">{s.brand} {s.model}</span>
-                                                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-3 mt-1">
-                                                                <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                        <div className="min-w-0 pr-8 md:pr-0">
+                                                            <div className="flex items-start gap-2.5">
+                                                                <div className="mt-0.5 h-8 w-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
+                                                                    <FileText className="w-4 h-4" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        <span className="font-extrabold text-slate-900 text-sm md:text-[15px] leading-tight truncate">{s.brand} {s.model}</span>
+                                                                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                                        <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
 
-                                                        <div className="text-sm font-bold text-slate-700 truncate">
-                                                            {s.buyerName || '---'}
+                                                        <div className="text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2">
+                                                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-black md:hidden">Buyer</span>
+                                                            <div className="truncate">{s.buyerName || '---'}</div>
                                                         </div>
 
-                                                        <div className="text-right">
+                                                        <div className="text-left md:text-right">
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight md:hidden">Bank Paid</div>
                                                             <div className="text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Bank Paid</div>
+                                                            <div className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-tight">Bank Paid</div>
                                                         </div>
 
-                                                        <div className="text-right">
+                                                        <div className="text-left md:text-right">
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight md:hidden">Due Balance</div>
                                                             <div className={`text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
-                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Due Balance</div>
+                                                            <div className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-tight">Due Balance</div>
                                                         </div>
 
-                                                        <div className="flex items-center justify-center gap-2">
+                                                        <div className="flex items-center justify-start md:justify-center gap-2 mt-1 md:mt-0">
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-900 text-white min-w-[100px] hover:bg-slate-800 transition-all shadow-md active:scale-95"
+                                                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-white min-w-[110px] text-[11px] font-bold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
                                                             >
-                                                                <div className="flex items-center gap-1.5 mb-1">
-                                                                    <FileText className="w-3.5 h-3.5" />
-                                                                    <span className="text-[10px] font-black uppercase tracking-widest">Invoice</span>
-                                                                </div>
-                                                                <span className="text-[9px] opacity-70 font-semibold">View / Print</span>
+                                                                <FileText className="w-3.5 h-3.5" />
+                                                                <span className="uppercase tracking-wider">View File</span>
                                                             </button>
                                                         </div>
                                                     </div>
