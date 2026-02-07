@@ -790,23 +790,7 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey]);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
-    const [isTouchPrimaryInput, setIsTouchPrimaryInput] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(hover: none) and (pointer: coarse)');
-        const updateTouchPrimaryInput = () => setIsTouchPrimaryInput(mediaQuery.matches);
-
-        updateTouchPrimaryInput();
-
-        if (typeof mediaQuery.addEventListener === 'function') {
-            mediaQuery.addEventListener('change', updateTouchPrimaryInput);
-            return () => mediaQuery.removeEventListener('change', updateTouchPrimaryInput);
-        }
-
-        mediaQuery.addListener(updateTouchPrimaryInput);
-        return () => mediaQuery.removeListener(updateTouchPrimaryInput);
-    }, []);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
@@ -3324,7 +3308,7 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag={isTouchPrimaryInput ? false : 'x'}
+                                                                                drag={false}
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
@@ -3355,7 +3339,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
+                                                                                    touchAction: 'pan-x pan-y',
                                                                                     backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
@@ -3467,7 +3451,7 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag={isTouchPrimaryInput ? false : 'x'}
+                                                                                        drag={false}
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
@@ -3498,7 +3482,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
+                                                                                            touchAction: 'pan-x pan-y',
                                                                                             backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
@@ -3571,7 +3555,7 @@ export default function Dashboard() {
                                                         </div>
                                                         <motion.div
                                                             layout
-                                                            drag={isTouchPrimaryInput ? false : 'x'}
+                                                            drag={false}
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
@@ -3602,7 +3586,7 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: isTouchPrimaryInput ? 'auto' : 'pan-y',
+                                                                touchAction: 'pan-x pan-y',
                                                                 backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
@@ -3769,14 +3753,14 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors hover:bg-slate-50/80 ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             <div className="md:flex md:items-center md:justify-center">
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                                                    className={`w-5 h-5 md:w-6 md:h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent hover:border-slate-500 bg-white'}`}
+                                                                                    className={`w-5 h-5 md:w-6 md:h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent bg-white'}`}
                                                                                 >
                                                                                     <Check className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                                                 </button>
@@ -3817,7 +3801,7 @@ export default function Dashboard() {
                                                                             <div className="flex items-center justify-center">
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                    className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold hover:bg-slate-800 transition-all shadow-sm active:scale-95"
+                                                                                    className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
                                                                                 >
                                                                                     <FileText className="w-3.5 h-3.5" />
                                                                                     <span className="uppercase tracking-wider">View</span>
