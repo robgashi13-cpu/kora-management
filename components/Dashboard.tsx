@@ -2222,11 +2222,20 @@ export default function Dashboard() {
         if (s.id === 'config_profile_avatars') return false;
 
         // Restrict visibility for non-admin users to their own sales
-        if (!isAdmin && s.soldBy !== userProfile) return false;
+        if (!isAdmin) {
+            const normalizedUser = normalizeProfileName(userProfile);
+            const normalizedSoldBy = normalizeProfileName(s.soldBy);
+            const normalizedSellerName = normalizeProfileName(s.sellerName);
+            const isSold = (s.soldPrice || 0) > 0 || s.status === 'Completed';
+            const canAccessOwnRecord = normalizedSoldBy === normalizedUser || normalizedSellerName === normalizedUser;
+
+            // Never hide sold records; also keep legacy seller-owned rows visible.
+            if (!canAccessOwnRecord && !isSold) return false;
+        }
 
 
         if (activeCategory === 'SALES') {
-            if (['Shipped', 'Inspection', 'Autosallon', 'Archived'].includes(s.status)) return false;
+            if (['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
         } else {
             if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
