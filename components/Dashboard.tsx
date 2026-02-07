@@ -3293,7 +3293,10 @@ export default function Dashboard() {
                                                             </div>
                                                             {expandedGroups.includes(group.name) && (
                                                                 <div>
-                                                                    {groupSales.map(sale => (
+                                                                    {groupSales.map(sale => {
+                                                                        const isSoldSale = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
+
+                                                                        return (
                                                                         <motion.div
                                                                             key={sale.id}
                                                                             initial={{ opacity: 0 }}
@@ -3301,27 +3304,31 @@ export default function Dashboard() {
                                                                             className="relative border-b border-slate-200"
                                                                         >
                                                                             {/* Background Actions (Swipe Left) */}
-                                                                            <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
-                                                                                {groupingEnabled && sale.group && sale.status !== 'Completed' && (
-                                                                                    <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                                        Remove
+                                                                            {!isSoldSale && (
+                                                                                <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                                                    {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                                        <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                            Remove
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                                        Delete
                                                                                     </div>
-                                                                                )}
-                                                                                <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                                                    Delete
                                                                                 </div>
-                                                                            </div>
+                                                                            )}
 
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag="x"
+                                                                                drag={isSoldSale ? false : 'x'}
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
                                                                                 dragSnapToOrigin
                                                                                 onDragEnd={(e, { offset }) => {
+                                                                                    if (isSoldSale) return;
+
                                                                                     const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                                     if (offset.x < -165) {
                                                                                         const shouldDelete = confirm('Delete this item?');
@@ -3347,7 +3354,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 style={{
-                                                                                    touchAction: 'pan-x pan-y',
+                                                                                    touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
                                                                                     backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
@@ -3399,7 +3406,8 @@ export default function Dashboard() {
                                                                                 </div>
                                                                             </motion.div>
                                                                         </motion.div>
-                                                                    ))}
+                                                                    );
+                                                                    })}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -3439,32 +3447,39 @@ export default function Dashboard() {
                                                                     </div>
                                                                     {expandedGroups.includes(group.name) && (
                                                                         <div>
-                                                                            {groupSales.map(sale => (
+                                                                            {groupSales.map(sale => {
+                                                                                const isSoldSale = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
+
+                                                                                return (
                                                                                 <motion.div
                                                                                     key={sale.id}
                                                                                     initial={{ opacity: 0 }}
                                                                                     animate={{ opacity: 1 }}
                                                                                     className="relative border-b border-slate-200"
                                                                                 >
-                                                                                    <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
-                                                                                        {groupingEnabled && sale.group && sale.status !== 'Completed' && (
-                                                                                            <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                                                Remove
+                                                                                    {!isSoldSale && (
+                                                                                        <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                                                            {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                                                <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                                    Remove
+                                                                                                </div>
+                                                                                            )}
+                                                                                            <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                                                Delete
                                                                                             </div>
-                                                                                        )}
-                                                                                        <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                                            Delete
                                                                                         </div>
-                                                                                    </div>
+                                                                                    )}
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag="x"
+                                                                                        drag={isSoldSale ? false : 'x'}
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
                                                                                         dragSnapToOrigin
                                                                                         onDragEnd={(e, { offset }) => {
+                                                                                            if (isSoldSale) return;
+
                                                                                             const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                                             if (offset.x < -165) {
                                                                                                 const shouldDelete = confirm('Delete this item?');
@@ -3490,7 +3505,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         style={{
-                                                                                            touchAction: 'pan-x pan-y',
+                                                                                            touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
                                                                                             backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
@@ -3532,7 +3547,8 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                     </motion.div>
                                                                                 </motion.div>
-                                                                            ))}
+                                                                            );
+                                                                            })}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -3543,32 +3559,39 @@ export default function Dashboard() {
                                             </>
                                         ) : (
                                             <>
-                                                {filteredSales.map(sale => (
+                                                {filteredSales.map(sale => {
+                                                    const isSoldSale = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
+
+                                                    return (
                                                     <motion.div
                                                         key={sale.id}
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
                                                         className="relative border-b border-slate-200"
                                                     >
-                                                        <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
-                                                            {groupingEnabled && sale.group && sale.status !== 'Completed' && (
-                                                                <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                    Remove
+                                                        {!isSoldSale && (
+                                                            <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
+                                                                {groupingEnabled && sale.group && sale.status !== 'Completed' && (
+                                                                    <div className="inline-flex items-center rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                        Remove
+                                                                    </div>
+                                                                )}
+                                                                <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                    Delete
                                                                 </div>
-                                                            )}
-                                                            <div className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-[10px] font-semibold text-white">
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                                Delete
                                                             </div>
-                                                        </div>
+                                                        )}
                                                         <motion.div
                                                             layout
-                                                            drag="x"
+                                                            drag={isSoldSale ? false : 'x'}
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
                                                             dragSnapToOrigin
                                                             onDragEnd={(e, { offset }) => {
+                                                                if (isSoldSale) return;
+
                                                                 const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                 if (offset.x < -165) {
                                                                     const shouldDelete = confirm('Delete this item?');
@@ -3594,7 +3617,7 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             style={{
-                                                                touchAction: 'pan-x pan-y',
+                                                                touchAction: isSoldSale ? 'pan-y' : 'pan-x pan-y',
                                                                 backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
@@ -3646,7 +3669,8 @@ export default function Dashboard() {
                                                                                 </div>
                                                         </motion.div>
                                                     </motion.div>
-                                                ))}
+                                                );
+                                                })}
                                             </>
                                         )}
                                     </div>
