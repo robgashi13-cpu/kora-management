@@ -81,7 +81,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     s.status === 'Inspection' ? 'status-inspection' :
                         'bg-slate-100 text-slate-500';
     const isSoldRow = s.status === 'Completed';
-    const rowClassName = isSoldRow ? 'contents table-row-compact' : 'contents group table-row-hover table-row-compact';
+    const rowClassName = isSoldRow ? 'contents table-row-compact cars-sold-row' : 'contents group table-row-hover table-row-compact';
 
     const handleFieldUpdate = async (field: keyof CarSale, value: string | number) => {
         if (onInlineUpdate) {
