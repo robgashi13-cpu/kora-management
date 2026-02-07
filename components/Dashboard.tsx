@@ -64,16 +64,6 @@ const normalizeAvatarMap = (avatars: Record<string, string>) => {
     return normalized;
 };
 
-const isIpadTouchDevice = () => {
-    if (typeof navigator === 'undefined') return false;
-
-    const ua = navigator.userAgent || '';
-    const platform = navigator.platform || '';
-    const maxTouchPoints = navigator.maxTouchPoints || 0;
-
-    return /iPad/i.test(ua) || (platform === 'MacIntel' && maxTouchPoints > 1);
-};
-
 type GroupMeta = {
     name: string;
     order: number;
@@ -526,7 +516,7 @@ export default function Dashboard() {
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [forceMobileLayout, setForceMobileLayout] = useState(false);
+    const forceMobileLayout = false;
     const isFormOpen = view === 'sale_form';
     const isFormOpenRef = React.useRef(isFormOpen);
 
@@ -802,10 +792,6 @@ export default function Dashboard() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [touchStartY, setTouchStartY] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setForceMobileLayout(isIpadTouchDevice());
-    }, []);
 
     const handlePullTouchStart = (e: React.TouchEvent) => {
         if (scrollContainerRef.current && scrollContainerRef.current.scrollTop === 0) {
