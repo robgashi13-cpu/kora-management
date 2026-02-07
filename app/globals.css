@@ -210,9 +210,8 @@ select:focus-visible {
 
 .scroll-container {
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  overscroll-behavior-y: contain;
-  touch-action: pan-x pan-y;
+  overscroll-behavior: auto;
+  touch-action: pan-y;
   scrollbar-gutter: stable both-edges;
 }
 
