@@ -88,7 +88,13 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
     };
 
     return (
-        <Reorder.Item value={s} id={s.id} className="contents group table-row-hover table-row-compact">
+        <Reorder.Item
+            value={s}
+            id={s.id}
+            className="contents group table-row-hover table-row-compact"
+            dragListener={false}
+            dragControls={controls}
+        >
             {/* Hidden Card View */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-slate-400 transition-colors hidden">
                 <div className="flex justify-between mb-4">
@@ -333,6 +339,39 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
 
 const INITIAL_SALES: CarSale[] = [];
 
+const LEGACY_MERCEDES_B200: CarSale = {
+    id: 'legacy-mercedes-b200-wddmhojbxgn149268',
+    brand: 'MERCEDES',
+    model: 'B200',
+    year: 2016,
+    km: 0,
+    color: 'WHITE',
+    plateNumber: '0736',
+    vin: 'WDDMHOJBXGN149268',
+    sellerName: ADMIN_PROFILE,
+    buyerName: 'ARLIND',
+    shippingName: '',
+    shippingDate: '',
+    includeTransport: false,
+    costToBuy: 7350,
+    soldPrice: 7750,
+    amountPaidCash: 7350,
+    amountPaidBank: 0,
+    deposit: 0,
+    servicesCost: 30.51,
+    tax: 0,
+    amountPaidByClient: 7350,
+    amountPaidToKorea: 0,
+    paidDateToKorea: null,
+    paidDateFromClient: null,
+    isPaid: false,
+    paymentMethod: 'Cash',
+    status: 'Completed',
+    createdAt: '2024-11-13T00:00:00.000Z',
+    soldBy: ADMIN_PROFILE
+};
+
+
 type NavItem = {
     id: string;
     label: string;
@@ -500,6 +539,25 @@ export default function Dashboard() {
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy)
     }), []);
+
+    const ensureMercedesB200Present = useCallback((currentSales: CarSale[]) => {
+        const hasB200 = currentSales.some((sale) => {
+            const vin = (sale.vin || '').trim().toUpperCase();
+            const model = (sale.model || '').trim().toUpperCase();
+            const brand = (sale.brand || '').trim().toUpperCase();
+            const plate = (sale.plateNumber || '').trim();
+
+            return vin === LEGACY_MERCEDES_B200.vin
+                || (brand === 'MERCEDES' && model === 'B200' && plate === LEGACY_MERCEDES_B200.plateNumber);
+        });
+
+        if (hasB200) return { sales: currentSales, added: false };
+
+        return {
+            sales: [...currentSales, { ...LEGACY_MERCEDES_B200, sortOrder: currentSales.length }],
+            added: true
+        };
+    }, []);
 
     const enforceAllowedSalesProfiles = useCallback((currentSales: CarSale[]) => {
         let hasChanges = false;
@@ -1727,17 +1785,18 @@ export default function Dashboard() {
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
                 const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
                 const { updatedSales: reassignedSales, hasChanges: hasReassignments } = enforceAllowedSalesProfiles(normalizedSales);
-                if (hasAdminOwnership || hasReassignments) {
+                const { sales: salesWithB200, added: addedMissingB200 } = ensureMercedesB200Present(reassignedSales);
+                if (hasAdminOwnership || hasReassignments || addedMissingB200) {
                     currentSales.forEach((sale: CarSale) => {
                         if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                             dirtyIds.current.add(sale.id);
                         }
                     });
                     await persistDirtyIds(dirtyIds.current);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(reassignedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(reassignedSales));
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(salesWithB200) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(salesWithB200));
                 }
-                setSales(reassignedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+                setSales(salesWithB200.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
                 const { value: key } = await Preferences.get({ key: 'openai_api_key' });
@@ -3242,7 +3301,10 @@ export default function Dashboard() {
                                                                                     e.preventDefault();
                                                                                     toggleSelection(sale.id);
                                                                                 }}
-                                                                                style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                                style={{
+                                                                                    touchAction: 'pan-y',
+                                                                                    backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                                                }}
                                                                             >
                                                                                 {selectedIds.size > 0 && (
                                                                                     <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
@@ -3369,7 +3431,10 @@ export default function Dashboard() {
                                                                                             e.preventDefault();
                                                                                             toggleSelection(sale.id);
                                                                                         }}
-                                                                                        style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                                                        style={{
+                                                                                            touchAction: 'pan-y',
+                                                                                            backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                                                        }}
                                                                                     >
                                                                                         {selectedIds.size > 0 && (
                                                                                             <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
@@ -3466,7 +3531,10 @@ export default function Dashboard() {
                                                                 e.preventDefault();
                                                                 toggleSelection(sale.id);
                                                             }}
-                                                            style={{ backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff' }}
+                                                            style={{
+                                                                touchAction: 'pan-y',
+                                                                backgroundColor: selectedIds.has(sale.id) ? '#f5f5f5' : '#ffffff'
+                                                            }}
                                                         >
                                                             {selectedIds.size > 0 && (
                                                                 <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
