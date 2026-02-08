@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, Sun, Moon, History } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -68,6 +68,25 @@ type GroupMeta = {
     name: string;
     order: number;
     archived: boolean;
+};
+
+type CustomDashboardColumn = {
+    id: string;
+    name: string;
+};
+
+type CustomDashboardRow = {
+    id: string;
+    cells: Record<string, string>;
+};
+
+type CustomDashboard = {
+    id: string;
+    name: string;
+    columns: CustomDashboardColumn[];
+    rows: CustomDashboardRow[];
+    createdAt: string;
+    updatedAt: string;
 };
 
 const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup }: any) {
@@ -429,6 +448,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
+    { id: 'CREATE', label: 'Create', icon: FolderPlus, view: 'create' },
     { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
@@ -444,6 +464,7 @@ export default function Dashboard() {
     const salesRef = useRef(sales);
     useEffect(() => { salesRef.current = sales; }, [sales]);
     const [view, setView] = useState('dashboard');
+    const [activeCustomDashboardId, setActiveCustomDashboardId] = useState<string | null>(null);
     const [userProfile, setUserProfile] = useState<string | null>(null);
     const [availableProfiles, setAvailableProfiles] = useState<string[]>(['Robert Gashi', ADMIN_PROFILE, 'User', 'Leonit']);
     const [isLoading, setIsLoading] = useState(true);
@@ -527,8 +548,9 @@ export default function Dashboard() {
         if (view === 'settings') return 'SETTINGS';
         if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
+        if (view === 'custom_dashboard') return activeCustomDashboardId || 'CREATE';
         return activeCategory as string;
-    }, [view, activeCategory]);
+    }, [view, activeCategory, activeCustomDashboardId]);
     const [editingSale, setEditingSale] = useState<CarSale | null>(null);
     const [editChoiceSale, setEditChoiceSale] = useState<CarSale | null>(null);
     const [editChoiceReturnView, setEditChoiceReturnView] = useState('dashboard');
@@ -562,6 +584,7 @@ export default function Dashboard() {
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [customDashboards, setCustomDashboards] = useState<CustomDashboard[]>([]);
     const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
     const [isLoadingAudit, setIsLoadingAudit] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
@@ -574,6 +597,7 @@ export default function Dashboard() {
     const restoredScrollTopRef = useRef<number | null>(null);
     const didRestoreUiStateRef = useRef(false);
     const mobileRowTapStateRef = useRef<Record<string, { x: number; y: number; moved: boolean; active: boolean }>>({});
+    const interactionGuardRef = useRef<Record<number, { x: number; y: number; moved: boolean }>>({});
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -616,6 +640,45 @@ export default function Dashboard() {
     }, []);
 
     const isTouchInputMode = inputMode === 'touch';
+
+    const handleAppPointerDownCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+        if (event.pointerType === 'mouse') return;
+        interactionGuardRef.current[event.pointerId] = { x: event.clientX, y: event.clientY, moved: false };
+    };
+
+    const handleAppPointerMoveCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+        const state = interactionGuardRef.current[event.pointerId];
+        if (!state || state.moved) return;
+        if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
+            state.moved = true;
+        }
+    };
+
+    const handleAppPointerUpCapture = (event: React.PointerEvent<HTMLDivElement>) => {
+        window.setTimeout(() => {
+            delete interactionGuardRef.current[event.pointerId];
+        }, 0);
+    };
+
+    const handleAppClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+        const nativeEvent = event.nativeEvent as MouseEvent & { sourceCapabilities?: { firesTouchEvents?: boolean } };
+        const fromTouch = nativeEvent.sourceCapabilities?.firesTouchEvents;
+        if (!fromTouch) return;
+        const hasMovedPointer = Object.values(interactionGuardRef.current).some((state) => state.moved);
+        if (hasMovedPointer) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
+    const CUSTOM_DASHBOARDS_STORAGE_KEY = 'custom_dashboards_v1';
+
+    const persistCustomDashboards = useCallback(async (next: CustomDashboard[]) => {
+        localStorage.setItem(CUSTOM_DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
+        await Preferences.set({ key: CUSTOM_DASHBOARDS_STORAGE_KEY, value: JSON.stringify(next) });
+    }, []);
+
+    const activeCustomDashboard = useMemo(() => customDashboards.find(d => d.id === activeCustomDashboardId) || null, [customDashboards, activeCustomDashboardId]);
 
     const logAuditEvent = useCallback(async (entry: {
         actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE';
@@ -734,6 +797,57 @@ export default function Dashboard() {
             await Preferences.remove({ key: 'user_profile' });
             await Preferences.set({ key: 'remember_profile', value: 'false' });
         }
+    };
+
+    const handleCreateCustomDashboard = async () => {
+        const now = new Date().toISOString();
+        const dashboard: CustomDashboard = {
+            id: crypto.randomUUID(),
+            name: `Dashboard ${customDashboards.length + 1}`,
+            columns: [
+                { id: crypto.randomUUID(), name: 'Column 1' },
+                { id: crypto.randomUUID(), name: 'Column 2' }
+            ],
+            rows: [],
+            createdAt: now,
+            updatedAt: now
+        };
+        const next = [...customDashboards, dashboard];
+        setCustomDashboards(next);
+        setActiveCustomDashboardId(dashboard.id);
+        setView('custom_dashboard');
+        await persistCustomDashboards(next);
+    };
+
+    const patchActiveCustomDashboard = async (patcher: (dashboard: CustomDashboard) => CustomDashboard) => {
+        if (!activeCustomDashboard) return;
+        const next = customDashboards.map((dashboard) => {
+            if (dashboard.id !== activeCustomDashboard.id) return dashboard;
+            return { ...patcher(dashboard), updatedAt: new Date().toISOString() };
+        });
+        setCustomDashboards(next);
+        await persistCustomDashboards(next);
+    };
+
+    const handleAddCustomDashboardColumn = async () => {
+        await patchActiveCustomDashboard((dashboard) => {
+            const nextColumn = { id: crypto.randomUUID(), name: `Column ${dashboard.columns.length + 1}` };
+            return {
+                ...dashboard,
+                columns: [...dashboard.columns, nextColumn],
+                rows: dashboard.rows.map((row) => ({ ...row, cells: { ...row.cells, [nextColumn.id]: '' } }))
+            };
+        });
+    };
+
+    const handleAddCustomDashboardRow = async () => {
+        await patchActiveCustomDashboard((dashboard) => ({
+            ...dashboard,
+            rows: [
+                ...dashboard.rows,
+                { id: crypto.randomUUID(), cells: Object.fromEntries(dashboard.columns.map((column) => [column.id, ''])) }
+            ]
+        }));
     };
 
     const openSaleForm = (sale: CarSale | null, returnView = view) => {
@@ -1917,6 +2031,19 @@ export default function Dashboard() {
                     }
                 }
 
+                const { value: customDashboardsValue } = await Preferences.get({ key: CUSTOM_DASHBOARDS_STORAGE_KEY });
+                const customDashboardsRaw = customDashboardsValue || localStorage.getItem(CUSTOM_DASHBOARDS_STORAGE_KEY);
+                if (customDashboardsRaw) {
+                    try {
+                        const parsed = JSON.parse(customDashboardsRaw) as CustomDashboard[];
+                        if (Array.isArray(parsed)) {
+                            setCustomDashboards(parsed);
+                        }
+                    } catch (error) {
+                        console.error('Failed to parse custom dashboards', error);
+                    }
+                }
+
                 const persistedUiState = localStorage.getItem(UI_STATE_STORAGE_KEY);
                 if (persistedUiState) {
                     try {
@@ -2980,15 +3107,21 @@ export default function Dashboard() {
             </div>
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 space-y-1 mt-4 pb-4">
-                {navItems.map((item) => {
+                {[...navItems, ...customDashboards.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' }))].map((item) => {
                     if (item.adminOnly && !isAdmin) return null;
-                    const isActive = currentNavId === item.id;
+                    const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
                     return (
                         <button
                             key={item.id}
                             onClick={() => {
+                                if (item.id === 'CREATE') {
+                                    handleCreateCustomDashboard();
+                                    setIsMobileMenuOpen(false);
+                                    return;
+                                }
                                 setView(item.view);
                                 if (item.category) setActiveCategory(item.category as any);
+                                if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
                                 setIsMobileMenuOpen(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
@@ -3003,21 +3136,18 @@ export default function Dashboard() {
                 })}
             </nav>
 
-            <div className="px-4 pb-4">
-                <button
-                    type="button"
-                    onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-colors"
-                >
-                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                </button>
-            </div>
         </div>
     );
 
     return (
-        <div className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900`}>
+        <div
+            className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900`}
+            onPointerDownCapture={handleAppPointerDownCapture}
+            onPointerMoveCapture={handleAppPointerMoveCapture}
+            onPointerUpCapture={handleAppPointerUpCapture}
+            onPointerCancelCapture={handleAppPointerUpCapture}
+            onClickCapture={handleAppClickCapture}
+        >
             {importStatus && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
                     <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
@@ -4071,7 +4201,39 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                            </>) : view === 'settings' ? (
+                            </> ) : view === 'custom_dashboard' ? (
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    {!activeCustomDashboard ? (
+                                        <div className="text-center py-16">
+                                            <p className="text-slate-500 mb-4">No custom dashboard selected.</p>
+                                            <button onClick={handleCreateCustomDashboard} className="px-4 py-2 rounded-lg bg-slate-900 text-white">Create dashboard</button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <input value={activeCustomDashboard.name} onChange={(e) => patchActiveCustomDashboard((d) => ({ ...d, name: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-semibold" />
+                                            <div className="flex gap-2">
+                                                <button onClick={handleAddCustomDashboardColumn} className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Add Column</button>
+                                                <button onClick={handleAddCustomDashboardRow} className="px-3 py-2 rounded-lg bg-slate-100 text-slate-800 text-sm">Add Row</button>
+                                            </div>
+                                            <div className="overflow-auto border border-slate-200 rounded-xl">
+                                                <table className="min-w-full text-sm">
+                                                    <thead className="bg-slate-50"><tr>{activeCustomDashboard.columns.map((column, index) => (<th key={column.id} className="p-2 border-b border-slate-200"><div className="flex items-center gap-1"><input value={column.name} onChange={(e) => patchActiveCustomDashboard((d) => ({ ...d, columns: d.columns.map(c => c.id === column.id ? { ...c, name: e.target.value } : c) }))} className="w-full bg-white border border-slate-200 rounded px-2 py-1" /><button onClick={() => patchActiveCustomDashboard((d) => ({ ...d, columns: d.columns.filter(c => c.id !== column.id), rows: d.rows.map(r => { const nextCells = { ...r.cells }; delete nextCells[column.id]; return { ...r, cells: nextCells }; }) }))} className="text-red-500">×</button><button disabled={index===0} onClick={() => patchActiveCustomDashboard((d) => { const cols=[...d.columns]; [cols[index-1],cols[index]]=[cols[index],cols[index-1]]; return { ...d, columns: cols }; })}>↑</button><button disabled={index===activeCustomDashboard.columns.length-1} onClick={() => patchActiveCustomDashboard((d) => { const cols=[...d.columns]; [cols[index],cols[index+1]]=[cols[index+1],cols[index]]; return { ...d, columns: cols }; })}>↓</button></div></th>))}<th className="p-2 border-b border-slate-200">Actions</th></tr></thead>
+                                                    <tbody>
+                                                        {activeCustomDashboard.rows.map((row) => (
+                                                            <tr key={row.id} className="border-b border-slate-100">
+                                                                {activeCustomDashboard.columns.map((column) => (
+                                                                    <td key={column.id} className="p-2"><input value={row.cells[column.id] || ''} onChange={(e) => patchActiveCustomDashboard((d) => ({ ...d, rows: d.rows.map(r => r.id === row.id ? { ...r, cells: { ...r.cells, [column.id]: e.target.value } } : r) }))} className="w-full bg-white border border-slate-200 rounded px-2 py-1" /></td>
+                                                                ))}
+                                                                <td className="p-2"><button onClick={() => patchActiveCustomDashboard((d) => ({ ...d, rows: d.rows.filter(r => r.id !== row.id) }))} className="text-red-500">Delete</button></td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : view === 'settings' ? (
                                 <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
                                     <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
                                     <div className="space-y-3 md:space-y-4">
@@ -4100,6 +4262,14 @@ export default function Dashboard() {
 
                                         <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
                                         <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                                        >
+                                            {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                                        </button>
 
                                         <div className="h-px bg-slate-200 my-3 md:my-4" />
                                         <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
@@ -4516,6 +4686,7 @@ export default function Dashboard() {
                                     isAdmin={isAdmin}
                                     currentProfile={userProfile}
                                     availableProfiles={profileOptions}
+                                    existingSales={sales}
                                 />
                             </div>
                         </motion.div>
