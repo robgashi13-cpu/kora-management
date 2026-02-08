@@ -449,11 +449,10 @@ type NavItem = {
 
 const navItems: NavItem[] = [
     { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
-    { id: 'CREATE', label: 'Create', icon: FolderPlus, view: 'create' },
-    { id: 'INVOICES', label: 'Invoices', icon: FileText, view: 'invoices', category: 'SALES' },
+    { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
-    { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+    { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
     { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
@@ -478,6 +477,8 @@ export default function Dashboard() {
     const [rememberProfile, setRememberProfile] = useState(false);
     const [viewSaleModalItem, setViewSaleModalItem] = useState<CarSale | null>(null);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isSalesGroupOpen, setIsSalesGroupOpen] = useState(true);
+    const [isOperationsGroupOpen, setIsOperationsGroupOpen] = useState(true);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
     const isRecordAdmin = userProfile === ADMIN_PROFILE;
@@ -3102,9 +3103,13 @@ export default function Dashboard() {
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
+            const mainNavItems = navItems.filter((item) => item.id !== 'RECORD' && item.id !== 'SETTINGS');
+            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
+            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS'].includes(item.id));
+            const secondaryNavItems = navItems.filter((item) => item.id === 'RECORD');
             const combinedNavItems = [
-                ...navItems,
-                ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' }))
+                ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
+                ...secondaryNavItems
             ];
             return (
         <div className="flex flex-col h-full bg-slate-900 text-slate-400">
@@ -3168,92 +3173,190 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 space-y-1 mt-4 pb-4">
-                {combinedNavItems.map((item) => {
-                    if (item.adminOnly && !isAdmin) return null;
-                    const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
-                    const isCustomDashboardItem = item.view === 'custom_dashboard' && !navItems.some((navItem) => navItem.id === item.id);
-                    return (
-                        <div key={item.id} className="relative">
-                            <button
-                                onClick={() => {
-                                    if (item.id === 'CREATE') {
-                                        handleCreateCustomDashboard();
-                                        setIsMobileMenuOpen(false);
-                                        return;
-                                    }
-                                    setView(item.view);
-                                    if (item.category) setActiveCategory(item.category as any);
-                                    if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
-                                    setIsMobileMenuOpen(false);
-                                }}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                    ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                    : 'hover:bg-slate-800 hover:text-white'
-                                    }`}
-                            >
-                                <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
-                                <span className="flex-1 text-left truncate">{item.label}</span>
-                            </button>
-                            {isCustomDashboardItem && (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            setActiveCustomDashboardMenuId((prev) => (prev === item.id ? null : item.id));
-                                        }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"
-                                        aria-label={`Dashboard options for ${item.label}`}
-                                    >
-                                        <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                    {activeCustomDashboardMenuId === item.id && (
-                                        <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-xl border border-slate-700 bg-slate-950 shadow-2xl p-1">
-                                            <button onClick={() => handleArchiveCustomDashboard(item.id, true)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-slate-800">Archive</button>
-                                            <button onClick={() => handleDeleteCustomDashboard(item.id)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Delete</button>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    );
-                })}
-
-                {archivedCustomDashboardItems.length > 0 && (
-                    <div className="pt-2">
+            <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 mt-4 pb-4">
+                <div className="space-y-2">
+                    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/30 p-1.5">
                         <button
                             type="button"
-                            onClick={() => setShowArchivedDashboards((prev) => !prev)}
-                            className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500"
+                            onClick={() => setIsSalesGroupOpen((prev) => !prev)}
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-slate-800/70 hover:text-white transition-colors"
                         >
-                            <span>Archived Dashboards ({archivedCustomDashboardItems.length})</span>
-                            {showArchivedDashboards ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            <span>Sales Flow</span>
+                            {isSalesGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        {showArchivedDashboards && (
-                            <div className="space-y-1 mt-1">
-                                {archivedCustomDashboardItems.map((dashboard) => (
-                                    <div key={dashboard.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
-                                        <Archive className="w-3.5 h-3.5 text-slate-500" />
-                                        <span className="flex-1 text-xs text-slate-300 truncate">{dashboard.name}</span>
-                                        <button onClick={() => handleArchiveCustomDashboard(dashboard.id, false)} className="text-xs text-white px-2 py-1 rounded-md border border-slate-600 hover:bg-slate-700">Restore</button>
-                                    </div>
-                                ))}
+                        <div className={`grid overflow-hidden transition-all duration-200 ease-out ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-60'}`}>
+                            <div className="min-h-0 space-y-1 px-1 pb-1">
+                                {salesGroupItems.map((item) => {
+                                    if (item.adminOnly && !isAdmin) return null;
+                                    const isActive = currentNavId === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setView(item.view);
+                                                if (item.category) setActiveCategory(item.category as any);
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                }`}
+                                        >
+                                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                            <span className="flex-1 text-left truncate">{item.label}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        )}
+                        </div>
                     </div>
-                )}
+
+                    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/30 p-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsOperationsGroupOpen((prev) => !prev)}
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-slate-800/70 hover:text-white transition-colors"
+                        >
+                            <span>Operations</span>
+                            {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                        <div className={`grid overflow-hidden transition-all duration-200 ease-out ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-60'}`}>
+                            <div className="min-h-0 space-y-1 px-1 pb-1">
+                                {operationsGroupItems.map((item) => {
+                                    if (item.adminOnly && !isAdmin) return null;
+                                    const isActive = currentNavId === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => {
+                                                setView(item.view);
+                                                if (item.category) setActiveCategory(item.category as any);
+                                                setIsMobileMenuOpen(false);
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                }`}
+                                        >
+                                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                            <span className="flex-1 text-left truncate">{item.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1 pt-1">
+                        {combinedNavItems.map((item) => {
+                            if (item.adminOnly && !isAdmin) return null;
+                            const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
+                            const isCustomDashboardItem = item.view === 'custom_dashboard' && !navItems.some((navItem) => navItem.id === item.id);
+                            return (
+                                <div key={item.id} className="relative">
+                                    <button
+                                        onClick={() => {
+                                            setView(item.view);
+                                            if (item.category) setActiveCategory(item.category as any);
+                                            if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
+                                            setIsMobileMenuOpen(false);
+                                        }}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                            ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                            }`}
+                                    >
+                                        <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                        <span className="flex-1 text-left truncate">{item.label}</span>
+                                    </button>
+                                    {isCustomDashboardItem && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    setActiveCustomDashboardMenuId((prev) => (prev === item.id ? null : item.id));
+                                                }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"
+                                                aria-label={`Dashboard options for ${item.label}`}
+                                            >
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+                                            {activeCustomDashboardMenuId === item.id && (
+                                                <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-xl border border-slate-700 bg-slate-950 shadow-2xl p-1">
+                                                    <button onClick={() => handleArchiveCustomDashboard(item.id, true)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-slate-800">Archive</button>
+                                                    <button onClick={() => handleDeleteCustomDashboard(item.id)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Delete</button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {archivedCustomDashboardItems.length > 0 && (
+                        <div className="pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowArchivedDashboards((prev) => !prev)}
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500"
+                            >
+                                <span>Archived Dashboards ({archivedCustomDashboardItems.length})</span>
+                                {showArchivedDashboards ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            </button>
+                            {showArchivedDashboards && (
+                                <div className="space-y-1 mt-1">
+                                    {archivedCustomDashboardItems.map((dashboard) => (
+                                        <div key={dashboard.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
+                                            <Archive className="w-3.5 h-3.5 text-slate-500" />
+                                            <span className="flex-1 text-xs text-slate-300 truncate">{dashboard.name}</span>
+                                            <button onClick={() => handleArchiveCustomDashboard(dashboard.id, false)} className="text-xs text-white px-2 py-1 rounded-md border border-slate-600 hover:bg-slate-700">Restore</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </nav>
 
-            <div className="px-4 pb-4 pt-2 border-t border-slate-800 sticky bottom-0 bg-slate-900 z-20">
-                <button
-                    type="button"
-                    onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-black text-white border border-slate-700 hover:border-slate-500 transition-colors"
-                >
-                    <span className="text-sm font-semibold">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
-                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </button>
+            <div className="px-4 pb-4 pt-3 border-t border-slate-800 bg-slate-900/95 backdrop-blur sticky bottom-0 z-20">
+                <div className="grid grid-cols-3 gap-2">
+                    <button
+                        type="button"
+                        title="Create"
+                        aria-label="Create"
+                        onClick={() => {
+                            handleCreateCustomDashboard();
+                            setIsMobileMenuOpen(false);
+                        }}
+                        className="h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
+                    >
+                        <FolderPlus className="w-5 h-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
+                        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                        className="h-11 rounded-xl border border-slate-700 bg-black text-white hover:border-slate-500 transition-colors inline-flex items-center justify-center gap-1.5"
+                    >
+                        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                        <span className="text-[11px] font-semibold">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+                    </button>
+                    <button
+                        type="button"
+                        title="Settings"
+                        aria-label="Settings"
+                        onClick={() => {
+                            setView('settings');
+                            setIsMobileMenuOpen(false);
+                        }}
+                        className="h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
+                    >
+                        <Settings className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
 
         </div>
