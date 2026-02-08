@@ -183,10 +183,10 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                                 {isGeneratingPdf ? 'Preparing PDF...' : 'View PDF'}
                             </button>
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                                sale.status === 'Completed' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
-                                sale.status === 'In Progress' ? 'bg-blue-50 text-blue-600 border border-blue-200' :
-                                sale.status === 'Shipped' ? 'bg-purple-50 text-purple-600 border border-purple-200' :
-                                sale.status === 'Cancelled' ? 'bg-red-50 text-red-600 border border-red-200' :
+                                sale.status === 'Completed' ? 'bg-slate-100 text-slate-900 border border-slate-300' :
+                                sale.status === 'In Progress' ? 'bg-slate-100 text-slate-700 border border-slate-300' :
+                                sale.status === 'Shipped' ? 'bg-slate-200 text-slate-800 border border-slate-300' :
+                                sale.status === 'Cancelled' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
                                 'bg-slate-100 text-slate-600 border border-slate-200'
                             }`}>
                                 {sale.status}

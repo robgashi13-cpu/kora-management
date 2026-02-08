@@ -54,16 +54,16 @@ html {
   --radius: 0.5rem;
 
   /* Semantic Colors */
-  --success: 142 42% 36%;
-  --success-light: 142 30% 94%;
-  --warning: 38 58% 44%;
-  --warning-light: 40 40% 93%;
-  --info: 199 40% 40%;
-  --info-light: 199 30% 94%;
+  --success: 222 8% 24%;
+  --success-light: 210 8% 94%;
+  --warning: 222 8% 24%;
+  --warning-light: 210 8% 94%;
+  --info: 222 8% 24%;
+  --info-light: 210 8% 94%;
   --profit: 222 15% 18%;
-  --loss: 0 70% 48%;
-  --balance-due: 0 60% 45%;
-  --balance-paid: 142 42% 36%;
+  --loss: 222 8% 24%;
+  --balance-due: 222 8% 24%;
+  --balance-paid: 222 8% 24%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -87,12 +87,12 @@ html {
     --border: 214 18% 88%;
     --input: 214 18% 88%;
     --ring: 222 15% 18%;
-    --success: 142 42% 36%;
-    --success-light: 142 30% 94%;
-    --warning: 38 58% 44%;
-    --warning-light: 40 40% 93%;
-    --info: 199 40% 40%;
-    --info-light: 199 30% 94%;
+    --success: 222 8% 24%;
+    --success-light: 210 8% 94%;
+    --warning: 222 8% 24%;
+    --warning-light: 210 8% 94%;
+    --info: 222 8% 24%;
+    --info-light: 210 8% 94%;
   }
 }
 
@@ -390,11 +390,11 @@ select:focus-visible {
 }
 
 .inline-cell-btn-save {
-  background-color: hsl(142 71% 94%);
-  color: hsl(142 71% 35%);
+  background-color: hsl(210 10% 92%);
+  color: hsl(222 12% 24%);
 }
 .inline-cell-btn-save:hover {
-  background-color: hsl(142 71% 88%);
+  background-color: hsl(210 10% 86%);
 }
 
 .inline-cell-btn-cancel {
@@ -424,9 +424,9 @@ select:focus-visible {
 }
 
 .inline-cell-feedback-success {
-  background-color: hsl(142 71% 90%);
-  color: hsl(142 71% 35%);
-  box-shadow: 0 0 4px hsl(142 71% 50% / 0.25);
+  background-color: hsl(210 10% 88%);
+  color: hsl(222 12% 24%);
+  box-shadow: 0 0 4px hsl(222 10% 20% / 0.2);
 }
 
 .inline-cell-feedback-error {
@@ -453,9 +453,7 @@ select:focus-visible {
   }
 }
 
-.status-completed { 
-  color: hsl(142 45% 25%);
-}
+.status-completed { color: hsl(222 10% 20%); }
 
 .status-new { 
   background: linear-gradient(135deg, hsl(220 18% 94%), hsl(220 15% 90%)); 
@@ -463,29 +461,13 @@ select:focus-visible {
   border: 1px solid hsl(220 15% 80%);
 }
 
-.status-in-progress { 
-  background: linear-gradient(135deg, hsl(38 50% 92%), hsl(38 45% 88%)); 
-  color: hsl(30 40% 28%);
-  border: 1px solid hsl(38 35% 75%);
-}
+.status-in-progress { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
 
-.status-shipped { 
-  background: linear-gradient(135deg, hsl(260 20% 94%), hsl(260 18% 90%)); 
-  color: hsl(260 25% 30%);
-  border: 1px solid hsl(260 15% 80%);
-}
+.status-shipped { background: linear-gradient(135deg, hsl(220 8% 94%), hsl(220 8% 90%)); color: hsl(222 10% 30%); border: 1px solid hsl(220 8% 80%); }
 
-.status-inspection { 
-  background: linear-gradient(135deg, hsl(199 35% 92%), hsl(199 30% 88%)); 
-  color: hsl(200 35% 28%);
-  border: 1px solid hsl(199 28% 75%);
-}
+.status-inspection { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
 
-.status-autosallon { 
-  background: linear-gradient(135deg, hsl(38 50% 92%), hsl(38 45% 88%)); 
-  color: hsl(30 40% 28%);
-  border: 1px solid hsl(38 35% 75%);
-}
+.status-autosallon { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
 
 .status-archived {
   background: linear-gradient(135deg, hsl(220 10% 92%), hsl(220 8% 88%));
@@ -494,8 +476,8 @@ select:focus-visible {
 }
 
 /* Money Colors */
-.money-positive { color: hsl(142 71% 35%); font-weight: 600; }
-.money-negative { color: hsl(0 84% 50%); font-weight: 600; }
+.money-positive { color: hsl(222 10% 20%); font-weight: 600; }
+.money-negative { color: hsl(222 10% 20%); font-weight: 600; }
 .money-neutral { color: hsl(var(--foreground)); }
 .money-muted { color: hsl(var(--muted-foreground)); }
 
@@ -571,7 +553,7 @@ select:focus-visible {
 }
 
 .gradient-success {
-  background: linear-gradient(135deg, hsl(142 42% 36%), hsl(158 32% 38%));
+  background: linear-gradient(135deg, hsl(222 10% 14%), hsl(220 10% 30%));
 }
 
 .text-gradient-primary {
@@ -586,25 +568,25 @@ html, body, #__next, #root, * {
 }
 
 [data-theme='dark'] {
-  --background: 222 35% 10%;
+  --background: 0 0% 8%;
   --foreground: 210 40% 98%;
-  --card: 222 28% 14%;
+  --card: 0 0% 12%;
   --card-foreground: 210 40% 98%;
-  --popover: 222 28% 14%;
+  --popover: 0 0% 12%;
   --popover-foreground: 210 40% 98%;
-  --secondary: 222 20% 18%;
+  --secondary: 0 0% 16%;
   --secondary-foreground: 210 40% 96%;
-  --muted: 222 20% 18%;
+  --muted: 0 0% 16%;
   --muted-foreground: 215 20% 75%;
-  --accent: 222 20% 22%;
+  --accent: 0 0% 20%;
   --accent-foreground: 210 40% 98%;
-  --border: 217 20% 28%;
-  --input: 217 20% 28%;
+  --border: 0 0% 28%;
+  --input: 0 0% 28%;
 }
 
 [data-theme='dark'] body,
 body[data-theme='dark'] {
-  background: #0b1220;
+  background: #0a0a0a;
   color: #f8fafc;
 }
 
@@ -653,6 +635,17 @@ body[data-theme='dark'] {
   color: #111111 !important;
 }
 
+[class*='text-purple'],
+[class*='text-pink'],
+[class*='text-violet'],
+[class*='text-fuchsia'],
+[class*='text-lime'],
+[class*='text-orange'],
+[class*='text-teal'],
+[class*='text-rose'] {
+  color: #111111 !important;
+}
+
 [class*='bg-blue'],
 [class*='bg-sky'],
 [class*='bg-cyan'],
@@ -662,6 +655,17 @@ body[data-theme='dark'] {
 [class*='bg-red'],
 [class*='bg-amber'],
 [class*='bg-yellow'] {
+  background-color: #f3f4f6 !important;
+}
+
+[class*='bg-purple'],
+[class*='bg-pink'],
+[class*='bg-violet'],
+[class*='bg-fuchsia'],
+[class*='bg-lime'],
+[class*='bg-orange'],
+[class*='bg-teal'],
+[class*='bg-rose'] {
   background-color: #f3f4f6 !important;
 }
 
@@ -675,4 +679,97 @@ body[data-theme='dark'] {
 [class*='border-amber'],
 [class*='border-yellow'] {
   border-color: #d1d5db !important;
+}
+
+[class*='border-purple'],
+[class*='border-pink'],
+[class*='border-violet'],
+[class*='border-fuchsia'],
+[class*='border-lime'],
+[class*='border-orange'],
+[class*='border-teal'],
+[class*='border-rose'] {
+  border-color: #d1d5db !important;
+}
+
+[class*='ring-blue'],
+[class*='ring-sky'],
+[class*='ring-cyan'],
+[class*='ring-indigo'],
+[class*='ring-emerald'],
+[class*='ring-green'],
+[class*='ring-red'],
+[class*='ring-amber'],
+[class*='ring-yellow'],
+[class*='ring-purple'],
+[class*='ring-pink'],
+[class*='ring-violet'],
+[class*='ring-fuchsia'],
+[class*='ring-lime'],
+[class*='ring-orange'],
+[class*='ring-teal'],
+[class*='ring-rose'] {
+  --tw-ring-color: #9ca3af !important;
+}
+
+
+[class*='from-blue'],
+[class*='from-sky'],
+[class*='from-cyan'],
+[class*='from-indigo'],
+[class*='from-emerald'],
+[class*='from-green'],
+[class*='from-red'],
+[class*='from-amber'],
+[class*='from-yellow'],
+[class*='from-purple'],
+[class*='from-pink'],
+[class*='from-violet'],
+[class*='from-fuchsia'],
+[class*='from-lime'],
+[class*='from-orange'],
+[class*='from-teal'],
+[class*='from-rose'] {
+  --tw-gradient-from: #e5e7eb var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(229 231 235 / 0) var(--tw-gradient-to-position) !important;
+}
+
+[class*='via-blue'],
+[class*='via-sky'],
+[class*='via-cyan'],
+[class*='via-indigo'],
+[class*='via-emerald'],
+[class*='via-green'],
+[class*='via-red'],
+[class*='via-amber'],
+[class*='via-yellow'],
+[class*='via-purple'],
+[class*='via-pink'],
+[class*='via-violet'],
+[class*='via-fuchsia'],
+[class*='via-lime'],
+[class*='via-orange'],
+[class*='via-teal'],
+[class*='via-rose'] {
+  --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), #d1d5db var(--tw-gradient-via-position), var(--tw-gradient-to)) !important;
+}
+
+[class*='to-blue'],
+[class*='to-sky'],
+[class*='to-cyan'],
+[class*='to-indigo'],
+[class*='to-emerald'],
+[class*='to-green'],
+[class*='to-red'],
+[class*='to-amber'],
+[class*='to-yellow'],
+[class*='to-purple'],
+[class*='to-pink'],
+[class*='to-violet'],
+[class*='to-fuchsia'],
+[class*='to-lime'],
+[class*='to-orange'],
+[class*='to-teal'],
+[class*='to-rose'] {
+  --tw-gradient-to: #d1d5db var(--tw-gradient-to-position) !important;
 }
