@@ -30,69 +30,69 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Clean White Admin Theme - Enhanced Colors */
+/* Clean Black & White Theme */
 :root {
   --background: 0 0% 100%;
-  --foreground: 222 20% 9%;
+  --foreground: 0 0% 7%;
   --card: 0 0% 100%;
-  --card-foreground: 222 20% 9%;
+  --card-foreground: 0 0% 7%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 20% 9%;
-  --primary: 222 15% 12%;
+  --popover-foreground: 0 0% 7%;
+  --primary: 0 0% 0%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 16% 96%;
-  --secondary-foreground: 222 20% 16%;
-  --muted: 210 16% 96%;
-  --muted-foreground: 215 12% 38%;
-  --accent: 210 14% 93%;
-  --accent-foreground: 222 20% 12%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 12%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 34%;
+  --accent: 0 0% 92%;
+  --accent-foreground: 0 0% 10%;
   --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 100%;
-  --border: 214 18% 88%;
-  --input: 214 18% 88%;
-  --ring: 222 15% 18%;
+  --border: 0 0% 85%;
+  --input: 0 0% 85%;
+  --ring: 0 0% 18%;
   --radius: 0.5rem;
 
   /* Semantic Colors */
-  --success: 222 8% 24%;
-  --success-light: 210 8% 94%;
-  --warning: 222 8% 24%;
-  --warning-light: 210 8% 94%;
-  --info: 222 8% 24%;
-  --info-light: 210 8% 94%;
-  --profit: 222 15% 18%;
-  --loss: 222 8% 24%;
-  --balance-due: 222 8% 24%;
-  --balance-paid: 222 8% 24%;
+  --success: 0 0% 18%;
+  --success-light: 0 0% 94%;
+  --warning: 0 0% 18%;
+  --warning-light: 0 0% 94%;
+  --info: 0 0% 18%;
+  --info-light: 0 0% 94%;
+  --profit: 0 0% 18%;
+  --loss: 0 0% 18%;
+  --balance-due: 0 0% 18%;
+  --balance-paid: 0 0% 18%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222 20% 9%;
+    --foreground: 0 0% 7%;
     --card: 0 0% 100%;
-    --card-foreground: 222 20% 9%;
+    --card-foreground: 0 0% 7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 20% 9%;
-    --primary: 222 15% 12%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 0 0% 0%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 16% 96%;
-    --secondary-foreground: 222 20% 16%;
-    --muted: 210 16% 96%;
-    --muted-foreground: 215 12% 38%;
-    --accent: 210 14% 93%;
-    --accent-foreground: 222 20% 12%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 34%;
+    --accent: 0 0% 92%;
+    --accent-foreground: 0 0% 10%;
     --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 18% 88%;
-    --input: 214 18% 88%;
-    --ring: 222 15% 18%;
-    --success: 222 8% 24%;
-    --success-light: 210 8% 94%;
-    --warning: 222 8% 24%;
-    --warning-light: 210 8% 94%;
-    --info: 222 8% 24%;
-    --info-light: 210 8% 94%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 0 0% 18%;
+    --success: 0 0% 18%;
+    --success-light: 0 0% 94%;
+    --warning: 0 0% 18%;
+    --warning-light: 0 0% 94%;
+    --info: 0 0% 18%;
+    --info-light: 0 0% 94%;
   }
 }
 
@@ -549,15 +549,15 @@ select:focus-visible {
 
 /* Attractive Gradients */
 .gradient-primary {
-  background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));
+  background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 26%));
 }
 
 .gradient-success {
-  background: linear-gradient(135deg, hsl(222 10% 14%), hsl(220 10% 30%));
+  background: linear-gradient(135deg, hsl(0 0% 8%), hsl(0 0% 28%));
 }
 
 .text-gradient-primary {
-  background: linear-gradient(135deg, hsl(222 15% 12%), hsl(220 10% 32%));
+  background: linear-gradient(135deg, hsl(0 0% 0%), hsl(0 0% 26%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -568,20 +568,20 @@ html, body, #__next, #root, * {
 }
 
 [data-theme='dark'] {
-  --background: 0 0% 8%;
-  --foreground: 210 40% 98%;
-  --card: 0 0% 12%;
-  --card-foreground: 210 40% 98%;
-  --popover: 0 0% 12%;
-  --popover-foreground: 210 40% 98%;
-  --secondary: 0 0% 16%;
-  --secondary-foreground: 210 40% 96%;
-  --muted: 0 0% 16%;
-  --muted-foreground: 215 20% 75%;
-  --accent: 0 0% 20%;
-  --accent-foreground: 210 40% 98%;
-  --border: 0 0% 28%;
-  --input: 0 0% 28%;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 8%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 0 0% 96%;
+  --secondary: 0 0% 14%;
+  --secondary-foreground: 0 0% 92%;
+  --muted: 0 0% 14%;
+  --muted-foreground: 0 0% 74%;
+  --accent: 0 0% 18%;
+  --accent-foreground: 0 0% 96%;
+  --border: 0 0% 24%;
+  --input: 0 0% 24%;
 }
 
 [data-theme='dark'] body,
@@ -594,16 +594,16 @@ body[data-theme='dark'] {
 [data-theme='dark'] .bg-slate-50,
 [data-theme='dark'] .bg-slate-100,
 [data-theme='dark'] .bg-slate-50\/80,
-[data-theme='dark'] .bg-slate-50\/70 { background-color: #1f2937 !important; }
+[data-theme='dark'] .bg-slate-50\/70 { background-color: #1a1a1a !important; }
 [data-theme='dark'] .text-slate-900,
 [data-theme='dark'] .text-slate-800,
 [data-theme='dark'] .text-slate-700 { color: #f8fafc !important; }
 [data-theme='dark'] .text-slate-600,
 [data-theme='dark'] .text-slate-500,
-[data-theme='dark'] .text-slate-400 { color: #cbd5e1 !important; }
+[data-theme='dark'] .text-slate-400 { color: #cfcfcf !important; }
 [data-theme='dark'] .border-slate-100,
 [data-theme='dark'] .border-slate-200,
-[data-theme='dark'] .border-slate-300 { border-color: #334155 !important; }
+[data-theme='dark'] .border-slate-300 { border-color: #3a3a3a !important; }
 
 /* Touch-first interaction hardening */
 .touch-input-mode .table-row-hover:hover,
