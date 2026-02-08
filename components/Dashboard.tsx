@@ -90,7 +90,7 @@ type CustomDashboard = {
     updatedAt: string;
 };
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
@@ -312,7 +312,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                             <span className="font-mono text-[11px] xl:text-xs text-slate-600">€{(s.servicesCost ?? 30.51).toLocaleString()}</span>
                         )}
                     </div>
-                    {isAdmin && <div className="px-2 h-full flex items-center justify-end font-mono font-bold text-slate-900 whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs">€{calculateProfit(s).toLocaleString()}</div>}
+                    {isAdmin && <div className="px-2 h-full flex items-center justify-end font-mono font-bold financial-positive-text whitespace-nowrap border-r border-slate-100 bg-white text-[11px] xl:text-xs">€{calculateProfit(s).toLocaleString()}</div>}
                 </>
             ) : (
                 <>
@@ -324,7 +324,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             {/* 15. Balance (Admin OR own sale) */}
             {(isAdmin || s.soldBy === userProfile) ? (
                 <div className="px-2 h-full flex items-center justify-end font-mono font-bold border-r border-slate-100 bg-white">
-                    <span className={`text-[11px] xl:text-xs font-semibold ${calculateBalance(s) > 0 ? 'text-red-700' : 'text-emerald-700'}`}>
+                    <span className={`text-[11px] xl:text-xs font-semibold ${calculateBalance(s) > 0 ? 'financial-negative-text' : 'financial-positive-text'}`}>
                         €{calculateBalance(s).toLocaleString()}
                     </span>
                 </div>
@@ -338,7 +338,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     {canEdit && (
                         <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] xl:text-[11px] font-bold text-slate-700" />
                     )}
-                    <span className={`payment-badge text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'payment-badge--pending' : 'payment-badge--paid'}`}>
+                        <span className={`payment-badge text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'payment-badge--pending' : 'payment-badge--paid'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
@@ -353,7 +353,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <span className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="payment-badge payment-badge--paid text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full">
+                        <span className="payment-badge payment-badge--paid financial-positive-text text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full">
                             Paid
                         </span>
                     )}
@@ -374,13 +374,13 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
-                        className={`text-slate-500 transition-colors p-1.5 rounded-lg ${isSoldRow ? '' : 'hover:text-red-600 hover:bg-red-50'}`}
+                        className={`row-action-button transition-colors p-1.5 rounded-lg ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
                         title="Remove from group"
                     >
                         <X className="w-4 h-4" />
                     </button>
                 )}
-                <button onClick={(e) => openInvoice(s, e)} className={`text-slate-600 transition-colors p-1.5 rounded-lg ${isSoldRow ? '' : 'hover:text-slate-900 hover:bg-slate-100'}`} title="View Invoice">
+                <button onClick={(e) => openInvoice(s, e)} className={`row-action-button transition-colors p-1.5 rounded-lg ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`} title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
             </div>
@@ -390,7 +390,8 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
     prev.s === next.s &&
     prev.isSelected === next.isSelected &&
     prev.userProfile === next.userProfile &&
-    prev.canViewPrices === next.canViewPrices
+    prev.canViewPrices === next.canViewPrices &&
+    prev.theme === next.theme
 ));
 
 const INITIAL_SALES: CarSale[] = [];
@@ -506,10 +507,46 @@ export default function Dashboard() {
         actions: 52
     }), []);
 
-    const { getColumnStyle, handleMouseDown, columnWidths } = useResizableColumns(defaultWidths, {
-        storageKey: isAdmin ? 'table-widths-admin' : 'table-widths-user',
-        minWidth: 30
+    const columnWidthStorageKey = useMemo(() => {
+        const profileKey = normalizeProfileName(userProfile || 'guest') || 'guest';
+        return `table-widths-${isAdmin ? 'admin' : 'user'}-${profileKey}`;
+    }, [isAdmin, userProfile]);
+
+    const { getColumnStyle, handleMouseDown, columnWidths, setColumnWidths } = useResizableColumns(defaultWidths, {
+        storageKey: columnWidthStorageKey,
+        minWidth: 30,
+        onWidthsChange: (widths) => {
+            void Preferences.set({ key: columnWidthStorageKey, value: JSON.stringify(widths) });
+        }
     });
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const hydrateColumnWidths = async () => {
+            const fromPrefs = await Preferences.get({ key: columnWidthStorageKey });
+            const raw = fromPrefs.value || (typeof window !== 'undefined' ? localStorage.getItem(columnWidthStorageKey) : null);
+            if (!raw) return;
+
+            try {
+                const parsed = JSON.parse(raw);
+                if (cancelled || !parsed || typeof parsed !== 'object') return;
+                const merged = { ...defaultWidths, ...parsed };
+                setColumnWidths(merged);
+                if (typeof window !== 'undefined') {
+                    localStorage.setItem(columnWidthStorageKey, JSON.stringify(merged));
+                }
+            } catch (error) {
+                console.error('Failed to restore column widths', error);
+            }
+        };
+
+        void hydrateColumnWidths();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [columnWidthStorageKey, defaultWidths, setColumnWidths]);
 
     const gridTemplateColumns = useMemo(() => {
         const cols = [
@@ -1130,6 +1167,7 @@ export default function Dashboard() {
     };
 
     const updateSalesAndSave = async (newSales: CarSale[]): Promise<{ success: boolean; error?: string }> => {
+        const previousSales = salesRef.current;
         const normalizedSales = newSales.map(normalizeSaleProfiles);
         setSales(normalizedSales);
         try {
@@ -1138,17 +1176,20 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey && userProfile) {
                 const syncResult = await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
                 if (!syncResult.success) {
+                    setSales(previousSales);
                     alert(`Save failed: ${syncResult.error || 'Sync failed.'}`);
                     return { success: false, error: syncResult.error || 'Sync failed.' };
                 }
             } else {
                 const missing = !supabaseUrl || !supabaseKey ? 'Supabase settings' : 'User profile';
                 const message = `Save failed: ${missing} missing.`;
+                setSales(previousSales);
                 alert(message);
                 return { success: false, error: message };
             }
             return { success: true };
         } catch (e: any) {
+            setSales(previousSales);
             console.error("Save failed", e);
             alert(`Save failed: ${e?.message || 'Unknown error'}`);
             return { success: false, error: e?.message || 'Save failed.' };
@@ -2528,7 +2569,7 @@ export default function Dashboard() {
                     id: sale.id,
                     error: saveResult.error
                 });
-                return { success: false, error: saveResult.error || 'Sync failed. Data saved locally.' };
+                return { success: false, error: saveResult.error || 'Sync failed.' };
             }
             console.info('[sale.save] success', { id: sale.id, mode: isCreate ? 'create' : 'update' });
             const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
@@ -2536,7 +2577,7 @@ export default function Dashboard() {
             return { success: true };
         } catch (e) {
             console.error("Save Error", e);
-            return { success: false, error: 'Error saving sale. Data is saved locally but might not be synced.' };
+            return { success: false, error: 'Error saving sale.' };
         } finally {
             setIsSyncing(false);
         }
@@ -3772,6 +3813,7 @@ export default function Dashboard() {
                                                                             }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
+                                                                            theme={theme}
                                                                         />
                                                                     ))}
                                                                 </Reorder.Group>
@@ -3825,6 +3867,7 @@ export default function Dashboard() {
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
+                                                                        theme={theme}
                                                                     />
                                                                 ))}
                                                             </Reorder.Group>
@@ -3902,6 +3945,7 @@ export default function Dashboard() {
                                                                                     }}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
+                                                                                    theme={theme}
                                                                                 />
                                                                             ))}
                                                                         </Reorder.Group>
@@ -3943,6 +3987,7 @@ export default function Dashboard() {
                                                             handleSaleInteraction(s);
                                                         }}
                                                         onDelete={handleDeleteSingle}
+                                                        theme={theme}
                                                     />
                                                 ))}
                                             </Reorder.Group>
@@ -3952,7 +3997,7 @@ export default function Dashboard() {
                                         <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
                                             <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
                                             {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
-                                            <div className="p-3 text-right font-mono text-emerald-600">€{totalSold.toLocaleString()}</div>
+                                            <div className="p-3 text-right font-mono financial-positive-text">€{totalSold.toLocaleString()}</div>
                                             <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
                                             {isAdmin && <>
                                                 <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
