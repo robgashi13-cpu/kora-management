@@ -1112,7 +1112,6 @@ export default function Dashboard() {
     }, []);
 
     const handleMobileRowPointerDown = (id: string, event: React.PointerEvent) => {
-        if (event.pointerType === 'mouse') return;
         mobileRowTapStateRef.current[id] = {
             x: event.clientX,
             y: event.clientY,
@@ -1123,7 +1122,7 @@ export default function Dashboard() {
 
     const handleMobileRowPointerMove = (id: string, event: React.PointerEvent) => {
         const state = mobileRowTapStateRef.current[id];
-        if (event.pointerType === 'mouse' || !state?.active || state.moved) return;
+        if (!state?.active || state.moved) return;
         if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
             state.moved = true;
         }
@@ -1142,7 +1141,6 @@ export default function Dashboard() {
     };
 
     const handleMobileSaleClick = (sale: CarSale, isSoldSale: boolean) => {
-        if (isTouchInputMode) return;
         if (shouldIgnoreMobileRowTap(sale.id)) return;
         if (selectedIds.size > 0 && !isSoldSale) {
             toggleSelection(sale.id);
@@ -3564,7 +3562,7 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag={isSoldSale || !isTouchInputMode ? false : 'x'}
+                                                                                drag={isSoldSale ? false : 'x'}
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
@@ -3582,7 +3580,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
+                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -3717,7 +3715,7 @@ export default function Dashboard() {
                                                                                     )}
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag={isSoldSale || !isTouchInputMode ? false : 'x'}
+                                                                                        drag={isSoldSale ? false : 'x'}
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
@@ -3735,7 +3733,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
+                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -3831,7 +3829,7 @@ export default function Dashboard() {
                                                         )}
                                                         <motion.div
                                                             layout
-                                                            drag={isSoldSale || !isTouchInputMode ? false : 'x'}
+                                                            drag={isSoldSale ? false : 'x'}
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
@@ -3849,7 +3847,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${isTouchInputMode ? 'touch-swipe-only-row' : ''}`}
+                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
