@@ -16,18 +16,6 @@ const canAccessSale = (sale: CarSale, profile: string) => {
     return normalizeProfileName(sale.soldBy) === normalizedProfile || normalizeProfileName(sale.sellerName) === normalizedProfile;
 };
 
-const sanitizeSaleForRole = (sale: CarSale, userProfile: string): CarSale => {
-    if (isAdminProfile(userProfile)) return sale;
-    const normalizedProfile = normalizeProfileName(userProfile);
-    return {
-        ...sale,
-        soldBy: normalizedProfile,
-        sellerName: normalizedProfile,
-        shippingName: '',
-        shippingDate: ''
-    };
-};
-
 export const createSupabaseClient = (url: string, key: string): SupabaseClient => {
     return createClient(url, key);
 };
@@ -57,7 +45,7 @@ const getSchemaCacheErrorDetails = (error: any) => {
 // Helper to map Local (camel) to Remote (snake)
 // CRITICAL: Every field that exists as a DB column MUST be mapped here to persist correctly
 const toRemote = (sale: CarSale, userProfile: string) => {
-    const s = sanitizeSaleForRole(sale, userProfile);
+    const s = sale;
     const payload = {
         id: s.id,
         brand: s.brand,
@@ -167,7 +155,6 @@ export const syncSalesWithSupabase = async (
 ): Promise<{ success: boolean; data?: CarSale[]; error?: string; failedIds?: string[] }> => {
     try {
         const roleScopedSales = localSales
-            .map((sale) => sanitizeSaleForRole(sale, userProfile))
             .filter((sale) => canAccessSale(sale, userProfile));
 
         // 1. Upsert Local to Remote (Single batch to ensure all-or-none behavior)
@@ -275,7 +262,6 @@ export const syncSalesWithSupabase = async (
 
         const syncedSales = Array.from(mergedRemoteRows.values())
             .map(r => fromRemote(r))
-            .map((sale) => sanitizeSaleForRole(sale, userProfile))
             .filter((sale) => canAccessSale(sale, userProfile));
         // Return latest remote state with locally upserted rows merged in for consistency.
         return { success: true, data: syncedSales };

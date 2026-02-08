@@ -878,28 +878,6 @@ export default function Dashboard() {
         soldBy: normalizeProfileName(sale.soldBy)
     }), []);
 
-    const enforceAllowedSalesProfiles = useCallback((currentSales: CarSale[]) => {
-        let hasChanges = false;
-        const updatedSales = currentSales.map((sale) => {
-            const normalizedSeller = normalizeProfileName(sale.sellerName);
-            const normalizedSoldBy = normalizeProfileName(sale.soldBy);
-            const shouldReplaceSeller = normalizedSeller && !ALLOWED_PROFILE_SET.has(normalizedSeller);
-            const shouldReplaceSoldBy = normalizedSoldBy && !ALLOWED_PROFILE_SET.has(normalizedSoldBy);
-
-            if (!shouldReplaceSeller && !shouldReplaceSoldBy) return sale;
-
-            hasChanges = true;
-            dirtyIds.current.add(sale.id);
-            return {
-                ...sale,
-                sellerName: shouldReplaceSeller ? ADMIN_PROFILE : sale.sellerName,
-                soldBy: shouldReplaceSoldBy ? ADMIN_PROFILE : sale.soldBy
-            };
-        });
-
-        return { updatedSales, hasChanges };
-    }, []);
-
     const profileOptions = useMemo(() => {
         const profileMap = new Map<string, string>();
         availableProfiles.forEach(name => {
@@ -2410,9 +2388,8 @@ export default function Dashboard() {
                 // Just load the saved data - no auto-import
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
                 const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
-                const { updatedSales: reassignedSales, hasChanges: hasReassignments } = enforceAllowedSalesProfiles(normalizedSales);
-                const { repaired: visibilityRepairedSales, hasChanges: hasVisibilityRepairs } = repairMercedesB200Visibility(reassignedSales);
-                if (hasAdminOwnership || hasReassignments || hasVisibilityRepairs) {
+                const { repaired: visibilityRepairedSales, hasChanges: hasVisibilityRepairs } = repairMercedesB200Visibility(normalizedSales);
+                if (hasAdminOwnership || hasVisibilityRepairs) {
                     currentSales.forEach((sale: CarSale) => {
                         if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                             dirtyIds.current.add(sale.id);
@@ -2477,14 +2454,6 @@ export default function Dashboard() {
         const profilesChanged = normalizedProfiles.length !== availableProfiles.length
             || normalizedProfiles.some((profile, index) => profile !== availableProfiles[index]);
 
-        const { updatedSales, hasChanges } = enforceAllowedSalesProfiles(sales);
-
-        if (hasChanges) {
-            setSales(updatedSales);
-            Preferences.set({ key: 'car_sales_data', value: JSON.stringify(updatedSales) });
-            localStorage.setItem('car_sales_data', JSON.stringify(updatedSales));
-        }
-
         if (profilesChanged) {
             setAvailableProfiles(normalizedProfiles);
             Preferences.set({ key: 'available_profiles', value: JSON.stringify(normalizedProfiles) });
@@ -2492,7 +2461,7 @@ export default function Dashboard() {
                 syncProfilesToCloud(normalizedProfiles);
             }
         }
-    }, [sales, availableProfiles, supabaseUrl, supabaseKey, enforceAllowedSalesProfiles, normalizeProfiles]);
+    }, [sales, availableProfiles, supabaseUrl, supabaseKey, normalizeProfiles]);
 
     useEffect(() => {
         if (!userProfile || !supabaseUrl || !supabaseKey) return;
@@ -2646,14 +2615,14 @@ export default function Dashboard() {
                 sellerName: sellerLabel
             };
 
-            const deriveSellerFields = (input: Partial<CarSale>, fallbackSoldBy?: string) => {
+            const deriveSellerFieldsForCreate = (input: Partial<CarSale>) => {
                 if (!isAdmin) {
                     return {
                         soldBy: sessionSellerId,
                         sellerName: sellerLabel
                     };
                 }
-                const resolvedSoldBy = resolveSoldBy(input, fallbackSoldBy);
+                const resolvedSoldBy = resolveSoldBy(input, sessionSellerId);
                 return {
                     soldBy: resolvedSoldBy,
                     sellerName: profileOptions.find(p => p.id === resolvedSoldBy)?.label || input.sellerName || resolvedSoldBy
@@ -2663,12 +2632,11 @@ export default function Dashboard() {
             if (index >= 0) {
                 // UPDATE
                 const currentSale = currentSales[index];
-                const currentSoldBy = currentSale.soldBy;
                 const merged = isAdmin
                     ? sale
-                    : { ...sale, ...sellerFromSession, shippingName: currentSale.shippingName || '', shippingDate: currentSale.shippingDate || '' };
+                    : { ...sale, soldBy: currentSale.soldBy, sellerName: currentSale.sellerName, shippingName: currentSale.shippingName || '', shippingDate: currentSale.shippingDate || '' };
                 newSales = [...currentSales];
-                newSales[index] = { ...currentSale, ...merged, ...deriveSellerFields(merged, currentSoldBy) };
+                newSales[index] = { ...currentSale, ...merged };
                 await logAuditEvent({
                     actionType: 'UPDATE',
                     entityType: 'sale',
@@ -2680,7 +2648,7 @@ export default function Dashboard() {
             } else {
                 // CREATE
                 const created = isAdmin ? sale : { ...sale, ...sellerFromSession, shippingName: '', shippingDate: '' };
-                const finalized = { ...created, ...deriveSellerFields(created, sessionSellerId) };
+                const finalized = { ...created, ...deriveSellerFieldsForCreate(created) };
                 newSales = [...currentSales, finalized];
                 await logAuditEvent({
                     actionType: 'CREATE',

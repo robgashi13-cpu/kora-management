@@ -111,7 +111,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             const resolvedSeller = resolveSellerSelection(migratedSale);
             const nextFormData = {
                 ...migratedSale,
-                ...(isAdmin ? resolvedSeller : sellerFromSession)
+                ...resolvedSeller
             };
             setFormData(nextFormData);
             initialFormDataRef.current = nextFormData;
@@ -128,24 +128,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }
         setSaveState({ saving: false });
     }, [existingSale, isOpen, currentProfile, availableProfiles, isAdmin]);
-
-    useEffect(() => {
-        if (isAdmin || !isOpen) return;
-        const activeProfile = (currentProfile || '').trim();
-        if (!activeProfile) return;
-        const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
-        const nextSellerName = activeOption?.label || activeProfile;
-        const nextSoldBy = activeOption?.id || activeProfile;
-
-        setFormData(prev => {
-            if (prev.sellerName === nextSellerName && prev.soldBy === nextSoldBy) return prev;
-            return {
-                ...prev,
-                sellerName: nextSellerName,
-                soldBy: nextSoldBy
-            };
-        });
-    }, [availableProfiles, currentProfile, isAdmin, isOpen]);
 
     useEffect(() => {
         if (!isOpen || typeof window === 'undefined') return;
@@ -300,13 +282,18 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
         setSaveState({ saving: true });
         const profileName = (currentProfile || '').trim();
+        const activeOption = availableProfiles.find(profile => profile.id === profileName || profile.label === profileName);
+        const sellerFromSession = {
+            sellerName: activeOption?.label || profileName,
+            soldBy: activeOption?.id || profileName
+        };
+        const isCreate = !existingSale;
         const sale: CarSale = {
             ...formData as CarSale,
-            ...(!isAdmin ? {
-                sellerName: profileName,
-                soldBy: profileName,
-                shippingName: existingSale?.shippingName || '',
-                shippingDate: existingSale?.shippingDate || ''
+            ...(!isAdmin && isCreate ? {
+                ...sellerFromSession,
+                shippingName: '',
+                shippingDate: ''
             } : {}),
             id: existingSale?.id || crypto.randomUUID(),
             createdAt: existingSale?.createdAt || new Date().toISOString(),
