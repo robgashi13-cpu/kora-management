@@ -580,3 +580,45 @@ select:focus-visible {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+html, body, #__next, #root, * {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+[data-theme='dark'] {
+  --background: 222 35% 10%;
+  --foreground: 210 40% 98%;
+  --card: 222 28% 14%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 28% 14%;
+  --popover-foreground: 210 40% 98%;
+  --secondary: 222 20% 18%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 222 20% 18%;
+  --muted-foreground: 215 20% 75%;
+  --accent: 222 20% 22%;
+  --accent-foreground: 210 40% 98%;
+  --border: 217 20% 28%;
+  --input: 217 20% 28%;
+}
+
+[data-theme='dark'] body,
+body[data-theme='dark'] {
+  background: #0b1220;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bg-white { background-color: #111827 !important; }
+[data-theme='dark'] .bg-slate-50,
+[data-theme='dark'] .bg-slate-100,
+[data-theme='dark'] .bg-slate-50\/80,
+[data-theme='dark'] .bg-slate-50\/70 { background-color: #1f2937 !important; }
+[data-theme='dark'] .text-slate-900,
+[data-theme='dark'] .text-slate-800,
+[data-theme='dark'] .text-slate-700 { color: #f8fafc !important; }
+[data-theme='dark'] .text-slate-600,
+[data-theme='dark'] .text-slate-500,
+[data-theme='dark'] .text-slate-400 { color: #cbd5e1 !important; }
+[data-theme='dark'] .border-slate-100,
+[data-theme='dark'] .border-slate-200,
+[data-theme='dark'] .border-slate-300 { border-color: #334155 !important; }

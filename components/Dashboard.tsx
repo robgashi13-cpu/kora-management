@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, Sun, Moon, History } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -433,6 +433,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'AUTOSALLON', label: 'Autosallon', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+    { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
@@ -457,6 +458,7 @@ export default function Dashboard() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
+    const isRecordAdmin = userProfile === ADMIN_PROFILE;
     const canViewPrices = isAdmin;
 
     const defaultWidths = useMemo(() => ({
@@ -523,6 +525,7 @@ export default function Dashboard() {
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
+        if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
         return activeCategory as string;
     }, [view, activeCategory]);
@@ -558,6 +561,9 @@ export default function Dashboard() {
     const [syncError, setSyncError] = useState<string>('');
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
+    const [theme, setTheme] = useState<'light' | 'dark'>('light');
+    const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
+    const [isLoadingAudit, setIsLoadingAudit] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
@@ -610,6 +616,45 @@ export default function Dashboard() {
     }, []);
 
     const isTouchInputMode = inputMode === 'touch';
+
+    const logAuditEvent = useCallback(async (entry: {
+        actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE';
+        entityType: string;
+        entityId: string;
+        beforeData?: unknown;
+        afterData?: unknown;
+        pageContext?: string;
+    }) => {
+        if (!supabaseUrl || !supabaseKey || !userProfile) return;
+        try {
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+            await client.from('audit_logs').insert({
+                actor_profile_id: userProfile,
+                actor_profile_name: userProfile,
+                action_type: entry.actionType,
+                entity_type: entry.entityType,
+                entity_id: entry.entityId,
+                before_data: entry.beforeData ?? null,
+                after_data: entry.afterData ?? null,
+                page_context: entry.pageContext ?? view,
+                request_id: crypto.randomUUID(),
+                user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+            });
+        } catch (error) {
+            console.error('Audit log write failed', error);
+        }
+    }, [supabaseUrl, supabaseKey, userProfile, view]);
+
+    const applyTheme = useCallback((nextTheme: 'light' | 'dark') => {
+        setTheme(nextTheme);
+        if (typeof document !== 'undefined') {
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            document.body.setAttribute('data-theme', nextTheme);
+        }
+        Preferences.set({ key: 'theme_mode', value: nextTheme });
+        localStorage.setItem('theme_mode', nextTheme);
+    }, []);
+
 
     const normalizeProfiles = useCallback((profiles: string[]) => {
         const normalized = profiles
@@ -1015,6 +1060,7 @@ export default function Dashboard() {
         newSales[index] = updatedSale;
         dirtyIds.current.add(id);
         await updateSalesAndSave(newSales);
+        await logAuditEvent({ actionType: field === 'status' ? 'MOVE' : 'UPDATE', entityType: 'sale', entityId: id, beforeData: currentSales[index], afterData: updatedSale, pageContext: 'inline_edit' });
 
         requestAnimationFrame(() => {
             if (scrollContainerRef.current) {
@@ -1406,6 +1452,7 @@ export default function Dashboard() {
             }
 
             setSelectedIds(new Set());
+            await logAuditEvent({ actionType: 'UPDATE', entityType: 'invoice_download', entityId: `${selectedSales.length}_sales`, afterData: selectedSales.map(s => s.id), pageContext: 'invoices' });
         } catch (error: any) {
             console.error('Invoice download failed:', error);
             alert(`Download failed: ${error?.message || 'Unknown error'}`);
@@ -1435,12 +1482,15 @@ export default function Dashboard() {
         }
 
         // Delete locally
+        const beforeSales = sales.filter(s => selectedIds.has(s.id));
         const newSales = sales.filter(s => !selectedIds.has(s.id));
         await updateSalesAndSave(newSales);
+        await logAuditEvent({ actionType: 'DELETE', entityType: 'sale_bulk', entityId: idsToDelete.join(','), beforeData: beforeSales, pageContext: 'dashboard' });
         setSelectedIds(new Set());
     };
 
     const handleBulkMove = async (status: SaleStatus) => {
+        const beforeSales = sales.filter(s => selectedIds.has(s.id));
         const newSales = sales.map(s => {
             if (selectedIds.has(s.id)) {
                 dirtyIds.current.add(s.id);
@@ -1449,6 +1499,7 @@ export default function Dashboard() {
             return s;
         });
         await updateSalesAndSave(newSales);
+        await logAuditEvent({ actionType: 'MOVE', entityType: 'sale_bulk', entityId: Array.from(selectedIds).join(','), beforeData: beforeSales, afterData: newSales.filter(s => selectedIds.has(s.id)), pageContext: 'dashboard' });
         setSelectedIds(new Set());
     };
 
@@ -1468,8 +1519,10 @@ export default function Dashboard() {
         }
 
         // Delete locally
+        const beforeSale = sales.find(s => s.id === id);
         const newSales = sales.filter(s => s.id !== id);
         await updateSalesAndSave(newSales);
+        if (beforeSale) await logAuditEvent({ actionType: 'DELETE', entityType: 'sale', entityId: id, beforeData: beforeSale, pageContext: 'dashboard' });
     };
 
     // Group management functions
@@ -2252,14 +2305,39 @@ export default function Dashboard() {
                 sellerName: sale.sellerName
             });
 
+            const sessionSellerId = normalizeProfileName(userProfile || 'Unknown');
+            const sellerLabel = profileOptions.find(p => p.id === sessionSellerId)?.label || sessionSellerId;
+            const sellerFromSession = {
+                soldBy: sessionSellerId,
+                sellerName: sellerLabel
+            };
+
             if (index >= 0) {
                 // UPDATE
                 const currentSoldBy = currentSales[index].soldBy;
+                const merged = isAdmin ? sale : { ...sale, ...sellerFromSession };
                 newSales = [...currentSales];
-                newSales[index] = { ...sale, soldBy: resolveSoldBy(sale, currentSoldBy) };
+                newSales[index] = { ...merged, soldBy: resolveSoldBy(merged, currentSoldBy), sellerName: merged.sellerName || sellerLabel };
+                await logAuditEvent({
+                    actionType: 'UPDATE',
+                    entityType: 'sale',
+                    entityId: sale.id,
+                    beforeData: currentSales[index],
+                    afterData: newSales[index],
+                    pageContext: 'sale_form'
+                });
             } else {
                 // CREATE
-                newSales = [...currentSales, { ...sale, soldBy: resolveSoldBy(sale, userProfile || 'Unknown') }];
+                const created = isAdmin ? sale : { ...sale, ...sellerFromSession };
+                const finalized = { ...created, soldBy: resolveSoldBy(created, sessionSellerId), sellerName: created.sellerName || sellerLabel };
+                newSales = [...currentSales, finalized];
+                await logAuditEvent({
+                    actionType: 'CREATE',
+                    entityType: 'sale',
+                    entityId: sale.id,
+                    afterData: finalized,
+                    pageContext: 'sale_form'
+                });
             }
 
             const saveResult = await updateSalesAndSave(newSales);
@@ -2283,6 +2361,38 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
+        const loadTheme = async () => {
+            const { value } = await Preferences.get({ key: 'theme_mode' });
+            const stored = value || localStorage.getItem('theme_mode') || 'light';
+            applyTheme(stored === 'dark' ? 'dark' : 'light');
+        };
+        loadTheme();
+    }, [applyTheme]);
+
+    useEffect(() => {
+        if (!isRecordAdmin || view !== 'record' || !supabaseUrl || !supabaseKey) return;
+        const loadAuditLogs = async () => {
+            setIsLoadingAudit(true);
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data, error } = await client
+                    .from('audit_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(500);
+                if (error) {
+                    console.error('Audit load failed', error);
+                    return;
+                }
+                setAuditLogs(data || []);
+            } finally {
+                setIsLoadingAudit(false);
+            }
+        };
+        loadAuditLogs();
+    }, [isRecordAdmin, view, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
         const loadSidebarPreference = async () => {
             const { value } = await Preferences.get({ key: SIDEBAR_COLLAPSED_KEY });
@@ -2299,16 +2409,57 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
+        const loadTheme = async () => {
+            const { value } = await Preferences.get({ key: 'theme_mode' });
+            const stored = value || localStorage.getItem('theme_mode') || 'light';
+            applyTheme(stored === 'dark' ? 'dark' : 'light');
+        };
+        loadTheme();
+    }, [applyTheme]);
+
+    useEffect(() => {
+        if (!isRecordAdmin || view !== 'record' || !supabaseUrl || !supabaseKey) return;
+        const loadAuditLogs = async () => {
+            setIsLoadingAudit(true);
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data, error } = await client
+                    .from('audit_logs')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(500);
+                if (error) {
+                    console.error('Audit load failed', error);
+                    return;
+                }
+                setAuditLogs(data || []);
+            } finally {
+                setIsLoadingAudit(false);
+            }
+        };
+        loadAuditLogs();
+    }, [isRecordAdmin, view, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
         Preferences.set({ key: SIDEBAR_COLLAPSED_KEY, value: String(isSidebarCollapsed) });
         localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     }, [isSidebarCollapsed]);
 
     const saveSettings = async () => {
+        const beforeData = { apiKey: '***', supabaseUrl, userProfile };
         await Preferences.set({ key: 'openai_api_key', value: apiKey.trim() });
         await Preferences.set({ key: 'supabase_url', value: supabaseUrl.trim() });
         await Preferences.set({ key: 'supabase_key', value: supabaseKey.trim() });
         await persistUserProfile((userProfile || '').trim());
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'settings',
+            entityId: 'system',
+            beforeData,
+            afterData: { apiKey: '***', supabaseUrl: supabaseUrl.trim(), userProfile },
+            pageContext: 'settings'
+        });
         alert('Settings Saved!');
     };
 
@@ -2851,6 +3002,17 @@ export default function Dashboard() {
                     );
                 })}
             </nav>
+
+            <div className="px-4 pb-4">
+                <button
+                    type="button"
+                    onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+                >
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+            </div>
         </div>
     );
 
@@ -3945,6 +4107,35 @@ export default function Dashboard() {
                                         <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
                                     </div>
                                 </div>
+                            ) : view === 'record' ? (
+                                !isRecordAdmin ? (
+                                    <div className="w-full max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-100">
+                                        <h2 className="text-xl font-bold text-slate-900">Access denied</h2>
+                                        <p className="text-slate-500 mt-2">Record tab is restricted to ROBERT.</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                        <h2 className="text-2xl font-black text-slate-900 mb-3">Record Timeline</h2>
+                                        {isLoadingAudit ? (
+                                            <p className="text-slate-500">Loading records...</p>
+                                        ) : auditLogs.length === 0 ? (
+                                            <p className="text-slate-500">No records found.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {auditLogs.map((log) => (
+                                                    <div key={log.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50">
+                                                        <div className="text-xs text-slate-500">{new Date(log.created_at).toLocaleString()} • {log.actor_profile_name} • {log.action_type}</div>
+                                                        <div className="text-sm font-semibold text-slate-800">{log.entity_type} / {log.entity_id}</div>
+                                                        <details className="mt-2 text-xs text-slate-600">
+                                                            <summary className="cursor-pointer">Before / After</summary>
+                                                            <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ before: log.before_data, after: log.after_data }, null, 2)}</pre>
+                                                        </details>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
                             ) : view === 'invoices' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-3 md:px-4 md:py-3">
@@ -4323,6 +4514,7 @@ export default function Dashboard() {
                                     existingSale={editingSale}
                                     defaultStatus={activeCategory === 'INSPECTIONS' ? 'Inspection' : activeCategory === 'AUTOSALLON' ? 'Autosallon' : 'New'}
                                     isAdmin={isAdmin}
+                                    currentProfile={userProfile}
                                     availableProfiles={profileOptions}
                                 />
                             </div>
