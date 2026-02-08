@@ -269,8 +269,8 @@ export default function EditablePreviewModal({
           autoFocus
           className={`editable-preview-input ${className}`}
           style={{
-            background: 'rgba(59, 130, 246, 0.1)',
-            border: '1px solid #3b82f6',
+            background: 'rgba(0, 0, 0, 0.08)',
+            border: '1px solid #000000',
             borderRadius: '3px',
             padding: '1px 4px',
             outline: 'none',
@@ -503,8 +503,8 @@ export default function EditablePreviewModal({
 
       <style jsx global>{`
         .editable-preview-field:hover {
-          background-color: rgba(59, 130, 246, 0.1);
-          border-bottom: 1px dashed #3b82f6 !important;
+          background-color: rgba(0, 0, 0, 0.08);
+          border-bottom: 1px dashed #000000 !important;
         }
         @media print {
             body > *:not(.pdf-root) {
