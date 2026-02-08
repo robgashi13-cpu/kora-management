@@ -140,6 +140,7 @@ export const syncSalesWithSupabase = async (
     try {
         // 1. Upsert Local to Remote (Single batch to ensure all-or-none behavior)
         const salesToPush = localSales.map(s => toRemote(s, userProfile));
+        let latestUpsertedRows: any[] = [];
         if (salesToPush.length > 0) {
             let payloadToPush = salesToPush;
             const droppedColumns = new Set<string>();
@@ -151,7 +152,7 @@ export const syncSalesWithSupabase = async (
                 const { data: upsertedRows, error: upsertError } = await client
                     .from('sales')
                     .upsert(payloadToPush, { onConflict: 'id' })
-                    .select('id');
+                    .select('*');
 
                 if (!upsertError) {
                     const pushedIds = payloadToPush
@@ -177,6 +178,8 @@ export const syncSalesWithSupabase = async (
                             failedIds: missingIds
                         };
                     }
+
+                    latestUpsertedRows = upsertedRows || [];
 
                     if (droppedColumns.size > 0) {
                         console.warn(`Sales sync retry succeeded after dropping missing columns: ${Array.from(droppedColumns).join(', ')}`);
@@ -227,8 +230,19 @@ export const syncSalesWithSupabase = async (
         }
 
         // 3. Map Remote to Local
-        const syncedSales = remoteSales ? remoteSales.map(r => fromRemote(r)) : localSales;
-        // Return latest remote state (which includes our just-pushed changes generally, unless race condition)
+        // Merge upsert response rows over fetched rows to avoid stale read-after-write windows.
+        const mergedRemoteRows = new Map<string, any>();
+        (remoteSales || []).forEach((row: any) => {
+            if (row?.id) mergedRemoteRows.set(row.id, row);
+        });
+        (latestUpsertedRows || []).forEach((row: any) => {
+            if (row?.id) {
+                mergedRemoteRows.set(row.id, row);
+            }
+        });
+
+        const syncedSales = Array.from(mergedRemoteRows.values()).map(r => fromRemote(r));
+        // Return latest remote state with locally upserted rows merged in for consistency.
         return { success: true, data: syncedSales };
 
     } catch (e: any) {
