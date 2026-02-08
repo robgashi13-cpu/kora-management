@@ -10,13 +10,14 @@ interface UseResizableColumnsOptions {
   storageKey?: string;
   minWidth?: number;
   maxWidth?: number;
+  onWidthsChange?: (widths: ColumnWidths) => void;
 }
 
 export function useResizableColumns(
   defaultWidths: ColumnWidths,
   options: UseResizableColumnsOptions = {}
 ) {
-  const { storageKey = 'table-column-widths', minWidth = 40, maxWidth = 500 } = options;
+  const { storageKey = 'table-column-widths', minWidth = 40, maxWidth = 500, onWidthsChange } = options;
   
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => {
     if (typeof window !== 'undefined') {
@@ -66,13 +67,21 @@ export function useResizableColumns(
       currentColumn.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(storageKey, JSON.stringify(columnWidths));
-      }
     }
-  }, [columnWidths, storageKey]);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(storageKey, JSON.stringify(columnWidths));
+      onWidthsChange?.(columnWidths);
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [columnWidths, storageKey, onWidthsChange]);
 
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
@@ -99,9 +108,9 @@ export function useResizableColumns(
 
   return {
     columnWidths,
+    setColumnWidths,
     handleMouseDown,
     getColumnStyle,
-    resetWidths,
-    isResizing: isResizing.current
+    resetWidths
   };
 }

@@ -495,13 +495,13 @@ select:focus-visible {
 
 .payment-badge--paid {
   background: linear-gradient(135deg, hsl(142 45% 93%), hsl(142 40% 88%));
-  color: hsl(142 50% 24%);
+  color: #15803d;
   border-color: hsl(142 35% 70%);
 }
 
 .payment-badge--pending {
   background: linear-gradient(135deg, hsl(36 60% 93%), hsl(36 55% 88%));
-  color: hsl(28 68% 28%);
+  color: #b91c1c;
   border-color: hsl(36 45% 72%);
 }
 
@@ -509,6 +509,39 @@ select:focus-visible {
   background: linear-gradient(135deg, hsl(220 10% 92%), hsl(220 8% 88%));
   color: hsl(220 12% 35%);
   border: 1px solid hsl(220 10% 78%);
+}
+
+
+.financial-positive-text {
+  color: #15803d !important;
+}
+
+.financial-negative-text {
+  color: #b91c1c !important;
+}
+
+.row-action-button {
+  background: transparent !important;
+  border: 1px solid transparent;
+}
+
+[data-theme='dark'] .financial-positive-text {
+  color: #4ade80 !important;
+}
+
+[data-theme='dark'] .financial-negative-text {
+  color: #f87171 !important;
+}
+
+[data-theme='dark'] .cars-sold-row .row-action-button {
+  color: #f8fafc !important;
+  background: transparent !important;
+  z-index: 5;
+}
+
+[data-theme='light'] .cars-sold-row .row-action-button,
+body:not([data-theme='dark']) .cars-sold-row .row-action-button {
+  color: #0f172a !important;
 }
 
 /* Money Colors */
@@ -679,14 +712,14 @@ body[data-theme='dark'] {
 [data-theme='dark'] .status-inspection,
 [data-theme='dark'] .payment-badge--pending {
   background: linear-gradient(135deg, hsl(36 34% 24%), hsl(36 30% 20%));
-  color: hsl(40 100% 84%);
+  color: #f87171;
   border-color: hsl(36 24% 38%);
 }
 
 [data-theme='dark'] .status-completed,
 [data-theme='dark'] .payment-badge--paid {
   background: linear-gradient(135deg, hsl(142 32% 24%), hsl(142 28% 20%));
-  color: hsl(145 90% 84%);
+  color: #4ade80;
   border-color: hsl(142 22% 38%);
 }
 
