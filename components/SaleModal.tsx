@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
@@ -20,6 +20,7 @@ interface Props {
     availableProfiles?: { id: string; label: string }[];
     hideHeader?: boolean;
     currentProfile?: string | null;
+    existingSales?: CarSale[];
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -44,7 +45,7 @@ const COLORS = [
 
 import EditablePreviewModal from './EditablePreviewModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null, existingSales = [] }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -147,6 +148,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         };
         window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
     }, [draftStorageKey, formData, isOpen]);
+
+    const duplicateWarnings = useMemo(() => {
+        const vin = (formData.vin || '').trim().toLowerCase();
+        const plate = (formData.plateNumber || '').trim().toLowerCase();
+        const currentId = existingSale?.id;
+        if (!vin && !plate) return [];
+
+        const vinMatch = vin
+            ? existingSales.filter((sale) => sale.id !== currentId && (sale.vin || '').trim().toLowerCase() === vin)
+            : [];
+        const plateMatch = plate
+            ? existingSales.filter((sale) => sale.id !== currentId && (sale.plateNumber || '').trim().toLowerCase() === plate)
+            : [];
+
+        const warnings: string[] = [];
+        if (vinMatch.length) warnings.push(`Duplicate detected: VIN already exists (${vinMatch[0].brand} ${vinMatch[0].model} - ${vinMatch[0].id.slice(0, 8)})`);
+        if (plateMatch.length) warnings.push(`Duplicate detected: Plate already exists (${plateMatch[0].brand} ${plateMatch[0].model} - ${plateMatch[0].id.slice(0, 8)})`);
+        return warnings;
+    }, [existingSale?.id, existingSales, formData.plateNumber, formData.vin]);
 
     const isDirty = useMemo(() => {
         if (!initialFormDataRef.current) return false;
@@ -460,6 +480,21 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             <Input label="VIN" name="vin" value={formData.vin} onChange={handleChange} />
                             <Input label="License Plate" name="plateNumber" value={formData.plateNumber} onChange={handleChange} />
                         </div>
+
+                        {duplicateWarnings.length > 0 && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                <div className="flex items-start gap-2">
+                                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
+                                    <div className="space-y-1">
+                                        {duplicateWarnings.map((warning) => (
+                                            <p key={warning} className="text-xs text-amber-800">{warning}</p>
+                                        ))}
+                                        <p className="text-[11px] text-amber-700">You can still continue and save this sale.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </Section>
 
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
