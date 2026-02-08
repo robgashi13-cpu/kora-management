@@ -87,6 +87,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     };
 
     useEffect(() => {
+        const activeProfile = (currentProfile || '').trim();
+        const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
+        const sellerFromSession = {
+            sellerName: activeOption?.label || activeProfile || '',
+            soldBy: activeOption?.id || activeProfile || ''
+        };
+
         if (existingSale) {
             // Migration logic: Ensure arrays exist if legacy singulars exist
             const migratedSale = { ...existingSale };
@@ -104,17 +111,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             const resolvedSeller = resolveSellerSelection(migratedSale);
             const nextFormData = {
                 ...migratedSale,
-                ...resolvedSeller
+                ...(isAdmin ? resolvedSeller : sellerFromSession)
             };
             setFormData(nextFormData);
             initialFormDataRef.current = nextFormData;
         } else {
-            const activeProfile = (currentProfile || '').trim();
-            const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
             const nextFormData = {
                 ...EMPTY_SALE,
-                sellerName: activeOption?.label || activeProfile || '',
-                soldBy: activeOption?.id || activeProfile || '',
+                ...sellerFromSession,
                 bankReceipts: [],
                 bankInvoices: [],
                 depositInvoices: []
@@ -123,7 +127,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             initialFormDataRef.current = nextFormData;
         }
         setSaveState({ saving: false });
-    }, [existingSale, isOpen, currentProfile, availableProfiles]);
+    }, [existingSale, isOpen, currentProfile, availableProfiles, isAdmin]);
+
+    useEffect(() => {
+        if (isAdmin || !isOpen) return;
+        const activeProfile = (currentProfile || '').trim();
+        if (!activeProfile) return;
+        const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
+        const nextSellerName = activeOption?.label || activeProfile;
+        const nextSoldBy = activeOption?.id || activeProfile;
+
+        setFormData(prev => {
+            if (prev.sellerName === nextSellerName && prev.soldBy === nextSoldBy) return prev;
+            return {
+                ...prev,
+                sellerName: nextSellerName,
+                soldBy: nextSoldBy
+            };
+        });
+    }, [availableProfiles, currentProfile, isAdmin, isOpen]);
 
     useEffect(() => {
         if (!isOpen || typeof window === 'undefined') return;
@@ -279,6 +301,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         setSaveState({ saving: true });
         const sale: CarSale = {
             ...formData as CarSale,
+            ...(!isAdmin ? {
+                sellerName: formData.sellerName || (currentProfile || '').trim(),
+                soldBy: formData.soldBy || (currentProfile || '').trim()
+            } : {}),
             id: existingSale?.id || crypto.randomUUID(),
             createdAt: existingSale?.createdAt || new Date().toISOString(),
         };
