@@ -2529,7 +2529,7 @@ export default function Dashboard() {
                 sellerName: sellerLabel
             };
 
-            const deriveSellerFields = (input: Partial<CarSale>, fallbackSoldBy: string) => {
+            const deriveSellerFields = (input: Partial<CarSale>, fallbackSoldBy?: string) => {
                 const resolvedSoldBy = resolveSoldBy(input, fallbackSoldBy);
                 return {
                     soldBy: resolvedSoldBy,
