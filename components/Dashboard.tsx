@@ -3426,25 +3426,27 @@ export default function Dashboard() {
             </AnimatePresence>
 
             <div className="flex-1 flex flex-col min-w-0 relative transition-[width] duration-300 ease-in-out">
-                <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 sticky top-0 z-40">
+                <header className={`backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-40 transition-colors ${theme === 'dark'
+                    ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
+                    : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className={`p-2 -ml-2 rounded-xl hover:bg-slate-100 ${forceMobileLayout ? '' : 'md:hidden'} text-slate-600`}
+                                className={`p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? '' : 'md:hidden'}`}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                className={`p-2 -ml-2 rounded-xl hover:bg-slate-100 ${forceMobileLayout ? 'hidden' : 'hidden md:block'} text-slate-600 transition-colors`}
+                                className={`p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}
                                 title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
-                            <h2 className="text-lg font-bold text-slate-900 hidden sm:flex items-center gap-2">
+                            <h2 className={`text-lg font-bold hidden sm:flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : activeCategory}
-                                <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
                                 </span>
                             </h2>
@@ -3452,10 +3454,12 @@ export default function Dashboard() {
 
                         <div className={`flex-1 max-w-xl ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}>
                             <div className="relative group">
-                                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                                <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600'}`} />
                                 <input
                                     placeholder="Search sales..."
-                                    className="w-full bg-slate-100 border-transparent rounded-2xl pl-11 pr-4 py-2 text-sm focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5 transition-all outline-none"
+                                    className={`w-full rounded-2xl pl-11 pr-4 py-2 text-sm border transition-all outline-none ${theme === 'dark'
+                                        ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30 focus:ring-4 focus:ring-white/10'
+                                        : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5'}`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -3465,7 +3469,11 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2.5 rounded-xl hover:bg-slate-100 transition-all ${isSyncing ? 'animate-spin text-slate-900' : 'text-slate-400 hover:text-slate-900'}`}
+                                className={`p-2.5 rounded-xl transition-all ${isSyncing
+                                    ? `${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} animate-spin`
+                                    : theme === 'dark'
+                                        ? 'text-slate-400 hover:text-slate-100 hover:bg-white/10'
+                                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
                                 title="Sync Now"
                             >
                                 <RefreshCw className="w-5 h-5" />
@@ -3473,11 +3481,13 @@ export default function Dashboard() {
 
                             <div className="flex gap-2">
                                 <div className="relative hidden sm:block">
-                                    <ArrowUpDown className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <ArrowUpDown className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
                                     <select
                                         value={sortBy}
                                         onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                        className="bg-slate-100 border-transparent text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none focus:bg-white focus:border-slate-300 transition-all appearance-none cursor-pointer text-slate-700 font-medium"
+                                        className={`text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none transition-all appearance-none cursor-pointer font-medium border ${theme === 'dark'
+                                            ? 'bg-white/5 border-white/15 text-slate-100 focus:bg-white/10 focus:border-white/30'
+                                            : 'bg-slate-100 border-transparent text-slate-700 focus:bg-white focus:border-slate-300'}`}
                                     >
                                         <option value="createdAt">Date Added</option>
                                         <option value="nameAlphabetic">Name (A-Z)</option>
@@ -3485,12 +3495,14 @@ export default function Dashboard() {
                                         {isAdmin && <option value="koreaBalance">Balance (Korea)</option>}
                                         <option value="year">Year</option>
                                     </select>
-                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                    <ChevronDown className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
                                 </div>
 
                                 <button
                                     onClick={() => openSaleForm(null)}
-                                    className="bg-slate-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95"
+                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 border ${theme === 'dark'
+                                        ? 'bg-white text-black border-white hover:bg-slate-100 shadow-lg shadow-black/25'
+                                        : 'bg-black text-white border-black hover:bg-slate-900 shadow-lg shadow-slate-900/20'}`}
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span className="hidden lg:inline">New Sale</span>
@@ -3502,10 +3514,12 @@ export default function Dashboard() {
                     {/* Mobile Search - Visible only on mobile */}
                     <div className={`mt-3 ${forceMobileLayout ? '' : 'md:hidden'}`}>
                         <div className="relative group">
-                            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                                 placeholder="Search sales..."
-                                className="w-full bg-slate-100 border-transparent rounded-xl pl-11 pr-4 py-2.5 text-sm focus:bg-white focus:border-slate-300 transition-all outline-none"
+                                className={`w-full rounded-xl pl-11 pr-4 py-2.5 text-sm border transition-all outline-none ${theme === 'dark'
+                                    ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
+                                    : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
