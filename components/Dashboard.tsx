@@ -445,9 +445,9 @@ type NavItem = {
 const navItems: NavItem[] = [
     { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
     { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
-    { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
+    { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
-    { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON' },
+    { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
@@ -478,6 +478,7 @@ export default function Dashboard() {
     const isAdmin = userProfile === ADMIN_PROFILE;
     const isRecordAdmin = userProfile === ADMIN_PROFILE;
     const canViewPrices = isAdmin;
+
 
     const defaultWidths = useMemo(() => ({
         selection: 30,
@@ -579,6 +580,16 @@ export default function Dashboard() {
     }, [isAdmin, sortBy]);
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
+
+    useEffect(() => {
+        if (isAdmin) return;
+        if (view === 'record' || view === 'settings') {
+            setView('dashboard');
+        }
+        if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
+            setActiveCategory('SALES');
+        }
+    }, [isAdmin, view, activeCategory]);
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
@@ -1035,7 +1046,7 @@ export default function Dashboard() {
     };
 
     const handleSaleInteraction = (sale: CarSale, returnView = view) => {
-        if (!isAdmin && sale.soldBy !== userProfile) {
+        if (!isAdmin && normalizeProfileName(sale.soldBy) !== normalizeProfileName(userProfile)) {
             setViewSaleModalItem(sale);
             return;
         }
@@ -1329,6 +1340,10 @@ export default function Dashboard() {
         }
 
         let normalizedValue = normalized;
+        if (!isAdmin && (field === 'sellerName' || field === 'soldBy' || field === 'shippingName' || field === 'shippingDate')) {
+            return;
+        }
+
         if ((field === 'sellerName' || field === 'soldBy') && typeof normalized === 'string') {
             normalizedValue = normalizeProfileName(normalized);
         }
@@ -1367,6 +1382,13 @@ export default function Dashboard() {
         if (index === -1) return;
 
         let updatedSale = { ...currentSales[index], ...updates };
+        if (!isAdmin) {
+            delete updates.sellerName;
+            delete updates.soldBy;
+            delete updates.shippingName;
+            delete updates.shippingDate;
+        }
+
         if (updates.sellerName) {
             updatedSale.sellerName = normalizeProfileName(updates.sellerName);
         }
@@ -2625,6 +2647,12 @@ export default function Dashboard() {
             };
 
             const deriveSellerFields = (input: Partial<CarSale>, fallbackSoldBy?: string) => {
+                if (!isAdmin) {
+                    return {
+                        soldBy: sessionSellerId,
+                        sellerName: sellerLabel
+                    };
+                }
                 const resolvedSoldBy = resolveSoldBy(input, fallbackSoldBy);
                 return {
                     soldBy: resolvedSoldBy,
@@ -2636,7 +2664,9 @@ export default function Dashboard() {
                 // UPDATE
                 const currentSale = currentSales[index];
                 const currentSoldBy = currentSale.soldBy;
-                const merged = isAdmin ? sale : { ...sale, ...sellerFromSession };
+                const merged = isAdmin
+                    ? sale
+                    : { ...sale, ...sellerFromSession, shippingName: currentSale.shippingName || '', shippingDate: currentSale.shippingDate || '' };
                 newSales = [...currentSales];
                 newSales[index] = { ...currentSale, ...merged, ...deriveSellerFields(merged, currentSoldBy) };
                 await logAuditEvent({
@@ -2649,7 +2679,7 @@ export default function Dashboard() {
                 });
             } else {
                 // CREATE
-                const created = isAdmin ? sale : { ...sale, ...sellerFromSession };
+                const created = isAdmin ? sale : { ...sale, ...sellerFromSession, shippingName: '', shippingDate: '' };
                 const finalized = { ...created, ...deriveSellerFields(created, sessionSellerId) };
                 newSales = [...currentSales, finalized];
                 await logAuditEvent({
@@ -2969,20 +2999,23 @@ export default function Dashboard() {
             const normalizedUser = normalizeProfileName(userProfile);
             const normalizedSoldBy = normalizeProfileName(s.soldBy);
             const normalizedSellerName = normalizeProfileName(s.sellerName);
-            const isSold = (s.soldPrice || 0) > 0 || s.status === 'Completed';
             const canAccessOwnRecord = normalizedSoldBy === normalizedUser || normalizedSellerName === normalizedUser;
-
-            // Never hide sold records; also keep legacy seller-owned rows visible.
-            if (!canAccessOwnRecord && !isSold) return false;
+            if (!canAccessOwnRecord) return false;
         }
 
 
         if (activeCategory === 'SALES') {
             if (['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
         } else {
-            if (activeCategory === 'SHIPPED' && s.status !== 'Shipped') return false;
+            if (activeCategory === 'SHIPPED') {
+                if (!isAdmin) return false;
+                if (s.status !== 'Shipped') return false;
+            }
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
-            if (activeCategory === 'AUTOSALLON' && s.status !== 'Autosallon') return false;
+            if (activeCategory === 'AUTOSALLON') {
+                if (!isAdmin) return false;
+                if (s.status !== 'Autosallon') return false;
+            }
         }
 
         const term = deferredSearchTerm.toLowerCase().trim();
@@ -3020,7 +3053,7 @@ export default function Dashboard() {
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         }
         return 0;
-    }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir]);
+    }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir, isAdmin]);
     const soldInvoiceSales = React.useMemo(
         () => filteredSales.filter(sale => (sale.soldPrice || 0) > 0 || sale.status === 'Completed'),
         [filteredSales]

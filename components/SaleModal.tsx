@@ -299,11 +299,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }
 
         setSaveState({ saving: true });
+        const profileName = (currentProfile || '').trim();
         const sale: CarSale = {
             ...formData as CarSale,
             ...(!isAdmin ? {
-                sellerName: formData.sellerName || (currentProfile || '').trim(),
-                soldBy: formData.soldBy || (currentProfile || '').trim()
+                sellerName: profileName,
+                soldBy: profileName,
+                shippingName: existingSale?.shippingName || '',
+                shippingDate: existingSale?.shippingDate || ''
             } : {}),
             id: existingSale?.id || crypto.randomUUID(),
             createdAt: existingSale?.createdAt || new Date().toISOString(),
@@ -527,20 +530,24 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                        <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
-                            <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange} disabled={!isAdmin}>
-                                <option value="">Auto-assigned from logged in user</option>
-                                {availableProfiles.map(profile => (
-                                    <option key={profile.id} value={profile.id}>{profile.label}</option>
-                                ))}
-                            </Select>
+                            {isAdmin && (
+                                <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange}>
+                                    <option value="">Auto-assigned from logged in user</option>
+                                    {availableProfiles.map(profile => (
+                                        <option key={profile.id} value={profile.id}>{profile.label}</option>
+                                    ))}
+                                </Select>
+                            )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                            <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
-                            <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
-                        </div>
+                        {isAdmin && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                <Input label="Shipping Company" name="shippingName" value={formData.shippingName} onChange={handleChange} />
+                                <DateInput label="Shipping Date" name="shippingDate" value={formData.shippingDate ? String(formData.shippingDate).split('T')[0] : ''} onChange={handleChange} />
+                            </div>
+                        )}
                     </Section>
 
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
@@ -595,10 +602,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <Input label="Paid Bank (€)" name="amountPaidBank" type="number" value={formData.amountPaidBank || ''} onChange={handleChange} />
                                 <Input label="Paid Cash (€)" name="amountPaidCash" type="number" value={formData.amountPaidCash || ''} onChange={handleChange} />
                                 <Input label="Deposit (€)" name="deposit" type="number" value={formData.deposit || ''} onChange={handleChange} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                                 <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
-                                <div className="col-span-1 sm:col-span-2 xl:col-span-3">
-                                    <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
-                                </div>
+                                <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
                         </div>
 
