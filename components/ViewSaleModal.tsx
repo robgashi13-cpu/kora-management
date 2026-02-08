@@ -230,8 +230,8 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Payment</div>
-                                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
-                                        sale.isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200'
+                                    <span className={`text-xs font-semibold ${
+                                        sale.isPaid ? 'text-emerald-600' : 'text-red-600'
                                     }`}>
                                         {sale.isPaid ? 'Paid' : 'Not Paid'}
                                     </span>

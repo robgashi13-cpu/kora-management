@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
 import { motion } from 'framer-motion';
@@ -60,7 +60,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
-    const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string }>({ saving: false });
+    const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string; savedAt?: string }>({ saving: false });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
     const draftStorageKey = useMemo(() => (
@@ -317,7 +317,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (typeof window !== 'undefined') {
                 window.localStorage.removeItem(draftStorageKey);
             }
-            setSaveState({ saving: false, success: existingSale ? 'Updated successfully.' : 'Created successfully.' });
+            setSaveState({ saving: false, success: existingSale ? 'Saved successfully.' : 'Created successfully.', savedAt: new Date().toISOString() });
+            setTimeout(() => {
+                handleRequestClose();
+            }, 350);
         } catch (error) {
             console.error('Save error', error);
             setSaveState({ saving: false, error: 'Update failed. Please try again.' });
@@ -653,7 +656,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             disabled={saveState.saving}
                             className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto"
                         >
-                            {saveState.saving ? 'Saving...' : existingSale ? 'Update Sale' : 'Create Sale'}
+                            {saveState.saving ? (<span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Saving…</span>) : existingSale ? 'Update Sale' : 'Create Sale'}
                         </button>
                     </div>
                     {(saveState.error || saveState.success) && (
@@ -663,7 +666,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 }`}
                         >
-                            {saveState.error || saveState.success}
+                            {saveState.error || saveState.success}{saveState.success && saveState.savedAt ? ` • ${new Date(saveState.savedAt).toLocaleTimeString()}` : ''}
                         </div>
                     )}
                 </form>

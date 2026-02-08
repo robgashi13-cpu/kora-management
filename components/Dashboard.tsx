@@ -347,7 +347,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <span className="text-[10px] xl:text-[11px] font-semibold text-slate-700">{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className="payment-badge payment-badge--paid financial-positive-text text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full">
+                        <span className="payment-badge payment-badge--paid financial-positive-text text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap">
                             Paid
                         </span>
                     )}
@@ -2579,8 +2579,6 @@ export default function Dashboard() {
                 return { success: false, error: saveResult.error || 'Sync failed.' };
             }
             console.info('[sale.save] success', { id: sale.id, mode: isCreate ? 'create' : 'update' });
-            const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
-            closeSaleForm(nextView);
             return { success: true };
         } catch (e) {
             console.error("Save Error", e);
@@ -4184,9 +4182,9 @@ export default function Dashboard() {
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
-                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
+                                                                                                sale.status === 'Inspection' ? 'text-amber-700' :
+                                                                                                    'text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
                                                                                     <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
@@ -4333,9 +4331,9 @@ export default function Dashboard() {
                                                                                             <div className="flex justify-between items-start">
                                                                                                 <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
                                                                                                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-900' :
-                                                                                                        sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                            'bg-slate-100 text-slate-500'
+                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
+                                                                                                        sale.status === 'Inspection' ? 'text-amber-700' :
+                                                                                                            'text-slate-500'
                                                                                                     }`}>{sale.status}</span>
                                                                                             </div>
                                                                                             <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
@@ -4451,9 +4449,9 @@ export default function Dashboard() {
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'bg-slate-100 text-slate-800' :
-                                                                                                sale.status === 'Inspection' ? 'bg-amber-50 text-amber-700' :
-                                                                                                    'bg-slate-100 text-slate-500'
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
+                                                                                                sale.status === 'Inspection' ? 'text-amber-700' :
+                                                                                                    'text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
                                                                                     <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
@@ -4577,11 +4575,11 @@ export default function Dashboard() {
                                             <div className="space-y-2">
                                                 {auditLogs.map((log) => (
                                                     <div key={log.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50">
-                                                        <div className="text-xs text-slate-500">{new Date(log.created_at).toLocaleString()} • {log.actor_profile_name} • {log.action_type}</div>
+                                                        <div className="text-xs text-slate-500">{new Date(log.created_at).toLocaleString()} • {log.actor_profile_name} ({log.actor_profile_id || 'unknown'}) • {log.action_type}</div>
                                                         <div className="text-sm font-semibold text-slate-800">{log.entity_type} / {log.entity_id}</div>
                                                         <details className="mt-2 text-xs text-slate-600">
-                                                            <summary className="cursor-pointer">Before / After</summary>
-                                                            <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ before: log.before_data, after: log.after_data }, null, 2)}</pre>
+                                                            <summary className="cursor-pointer">Before / After / Field Diff</summary>
+                                                            <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ diff: log.field_changes, before: log.before_data, after: log.after_data }, null, 2)}</pre>
                                                         </details>
                                                     </div>
                                                 ))}
@@ -4688,7 +4686,7 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
                                                                                             <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'text-slate-900' : 'bg-slate-100 text-slate-700'}`}>{s.status}</span>
+                                                                                            <span className={`text-[9px] md:text-[10px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
