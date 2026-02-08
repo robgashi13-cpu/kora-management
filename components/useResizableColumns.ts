@@ -11,13 +11,14 @@ interface UseResizableColumnsOptions {
   minWidth?: number;
   maxWidth?: number;
   onWidthsChange?: (widths: ColumnWidths) => void;
+  onResizeComplete?: (payload: { columnKey: string; oldWidth: number; newWidth: number; widths: ColumnWidths }) => void;
 }
 
 export function useResizableColumns(
   defaultWidths: ColumnWidths,
   options: UseResizableColumnsOptions = {}
 ) {
-  const { storageKey = 'table-column-widths', minWidth = 40, maxWidth = 500, onWidthsChange } = options;
+  const { storageKey = 'table-column-widths', minWidth = 40, maxWidth = 500, onWidthsChange, onResizeComplete } = options;
   
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => {
     if (typeof window !== 'undefined') {
@@ -63,12 +64,18 @@ export function useResizableColumns(
 
   const handleMouseUp = useCallback(() => {
     if (isResizing.current) {
+      const resizedColumn = currentColumn.current;
+      const oldWidth = startWidth.current;
+      const newWidth = resizedColumn ? (columnWidths[resizedColumn] || oldWidth) : oldWidth;
       isResizing.current = false;
       currentColumn.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      if (resizedColumn && newWidth !== oldWidth) {
+        onResizeComplete?.({ columnKey: resizedColumn, oldWidth, newWidth, widths: columnWidths });
+      }
     }
-  }, []);
+  }, [columnWidths, onResizeComplete]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

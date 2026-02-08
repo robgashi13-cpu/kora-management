@@ -511,6 +511,9 @@ export default function Dashboard() {
         minWidth: 30,
         onWidthsChange: (widths) => {
             void Preferences.set({ key: columnWidthStorageKey, value: JSON.stringify(widths) });
+        },
+        onResizeComplete: ({ columnKey, oldWidth, newWidth }) => {
+            setLastResizeAudit({ columnKey, oldWidth, newWidth });
         }
     });
 
@@ -622,6 +625,8 @@ export default function Dashboard() {
     const [showArchivedDashboards, setShowArchivedDashboards] = useState(false);
     const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
     const [isLoadingAudit, setIsLoadingAudit] = useState(false);
+    const [auditPage, setAuditPage] = useState(0);
+    const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
@@ -706,6 +711,57 @@ export default function Dashboard() {
         }
     };
 
+    useEffect(() => {
+        if (typeof document === 'undefined' || !userProfile || !supabaseUrl || !supabaseKey) return;
+
+        const writeClickAudit = async (actionLabel: string, tagName: string) => {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const payload = {
+                    p_actor_profile_id: userProfile,
+                    p_actor_profile_name: userProfile,
+                    p_action_type: 'CLICK',
+                    p_entity_type: 'ui_interaction',
+                    p_entity_id: actionLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_\-]/g, ''),
+                    p_page_context: view,
+                    p_route: typeof window !== 'undefined' ? window.location.pathname : null,
+                    p_metadata: { actionLabel, tagName }
+                };
+                const rpc = await client.rpc('log_ui_audit_event', payload);
+                if (rpc.error) {
+                    await client.from('audit_logs').insert({
+                        actor_profile_id: userProfile,
+                        actor_profile_name: userProfile,
+                        action_type: 'CLICK',
+                        entity_type: 'ui_interaction',
+                        entity_id: payload.p_entity_id,
+                        page_context: view,
+                        route: payload.p_route,
+                        metadata: payload.p_metadata,
+                        source: 'ui'
+                    });
+                }
+            } catch (error) {
+                console.error('Audit click log write failed', error);
+            }
+        };
+
+        const clickHandler = (event: MouseEvent) => {
+            const target = event.target as HTMLElement | null;
+            if (!target) return;
+            const interactive = target.closest('button,[role="button"],a,[data-audit-click]') as HTMLElement | null;
+            if (!interactive) return;
+
+            const explicitAction = interactive.getAttribute('data-audit-click');
+            const actionLabel = explicitAction || interactive.getAttribute('aria-label') || (interactive.textContent || '').trim().slice(0, 80);
+            if (!actionLabel) return;
+            void writeClickAudit(actionLabel, interactive.tagName.toLowerCase());
+        };
+
+        document.addEventListener('click', clickHandler, true);
+        return () => document.removeEventListener('click', clickHandler, true);
+    }, [supabaseKey, supabaseUrl, userProfile, view]);
+
     const CUSTOM_DASHBOARDS_STORAGE_KEY = 'custom_dashboards_v1';
 
     const persistCustomDashboards = useCallback(async (next: CustomDashboard[]) => {
@@ -716,32 +772,67 @@ export default function Dashboard() {
     const activeCustomDashboard = useMemo(() => customDashboards.find(d => d.id === activeCustomDashboardId) || null, [customDashboards, activeCustomDashboardId]);
 
     const logAuditEvent = useCallback(async (entry: {
-        actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE';
+        actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE' | 'RESIZE' | 'VIEW' | 'CLICK';
         entityType: string;
         entityId: string;
         beforeData?: unknown;
         afterData?: unknown;
         pageContext?: string;
+        metadata?: Record<string, unknown>;
     }) => {
         if (!supabaseUrl || !supabaseKey || !userProfile) return;
+        const requestId = crypto.randomUUID();
+        const payload = {
+            actor_profile_id: userProfile,
+            actor_profile_name: userProfile,
+            action_type: entry.actionType,
+            entity_type: entry.entityType,
+            entity_id: entry.entityId,
+            before_data: entry.beforeData ?? null,
+            after_data: entry.afterData ?? null,
+            page_context: entry.pageContext ?? view,
+            request_id: requestId,
+            route: typeof window !== 'undefined' ? window.location.pathname : null,
+            metadata: entry.metadata ?? null,
+            user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+        };
         try {
             const client = createSupabaseClient(supabaseUrl, supabaseKey);
-            await client.from('audit_logs').insert({
-                actor_profile_id: userProfile,
-                actor_profile_name: userProfile,
-                action_type: entry.actionType,
-                entity_type: entry.entityType,
-                entity_id: entry.entityId,
-                before_data: entry.beforeData ?? null,
-                after_data: entry.afterData ?? null,
-                page_context: entry.pageContext ?? view,
-                request_id: crypto.randomUUID(),
-                user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+            const { error } = await client.rpc('log_ui_audit_event', {
+                p_actor_profile_id: payload.actor_profile_id,
+                p_actor_profile_name: payload.actor_profile_name,
+                p_action_type: payload.action_type,
+                p_entity_type: payload.entity_type,
+                p_entity_id: payload.entity_id,
+                p_before_data: payload.before_data,
+                p_after_data: payload.after_data,
+                p_page_context: payload.page_context,
+                p_request_id: payload.request_id,
+                p_route: payload.route,
+                p_metadata: payload.metadata,
+                p_user_agent: payload.user_agent
             });
+            if (error) {
+                const fallback = await client.from('audit_logs').insert(payload);
+                if (fallback.error) throw fallback.error;
+            }
         } catch (error) {
             console.error('Audit log write failed', error);
         }
     }, [supabaseUrl, supabaseKey, userProfile, view]);
+
+    useEffect(() => {
+        if (!lastResizeAudit) return;
+        void logAuditEvent({
+            actionType: 'RESIZE',
+            entityType: 'table_column',
+            entityId: lastResizeAudit.columnKey,
+            beforeData: { width: lastResizeAudit.oldWidth },
+            afterData: { width: lastResizeAudit.newWidth },
+            pageContext: 'cars_sold',
+            metadata: { tableName: 'Cars Sold', columnKey: lastResizeAudit.columnKey, oldWidth: lastResizeAudit.oldWidth, newWidth: lastResizeAudit.newWidth }
+        });
+    }, [lastResizeAudit, logAuditEvent]);
 
     const applyTheme = useCallback((nextTheme: 'light' | 'dark') => {
         setTheme(nextTheme);
@@ -2598,16 +2689,22 @@ export default function Dashboard() {
     }, [applyTheme]);
 
     useEffect(() => {
+        if (view === 'record') setAuditPage(0);
+    }, [view]);
+
+    useEffect(() => {
         if (!isRecordAdmin || view !== 'record' || !supabaseUrl || !supabaseKey) return;
         const loadAuditLogs = async () => {
             setIsLoadingAudit(true);
             try {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const from = auditPage * 200;
+                const to = from + 199;
                 const { data, error } = await client
                     .from('audit_logs')
                     .select('*')
                     .order('created_at', { ascending: false })
-                    .limit(500);
+                    .range(from, to);
                 if (error) {
                     console.error('Audit load failed', error);
                     return;
@@ -2618,7 +2715,7 @@ export default function Dashboard() {
             }
         };
         loadAuditLogs();
-    }, [isRecordAdmin, view, supabaseUrl, supabaseKey]);
+    }, [auditPage, isRecordAdmin, view, supabaseUrl, supabaseKey]);
 
     useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
@@ -2635,38 +2732,6 @@ export default function Dashboard() {
         };
         loadSidebarPreference();
     }, []);
-
-    useEffect(() => {
-        const loadTheme = async () => {
-            const { value } = await Preferences.get({ key: 'theme_mode' });
-            const stored = value || localStorage.getItem('theme_mode') || 'light';
-            applyTheme(stored === 'dark' ? 'dark' : 'light');
-        };
-        loadTheme();
-    }, [applyTheme]);
-
-    useEffect(() => {
-        if (!isRecordAdmin || view !== 'record' || !supabaseUrl || !supabaseKey) return;
-        const loadAuditLogs = async () => {
-            setIsLoadingAudit(true);
-            try {
-                const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data, error } = await client
-                    .from('audit_logs')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(500);
-                if (error) {
-                    console.error('Audit load failed', error);
-                    return;
-                }
-                setAuditLogs(data || []);
-            } finally {
-                setIsLoadingAudit(false);
-            }
-        };
-        loadAuditLogs();
-    }, [isRecordAdmin, view, supabaseUrl, supabaseKey]);
 
     useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
@@ -3158,7 +3223,7 @@ export default function Dashboard() {
                 ...secondaryNavItems
             ];
             return (
-        <div className="flex flex-col h-full bg-slate-900 text-slate-400">
+        <div className="flex flex-col h-full bg-black text-slate-300">
             <div className="p-6 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-200 p-[2px] shadow-lg">
                     <img src="/logo_new.jpg" alt="Logo" className="w-full h-full rounded-lg object-cover" />
@@ -3170,21 +3235,21 @@ export default function Dashboard() {
                 <div className="relative">
                     <button
                         onClick={() => setShowProfileMenu(!showProfileMenu)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 transition-all group"
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900 transition-all group"
                     >
                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
                             {userProfile ? userProfile[0].toUpperCase() : 'U'}
                         </div>
                         <div className="flex-1 text-left overflow-hidden">
                             <div className="text-sm font-bold text-white truncate">{userProfile}</div>
-                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Switch Profile</div>
+                            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Switch Profile</div>
                         </div>
                         <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
                     </button>
 
                     {showProfileMenu && (
-                        <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-slate-200 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-top-2">
-                            <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
+                        <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-top-2">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
                                     <button key={p} onClick={() => {
@@ -3200,17 +3265,17 @@ export default function Dashboard() {
                                         persistUserProfile(p);
                                         setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                     }}
-                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-black text-white font-medium' : 'text-slate-700 hover:bg-slate-50'}`}>
+                                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-zinc-800 text-white font-medium' : 'text-slate-300 hover:bg-zinc-900'}`}>
                                         <span>{p}</span>
                                         {userProfile === p && <CheckSquare className="w-4 h-4" />}
                                     </button>
                                 ))}
                             </div>
-                            <div className="h-px bg-slate-100 my-2" />
+                            <div className="h-px bg-zinc-800 my-2" />
                             <button onClick={quickAddProfile} className="w-full text-left px-3 py-2.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors disabled:opacity-60 disabled:pointer-events-none" disabled={!isAdmin}>
                                 <Plus className="w-4 h-4" /> Add Profile
                             </button>
-                            <div className="h-px bg-slate-100 my-2" />
+                            <div className="h-px bg-zinc-800 my-2" />
                             <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
                                 <LogOut className="w-4 h-4" /> Log Out
                             </button>
@@ -3221,11 +3286,11 @@ export default function Dashboard() {
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 mt-4 pb-4">
                 <div className="space-y-2">
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/30 p-1.5">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsSalesGroupOpen((prev) => !prev)}
-                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-slate-800/70 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
                         >
                             <span>Sales Flow</span>
                             {isSalesGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -3244,8 +3309,8 @@ export default function Dashboard() {
                                                 setIsMobileMenuOpen(false);
                                             }}
                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
                                             <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
@@ -3257,11 +3322,11 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/30 p-1.5">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsOperationsGroupOpen((prev) => !prev)}
-                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-slate-800/70 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
                         >
                             <span>Operations</span>
                             {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -3280,8 +3345,8 @@ export default function Dashboard() {
                                                 setIsMobileMenuOpen(false);
                                             }}
                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                                ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
                                             <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
@@ -3308,8 +3373,8 @@ export default function Dashboard() {
                                             setIsMobileMenuOpen(false);
                                         }}
                                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                            ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                            ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                            : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                             }`}
                                     >
                                         <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
@@ -3323,15 +3388,15 @@ export default function Dashboard() {
                                                     event.stopPropagation();
                                                     setActiveCustomDashboardMenuId((prev) => (prev === item.id ? null : item.id));
                                                 }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-900 text-slate-400"
                                                 aria-label={`Dashboard options for ${item.label}`}
                                             >
                                                 <MoreHorizontal className="w-4 h-4" />
                                             </button>
                                             {activeCustomDashboardMenuId === item.id && (
-                                                <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-xl border border-slate-700 bg-slate-950 shadow-2xl p-1">
-                                                    <button onClick={() => handleArchiveCustomDashboard(item.id, true)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-slate-800">Archive</button>
-                                                    <button onClick={() => handleDeleteCustomDashboard(item.id)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Delete</button>
+                                                <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-xl border border-zinc-700 bg-black shadow-2xl p-1">
+                                                    <button onClick={() => handleArchiveCustomDashboard(item.id, true)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-zinc-900">Archive</button>
+                                                    <button onClick={() => handleDeleteCustomDashboard(item.id)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-zinc-900">Delete</button>
                                                 </div>
                                             )}
                                         </>
@@ -3346,7 +3411,7 @@ export default function Dashboard() {
                             <button
                                 type="button"
                                 onClick={() => setShowArchivedDashboards((prev) => !prev)}
-                                className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500"
+                                className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-400"
                             >
                                 <span>Archived Dashboards ({archivedCustomDashboardItems.length})</span>
                                 {showArchivedDashboards ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -3354,10 +3419,10 @@ export default function Dashboard() {
                             {showArchivedDashboards && (
                                 <div className="space-y-1 mt-1">
                                     {archivedCustomDashboardItems.map((dashboard) => (
-                                        <div key={dashboard.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
+                                        <div key={dashboard.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900">
                                             <Archive className="w-3.5 h-3.5 text-slate-500" />
                                             <span className="flex-1 text-xs text-slate-300 truncate">{dashboard.name}</span>
-                                            <button onClick={() => handleArchiveCustomDashboard(dashboard.id, false)} className="text-xs text-white px-2 py-1 rounded-md border border-slate-600 hover:bg-slate-700">Restore</button>
+                                            <button onClick={() => handleArchiveCustomDashboard(dashboard.id, false)} className="text-xs text-white px-2 py-1 rounded-md border border-zinc-700 hover:bg-zinc-800">Restore</button>
                                         </div>
                                     ))}
                                 </div>
@@ -3383,7 +3448,7 @@ export default function Dashboard() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
+                        onClick={() => { const nextTheme = theme === 'dark' ? 'light' : 'dark'; applyTheme(nextTheme); void logAuditEvent({ actionType: 'UPDATE', entityType: 'theme', entityId: 'theme_mode', beforeData: { theme }, afterData: { theme: nextTheme }, pageContext: 'sidebar' }); }}
                         aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
                         className="h-11 rounded-xl border border-slate-700 bg-black text-white hover:border-slate-500 transition-colors inline-flex items-center justify-center gap-1.5"
                     >
@@ -4572,6 +4637,7 @@ export default function Dashboard() {
                                         ) : auditLogs.length === 0 ? (
                                             <p className="text-slate-500">No records found.</p>
                                         ) : (
+                                            <>
                                             <div className="space-y-2">
                                                 {auditLogs.map((log) => (
                                                     <div key={log.id} className="border border-slate-200 rounded-xl p-3 bg-slate-50">
@@ -4579,26 +4645,32 @@ export default function Dashboard() {
                                                         <div className="text-sm font-semibold text-slate-800">{log.entity_type} / {log.entity_id}</div>
                                                         <details className="mt-2 text-xs text-slate-600">
                                                             <summary className="cursor-pointer">Before / After / Field Diff</summary>
-                                                            <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ diff: log.field_changes, before: log.before_data, after: log.after_data }, null, 2)}</pre>
+                                                            <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ diff: log.field_changes, before: log.before_data, after: log.after_data, metadata: log.metadata, route: log.route, occurred_at: log.occurred_at }, null, 2)}</pre>
                                                         </details>
                                                     </div>
                                                 ))}
                                             </div>
+                                            <div className="mt-3 flex items-center justify-end gap-2">
+                                                <button onClick={() => setAuditPage((prev) => Math.max(0, prev - 1))} disabled={auditPage === 0 || isLoadingAudit} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Previous</button>
+                                                <span className="text-xs text-slate-500">Page {auditPage + 1}</span>
+                                                <button onClick={() => setAuditPage((prev) => prev + 1)} disabled={isLoadingAudit || auditLogs.length < 200} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Next</button>
+                                            </div>
+                                            </>
                                         )}
                                     </div>
                                 )
                             ) : view === 'invoices' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-3 md:px-4 md:py-3">
+                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-2xl border border-slate-100 shadow-sm mx-3 my-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
                                         <div>
-                                            <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Invoices</h2>
-                                            <p className="text-xs md:text-sm text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
+                                            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Invoices</h2>
+                                            <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAll(validInvoiceSales)}
-                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs md:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
                                             >
                                                 {selectedDownloadableInvoices.length > 0 && selectedDownloadableInvoices.length === validInvoiceSales.length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
@@ -4611,7 +4683,7 @@ export default function Dashboard() {
                                                 type="button"
                                                 onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
                                                 disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs md:text-sm font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
+                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
                                             >
                                                 {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                                 {isDownloadingInvoices ? 'Generating...' : `Download ${selectedDownloadableInvoices.length} Invoices`}
@@ -4676,17 +4748,17 @@ export default function Dashboard() {
 
                                                                             <div className="min-w-0">
                                                                                 <div className="flex items-start gap-2">
-                                                                                    <div className="mt-0.5 h-7 w-7 md:h-8 md:w-8 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
+                                                                                    <div className="mt-0.5 h-6 w-6 md:h-7 md:w-7 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
                                                                                         <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                                                                     </div>
                                                                                     <div className="min-w-0">
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                                                                                            <span className="font-extrabold text-slate-900 text-xs md:text-[15px] leading-tight truncate">{s.brand} {s.model}</span>
-                                                                                            <span className="text-[9px] md:text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                                            <span className="font-bold text-slate-900 text-xs md:text-sm leading-tight truncate">{s.brand} {s.model}</span>
+                                                                                            <span className="text-[9px] md:text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
-                                                                                            <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                                            <span className={`text-[9px] md:text-[10px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
+                                                                                            <span className="text-[9px] md:text-[9px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                                            <span className={`text-[9px] md:text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -4709,7 +4781,7 @@ export default function Dashboard() {
                                                                             <div className="flex items-center justify-center">
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                    className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 md:px-3 md:py-2 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                    className="inline-flex items-center justify-center gap-1 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
                                                                                 >
                                                                                     <FileText className="w-3.5 h-3.5" />
                                                                                     <span className="uppercase tracking-wider">View</span>
