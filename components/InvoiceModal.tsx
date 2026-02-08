@@ -165,7 +165,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
                             {isDownloading ? 'Saving...' : 'Download'}
                         </button>
-                        <button onClick={handlePrint} className="flex items-center gap-1 px-2.5 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-700 transition text-[11px] font-semibold" style={{ backgroundColor: '#111827' }}>
+                        <button onClick={handlePrint} className="flex items-center gap-1 px-2.5 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-700 transition text-[11px] font-semibold" style={{ backgroundColor: '#000000' }}>
                             <Printer className="w-3 h-3" /> Print
                         </button>
 
