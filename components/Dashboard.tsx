@@ -2424,15 +2424,14 @@ export default function Dashboard() {
                 syncErrorMessage = salesRes.error || 'Sales sync failed.';
             }
 
-            // 3. Clear Dirty IDs on success
+            const syncedDirtyIds = new Set<string>();
             if (salesRes.success) {
                 const failedIds = new Set(salesRes.failedIds || []);
                 dirtyItems.forEach(s => {
                     if (!failedIds.has(s.id)) {
-                        dirtyIds.current.delete(s.id);
+                        syncedDirtyIds.add(s.id);
                     }
                 });
-                await persistDirtyIds(dirtyIds.current);
             }
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
@@ -2461,6 +2460,11 @@ export default function Dashboard() {
                     setSales(normalizedSales);
                     await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
                     localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+
+                    if (syncedDirtyIds.size > 0) {
+                        syncedDirtyIds.forEach((id) => dirtyIds.current.delete(id));
+                        await persistDirtyIds(dirtyIds.current);
+                    }
                 }
             } else if (salesRes.error) {
                 console.error("Sales Sync Failed:", salesRes.error);
