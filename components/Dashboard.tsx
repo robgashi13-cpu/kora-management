@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -3136,12 +3136,23 @@ export default function Dashboard() {
                 })}
             </nav>
 
+            <div className="px-4 pb-4 pt-2 border-t border-slate-800">
+                <button
+                    type="button"
+                    onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-black text-white border border-slate-700 hover:border-slate-500 transition-colors"
+                >
+                    <span className="text-sm font-semibold">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+            </div>
+
         </div>
     );
 
     return (
         <div
-            className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-slate-50 relative overflow-x-hidden font-sans text-slate-900`}
+            className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-white relative overflow-x-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
             onPointerDownCapture={handleAppPointerDownCapture}
             onPointerMoveCapture={handleAppPointerMoveCapture}
             onPointerUpCapture={handleAppPointerUpCapture}
@@ -4262,14 +4273,6 @@ export default function Dashboard() {
 
                                         <input value={supabaseUrl} onChange={e => setSupabaseUrl(e.target.value)} placeholder="Supabase URL" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
                                         <input type="password" value={supabaseKey} onChange={e => setSupabaseKey(e.target.value)} placeholder="Supabase Key" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 md:p-3 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20 focus:border-slate-400" />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-colors"
-                                        >
-                                            {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                                        </button>
 
                                         <div className="h-px bg-slate-200 my-3 md:my-4" />
                                         <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>

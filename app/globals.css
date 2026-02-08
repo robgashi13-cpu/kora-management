@@ -622,3 +622,57 @@ body[data-theme='dark'] {
 [data-theme='dark'] .border-slate-100,
 [data-theme='dark'] .border-slate-200,
 [data-theme='dark'] .border-slate-300 { border-color: #334155 !important; }
+
+/* Touch-first interaction hardening */
+.touch-input-mode .table-row-hover:hover,
+.touch-input-mode .table-row-hover:active,
+.touch-input-mode .group:hover,
+.touch-input-mode button:hover,
+.touch-input-mode [role='button']:hover {
+  background-color: inherit !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.touch-input-mode .scroll-container,
+.touch-input-mode .scroll-container-horizontal,
+.touch-input-mode [data-interactive='row'] {
+  touch-action: pan-x pan-y;
+}
+
+/* Luxury monochrome enforcement */
+[class*='text-blue'],
+[class*='text-sky'],
+[class*='text-cyan'],
+[class*='text-indigo'],
+[class*='text-emerald'],
+[class*='text-green'],
+[class*='text-red'],
+[class*='text-amber'],
+[class*='text-yellow'] {
+  color: #111111 !important;
+}
+
+[class*='bg-blue'],
+[class*='bg-sky'],
+[class*='bg-cyan'],
+[class*='bg-indigo'],
+[class*='bg-emerald'],
+[class*='bg-green'],
+[class*='bg-red'],
+[class*='bg-amber'],
+[class*='bg-yellow'] {
+  background-color: #f3f4f6 !important;
+}
+
+[class*='border-blue'],
+[class*='border-sky'],
+[class*='border-cyan'],
+[class*='border-indigo'],
+[class*='border-emerald'],
+[class*='border-green'],
+[class*='border-red'],
+[class*='border-amber'],
+[class*='border-yellow'] {
+  border-color: #d1d5db !important;
+}
