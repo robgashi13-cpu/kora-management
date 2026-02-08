@@ -453,7 +453,11 @@ select:focus-visible {
   }
 }
 
-.status-completed { color: hsl(222 10% 20%); }
+.status-completed {
+  background: linear-gradient(135deg, hsl(142 45% 93%), hsl(142 40% 88%));
+  color: hsl(142 50% 24%);
+  border: 1px solid hsl(142 35% 70%);
+}
 
 .status-new { 
   background: linear-gradient(135deg, hsl(220 18% 94%), hsl(220 15% 90%)); 
@@ -461,13 +465,45 @@ select:focus-visible {
   border: 1px solid hsl(220 15% 80%);
 }
 
-.status-in-progress { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
+.status-in-progress {
+  background: linear-gradient(135deg, hsl(220 18% 93%), hsl(220 16% 89%));
+  color: hsl(220 34% 30%);
+  border: 1px solid hsl(220 16% 75%);
+}
 
-.status-shipped { background: linear-gradient(135deg, hsl(220 8% 94%), hsl(220 8% 90%)); color: hsl(222 10% 30%); border: 1px solid hsl(220 8% 80%); }
+.status-shipped {
+  background: linear-gradient(135deg, hsl(205 45% 94%), hsl(205 40% 90%));
+  color: hsl(205 60% 28%);
+  border: 1px solid hsl(205 35% 78%);
+}
 
-.status-inspection { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
+.status-inspection {
+  background: linear-gradient(135deg, hsl(36 60% 93%), hsl(36 55% 88%));
+  color: hsl(28 68% 28%);
+  border: 1px solid hsl(36 45% 72%);
+}
 
-.status-autosallon { background: linear-gradient(135deg, hsl(220 8% 93%), hsl(220 8% 89%)); color: hsl(222 10% 26%); border: 1px solid hsl(220 8% 75%); }
+.status-autosallon {
+  background: linear-gradient(135deg, hsl(276 34% 93%), hsl(276 30% 89%));
+  color: hsl(276 44% 30%);
+  border: 1px solid hsl(276 26% 75%);
+}
+
+.payment-badge {
+  border: 1px solid transparent;
+}
+
+.payment-badge--paid {
+  background: linear-gradient(135deg, hsl(142 45% 93%), hsl(142 40% 88%));
+  color: hsl(142 50% 24%);
+  border-color: hsl(142 35% 70%);
+}
+
+.payment-badge--pending {
+  background: linear-gradient(135deg, hsl(36 60% 93%), hsl(36 55% 88%));
+  color: hsl(28 68% 28%);
+  border-color: hsl(36 45% 72%);
+}
 
 .status-archived {
   background: linear-gradient(135deg, hsl(220 10% 92%), hsl(220 8% 88%));
@@ -497,13 +533,18 @@ select:focus-visible {
 .cars-sold-row > div,
 .cars-sold-row button,
 .cars-sold-row [role="button"] {
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border-color: #1f1f1f !important;
+  background-color: hsl(220 14% 94%) !important;
+  color: hsl(220 18% 16%) !important;
+  border-color: hsl(220 10% 78%) !important;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+.cars-sold-row .status-badge,
+.cars-sold-row .payment-badge {
+  color: inherit;
 }
 
 .cars-sold-row:active,
@@ -607,6 +648,53 @@ body[data-theme='dark'] {
 [data-theme='dark'] .border-slate-100,
 [data-theme='dark'] .border-slate-200,
 [data-theme='dark'] .border-slate-300 { border-color: #3a3a3a !important; }
+
+[data-theme='dark'] .cars-sold-row,
+[data-theme='dark'] .cars-sold-row > div,
+[data-theme='dark'] .cars-sold-row button,
+[data-theme='dark'] .cars-sold-row [role="button"] {
+  background-color: hsl(220 14% 18%) !important;
+  color: hsl(220 20% 92%) !important;
+  border-color: hsl(220 10% 30%) !important;
+}
+
+[data-theme='dark'] .status-new {
+  background: linear-gradient(135deg, hsl(220 24% 24%), hsl(220 22% 20%));
+  color: hsl(220 88% 88%);
+  border-color: hsl(220 24% 38%);
+}
+
+[data-theme='dark'] .status-in-progress {
+  background: linear-gradient(135deg, hsl(220 24% 24%), hsl(220 22% 20%));
+  color: hsl(215 90% 86%);
+  border-color: hsl(220 24% 38%);
+}
+
+[data-theme='dark'] .status-shipped {
+  background: linear-gradient(135deg, hsl(205 38% 24%), hsl(205 34% 20%));
+  color: hsl(195 90% 86%);
+  border-color: hsl(205 28% 38%);
+}
+
+[data-theme='dark'] .status-inspection,
+[data-theme='dark'] .payment-badge--pending {
+  background: linear-gradient(135deg, hsl(36 34% 24%), hsl(36 30% 20%));
+  color: hsl(40 100% 84%);
+  border-color: hsl(36 24% 38%);
+}
+
+[data-theme='dark'] .status-completed,
+[data-theme='dark'] .payment-badge--paid {
+  background: linear-gradient(135deg, hsl(142 32% 24%), hsl(142 28% 20%));
+  color: hsl(145 90% 84%);
+  border-color: hsl(142 22% 38%);
+}
+
+[data-theme='dark'] .status-autosallon {
+  background: linear-gradient(135deg, hsl(276 28% 24%), hsl(276 24% 20%));
+  color: hsl(276 92% 86%);
+  border-color: hsl(276 20% 38%);
+}
 
 /* Touch-first interaction hardening */
 .touch-input-mode .table-row-hover:hover,

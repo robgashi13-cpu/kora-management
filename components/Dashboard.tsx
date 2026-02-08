@@ -338,7 +338,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     {canEdit && (
                         <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] xl:text-[11px] font-bold text-slate-700" />
                     )}
-                    <span className={`text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? (isSoldRow ? 'text-amber-700' : 'bg-amber-100 text-amber-700 border border-amber-300') : (isSoldRow ? 'text-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300')}`}>
+                    <span className={`payment-badge text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'payment-badge--pending' : 'payment-badge--paid'}`}>
                         {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
                     </span>
                 </div>
@@ -353,7 +353,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <span className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`}>{s.status}</span>
                     )}
                     {s.isPaid && (
-                        <span className={`text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${isSoldRow ? 'text-emerald-700' : 'bg-emerald-100 text-emerald-700 border border-emerald-300'}`}>
+                        <span className="payment-badge payment-badge--paid text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full">
                             Paid
                         </span>
                     )}
