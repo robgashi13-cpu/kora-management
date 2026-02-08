@@ -19,6 +19,7 @@ interface Props {
     isAdmin?: boolean;
     availableProfiles?: { id: string; label: string }[];
     hideHeader?: boolean;
+    currentProfile?: string | null;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -43,7 +44,7 @@ const COLORS = [
 
 import EditablePreviewModal from './EditablePreviewModal';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -107,8 +108,12 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             setFormData(nextFormData);
             initialFormDataRef.current = nextFormData;
         } else {
+            const activeProfile = (currentProfile || '').trim();
+            const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
             const nextFormData = {
                 ...EMPTY_SALE,
+                sellerName: activeOption?.label || activeProfile || '',
+                soldBy: activeOption?.id || activeProfile || '',
                 bankReceipts: [],
                 bankInvoices: [],
                 depositInvoices: []
@@ -117,7 +122,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             initialFormDataRef.current = nextFormData;
         }
         setSaveState({ saving: false });
-    }, [existingSale, isOpen]);
+    }, [existingSale, isOpen, currentProfile, availableProfiles]);
 
     useEffect(() => {
         if (!isOpen || typeof window === 'undefined') return;
@@ -461,8 +466,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
                             <Input label="Buyer Personal ID" name="buyerPersonalId" value={formData.buyerPersonalId || ''} onChange={handleChange} />
-                            <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange}>
-                                <option value="">Select Seller</option>
+                            <Select label="Seller Name" name="sellerName" value={formData.soldBy || formData.sellerName || ''} onChange={handleSellerChange} disabled={!isAdmin}>
+                                <option value="">Auto-assigned from logged in user</option>
                                 {availableProfiles.map(profile => (
                                     <option key={profile.id} value={profile.id}>{profile.label}</option>
                                 ))}
