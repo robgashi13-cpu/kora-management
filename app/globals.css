@@ -593,7 +593,7 @@ body[data-theme='dark'] {
   color: #f8fafc;
 }
 
-[data-theme='dark'] .bg-white { background-color: #111827 !important; }
+[data-theme='dark'] .bg-white { background-color: #000000 !important; }
 [data-theme='dark'] .bg-slate-50,
 [data-theme='dark'] .bg-slate-100,
 [data-theme='dark'] .bg-slate-50\/80,
@@ -674,6 +674,9 @@ body[data-theme='dark'] {
 
 [class*='bg-slate-900'],
 [class*='bg-slate-800'],
+[class*='bg-slate-700'],
+[class*='bg-gray-900'],
+[class*='bg-gray-800'],
 [class*='bg-slate-950'] {
   background-color: #000000 !important;
 }
