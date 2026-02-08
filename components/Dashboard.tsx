@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -85,6 +85,7 @@ type CustomDashboard = {
     name: string;
     columns: CustomDashboardColumn[];
     rows: CustomDashboardRow[];
+    archived: boolean;
     createdAt: string;
     updatedAt: string;
 };
@@ -279,7 +280,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                         <div className="flex flex-col items-end gap-0.5 text-[10px] xl:text-[11px] leading-tight">
                             <div className="flex items-center gap-1">
                                 <span className="uppercase text-[8px] text-slate-500 font-semibold">Bk</span>
-                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-sky-700 font-semibold" />
+                                <InlineEditableCell value={s.amountPaidBank || 0} onSave={(v) => handleFieldUpdate('amountPaidBank', v)} type="number" prefix="€" className="text-slate-800 font-semibold" />
                             </div>
                             <div className="flex items-center gap-1">
                                 <span className="uppercase text-[8px] text-slate-500 font-semibold">Ca</span>
@@ -291,7 +292,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                             </div>
                         </div>
                     ) : (
-                        <div className="font-mono text-sky-700 font-semibold text-[11px] xl:text-xs">
+                        <div className="font-mono text-slate-800 font-semibold text-[11px] xl:text-xs">
                             €{((s.amountPaidCash || 0) + (s.amountPaidBank || 0) + (s.deposit || 0)).toLocaleString()}
                         </div>
                     )}
@@ -585,6 +586,8 @@ export default function Dashboard() {
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
     const [customDashboards, setCustomDashboards] = useState<CustomDashboard[]>([]);
+    const [activeCustomDashboardMenuId, setActiveCustomDashboardMenuId] = useState<string | null>(null);
+    const [showArchivedDashboards, setShowArchivedDashboards] = useState(false);
     const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
     const [isLoadingAudit, setIsLoadingAudit] = useState(false);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
@@ -809,6 +812,7 @@ export default function Dashboard() {
                 { id: crypto.randomUUID(), name: 'Column 2' }
             ],
             rows: [],
+            archived: false,
             createdAt: now,
             updatedAt: now
         };
@@ -848,6 +852,52 @@ export default function Dashboard() {
                 { id: crypto.randomUUID(), cells: Object.fromEntries(dashboard.columns.map((column) => [column.id, ''])) }
             ]
         }));
+    };
+
+    const handleArchiveCustomDashboard = async (dashboardId: string, archived: boolean) => {
+        const target = customDashboards.find((dashboard) => dashboard.id === dashboardId);
+        if (!target) return;
+
+        const next = customDashboards.map((dashboard) =>
+            dashboard.id === dashboardId ? { ...dashboard, archived, updatedAt: new Date().toISOString() } : dashboard
+        );
+        setCustomDashboards(next);
+        if (archived && activeCustomDashboardId === dashboardId) {
+            setActiveCustomDashboardId(null);
+            setView('dashboard');
+        }
+        await persistCustomDashboards(next);
+        setActiveCustomDashboardMenuId(null);
+        await logAuditEvent({
+            actionType: archived ? 'ARCHIVE' : 'RESTORE',
+            entityType: 'custom_dashboard',
+            entityId: dashboardId,
+            beforeData: target,
+            afterData: next.find((dashboard) => dashboard.id === dashboardId),
+            pageContext: 'sidebar'
+        });
+    };
+
+    const handleDeleteCustomDashboard = async (dashboardId: string) => {
+        const target = customDashboards.find((dashboard) => dashboard.id === dashboardId);
+        if (!target) return;
+        if (!window.confirm(`Delete dashboard "${target.name}" permanently? This action cannot be undone.`)) return;
+
+        const next = customDashboards.filter((dashboard) => dashboard.id !== dashboardId);
+        setCustomDashboards(next);
+        if (activeCustomDashboardId === dashboardId) {
+            setActiveCustomDashboardId(null);
+            setView('dashboard');
+        }
+        await persistCustomDashboards(next);
+        setActiveCustomDashboardMenuId(null);
+        await logAuditEvent({
+            actionType: 'DELETE',
+            entityType: 'custom_dashboard',
+            entityId: dashboardId,
+            beforeData: target,
+            pageContext: 'sidebar'
+        });
     };
 
     const openSaleForm = (sale: CarSale | null, returnView = view) => {
@@ -2037,7 +2087,11 @@ export default function Dashboard() {
                     try {
                         const parsed = JSON.parse(customDashboardsRaw) as CustomDashboard[];
                         if (Array.isArray(parsed)) {
-                            setCustomDashboards(parsed);
+                            const normalizedDashboards = parsed.map((dashboard) => ({
+                                ...dashboard,
+                                archived: Boolean((dashboard as Partial<CustomDashboard>).archived)
+                            }));
+                            setCustomDashboards(normalizedDashboards);
                         }
                     } catch (error) {
                         console.error('Failed to parse custom dashboards', error);
@@ -3045,6 +3099,14 @@ export default function Dashboard() {
 
 
     const SidebarContent = () => (
+        (() => {
+            const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
+            const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
+            const combinedNavItems = [
+                ...navItems,
+                ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' }))
+            ];
+            return (
         <div className="flex flex-col h-full bg-slate-900 text-slate-400">
             <div className="p-6 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-white to-slate-200 p-[2px] shadow-lg">
@@ -3107,36 +3169,83 @@ export default function Dashboard() {
             </div>
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 space-y-1 mt-4 pb-4">
-                {[...navItems, ...customDashboards.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' }))].map((item) => {
+                {combinedNavItems.map((item) => {
                     if (item.adminOnly && !isAdmin) return null;
                     const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
+                    const isCustomDashboardItem = item.view === 'custom_dashboard' && !navItems.some((navItem) => navItem.id === item.id);
                     return (
-                        <button
-                            key={item.id}
-                            onClick={() => {
-                                if (item.id === 'CREATE') {
-                                    handleCreateCustomDashboard();
+                        <div key={item.id} className="relative">
+                            <button
+                                onClick={() => {
+                                    if (item.id === 'CREATE') {
+                                        handleCreateCustomDashboard();
+                                        setIsMobileMenuOpen(false);
+                                        return;
+                                    }
+                                    setView(item.view);
+                                    if (item.category) setActiveCategory(item.category as any);
+                                    if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
                                     setIsMobileMenuOpen(false);
-                                    return;
-                                }
-                                setView(item.view);
-                                if (item.category) setActiveCategory(item.category as any);
-                                if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
-                                setIsMobileMenuOpen(false);
-                            }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
-                                ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
-                                : 'hover:bg-slate-800 hover:text-white'
-                                }`}
-                        >
-                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
-                            {item.label}
-                        </button>
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                    ? 'bg-white text-slate-900 shadow-lg shadow-black/20'
+                                    : 'hover:bg-slate-800 hover:text-white'
+                                    }`}
+                            >
+                                <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                <span className="flex-1 text-left truncate">{item.label}</span>
+                            </button>
+                            {isCustomDashboardItem && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setActiveCustomDashboardMenuId((prev) => (prev === item.id ? null : item.id));
+                                        }}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-slate-800 text-slate-400"
+                                        aria-label={`Dashboard options for ${item.label}`}
+                                    >
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </button>
+                                    {activeCustomDashboardMenuId === item.id && (
+                                        <div className="absolute right-0 top-full mt-1 z-30 w-40 rounded-xl border border-slate-700 bg-slate-950 shadow-2xl p-1">
+                                            <button onClick={() => handleArchiveCustomDashboard(item.id, true)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-slate-800">Archive</button>
+                                            <button onClick={() => handleDeleteCustomDashboard(item.id)} className="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-300 hover:bg-slate-800">Delete</button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     );
                 })}
+
+                {archivedCustomDashboardItems.length > 0 && (
+                    <div className="pt-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowArchivedDashboards((prev) => !prev)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs uppercase tracking-wide text-slate-500"
+                        >
+                            <span>Archived Dashboards ({archivedCustomDashboardItems.length})</span>
+                            {showArchivedDashboards ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+                        {showArchivedDashboards && (
+                            <div className="space-y-1 mt-1">
+                                {archivedCustomDashboardItems.map((dashboard) => (
+                                    <div key={dashboard.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/50">
+                                        <Archive className="w-3.5 h-3.5 text-slate-500" />
+                                        <span className="flex-1 text-xs text-slate-300 truncate">{dashboard.name}</span>
+                                        <button onClick={() => handleArchiveCustomDashboard(dashboard.id, false)} className="text-xs text-white px-2 py-1 rounded-md border border-slate-600 hover:bg-slate-700">Restore</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </nav>
 
-            <div className="px-4 pb-4 pt-2 border-t border-slate-800">
+            <div className="px-4 pb-4 pt-2 border-t border-slate-800 sticky bottom-0 bg-slate-900 z-20">
                 <button
                     type="button"
                     onClick={() => applyTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -3148,6 +3257,8 @@ export default function Dashboard() {
             </div>
 
         </div>
+            );
+        })()
     );
 
     return (
@@ -4408,7 +4519,7 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
                                                                                             <span className="text-[9px] md:text-[10px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>{s.status}</span>
+                                                                                            <span className={`text-[9px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md ${s.status === 'Completed' ? 'text-slate-900' : 'bg-slate-100 text-slate-700'}`}>{s.status}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
