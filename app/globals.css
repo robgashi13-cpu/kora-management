@@ -497,6 +497,9 @@ select:focus-visible {
 .cars-sold-row > div,
 .cars-sold-row button,
 .cars-sold-row [role="button"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #1f1f1f !important;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -655,7 +658,7 @@ body[data-theme='dark'] {
 [class*='bg-red'],
 [class*='bg-amber'],
 [class*='bg-yellow'] {
-  background-color: #f3f4f6 !important;
+  background-color: #000000 !important;
 }
 
 [class*='bg-purple'],
@@ -666,7 +669,13 @@ body[data-theme='dark'] {
 [class*='bg-orange'],
 [class*='bg-teal'],
 [class*='bg-rose'] {
-  background-color: #f3f4f6 !important;
+  background-color: #000000 !important;
+}
+
+[class*='bg-slate-900'],
+[class*='bg-slate-800'],
+[class*='bg-slate-950'] {
+  background-color: #000000 !important;
 }
 
 [class*='border-blue'],
@@ -730,8 +739,8 @@ body[data-theme='dark'] {
 [class*='from-orange'],
 [class*='from-teal'],
 [class*='from-rose'] {
-  --tw-gradient-from: #e5e7eb var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(229 231 235 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-from: #000000 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position) !important;
 }
 
 [class*='via-blue'],
@@ -751,7 +760,7 @@ body[data-theme='dark'] {
 [class*='via-orange'],
 [class*='via-teal'],
 [class*='via-rose'] {
-  --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), #d1d5db var(--tw-gradient-via-position), var(--tw-gradient-to)) !important;
+  --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), #000000 var(--tw-gradient-via-position), var(--tw-gradient-to)) !important;
 }
 
 [class*='to-blue'],
@@ -771,5 +780,5 @@ body[data-theme='dark'] {
 [class*='to-orange'],
 [class*='to-teal'],
 [class*='to-rose'] {
-  --tw-gradient-to: #d1d5db var(--tw-gradient-to-position) !important;
+  --tw-gradient-to: #000000 var(--tw-gradient-to-position) !important;
 }
