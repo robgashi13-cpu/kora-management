@@ -379,36 +379,42 @@ const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
 const ROW_TAP_MOVE_THRESHOLD = 10;
 type InputMode = 'mouse' | 'touch';
 
-const LEGACY_MERCEDES_B200: CarSale = {
-    id: 'legacy-mercedes-b200-wddmhojbxgn149268',
-    brand: 'MERCEDES',
-    model: 'B200',
-    year: 2016,
-    km: 0,
-    color: 'WHITE',
-    plateNumber: '0736',
-    vin: 'WDDMHOJBXGN149268',
-    sellerName: ADMIN_PROFILE,
-    buyerName: 'ARLIND',
-    shippingName: '',
-    shippingDate: '',
-    includeTransport: false,
-    costToBuy: 7350,
-    soldPrice: 7750,
-    amountPaidCash: 7350,
-    amountPaidBank: 0,
-    deposit: 0,
-    servicesCost: 30.51,
-    tax: 0,
-    amountPaidByClient: 7350,
-    amountPaidToKorea: 0,
-    paidDateToKorea: null,
-    paidDateFromClient: null,
-    isPaid: false,
-    paymentMethod: 'Cash',
-    status: 'Completed',
-    createdAt: '2024-11-13T00:00:00.000Z',
-    soldBy: ADMIN_PROFILE
+const isMercedesB200Sale = (sale: CarSale) => {
+    const brand = (sale.brand || '').trim().toLowerCase();
+    const model = (sale.model || '').trim().toLowerCase();
+    const vin = (sale.vin || '').trim().toUpperCase();
+    return (brand.includes('mercedes') && model.includes('b200')) || vin === 'WDDMHOJBXGN149268';
+};
+
+const repairMercedesB200Visibility = (salesToRepair: CarSale[]) => {
+    let hasChanges = false;
+    const repaired = salesToRepair.map((sale) => {
+        if (!isMercedesB200Sale(sale)) return sale;
+
+        const nextStatus = ['Shipped', 'Inspection', 'Autosallon'].includes(sale.status) ? 'Completed' : sale.status;
+        const nextSoldBy = normalizeProfileName(sale.soldBy || sale.sellerName || ADMIN_PROFILE);
+        const nextSellerName = normalizeProfileName(sale.sellerName || sale.soldBy || ADMIN_PROFILE);
+
+        const updatedSale = {
+            ...sale,
+            status: nextStatus,
+            soldBy: nextSoldBy,
+            sellerName: nextSellerName
+        };
+
+        if (
+            updatedSale.status !== sale.status
+            || updatedSale.soldBy !== sale.soldBy
+            || updatedSale.sellerName !== sale.sellerName
+        ) {
+            hasChanges = true;
+            return updatedSale;
+        }
+
+        return sale;
+    });
+
+    return { repaired, hasChanges };
 };
 
 
@@ -626,25 +632,6 @@ export default function Dashboard() {
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy)
     }), []);
-
-    const ensureMercedesB200Present = useCallback((currentSales: CarSale[]) => {
-        const hasB200 = currentSales.some((sale) => {
-            const vin = (sale.vin || '').trim().toUpperCase();
-            const model = (sale.model || '').trim().toUpperCase();
-            const brand = (sale.brand || '').trim().toUpperCase();
-            const plate = (sale.plateNumber || '').trim();
-
-            return vin === LEGACY_MERCEDES_B200.vin
-                || (brand === 'MERCEDES' && model === 'B200' && plate === LEGACY_MERCEDES_B200.plateNumber);
-        });
-
-        if (hasB200) return { sales: currentSales, added: false };
-
-        return {
-            sales: [...currentSales, { ...LEGACY_MERCEDES_B200, sortOrder: currentSales.length }],
-            added: true
-        };
-    }, []);
 
     const enforceAllowedSalesProfiles = useCallback((currentSales: CarSale[]) => {
         let hasChanges = false;
@@ -2032,24 +2019,34 @@ export default function Dashboard() {
                     currentSales = JSON.parse(value);
                 } else {
                     const saved = localStorage.getItem('car_sales_data');
+                    if (saved) {
+                        currentSales = JSON.parse(saved);
+                    }
                 }
 
                 // Just load the saved data - no auto-import
                 const normalizedSales = currentSales.map(normalizeSaleProfiles);
                 const hasAdminOwnership = currentSales.some((sale: CarSale) => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
                 const { updatedSales: reassignedSales, hasChanges: hasReassignments } = enforceAllowedSalesProfiles(normalizedSales);
-                const { sales: salesWithB200, added: addedMissingB200 } = ensureMercedesB200Present(reassignedSales);
-                if (hasAdminOwnership || hasReassignments || addedMissingB200) {
+                const { repaired: visibilityRepairedSales, hasChanges: hasVisibilityRepairs } = repairMercedesB200Visibility(reassignedSales);
+                if (hasAdminOwnership || hasReassignments || hasVisibilityRepairs) {
                     currentSales.forEach((sale: CarSale) => {
                         if (isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy)) {
                             dirtyIds.current.add(sale.id);
                         }
                     });
+                    if (hasVisibilityRepairs) {
+                        visibilityRepairedSales.forEach((sale: CarSale) => {
+                            if (isMercedesB200Sale(sale)) {
+                                dirtyIds.current.add(sale.id);
+                            }
+                        });
+                    }
                     await persistDirtyIds(dirtyIds.current);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(salesWithB200) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(salesWithB200));
+                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(visibilityRepairedSales) });
+                    localStorage.setItem('car_sales_data', JSON.stringify(visibilityRepairedSales));
                 }
-                setSales(salesWithB200.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
+                setSales(visibilityRepairedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
                 // 2. Fetch/Sync with Supabase (Background)
                 const { value: key } = await Preferences.get({ key: 'openai_api_key' });
@@ -2179,33 +2176,7 @@ export default function Dashboard() {
                             mergedById.set(sale.id, sale);
                         }
                     });
-                    const mergedSales = Array.from(mergedById.values());
-                    // Aggressive Deduplication: Filter by ID, VIN, and Plate Number
-                    const seenIds = new Set<string>();
-                    const seenVins = new Set<string>();
-                    const seenPlates = new Set<string>();
-
-                    const uniqueSales = mergedSales.filter((s: CarSale) => {
-                        // 1. Check ID
-                        if (seenIds.has(s.id)) return false;
-
-                        // 2. Check VIN (if present and valid length > 5 to avoid short garbage)
-                        if (s.vin && s.vin.trim().length > 5) {
-                            const normalizedVin = s.vin.trim().toUpperCase();
-                            if (seenVins.has(normalizedVin)) return false;
-                            seenVins.add(normalizedVin);
-                        }
-
-                        // 3. Check Plate (if present)
-                        if (s.plateNumber && s.plateNumber.trim().length > 3) {
-                            const normalizedPlate = s.plateNumber.trim().toUpperCase().replace(/\s+/g, '');
-                            if (seenPlates.has(normalizedPlate)) return false;
-                            seenPlates.add(normalizedPlate);
-                        }
-
-                        seenIds.add(s.id);
-                        return true;
-                    });
+                    const uniqueSales = Array.from(mergedById.values());
 
                     const normalizedSales = uniqueSales.map(normalizeSaleProfiles);
                     const hasAdminOwnership = uniqueSales.some(sale => isLegacyAdminProfile(sale.sellerName) || isLegacyAdminProfile(sale.soldBy));
@@ -2269,6 +2240,17 @@ export default function Dashboard() {
             const currentSales = salesRef.current;
             const index = currentSales.findIndex(s => s.id === sale.id);
             let newSales;
+            const isCreate = index < 0;
+
+            console.info('[sale.save] submitting payload', {
+                mode: isCreate ? 'create' : 'update',
+                id: sale.id,
+                brand: sale.brand,
+                model: sale.model,
+                status: sale.status,
+                soldBy: sale.soldBy,
+                sellerName: sale.sellerName
+            });
 
             if (index >= 0) {
                 // UPDATE
@@ -2282,8 +2264,13 @@ export default function Dashboard() {
 
             const saveResult = await updateSalesAndSave(newSales);
             if (!saveResult.success) {
+                console.error('[sale.save] failed', {
+                    id: sale.id,
+                    error: saveResult.error
+                });
                 return { success: false, error: saveResult.error || 'Sync failed. Data saved locally.' };
             }
+            console.info('[sale.save] success', { id: sale.id, mode: isCreate ? 'create' : 'update' });
             const nextView = formReturnView === 'landing' ? 'dashboard' : formReturnView;
             closeSaleForm(nextView);
             return { success: true };

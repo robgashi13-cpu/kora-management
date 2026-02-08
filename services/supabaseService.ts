@@ -148,11 +148,36 @@ export const syncSalesWithSupabase = async (
             const maxAttempts = Math.max(4, Object.keys(salesToPush[0] ?? {}).length + 2);
 
             for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-                const { error: upsertError } = await client
+                const { data: upsertedRows, error: upsertError } = await client
                     .from('sales')
-                    .upsert(payloadToPush, { onConflict: 'id' });
+                    .upsert(payloadToPush, { onConflict: 'id' })
+                    .select('id');
 
                 if (!upsertError) {
+                    const pushedIds = payloadToPush
+                        .map((item) => typeof item.id === 'string' ? item.id : '')
+                        .filter(Boolean);
+                    const returnedIds = new Set((upsertedRows || []).map((row: { id: string }) => row.id));
+                    const missingIds = pushedIds.filter((id) => !returnedIds.has(id));
+
+                    console.info('[sales.sync] upsert response', {
+                        attempted: pushedIds.length,
+                        returned: returnedIds.size,
+                        missing: missingIds.length,
+                    });
+
+                    if (missingIds.length > 0) {
+                        console.error('[sales.sync] upsert did not return all IDs', {
+                            missingIds,
+                            hint: 'Possible RLS reject or invalid row payload.'
+                        });
+                        return {
+                            success: false,
+                            error: `Sales upsert incomplete. Missing IDs: ${missingIds.join(', ')}`,
+                            failedIds: missingIds
+                        };
+                    }
+
                     if (droppedColumns.size > 0) {
                         console.warn(`Sales sync retry succeeded after dropping missing columns: ${Array.from(droppedColumns).join(', ')}`);
                     }
@@ -186,6 +211,7 @@ export const syncSalesWithSupabase = async (
 
             if (lastError) {
                 console.error("Sync Error Batch:", lastError.message || lastError.code || lastError.details || JSON.stringify(lastError));
+                console.error('[sales.sync] payload sample', payloadToPush[0]);
                 return { success: false, error: lastError.message || lastError.code || lastError.details || "Unknown sync error" };
             }
         }
