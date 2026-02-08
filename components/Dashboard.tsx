@@ -94,12 +94,6 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
-    const statusClass = s.status === 'Completed' ? 'status-completed' :
-        (s.status === 'In Progress' || s.status === 'Autosallon') ? 'status-in-progress' :
-            s.status === 'New' ? 'status-new' :
-                s.status === 'Shipped' ? 'status-shipped' :
-                    s.status === 'Inspection' ? 'status-inspection' :
-                        'bg-slate-100 text-slate-500';
     const isSoldRow = s.status === 'Completed';
     const rowClassName = isSoldRow ? 'contents table-row-compact cars-sold-row' : 'contents group table-row-hover table-row-compact';
     const rowTapRef = useRef({ x: 0, y: 0, moved: false, active: false });
@@ -338,8 +332,8 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     {canEdit && (
                         <InlineEditableCell value={s.amountPaidToKorea || 0} onSave={(v) => handleFieldUpdate('amountPaidToKorea', v)} type="number" prefix="€" className="text-[10px] xl:text-[11px] font-bold text-slate-700" />
                     )}
-                        <span className={`payment-badge text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'payment-badge--pending' : 'payment-badge--paid'}`}>
-                        {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? `€${((s.costToBuy || 0) - (s.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                        <span className={`text-[10px] xl:text-[11px] uppercase font-bold whitespace-nowrap ${(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'financial-negative-text' : 'financial-positive-text'}`}>
+                        {(s.costToBuy || 0) - (s.amountPaidToKorea || 0) > 0 ? 'Not Paid' : 'Paid'}
                     </span>
                 </div>
             )}
@@ -348,9 +342,9 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             <div className="px-2 h-full flex items-center justify-center border-r border-slate-100 bg-white" title={s.status}>
                 <div className="flex flex-col items-center gap-1">
                     {canEdit ? (
-                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`} />
+                        <InlineEditableCell value={s.status} onSave={(v) => handleFieldUpdate('status', v)} className="text-[10px] xl:text-[11px] font-semibold text-slate-700" />
                     ) : (
-                        <span className={`status-badge text-[10px] xl:text-[11px] ${statusClass}`}>{s.status}</span>
+                        <span className="text-[10px] xl:text-[11px] font-semibold text-slate-700">{s.status}</span>
                     )}
                     {s.isPaid && (
                         <span className="payment-badge payment-badge--paid financial-positive-text text-[9px] xl:text-[10px] uppercase font-bold whitespace-nowrap px-2 py-0.5 rounded-full">
@@ -2535,24 +2529,33 @@ export default function Dashboard() {
                 sellerName: sellerLabel
             };
 
+            const deriveSellerFields = (input: Partial<CarSale>, fallbackSoldBy: string) => {
+                const resolvedSoldBy = resolveSoldBy(input, fallbackSoldBy);
+                return {
+                    soldBy: resolvedSoldBy,
+                    sellerName: profileOptions.find(p => p.id === resolvedSoldBy)?.label || input.sellerName || resolvedSoldBy
+                };
+            };
+
             if (index >= 0) {
                 // UPDATE
-                const currentSoldBy = currentSales[index].soldBy;
+                const currentSale = currentSales[index];
+                const currentSoldBy = currentSale.soldBy;
                 const merged = isAdmin ? sale : { ...sale, ...sellerFromSession };
                 newSales = [...currentSales];
-                newSales[index] = { ...merged, soldBy: resolveSoldBy(merged, currentSoldBy), sellerName: merged.sellerName || sellerLabel };
+                newSales[index] = { ...currentSale, ...merged, ...deriveSellerFields(merged, currentSoldBy) };
                 await logAuditEvent({
                     actionType: 'UPDATE',
                     entityType: 'sale',
                     entityId: sale.id,
-                    beforeData: currentSales[index],
+                    beforeData: currentSale,
                     afterData: newSales[index],
                     pageContext: 'sale_form'
                 });
             } else {
                 // CREATE
                 const created = isAdmin ? sale : { ...sale, ...sellerFromSession };
-                const finalized = { ...created, soldBy: resolveSoldBy(created, sessionSellerId), sellerName: created.sellerName || sellerLabel };
+                const finalized = { ...created, ...deriveSellerFields(created, sessionSellerId) };
                 newSales = [...currentSales, finalized];
                 await logAuditEvent({
                     actionType: 'CREATE',
@@ -4202,7 +4205,7 @@ export default function Dashboard() {
                                                                                         <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
                                                                                             <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'Not Paid' : 'Paid'}
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
@@ -4469,7 +4472,7 @@ export default function Dashboard() {
                                                                                         <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
                                                                                             <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'Not Paid' : 'Paid'}
                                                                                             </span>
                                                                                         )}
                                                                                     </div>

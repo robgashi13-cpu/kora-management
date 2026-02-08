@@ -544,6 +544,15 @@ body:not([data-theme='dark']) .cars-sold-row .row-action-button {
   color: #0f172a !important;
 }
 
+
+.cars-sold-row .row-action-button,
+[data-theme='dark'] .cars-sold-row .row-action-button,
+[data-theme='light'] .cars-sold-row .row-action-button,
+body:not([data-theme='dark']) .cars-sold-row .row-action-button {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
 /* Money Colors */
 .money-positive { color: hsl(222 10% 20%); font-weight: 600; }
 .money-negative { color: hsl(222 10% 20%); font-weight: 600; }
