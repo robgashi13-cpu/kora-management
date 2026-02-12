@@ -178,11 +178,11 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             </div>
                             <div className="flex gap-2">
                                 <span className="font-semibold min-w-20">Banka:</span>
-                                <span>TEB Raiffeisen Bank</span>
+                                <span>Raiffeisen Bank</span>
                             </div>
                             <div className="flex gap-2">
                                 <span className="font-semibold min-w-20">IBAN:</span>
-                                <strong>XK051501000001004890</strong>
+                                <strong>1501080002435404</strong>
                             </div>
                             <div className="flex gap-2">
                                 <span className="font-semibold min-w-20">Nr. Biznesit:</span>
