@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, FileText, ArrowLeft, Eye } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
@@ -25,6 +25,7 @@ const COLORS = [
 export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: Props) {
     const [formData, setFormData] = useState<ShitblerjeOverrides>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
     const [contractType, setContractType] = useState<ContractType | null>(null);
     const [showInvoice, setShowInvoice] = useState(false);
@@ -37,6 +38,14 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
+    const hasInitializedFormRef = useRef(false);
+    const hasRestoredDraftRef = useRef(false);
+    const autosaveTimerRef = useRef<number | null>(null);
+
+    const draftStorageKey = useMemo(() => {
+        if (!sale) return '';
+        return `sale_draft:shitblerje:edit:${sale.id}`;
+    }, [sale]);
 
     const baseValues = useMemo(() => {
         if (!sale) return null;
@@ -55,10 +64,59 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
     }, [sale]);
 
     useEffect(() => {
-        if (isOpen && baseValues) {
-            setFormData(baseValues);
-        }
+        if (!isOpen || !baseValues || hasInitializedFormRef.current) return;
+        setFormData(baseValues);
+        hasInitializedFormRef.current = true;
+        setDraftState({ status: 'idle' });
     }, [isOpen, baseValues]);
+
+    useEffect(() => {
+        if (isOpen) return;
+        hasInitializedFormRef.current = false;
+        hasRestoredDraftRef.current = false;
+        if (autosaveTimerRef.current) {
+            window.clearTimeout(autosaveTimerRef.current);
+            autosaveTimerRef.current = null;
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !draftStorageKey || hasRestoredDraftRef.current || typeof window === 'undefined') return;
+        hasRestoredDraftRef.current = true;
+        const raw = window.localStorage.getItem(draftStorageKey);
+        if (!raw) return;
+        try {
+            const draft = JSON.parse(raw) as { data: ShitblerjeOverrides; updatedAt?: string };
+            if (draft?.data) {
+                setFormData(prev => ({ ...prev, ...draft.data }));
+                setDraftState({ status: 'saved', savedAt: draft.updatedAt });
+            }
+        } catch (error) {
+            console.warn('Failed to restore shitblerje draft', error);
+        }
+    }, [draftStorageKey, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || !draftStorageKey || typeof window === 'undefined' || !hasInitializedFormRef.current) return;
+        setDraftState(prev => ({ ...prev, status: 'saving' }));
+
+        if (autosaveTimerRef.current) {
+            window.clearTimeout(autosaveTimerRef.current);
+        }
+
+        autosaveTimerRef.current = window.setTimeout(() => {
+            const savedAt = new Date().toISOString();
+            window.localStorage.setItem(draftStorageKey, JSON.stringify({ data: formData, updatedAt: savedAt }));
+            setDraftState({ status: 'saved', savedAt });
+        }, 500);
+
+        return () => {
+            if (autosaveTimerRef.current) {
+                window.clearTimeout(autosaveTimerRef.current);
+                autosaveTimerRef.current = null;
+            }
+        };
+    }, [draftStorageKey, formData, isOpen]);
 
     if (!isOpen || !sale) return null;
 
@@ -89,6 +147,10 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                 km: Number(formData.km || 0),
                 soldPrice: Number(formData.soldPrice || 0)
             });
+            if (typeof window !== 'undefined' && draftStorageKey) {
+                window.localStorage.removeItem(draftStorageKey);
+            }
+            setDraftState({ status: 'idle' });
         } finally {
             setIsSaving(false);
         }
@@ -207,6 +269,10 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                         </div>
 
                         <div className="flex flex-col sm:flex-row gap-2 justify-end pt-2 border-t border-slate-100">
+                            <div className="text-xs font-medium text-slate-500 sm:mr-auto sm:self-center">
+                                {draftState.status === 'saving' && 'Saving draft...'}
+                                {draftState.status === 'saved' && `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
+                            </div>
                             <button
                                 type="button"
                                 onClick={onClose}
