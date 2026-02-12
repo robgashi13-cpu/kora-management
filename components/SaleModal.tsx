@@ -61,11 +61,15 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string; savedAt?: string }>({ saving: false });
+    const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
+    const hasInitializedFormRef = useRef(false);
+    const hasRestoredDraftRef = useRef(false);
+    const autosaveTimerRef = useRef<number | null>(null);
     const draftStorageKey = useMemo(() => (
-        existingSale?.id ? `sale_draft_${existingSale.id}` : 'sale_draft_new'
-    ), [existingSale?.id]);
+        `sale_draft:${(currentProfile || 'anonymous').trim() || 'anonymous'}:${existingSale?.id ? `edit:${existingSale.id}` : 'create:new'}`
+    ), [currentProfile, existingSale?.id]);
 
     const resolveSellerSelection = (sale: CarSale | null) => {
         const candidates = [sale?.soldBy, sale?.sellerName]
@@ -86,7 +90,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         };
     };
 
-    useEffect(() => {
+    const buildInitialFormData = useCallback(() => {
         const activeProfile = (currentProfile || '').trim();
         const activeOption = availableProfiles.find(profile => profile.id === activeProfile || profile.label === activeProfile);
         const sellerFromSession = {
@@ -95,7 +99,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         };
 
         if (existingSale) {
-            // Migration logic: Ensure arrays exist if legacy singulars exist
             const migratedSale = { ...existingSale };
             if (migratedSale.bankReceipt && (!migratedSale.bankReceipts || migratedSale.bankReceipts.length === 0)) {
                 migratedSale.bankReceipts = [migratedSale.bankReceipt];
@@ -103,41 +106,57 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (migratedSale.bankInvoice && (!migratedSale.bankInvoices || migratedSale.bankInvoices.length === 0)) {
                 migratedSale.bankInvoices = [migratedSale.bankInvoice];
             }
-            // Ensure arrays are initialized
             if (!migratedSale.bankReceipts) migratedSale.bankReceipts = [];
             if (!migratedSale.bankInvoices) migratedSale.bankInvoices = [];
             if (!migratedSale.depositInvoices) migratedSale.depositInvoices = [];
 
             const resolvedSeller = resolveSellerSelection(migratedSale);
-            const nextFormData = {
+            return {
                 ...migratedSale,
                 ...resolvedSeller
             };
-            setFormData(nextFormData);
-            initialFormDataRef.current = nextFormData;
-        } else {
-            const nextFormData = {
-                ...EMPTY_SALE,
-                ...sellerFromSession,
-                bankReceipts: [],
-                bankInvoices: [],
-                depositInvoices: []
-            };
-            setFormData(nextFormData);
-            initialFormDataRef.current = nextFormData;
         }
-        setSaveState({ saving: false });
-    }, [existingSale, isOpen, currentProfile, availableProfiles, isAdmin]);
+
+        return {
+            ...EMPTY_SALE,
+            ...sellerFromSession,
+            bankReceipts: [],
+            bankInvoices: [],
+            depositInvoices: []
+        };
+    }, [availableProfiles, currentProfile, existingSale]);
 
     useEffect(() => {
-        if (!isOpen || typeof window === 'undefined') return;
+        if (!isOpen) return;
+        if (hasInitializedFormRef.current) return;
+        const nextFormData = buildInitialFormData();
+        setFormData(nextFormData);
+        initialFormDataRef.current = nextFormData;
+        hasInitializedFormRef.current = true;
+        setSaveState({ saving: false });
+        setDraftState({ status: 'idle' });
+    }, [buildInitialFormData, isOpen]);
+
+    useEffect(() => {
+        if (isOpen) return;
+        hasInitializedFormRef.current = false;
+        hasRestoredDraftRef.current = false;
+        if (autosaveTimerRef.current) {
+            window.clearTimeout(autosaveTimerRef.current);
+            autosaveTimerRef.current = null;
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || hasRestoredDraftRef.current || typeof window === 'undefined') return;
         const raw = window.localStorage.getItem(draftStorageKey);
+        hasRestoredDraftRef.current = true;
         if (!raw) return;
         try {
-            const draft = JSON.parse(raw) as { data: Partial<CarSale> };
+            const draft = JSON.parse(raw) as { data: Partial<CarSale>; updatedAt?: string };
             if (draft?.data) {
-                setFormData(draft.data);
-                initialFormDataRef.current = draft.data;
+                setFormData(prev => ({ ...prev, ...draft.data }));
+                setDraftState({ status: 'saved', savedAt: draft.updatedAt });
             }
         } catch (error) {
             console.warn('Failed to restore sale draft', error);
@@ -146,11 +165,29 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     useEffect(() => {
         if (!isOpen || typeof window === 'undefined') return;
-        const payload = {
-            updatedAt: new Date().toISOString(),
-            data: formData
+        if (!hasInitializedFormRef.current) return;
+
+        setDraftState(prev => ({ ...prev, status: 'saving' }));
+        if (autosaveTimerRef.current) {
+            window.clearTimeout(autosaveTimerRef.current);
+        }
+
+        autosaveTimerRef.current = window.setTimeout(() => {
+            const savedAt = new Date().toISOString();
+            const payload = {
+                updatedAt: savedAt,
+                data: formData
+            };
+            window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
+            setDraftState({ status: 'saved', savedAt });
+        }, 500);
+
+        return () => {
+            if (autosaveTimerRef.current) {
+                window.clearTimeout(autosaveTimerRef.current);
+                autosaveTimerRef.current = null;
+            }
         };
-        window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
     }, [draftStorageKey, formData, isOpen]);
 
     const duplicateWarnings = useMemo(() => {
@@ -307,6 +344,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             if (typeof window !== 'undefined') {
                 window.localStorage.removeItem(draftStorageKey);
             }
+            setDraftState({ status: 'idle' });
             setSaveState({ saving: false, success: existingSale ? 'Saved successfully.' : 'Created successfully.', savedAt: new Date().toISOString() });
             setTimeout(() => {
                 handleRequestClose();
@@ -643,6 +681,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     {/* Footer Actions */}
+                    <div className="-mt-4 text-xs font-medium text-slate-500">
+                        {draftState.status === 'saving' && 'Saving draft...'}
+                        {draftState.status === 'saved' && `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
+                    </div>
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
                         <button type="button" onClick={handleRequestClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
                         <button
