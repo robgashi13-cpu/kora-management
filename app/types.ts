@@ -48,6 +48,7 @@ export interface CarSale {
     includeTransport?: boolean;
 
     costToBuy: number;
+    baseCostToBuy?: number;
     soldPrice: number;
     customPriceDiscount?: number;
 
