@@ -116,6 +116,7 @@ const fromRemote = (r: any): CarSale => ({
     shippingDate: r.shipping_date ?? r.attachments?.shippingDate,
     includeTransport: r.include_transport ?? r.attachments?.includeTransport,
     costToBuy: r.cost_to_buy ?? r.attachments?.costToBuy,
+    baseCostToBuy: r.attachments?.baseCostToBuy,
     soldPrice: r.sold_price ?? r.attachments?.soldPrice,
     customPriceDiscount: r.custom_price_discount ?? r.attachments?.customPriceDiscount,
     amountPaidCash: r.amount_paid_cash ?? r.attachments?.amountPaidCash,
