@@ -29,6 +29,7 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     sellerName: '', buyerName: '',
     shippingName: '', shippingDate: '',
     costToBuy: 0, soldPrice: 0,
+    customPriceDiscount: 0,
     amountPaidCash: 0, amountPaidBank: 0, deposit: 0,
     servicesCost: 30.51, tax: 0,
     includeTransport: false,
@@ -70,6 +71,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const draftStorageKey = useMemo(() => (
         `sale_draft:${(currentProfile || 'anonymous').trim() || 'anonymous'}:${existingSale?.id ? `edit:${existingSale.id}` : 'create:new'}`
     ), [currentProfile, existingSale?.id]);
+    const isAutosalloniSale = existingSale !== null && formData.status === 'Autosallon';
+    const customPriceDiscount = isAutosalloniSale
+        ? Math.max(0, Number(formData.customPriceDiscount || 0))
+        : 0;
+    const computedBalanceDue = (formData.soldPrice || 0)
+        - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))
+        - customPriceDiscount;
 
     const resolveSellerSelection = (sale: CarSale | null) => {
         const candidates = [sale?.soldBy, sale?.sellerName]
@@ -357,9 +365,19 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
+        if (type === 'number') {
+            const parsed = value === '' ? 0 : Number(value);
+            const numericValue = Number.isNaN(parsed) ? 0 : parsed;
+            setFormData(prev => ({
+                ...prev,
+                [name]: name === 'customPriceDiscount' ? Math.max(0, numericValue) : numericValue
+            }));
+            return;
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'number' ? Number(value) : value
+            [name]: value
         }));
     };
 
@@ -581,6 +599,17 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <Input label="Cost to Buy (€)" name="costToBuy" type="number" value={formData.costToBuy || ''} onChange={handleChange} />
                             )}
                             <Input label="Sold Price (€)" name="soldPrice" type="number" value={formData.soldPrice || ''} onChange={handleChange} required className="font-bold text-emerald-700 border-emerald-200" />
+                            {isAutosalloniSale && (
+                                <Input
+                                    label="Custom Price Discount (€)"
+                                    name="customPriceDiscount"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={formData.customPriceDiscount || ''}
+                                    onChange={handleChange}
+                                />
+                            )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                             <div className="flex flex-col gap-1.5">
@@ -649,8 +678,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
                         <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex justify-between items-center">
                             <span className="text-sm text-slate-500 font-bold uppercase tracking-wide">Balance Due</span>
-                            <span className={`text-2xl font-mono font-bold ${(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                €{(formData.soldPrice! - ((formData.amountPaidBank || 0) + (formData.amountPaidCash || 0) + (formData.deposit || 0))).toLocaleString()}
+                            <span className={`text-2xl font-mono font-bold ${computedBalanceDue > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                €{computedBalanceDue.toLocaleString()}
                             </span>
                         </div>
                     </Section>

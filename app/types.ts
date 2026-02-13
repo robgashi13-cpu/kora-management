@@ -49,6 +49,7 @@ export interface CarSale {
 
     costToBuy: number;
     soldPrice: number;
+    customPriceDiscount?: number;
 
     // Payment Breakdown
     amountPaidCash: number;
