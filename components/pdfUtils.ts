@@ -329,7 +329,6 @@ export const generatePdf = async ({
     pagebreak: { mode: pagebreakMode ?? ['css', 'legacy', 'avoid-all'] }
   };
 
-  const fieldData = collectPdfTextFields(element);
   const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
   if (typeof pdf.viewerPreferences === 'function') {
     pdf.viewerPreferences({
@@ -337,7 +336,6 @@ export const generatePdf = async ({
       PickTrayByPDFSize: true
     });
   }
-  addPdfFormFields(pdf, fieldData);
   const blob = pdf.output('blob');
   return { pdf, blob, filename };
 };
