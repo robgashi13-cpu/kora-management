@@ -17,7 +17,26 @@ const canAccessSale = (sale: CarSale, profile: string) => {
 };
 
 export const createSupabaseClient = (url: string, key: string): SupabaseClient => {
-    return createClient(url, key);
+    return createClient(url, key, {
+        global: {
+            fetch: (input, init) => {
+                const headers = new Headers(init?.headers || {});
+                headers.set('cache-control', 'no-store, no-cache, must-revalidate');
+                headers.set('pragma', 'no-cache');
+                headers.set('expires', '0');
+                return fetch(input, {
+                    ...init,
+                    cache: 'no-store',
+                    headers,
+                });
+            }
+        },
+        realtime: {
+            params: {
+                eventsPerSecond: 10,
+            }
+        }
+    });
 };
 
 const tryRefreshSchemaCache = async (client: SupabaseClient) => {

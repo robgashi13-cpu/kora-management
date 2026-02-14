@@ -19,6 +19,7 @@ import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
+import PdfTemplateBuilder, { defaultPdfTemplates, PdfTemplateMap } from './PdfTemplateBuilder';
 import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
@@ -451,6 +452,7 @@ const navItems: NavItem[] = [
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
+    { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_templates', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
@@ -585,7 +587,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (isAdmin) return;
-        if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due') {
+        if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due' || view === 'pdf_templates') {
             setView('dashboard');
         }
         if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
@@ -599,6 +601,7 @@ export default function Dashboard() {
         if (view === 'invoices') return 'INVOICES';
         if (view === 'balance_due') return 'BALANCE_DUE';
         if (view === 'transport') return 'TRANSPORTI';
+        if (view === 'pdf_templates') return 'PDF';
         if (view === 'custom_dashboard') return activeCustomDashboardId || 'CREATE';
         return activeCategory as string;
     }, [view, activeCategory, activeCustomDashboardId]);
@@ -632,6 +635,8 @@ export default function Dashboard() {
     const [analyzing, setAnalyzing] = useState(false);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string>('');
+    const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateMap>(defaultPdfTemplates());
+    const [isSavingPdfTemplates, setIsSavingPdfTemplates] = useState(false);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -1129,6 +1134,48 @@ export default function Dashboard() {
         }
     };
 
+    const savePdfTemplates = useCallback(async () => {
+        setIsSavingPdfTemplates(true);
+        try {
+            await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(pdfTemplates) });
+            if (supabaseUrl && supabaseKey) {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                await client.from('sales').upsert({
+                    id: 'config_pdf_templates',
+                    attachments: { templates: pdfTemplates, updatedAt: new Date().toISOString() }
+                });
+            }
+        } finally {
+            setIsSavingPdfTemplates(false);
+        }
+    }, [pdfTemplates, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
+        const loadPdfTemplates = async () => {
+            const local = await Preferences.get({ key: 'pdf_templates' });
+            if (local.value) {
+                try {
+                    setPdfTemplates({ ...defaultPdfTemplates(), ...JSON.parse(local.value) });
+                } catch {
+                    setPdfTemplates(defaultPdfTemplates());
+                }
+            }
+
+            if (supabaseUrl && supabaseKey) {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_pdf_templates').single();
+                const cloudTemplates = data?.attachments?.templates;
+                if (cloudTemplates && typeof cloudTemplates === 'object') {
+                    const merged = { ...defaultPdfTemplates(), ...cloudTemplates };
+                    setPdfTemplates(merged);
+                    await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(merged) });
+                }
+            }
+        };
+
+        void loadPdfTemplates();
+    }, [supabaseUrl, supabaseKey]);
+
     // Sync profiles to Supabase when they change
     const syncProfilesToCloud = async (profiles: string[]) => {
         if (!supabaseUrl || !supabaseKey) return;
@@ -1224,8 +1271,9 @@ export default function Dashboard() {
 
 
     const persistSalesLocally = async (normalizedSales: CarSale[]) => {
-        await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-        localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+        const salesStorageKey = getSalesStorageKey();
+        await Preferences.set({ key: salesStorageKey, value: JSON.stringify(normalizedSales) });
+        localStorage.setItem(salesStorageKey, JSON.stringify(normalizedSales));
 
         if (Capacitor.isNativePlatform()) {
             await Filesystem.writeFile({
@@ -1239,10 +1287,21 @@ export default function Dashboard() {
 
     const DIRTY_IDS_KEY = 'dirty_sale_ids';
 
+    const getSalesStorageKey = (profile?: string | null) => {
+        const normalized = normalizeProfileName(profile || userProfile || 'guest') || 'guest';
+        return `car_sales_data_${normalized}`;
+    };
+
+    const getDirtyIdsStorageKey = (profile?: string | null) => {
+        const normalized = normalizeProfileName(profile || userProfile || 'guest') || 'guest';
+        return `${DIRTY_IDS_KEY}_${normalized}`;
+    };
+
     const persistDirtyIds = async (ids: Set<string>) => {
         const payload = JSON.stringify(Array.from(ids));
-        await Preferences.set({ key: DIRTY_IDS_KEY, value: payload });
-        localStorage.setItem(DIRTY_IDS_KEY, payload);
+        const dirtyStorageKey = getDirtyIdsStorageKey();
+        await Preferences.set({ key: dirtyStorageKey, value: payload });
+        localStorage.setItem(dirtyStorageKey, payload);
     };
 
     const updateSalesAndSave = async (newSales: CarSale[]): Promise<{ success: boolean; error?: string }> => {
@@ -2116,9 +2175,10 @@ export default function Dashboard() {
             .channel('public:sales')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, (payload) => {
                 console.log('Realtime Change:', payload);
-                // Trigger auto-sync to pull latest data and merge
-                // We pass undefined for sales to force a fresh read from Persistence to avoid stale closure state
-                if (userProfile) performAutoSync(supabaseUrl, supabaseKey, userProfile);
+                if (!userProfile) return;
+                window.setTimeout(() => {
+                    void performAutoSync(supabaseUrl, supabaseKey, userProfile);
+                }, 150);
             })
             .subscribe();
 
@@ -2201,12 +2261,13 @@ export default function Dashboard() {
                     }
                 }
 
-                const { value: dirtyValue } = await Preferences.get({ key: DIRTY_IDS_KEY });
+                const dirtyStorageKey = getDirtyIdsStorageKey(storedProfile);
+                const { value: dirtyValue } = await Preferences.get({ key: dirtyStorageKey });
                 if (dirtyValue) {
                     const parsed = JSON.parse(dirtyValue) as string[];
                     dirtyIds.current = new Set(parsed.filter(Boolean));
                 } else {
-                    const storedDirty = localStorage.getItem(DIRTY_IDS_KEY);
+                    const storedDirty = localStorage.getItem(dirtyStorageKey);
                     if (storedDirty) {
                         const parsed = JSON.parse(storedDirty) as string[];
                         dirtyIds.current = new Set(parsed.filter(Boolean));
@@ -2380,11 +2441,12 @@ export default function Dashboard() {
             try {
                 // 1. Load Local Data First for Immediate Display
                 let currentSales = INITIAL_SALES;
-                const { value } = await Preferences.get({ key: 'car_sales_data' });
+                const scopedSalesKey = getSalesStorageKey(userProfile || localStorage.getItem(SESSION_PROFILE_STORAGE_KEY));
+                const { value } = await Preferences.get({ key: scopedSalesKey });
                 if (value) {
                     currentSales = JSON.parse(value);
                 } else {
-                    const saved = localStorage.getItem('car_sales_data');
+                    const saved = localStorage.getItem(scopedSalesKey);
                     if (saved) {
                         currentSales = JSON.parse(saved);
                     }
@@ -2408,8 +2470,8 @@ export default function Dashboard() {
                         });
                     }
                     await persistDirtyIds(dirtyIds.current);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(visibilityRepairedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(visibilityRepairedSales));
+                    await Preferences.set({ key: scopedSalesKey, value: JSON.stringify(visibilityRepairedSales) });
+                    localStorage.setItem(scopedSalesKey, JSON.stringify(visibilityRepairedSales));
                 }
                 setSales(visibilityRepairedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
@@ -2442,7 +2504,8 @@ export default function Dashboard() {
             const { value: prof } = await Preferences.get({ key: 'user_profile' });
             if (url && sbKey && prof) {
                 console.log("App focused, syncing...", url);
-                const { value: s } = await Preferences.get({ key: 'car_sales_data' });
+                const scopedSalesKey = getSalesStorageKey(prof);
+                const { value: s } = await Preferences.get({ key: scopedSalesKey });
                 const latestSales = s ? JSON.parse(s) : [];
                 performAutoSync(url, sbKey, prof, latestSales);
             }
@@ -2471,11 +2534,22 @@ export default function Dashboard() {
     useEffect(() => {
         if (!userProfile || !supabaseUrl || !supabaseKey) return;
         const syncOnLogin = async () => {
-            const { value } = await Preferences.get({ key: 'car_sales_data' });
+            const scopedSalesKey = getSalesStorageKey(userProfile);
+            const { value } = await Preferences.get({ key: scopedSalesKey });
             const localSales = value ? JSON.parse(value) : salesRef.current;
             performAutoSync(supabaseUrl, supabaseKey, userProfile, localSales);
         };
         syncOnLogin();
+    }, [userProfile, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
+        if (!userProfile || !supabaseUrl || !supabaseKey) return;
+        const timer = window.setInterval(() => {
+            if (!isFormOpenRef.current) {
+                void performAutoSync(supabaseUrl, supabaseKey, userProfile);
+            }
+        }, 5000);
+        return () => window.clearInterval(timer);
     }, [userProfile, supabaseUrl, supabaseKey]);
 
     const performAutoSync = async (
@@ -2492,7 +2566,8 @@ export default function Dashboard() {
         try {
             let localSalesToSync = currentLocalSales;
             if (!localSalesToSync) {
-                const { value } = await Preferences.get({ key: 'car_sales_data' });
+                const scopedSalesKey = getSalesStorageKey(userProfile || localStorage.getItem(SESSION_PROFILE_STORAGE_KEY));
+                const { value } = await Preferences.get({ key: scopedSalesKey });
                 localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
             }
             if (!localSalesToSync) localSalesToSync = [];
@@ -2545,8 +2620,9 @@ export default function Dashboard() {
                         await persistDirtyIds(dirtyIds.current);
                     }
                     setSales(normalizedSales);
-                    await Preferences.set({ key: 'car_sales_data', value: JSON.stringify(normalizedSales) });
-                    localStorage.setItem('car_sales_data', JSON.stringify(normalizedSales));
+                    const scopedSalesKey = getSalesStorageKey(profile);
+                    await Preferences.set({ key: scopedSalesKey, value: JSON.stringify(normalizedSales) });
+                    localStorage.setItem(scopedSalesKey, JSON.stringify(normalizedSales));
 
                     if (syncedDirtyIds.size > 0) {
                         syncedDirtyIds.forEach((id) => dirtyIds.current.delete(id));
@@ -2787,8 +2863,8 @@ export default function Dashboard() {
                 // Delete locally
                 updateSalesAndSave([]);
                 try {
-                    await Preferences.remove({ key: 'car_sales_data' });
-                    localStorage.removeItem('car_sales_data');
+                    await Preferences.remove({ key: getSalesStorageKey() });
+                    localStorage.removeItem(getSalesStorageKey());
                     alert('All data has been deleted from local and database.');
                 } catch (e) { console.error('Error clearing data', e); }
             }
@@ -3077,10 +3153,10 @@ export default function Dashboard() {
     );
 
     const balanceDueSales = React.useMemo(
-        () => sales
+        () => filteredSales
             .filter((sale) => calculateBalance(sale) > 0)
             .sort((a, b) => calculateBalance(b) - calculateBalance(a)),
-        [sales]
+        [filteredSales]
     );
 
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
@@ -3634,7 +3710,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-lg font-bold hidden sm:flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
                                 </span>
@@ -4665,6 +4741,13 @@ export default function Dashboard() {
                                         </div>
                                     )}
                                 </div>
+                            ) : view === 'pdf_templates' ? (
+                                <PdfTemplateBuilder
+                                    templates={pdfTemplates}
+                                    onChange={setPdfTemplates}
+                                    onSave={savePdfTemplates}
+                                    saving={isSavingPdfTemplates}
+                                />
                             ) : view === 'settings' ? (
                                 <div className="w-full max-w-xl mx-auto bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
                                     <h2 className="text-xl font-bold mb-4 text-slate-900">Settings</h2>
