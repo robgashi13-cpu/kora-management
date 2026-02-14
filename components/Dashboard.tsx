@@ -456,6 +456,10 @@ const navItems: NavItem[] = [
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
+const getClientTransportPaidStatus = (sale: Pick<CarSale, 'includeTransport' | 'transportPaid'>): TransportPaymentStatus => (
+    sale.includeTransport ? 'PAID' : (sale.transportPaid === 'PAID' ? 'PAID' : 'NOT PAID')
+);
+
 export default function Dashboard() {
     const dirtyIds = useRef<Set<string>>(new Set());
     const [, startTransition] = useTransition();
@@ -478,6 +482,7 @@ export default function Dashboard() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isSalesGroupOpen, setIsSalesGroupOpen] = useState(true);
     const [isOperationsGroupOpen, setIsOperationsGroupOpen] = useState(true);
+    const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
     const isRecordAdmin = userProfile === ADMIN_PROFILE;
@@ -885,10 +890,24 @@ export default function Dashboard() {
         ...sale,
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy),
-        transportPaid: (sale.transportPaid === 'PAID' ? 'PAID' : 'NOT PAID') as TransportPaymentStatus,
+        transportPaid: getClientTransportPaidStatus(sale),
         paidToTransportusi: (sale.paidToTransportusi === 'PAID' ? 'PAID' : 'NOT PAID') as TransportPaymentStatus,
         transportCost: typeof sale.transportCost === 'number' ? sale.transportCost : (sale.includeTransport ? 350 : 0)
     }), []);
+
+    useEffect(() => {
+        if (isLoading || hasSyncedTransportPaidRef.current || !sales.length) return;
+        const hasMismatch = sales.some((sale) => sale.transportPaid !== getClientTransportPaidStatus(sale));
+        if (!hasMismatch) {
+            hasSyncedTransportPaidRef.current = true;
+            return;
+        }
+        hasSyncedTransportPaidRef.current = true;
+        const reconciledSales = sales.map((sale) => ({ ...sale, transportPaid: getClientTransportPaidStatus(sale) }));
+        void updateSalesAndSave(reconciledSales);
+    // updateSalesAndSave is intentionally omitted to avoid render-loop re-syncs while preserving one-time reconciliation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading, sales]);
 
     const profileOptions = useMemo(() => {
         const profileMap = new Map<string, string>();
@@ -3148,7 +3167,7 @@ export default function Dashboard() {
     );
 
     const transportClientPaidCount = React.useMemo(
-        () => transportSales.filter((sale) => sale.transportPaid === 'PAID').length,
+        () => transportSales.filter((sale) => getClientTransportPaidStatus(sale) === 'PAID').length,
         [transportSales]
     );
 
@@ -3164,6 +3183,7 @@ export default function Dashboard() {
         const index = currentSales.findIndex((sale) => sale.id === saleId);
         if (index === -1) return;
         const before = currentSales[index];
+        if (field === 'transportPaid' && before.includeTransport) return;
         const updated = { ...before, [field]: value };
         const nextSales = [...currentSales];
         nextSales[index] = updated;
@@ -3267,7 +3287,11 @@ export default function Dashboard() {
     if (isLoading) {
         return (
             <div className="h-screen bg-gradient-to-br from-white to-slate-100 flex flex-col items-center justify-center gap-4">
-                <div className="w-14 h-14 border-4 border-slate-800 border-t-transparent rounded-full animate-spin" />
+                <div className="w-64 space-y-3">
+                    <div className="h-4 rounded-xl luxury-skeleton" />
+                    <div className="h-4 rounded-xl luxury-skeleton w-5/6" />
+                    <div className="h-4 rounded-xl luxury-skeleton w-4/6" />
+                </div>
                 <p className="text-slate-500 animate-pulse font-medium">Loading...</p>
             </div>
         );
@@ -3360,7 +3384,7 @@ export default function Dashboard() {
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
             const mainNavItems = navItems.filter((item) => item.id !== 'RECORD' && item.id !== 'SETTINGS');
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
-            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'BALANCE_DUE', 'TRANSPORTI'].includes(item.id));
+            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'BALANCE_DUE', 'TRANSPORTI', 'PDF'].includes(item.id));
             const secondaryNavItems = navItems.filter((item) => item.id === 'RECORD');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
@@ -3631,6 +3655,7 @@ export default function Dashboard() {
 
     return (
         <div
+            data-page-shell="true"
             className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-white relative overflow-x-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
             onPointerDownCapture={handleAppPointerDownCapture}
             onPointerMoveCapture={handleAppPointerMoveCapture}
@@ -4837,7 +4862,7 @@ export default function Dashboard() {
                                             </div>
                                             <div className="divide-y divide-slate-100">
                                                 {balanceDueSales.map((sale) => (
-                                                    <div key={sale.id} className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-3 text-sm">
+                                                    <div key={sale.id} data-list-row="true" className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-3 text-sm">
                                                         <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
                                                         <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                         <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
@@ -4855,17 +4880,17 @@ export default function Dashboard() {
                                             const groupSales = groupedTransportSales[groupName] || [];
                                             if (!groupSales.length) return null;
                                             const totalTransport = groupSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
-                                            const clientPaid = groupSales.filter((sale) => sale.transportPaid === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const clientPaid = groupSales.filter((sale) => getClientTransportPaidStatus(sale) === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             const transportusiPaid = groupSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             return (
                                                 <div key={groupName} className="rounded-2xl border border-slate-200 overflow-hidden">
                                                     <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-sm font-bold text-slate-800">{groupName}</div>
                                                     <div className="divide-y divide-slate-100">
                                                         {groupSales.map((sale) => (
-                                                            <div key={sale.id} className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-4 py-3 text-sm">
+                                                            <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-4 py-3 text-sm">
                                                                 <div className="font-semibold text-slate-900">{sale.brand} {sale.model}</div>
                                                                 <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
-                                                                <select value={sale.transportPaid || 'NOT PAID'} onChange={(e) => updateTransportField(sale.id, 'transportPaid', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold">
+                                                                <select value={getClientTransportPaidStatus(sale)} onChange={(e) => updateTransportField(sale.id, 'transportPaid', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold" disabled={sale.includeTransport} title={sale.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
                                                                     <option value="PAID">PAID</option>
                                                                     <option value="NOT PAID">NOT PAID</option>
                                                                 </select>
@@ -4888,7 +4913,7 @@ export default function Dashboard() {
                                     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-700">
                                         {(() => {
                                             const total = transportSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
-                                            const clientPaid = transportSales.filter((sale) => sale.transportPaid === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const clientPaid = transportSales.filter((sale) => getClientTransportPaidStatus(sale) === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             const transportusiPaid = transportSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             return (
                                                 <div className="flex flex-wrap gap-3">
@@ -5011,7 +5036,7 @@ export default function Dashboard() {
 
                                                                             <div className="text-center">
                                                                                 <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Transport</div>
-                                                                                <select value={s.transportPaid || 'NOT PAID'} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold">
+                                                                                <select value={getClientTransportPaidStatus(s)} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold" disabled={s.includeTransport} title={s.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
                                                                                     <option value="PAID">PAID</option>
                                                                                     <option value="NOT PAID">NOT PAID</option>
                                                                                 </select>

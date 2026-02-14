@@ -759,3 +759,53 @@ body[data-theme='dark'] {
   touch-action: pan-x pan-y;
 }
 
+
+
+/* Premium motion system */
+:root {
+  --luxury-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+button,
+a,
+[role='button'],
+select,
+input,
+textarea {
+  transition: transform 180ms var(--luxury-ease), box-shadow 220ms var(--luxury-ease), background-color 180ms var(--luxury-ease), border-color 180ms var(--luxury-ease), opacity 180ms var(--luxury-ease), color 180ms var(--luxury-ease);
+}
+
+button:active,
+[role='button']:active {
+  transform: scale(0.98);
+}
+
+[data-page-shell='true'] {
+  animation: pageFadeIn 220ms var(--luxury-ease);
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rowEnter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table-row-compact,
+[data-list-row='true'] {
+  animation: rowEnter 200ms var(--luxury-ease);
+}
+
+.luxury-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 20%, #e2e8f0 38%, #f1f5f9 56%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.1s linear infinite;
+}
+
+@keyframes skeletonShimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
