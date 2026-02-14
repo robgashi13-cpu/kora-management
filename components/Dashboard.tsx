@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -447,7 +447,8 @@ const navItems: NavItem[] = [
     { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
-    { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport' },
+    { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
+    { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
@@ -584,7 +585,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (isAdmin) return;
-        if (view === 'record' || view === 'settings') {
+        if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due') {
             setView('dashboard');
         }
         if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
@@ -596,6 +597,7 @@ export default function Dashboard() {
         if (view === 'settings') return 'SETTINGS';
         if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
+        if (view === 'balance_due') return 'BALANCE_DUE';
         if (view === 'transport') return 'TRANSPORTI';
         if (view === 'custom_dashboard') return activeCustomDashboardId || 'CREATE';
         return activeCategory as string;
@@ -3069,6 +3071,18 @@ export default function Dashboard() {
         [filteredSales]
     );
 
+    const transportClientPaidCount = React.useMemo(
+        () => transportSales.filter((sale) => sale.transportPaid === 'PAID').length,
+        [transportSales]
+    );
+
+    const balanceDueSales = React.useMemo(
+        () => sales
+            .filter((sale) => calculateBalance(sale) > 0)
+            .sort((a, b) => calculateBalance(b) - calculateBalance(a)),
+        [sales]
+    );
+
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
@@ -3270,7 +3284,7 @@ export default function Dashboard() {
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
             const mainNavItems = navItems.filter((item) => item.id !== 'RECORD' && item.id !== 'SETTINGS');
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
-            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'TRANSPORTI'].includes(item.id));
+            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'BALANCE_DUE', 'TRANSPORTI'].includes(item.id));
             const secondaryNavItems = navItems.filter((item) => item.id === 'RECORD');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
@@ -3349,7 +3363,7 @@ export default function Dashboard() {
                             <span>Sales Flow</span>
                             {isSalesGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <div className={`grid overflow-hidden transition-all duration-200 ease-out ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-60'}`}>
+                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {salesGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
@@ -3385,11 +3399,16 @@ export default function Dashboard() {
                             <span>Operations</span>
                             {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <div className={`grid overflow-hidden transition-all duration-200 ease-out ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-60'}`}>
+                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {operationsGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
                                     const isActive = currentNavId === item.id;
+                                    const badge = item.id === 'TRANSPORTI'
+                                        ? `${transportClientPaidCount}/${transportSales.length}`
+                                        : item.id === 'BALANCE_DUE'
+                                            ? `${balanceDueSales.length}`
+                                            : null;
                                     return (
                                         <button
                                             key={item.id}
@@ -3405,6 +3424,11 @@ export default function Dashboard() {
                                         >
                                             <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
                                             <span className="flex-1 text-left truncate">{item.label}</span>
+                                            {badge && (
+                                                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive ? 'bg-black/10 text-black' : 'bg-zinc-800 text-slate-300'}`}>
+                                                    {badge}
+                                                </span>
+                                            )}
                                         </button>
                                     );
                                 })}
@@ -3562,7 +3586,7 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 transition-[width,opacity] duration-300 ease-in-out ${isSidebarCollapsed ? 'w-0 overflow-hidden opacity-0' : 'w-64 opacity-100'}`}>
+            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[max-width,opacity] duration-300 ease-out will-change-[max-width,opacity] ${isSidebarCollapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-64 opacity-100'}`}>
                 <SidebarContent />
             </aside>
 
@@ -3610,7 +3634,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-lg font-bold hidden sm:flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
                                 </span>
@@ -4713,6 +4737,33 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 )
+                            ) : view === 'balance_due' ? (
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
+                                    <p className="text-xs text-slate-500 mb-3">Cars that are not fully paid by client.</p>
+                                    {balanceDueSales.length === 0 ? (
+                                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                                            No outstanding balances.
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                            <div className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                <div>Car</div>
+                                                <div>VIN / Plate</div>
+                                                <div className="text-right">Balance Due</div>
+                                            </div>
+                                            <div className="divide-y divide-slate-100">
+                                                {balanceDueSales.map((sale) => (
+                                                    <div key={sale.id} className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-3 text-sm">
+                                                        <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
+                                                        <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                        <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             ) : view === 'transport' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-3">Transporti</h2>
