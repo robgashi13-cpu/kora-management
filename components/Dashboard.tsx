@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
-import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides } from '@/app/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal } from 'lucide-react';
+import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/app/types';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -447,6 +447,7 @@ const navItems: NavItem[] = [
     { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
+    { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport' },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
@@ -595,6 +596,7 @@ export default function Dashboard() {
         if (view === 'settings') return 'SETTINGS';
         if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
+        if (view === 'transport') return 'TRANSPORTI';
         if (view === 'custom_dashboard') return activeCustomDashboardId || 'CREATE';
         return activeCategory as string;
     }, [view, activeCategory, activeCustomDashboardId]);
@@ -783,7 +785,7 @@ export default function Dashboard() {
     const activeCustomDashboard = useMemo(() => customDashboards.find(d => d.id === activeCustomDashboardId) || null, [customDashboards, activeCustomDashboardId]);
 
     const logAuditEvent = useCallback(async (entry: {
-        actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE' | 'RESIZE' | 'VIEW' | 'CLICK';
+        actionType: 'CREATE' | 'UPDATE' | 'MOVE' | 'ARCHIVE' | 'RESTORE' | 'DELETE' | 'RESIZE' | 'VIEW' | 'CLICK' | 'DOWNLOAD' | 'PRINT' | 'PREVIEW';
         entityType: string;
         entityId: string;
         beforeData?: unknown;
@@ -875,7 +877,10 @@ export default function Dashboard() {
     const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
         ...sale,
         sellerName: normalizeProfileName(sale.sellerName),
-        soldBy: normalizeProfileName(sale.soldBy)
+        soldBy: normalizeProfileName(sale.soldBy),
+        transportPaid: (sale.transportPaid === 'PAID' ? 'PAID' : 'NOT PAID') as TransportPaymentStatus,
+        paidToTransportusi: (sale.paidToTransportusi === 'PAID' ? 'PAID' : 'NOT PAID') as TransportPaymentStatus,
+        transportCost: typeof sale.transportCost === 'number' ? sale.transportCost : (sale.includeTransport ? 350 : 0)
     }), []);
 
     const profileOptions = useMemo(() => {
@@ -916,13 +921,11 @@ export default function Dashboard() {
 
     const handleCreateCustomDashboard = async () => {
         const now = new Date().toISOString();
+        const salesLayoutLabels = ['Car', 'Year', 'KM', 'Plate/VIN', 'Buyer', 'Seller', 'Shipping', 'Cost', 'Sold', 'Paid', 'Status'];
         const dashboard: CustomDashboard = {
             id: crypto.randomUUID(),
-            name: `Dashboard ${customDashboards.length + 1}`,
-            columns: [
-                { id: crypto.randomUUID(), name: 'Column 1' },
-                { id: crypto.randomUUID(), name: 'Column 2' }
-            ],
+            name: '',
+            columns: salesLayoutLabels.map(() => ({ id: crypto.randomUUID(), name: '' })),
             rows: [],
             archived: false,
             createdAt: now,
@@ -1743,7 +1746,7 @@ export default function Dashboard() {
             }
 
             setSelectedIds(new Set());
-            await logAuditEvent({ actionType: 'UPDATE', entityType: 'invoice_download', entityId: `${selectedSales.length}_sales`, afterData: selectedSales.map(s => s.id), pageContext: 'invoices' });
+            await logAuditEvent({ actionType: 'DOWNLOAD', entityType: 'invoice_download', entityId: `${selectedSales.length}_sales`, afterData: { sales: selectedSales.map(s => s.id), file: downloadName }, pageContext: 'invoices', metadata: { action: 'DOWNLOAD' } });
         } catch (error: any) {
             console.error('Invoice download failed:', error);
             alert(`Download failed: ${error?.message || 'Unknown error'}`);
@@ -2793,6 +2796,14 @@ export default function Dashboard() {
     const openInvoice = (sale: CarSale, e: React.MouseEvent, withDogane = false, showBankOnly = false) => {
         e.stopPropagation();
         setDocumentPreview({ sale, type: 'invoice', withDogane, showBankOnly });
+        void logAuditEvent({
+            actionType: 'PREVIEW',
+            entityType: 'pdf_invoice',
+            entityId: sale.id,
+            afterData: { file: `Invoice_${sale.vin || sale.id}.pdf`, withDogane, showBankOnly },
+            pageContext: 'invoices',
+            metadata: { action: 'PREVIEW' }
+        });
     };
 
     const handleFullBackup = async () => {
@@ -3053,6 +3064,33 @@ export default function Dashboard() {
         [soldInvoiceSales]
     );
 
+    const transportSales = React.useMemo(
+        () => filteredSales.filter((sale) => sale.status !== 'Completed' && sale.status !== 'Archived'),
+        [filteredSales]
+    );
+
+    const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex((sale) => sale.id === saleId);
+        if (index === -1) return;
+        const before = currentSales[index];
+        const updated = { ...before, [field]: value };
+        const nextSales = [...currentSales];
+        nextSales[index] = updated;
+        dirtyIds.current.add(saleId);
+        const result = await updateSalesAndSave(nextSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale_transport',
+            entityId: saleId,
+            beforeData: { [field]: before[field] },
+            afterData: { [field]: value },
+            pageContext: 'transport',
+            metadata: { action: field === 'transportPaid' ? 'TRANSPORT_PAID_CHANGE' : 'PAID_TO_TRANSPORTUSI_CHANGE' }
+        });
+    };
+
     // Toggle sort column
     const toggleSort = (column: string) => {
         if (sortBy === column) {
@@ -3105,6 +3143,21 @@ export default function Dashboard() {
     const invoiceGroupOrder = React.useMemo(
         () => [...activeGroups.map(g => g.name), ...(groupedInvoiceSales.Ungrouped?.length ? ['Ungrouped'] : [])],
         [activeGroups, groupedInvoiceSales]
+    );
+
+    const groupedTransportSales = React.useMemo(() => {
+        const groups: Record<string, CarSale[]> = {};
+        transportSales.forEach((sale) => {
+            const groupKey = sale.group?.trim() || 'Ungrouped';
+            if (!groups[groupKey]) groups[groupKey] = [];
+            groups[groupKey].push(sale);
+        });
+        return groups;
+    }, [transportSales]);
+
+    const transportGroupOrder = React.useMemo(
+        () => [...activeGroups.map((g) => g.name), ...(groupedTransportSales.Ungrouped?.length ? ['Ungrouped'] : [])],
+        [activeGroups, groupedTransportSales]
     );
 
     useEffect(() => {
@@ -3217,7 +3270,7 @@ export default function Dashboard() {
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
             const mainNavItems = navItems.filter((item) => item.id !== 'RECORD' && item.id !== 'SETTINGS');
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
-            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS'].includes(item.id));
+            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'TRANSPORTI'].includes(item.id));
             const secondaryNavItems = navItems.filter((item) => item.id === 'RECORD');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
@@ -4660,6 +4713,59 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 )
+                            ) : view === 'transport' ? (
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    <h2 className="text-2xl font-black text-slate-900 mb-3">Transporti</h2>
+                                    <div className="space-y-3">
+                                        {transportGroupOrder.map((groupName) => {
+                                            const groupSales = groupedTransportSales[groupName] || [];
+                                            if (!groupSales.length) return null;
+                                            const totalTransport = groupSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const clientPaid = groupSales.filter((sale) => sale.transportPaid === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const transportusiPaid = groupSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            return (
+                                                <div key={groupName} className="rounded-2xl border border-slate-200 overflow-hidden">
+                                                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-sm font-bold text-slate-800">{groupName}</div>
+                                                    <div className="divide-y divide-slate-100">
+                                                        {groupSales.map((sale) => (
+                                                            <div key={sale.id} className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-4 py-3 text-sm">
+                                                                <div className="font-semibold text-slate-900">{sale.brand} {sale.model}</div>
+                                                                <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                <select value={sale.transportPaid || 'NOT PAID'} onChange={(e) => updateTransportField(sale.id, 'transportPaid', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold">
+                                                                    <option value="PAID">PAID</option>
+                                                                    <option value="NOT PAID">NOT PAID</option>
+                                                                </select>
+                                                                <select value={sale.paidToTransportusi || 'NOT PAID'} onChange={(e) => updateTransportField(sale.id, 'paidToTransportusi', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold">
+                                                                    <option value="PAID">PAID</option>
+                                                                    <option value="NOT PAID">NOT PAID</option>
+                                                                </select>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 flex flex-wrap gap-3">
+                                                        <span>Total Transport: €{totalTransport.toLocaleString()}</span>
+                                                        <span>Client Paid: €{clientPaid.toLocaleString()} | Not Paid: €{(totalTransport - clientPaid).toLocaleString()}</span>
+                                                        <span>Paid to Transportusi: €{transportusiPaid.toLocaleString()} | Not Paid: €{(totalTransport - transportusiPaid).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-700">
+                                        {(() => {
+                                            const total = transportSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const clientPaid = transportSales.filter((sale) => sale.transportPaid === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const transportusiPaid = transportSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            return (
+                                                <div className="flex flex-wrap gap-3">
+                                                    <span>Overall Transport: €{total.toLocaleString()}</span>
+                                                    <span>Client Paid: €{clientPaid.toLocaleString()} | Not Paid: €{(total - clientPaid).toLocaleString()}</span>
+                                                    <span>Paid to Transportusi: €{transportusiPaid.toLocaleString()} | Not Paid: €{(total - transportusiPaid).toLocaleString()}</span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
                             ) : view === 'invoices' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-2xl border border-slate-100 shadow-sm mx-3 my-2">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
@@ -4720,7 +4826,7 @@ export default function Dashboard() {
 
                                                         {expandedGroups.includes(groupName) && (
                                                             <div className="divide-y divide-slate-100">
-                                                                <div className="hidden md:grid grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-3 px-4 py-2.5 bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
+                                                                <div className="hidden md:grid grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] gap-3 px-4 py-2.5 bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 border-b border-slate-200">
                                                                     <div className="text-center">Select</div>
                                                                     <div>Vehicle Details</div>
                                                                     <div>Buyer</div>
@@ -4734,7 +4840,7 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.45fr_minmax(130px,1fr)_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             <div className="md:flex md:items-center md:justify-center">
@@ -4767,6 +4873,14 @@ export default function Dashboard() {
 
                                                                             <div className="hidden md:block text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2">
                                                                                 <div className="truncate">{s.buyerName || '---'}</div>
+                                                                            </div>
+
+                                                                            <div className="text-center">
+                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Transport</div>
+                                                                                <select value={s.transportPaid || 'NOT PAID'} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold">
+                                                                                    <option value="PAID">PAID</option>
+                                                                                    <option value="NOT PAID">NOT PAID</option>
+                                                                                </select>
                                                                             </div>
 
                                                                             <div className="text-right">
