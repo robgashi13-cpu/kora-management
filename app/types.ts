@@ -1,5 +1,6 @@
 export type PaymentMethod = 'Cash' | 'Bank' | 'Mixed';
 export type SaleStatus = 'New' | 'In Progress' | 'Shipped' | 'Completed' | 'Cancelled' | 'Inspection' | 'Autosallon' | 'Archived';
+export type TransportPaymentStatus = 'PAID' | 'NOT PAID';
 export type ContractType = 'deposit' | 'full_marreveshje' | 'full_shitblerje';
 export type ShitblerjeOverrides = {
     brand?: string;
@@ -46,6 +47,9 @@ export interface CarSale {
     shippingName: string;
     shippingDate: string; // ISO date string
     includeTransport?: boolean;
+    transportPaid?: TransportPaymentStatus;
+    paidToTransportusi?: TransportPaymentStatus;
+    transportCost?: number;
 
     costToBuy: number;
     baseCostToBuy?: number;

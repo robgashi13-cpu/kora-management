@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
-import { CarSale, SaleStatus, Attachment, ContractType } from '@/app/types';
+import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus } from '@/app/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
@@ -34,6 +34,9 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     amountPaidCash: 0, amountPaidBank: 0, deposit: 0,
     servicesCost: 30.51, tax: 0,
     includeTransport: false,
+    transportPaid: 'NOT PAID' as TransportPaymentStatus,
+    paidToTransportusi: 'NOT PAID' as TransportPaymentStatus,
+    transportCost: 350,
     amountPaidToKorea: 0, paidDateToKorea: null, paidDateFromClient: null,
     paymentMethod: 'Bank', status: 'New',
     isPaid: false,
@@ -208,22 +211,30 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         };
     }, [draftStorageKey, formData, isOpen]);
 
+    const normalizeDuplicateValue = (value?: string | null) => {
+        if (!value) return '';
+        return value
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '');
+    };
+
     const duplicateWarnings = useMemo(() => {
-        const vin = (formData.vin || '').trim().toLowerCase();
-        const plate = (formData.plateNumber || '').trim().toLowerCase();
+        const vin = normalizeDuplicateValue(formData.vin);
+        const plate = normalizeDuplicateValue(formData.plateNumber);
         const currentId = existingSale?.id;
         if (!vin && !plate) return [];
 
         const vinMatch = vin
-            ? existingSales.filter((sale) => sale.id !== currentId && (sale.vin || '').trim().toLowerCase() === vin)
-            : [];
+            ? existingSales.find((sale) => sale.id !== currentId && normalizeDuplicateValue(sale.vin) === vin)
+            : null;
         const plateMatch = plate
-            ? existingSales.filter((sale) => sale.id !== currentId && (sale.plateNumber || '').trim().toLowerCase() === plate)
-            : [];
+            ? existingSales.find((sale) => sale.id !== currentId && normalizeDuplicateValue(sale.plateNumber) === plate)
+            : null;
 
         const warnings: string[] = [];
-        if (vinMatch.length) warnings.push(`Duplicate detected: VIN already exists (${vinMatch[0].brand} ${vinMatch[0].model} - ${vinMatch[0].id.slice(0, 8)})`);
-        if (plateMatch.length) warnings.push(`Duplicate detected: Plate already exists (${plateMatch[0].brand} ${plateMatch[0].model} - ${plateMatch[0].id.slice(0, 8)})`);
+        if (vinMatch) warnings.push(`Duplicate detected: VIN already exists (${vinMatch.brand} ${vinMatch.model} - ${vinMatch.id.slice(0, 8)})`);
+        if (plateMatch) warnings.push(`Duplicate detected: Plate already exists (${plateMatch.brand} ${plateMatch.model} - ${plateMatch.id.slice(0, 8)})`);
         return warnings;
     }, [existingSale?.id, existingSales, formData.plateNumber, formData.vin]);
 
