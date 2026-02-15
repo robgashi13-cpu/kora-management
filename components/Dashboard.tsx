@@ -393,9 +393,6 @@ const INITIAL_SALES: CarSale[] = [];
 const UI_STATE_STORAGE_KEY = 'dashboard_ui_state_v1';
 const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
 const ROW_TAP_MOVE_THRESHOLD = 10;
-const DEFAULT_ROW_HEIGHT = 30;
-const MIN_ROW_HEIGHT = 24;
-const MAX_ROW_HEIGHT = 72;
 type InputMode = 'mouse' | 'touch';
 
 const isMercedesB200Sale = (sale: CarSale) => {
@@ -520,18 +517,6 @@ export default function Dashboard() {
         return `table-widths-${isAdmin ? 'admin' : 'user'}-${profileKey}`;
     }, [isAdmin, userProfile]);
 
-    const rowHeightStorageKey = useMemo(() => {
-        const profileKey = normalizeProfileName(userProfile || 'guest') || 'guest';
-        return `table-row-height-${profileKey}`;
-    }, [userProfile]);
-
-    const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT);
-    const rowResizeState = useRef<{ active: boolean; startY: number; startHeight: number }>({
-        active: false,
-        startY: 0,
-        startHeight: DEFAULT_ROW_HEIGHT
-    });
-
     const { getColumnStyle, handleMouseDown, columnWidths, setColumnWidths } = useResizableColumns(defaultWidths, {
         storageKey: columnWidthStorageKey,
         minWidth: 30,
@@ -570,95 +555,6 @@ export default function Dashboard() {
             cancelled = true;
         };
     }, [columnWidthStorageKey, defaultWidths, setColumnWidths]);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        const hydrateRowHeight = async () => {
-            const fromPrefs = await Preferences.get({ key: rowHeightStorageKey });
-            const raw = fromPrefs.value || (typeof window !== 'undefined' ? localStorage.getItem(rowHeightStorageKey) : null);
-            if (!raw) return;
-            const parsed = Number(raw);
-            if (!Number.isFinite(parsed)) return;
-            const nextHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, parsed));
-            if (!cancelled) {
-                setRowHeight(nextHeight);
-            }
-        };
-
-        void hydrateRowHeight();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [rowHeightStorageKey]);
-
-    useEffect(() => {
-        const payload = String(rowHeight);
-        localStorage.setItem(rowHeightStorageKey, payload);
-        void Preferences.set({ key: rowHeightStorageKey, value: payload });
-    }, [rowHeight, rowHeightStorageKey]);
-
-    const finishRowResize = useCallback(() => {
-        if (!rowResizeState.current.active) return;
-        rowResizeState.current.active = false;
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-    }, []);
-
-    const handleRowResizeMove = useCallback((clientY: number) => {
-        if (!rowResizeState.current.active) return;
-        const diff = clientY - rowResizeState.current.startY;
-        const nextHeight = Math.max(MIN_ROW_HEIGHT, Math.min(MAX_ROW_HEIGHT, rowResizeState.current.startHeight + diff));
-        setRowHeight(nextHeight);
-    }, []);
-
-    useEffect(() => {
-        const onMove = (event: MouseEvent) => handleRowResizeMove(event.clientY);
-        const onTouchMove = (event: TouchEvent) => {
-            if (!event.touches[0]) return;
-            handleRowResizeMove(event.touches[0].clientY);
-            if (rowResizeState.current.active) event.preventDefault();
-        };
-
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', finishRowResize);
-        document.addEventListener('touchmove', onTouchMove, { passive: false });
-        document.addEventListener('touchend', finishRowResize);
-        document.addEventListener('touchcancel', finishRowResize);
-
-        return () => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', finishRowResize);
-            document.removeEventListener('touchmove', onTouchMove);
-            document.removeEventListener('touchend', finishRowResize);
-            document.removeEventListener('touchcancel', finishRowResize);
-        };
-    }, [finishRowResize, handleRowResizeMove]);
-
-    const startRowResize = useCallback((clientY: number) => {
-        rowResizeState.current = {
-            active: true,
-            startY: clientY,
-            startHeight: rowHeight
-        };
-        document.body.style.cursor = 'row-resize';
-        document.body.style.userSelect = 'none';
-    }, [rowHeight]);
-
-    const handleRowResizeMouseDown = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-        startRowResize(event.clientY);
-    }, [startRowResize]);
-
-    const handleRowResizeTouchStart = useCallback((event: React.TouchEvent<HTMLButtonElement>) => {
-        const touch = event.touches[0];
-        if (!touch) return;
-        event.preventDefault();
-        event.stopPropagation();
-        startRowResize(touch.clientY);
-    }, [startRowResize]);
 
     const gridTemplateColumns = useMemo(() => {
         const cols = [
@@ -810,23 +706,6 @@ export default function Dashboard() {
     }, []);
 
     const isTouchInputMode = inputMode === 'touch';
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const setAppHeight = () => {
-            document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-        };
-
-        setAppHeight();
-        window.addEventListener('resize', setAppHeight);
-        window.addEventListener('orientationchange', setAppHeight);
-
-        return () => {
-            window.removeEventListener('resize', setAppHeight);
-            window.removeEventListener('orientationchange', setAppHeight);
-        };
-    }, []);
 
     const handleAppPointerDownCapture = (event: React.PointerEvent<HTMLDivElement>) => {
         if (event.pointerType === 'mouse') return;
@@ -3869,8 +3748,7 @@ export default function Dashboard() {
     return (
         <div
             data-page-shell="true"
-            className={`flex h-[var(--app-height)] w-full bg-white relative overflow-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
-            style={{ '--row-height-compact': `${rowHeight}px` } as React.CSSProperties}
+            className={`flex h-[100dvh] w-full bg-white relative overflow-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
             onPointerDownCapture={handleAppPointerDownCapture}
             onPointerMoveCapture={handleAppPointerMoveCapture}
             onPointerUpCapture={handleAppPointerUpCapture}
@@ -4126,19 +4004,6 @@ export default function Dashboard() {
                                                 <div className="resize-handle" onMouseDown={(e: React.MouseEvent) => handleMouseDown('soldBy', e)} />
                                             </div>
                                             <div className="p-2 xl:p-3"></div>
-                                        </div>
-                                        <div className="col-span-full sticky top-[41px] xl:top-[45px] z-20 flex justify-end bg-white/95 border-b border-slate-200" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                            <button
-                                                type="button"
-                                                className="row-resize-handle"
-                                                onMouseDown={handleRowResizeMouseDown}
-                                                onTouchStart={handleRowResizeTouchStart}
-                                                aria-label="Resize car row height"
-                                                title={`Row height: ${Math.round(rowHeight)}px`}
-                                            >
-                                                <GripVertical className="w-3.5 h-3.5 rotate-90" />
-                                                <span className="text-[10px] font-semibold">{Math.round(rowHeight)}px</span>
-                                            </button>
                                         </div>
                                         {/* Render Rows */}
                                         {groupingEnabled ? (

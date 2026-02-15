@@ -52,7 +52,6 @@ html {
   --input: 0 0% 85%;
   --ring: 0 0% 18%;
   --radius: 0.5rem;
-  --app-height: 100dvh;
 
   /* Semantic Colors */
   --success: 0 0% 18%;
@@ -152,20 +151,12 @@ textarea {
 
 .ui-control {
   min-height: 42px;
-  border-radius: 0.95rem;
-  border: 1px solid hsl(220 14% 86% / 0.9);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+  border-radius: 0.875rem;
   transition: background-color 160ms ease, border-color 160ms ease, transform 140ms ease, box-shadow 180ms ease;
 }
 
-.ui-control:hover {
-  border-color: hsl(220 14% 80%);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
-}
-
 .ui-control:active {
-  transform: scale(0.985);
+  transform: scale(0.98);
 }
 
 .premium-card {
@@ -266,26 +257,6 @@ textarea {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x;
-}
-
-.row-resize-handle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: hsl(222 16% 36%);
-  cursor: row-resize;
-  user-select: none;
-  padding: 0.28rem 0.6rem;
-  margin: 0.2rem 0.35rem;
-  border-radius: 9999px;
-  border: 1px solid hsl(220 16% 86%);
-  background: linear-gradient(180deg, #ffffff, #f1f5f9);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
-}
-
-.row-resize-handle:hover {
-  color: hsl(222 40% 20%);
-  border-color: hsl(220 16% 76%);
 }
 
 /* Column Resize Handle */
@@ -874,42 +845,4 @@ button:active,
 @keyframes skeletonShimmer {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
-}
-
-
-input:not([type='checkbox']):not([type='radio']),
-select,
-textarea {
-  border-radius: 0.95rem;
-}
-
-input[type='checkbox'] {
-  appearance: none;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 0.4rem;
-  border: 1.5px solid hsl(220 12% 75%);
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-  display: inline-grid;
-  place-content: center;
-}
-
-input[type='checkbox']::before {
-  content: '';
-  width: 0.6rem;
-  height: 0.6rem;
-  transform: scale(0);
-  transition: transform 120ms ease;
-  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
-  background: hsl(0 0% 100%);
-}
-
-input[type='checkbox']:checked {
-  border-color: hsl(221 39% 40%);
-  background: linear-gradient(180deg, hsl(221 44% 48%), hsl(221 38% 41%));
-}
-
-input[type='checkbox']:checked::before {
-  transform: scale(1);
 }
