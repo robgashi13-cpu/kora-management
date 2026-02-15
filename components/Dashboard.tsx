@@ -447,12 +447,12 @@ const navItems: NavItem[] = [
     { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
     { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
-    { id: 'INSPECTIONS', label: 'Inspections', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
+    { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
-    { id: 'RECORD', label: 'Record', icon: History, view: 'record', adminOnly: true },
-    { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_templates', adminOnly: true },
+    { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
+    { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
@@ -482,6 +482,7 @@ export default function Dashboard() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isSalesGroupOpen, setIsSalesGroupOpen] = useState(true);
     const [isOperationsGroupOpen, setIsOperationsGroupOpen] = useState(true);
+    const [isFinanceGroupOpen, setIsFinanceGroupOpen] = useState(true);
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
@@ -606,7 +607,7 @@ export default function Dashboard() {
         if (view === 'invoices') return 'INVOICES';
         if (view === 'balance_due') return 'BALANCE_DUE';
         if (view === 'transport') return 'TRANSPORTI';
-        if (view === 'pdf_templates') return 'PDF';
+        if (view === 'pdf_templates' || view === 'pdf_list') return 'PDF';
         if (view === 'custom_dashboard') return activeCustomDashboardId || 'CREATE';
         return activeCategory as string;
     }, [view, activeCategory, activeCustomDashboardId]);
@@ -2927,6 +2928,18 @@ export default function Dashboard() {
         });
     };
 
+
+    const openPdfDocument = (
+        sale: CarSale,
+        type: 'invoice' | 'deposit' | 'full_marreveshje' | 'full_shitblerje',
+        e: React.MouseEvent,
+        withDogane = false,
+        showBankOnly = false
+    ) => {
+        e.stopPropagation();
+        setDocumentPreview({ sale, type, withDogane, showBankOnly });
+    };
+
     const handleFullBackup = async () => {
         const backupData = {
             version: 1,
@@ -3406,10 +3419,12 @@ export default function Dashboard() {
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
-            const mainNavItems = navItems.filter((item) => item.id !== 'RECORD' && item.id !== 'SETTINGS');
+            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS');
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
-            const operationsGroupItems = mainNavItems.filter((item) => ['INVOICES', 'INSPECTIONS', 'BALANCE_DUE', 'TRANSPORTI', 'PDF'].includes(item.id));
-            const secondaryNavItems = navItems.filter((item) => item.id === 'RECORD');
+            const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES'].includes(item.id));
+            const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
+            const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
+            const secondaryNavItems = navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
                 ...secondaryNavItems
@@ -3526,6 +3541,59 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {operationsGroupItems.map((item) => {
+                                    if (item.adminOnly && !isAdmin) return null;
+                                    const isActive = currentNavId === item.id;
+                                    return (
+                                        <React.Fragment key={item.id}>
+                                            <button
+                                                onClick={() => {
+                                                    setView(item.view);
+                                                    if (item.category) setActiveCategory(item.category as any);
+                                                    setIsMobileMenuOpen(false);
+                                                }}
+                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                                    ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                    : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
+                                                    }`}
+                                            >
+                                                <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                                <span className="flex-1 text-left truncate">{item.label}</span>
+                                            </button>
+                                            {item.id === 'INVOICES' && pdfNavItem && (!pdfNavItem.adminOnly || isAdmin) && (
+                                                <button
+                                                    onClick={() => {
+                                                        setView(pdfNavItem.view);
+                                                        if (pdfNavItem.category) setActiveCategory(pdfNavItem.category as any);
+                                                        setIsMobileMenuOpen(false);
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 px-4 py-2.5 ml-3 rounded-xl text-xs font-semibold transition-all ${currentNavId === pdfNavItem.id
+                                                        ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                        : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
+                                                        }`}
+                                                >
+                                                    <pdfNavItem.icon className={`w-4 h-4 ${currentNavId === pdfNavItem.id ? 'text-slate-900' : 'text-slate-500'}`} />
+                                                    <span className="flex-1 text-left truncate">{pdfNavItem.label}</span>
+                                                </button>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setIsFinanceGroupOpen((prev) => !prev)}
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
+                        >
+                            <span>Finance/Control</span>
+                            {isFinanceGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isFinanceGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
+                            <div className="min-h-0 space-y-1 px-1 pb-1">
+                                {financeControlGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
                                     const isActive = currentNavId === item.id;
                                     const badge = item.id === 'TRANSPORTI'
@@ -3680,7 +3748,7 @@ export default function Dashboard() {
     return (
         <div
             data-page-shell="true"
-            className={`flex min-h-[100dvh] ${forceMobileLayout ? '' : 'md:h-screen'} w-full bg-white relative overflow-x-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
+            className={`flex h-[100dvh] w-full bg-white relative overflow-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
             onPointerDownCapture={handleAppPointerDownCapture}
             onPointerMoveCapture={handleAppPointerMoveCapture}
             onPointerUpCapture={handleAppPointerUpCapture}
@@ -3759,7 +3827,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-lg font-bold hidden sm:flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
                                 </span>
@@ -4950,11 +5018,11 @@ export default function Dashboard() {
                                         })()}
                                     </div>
                                 </div>
-                            ) : view === 'invoices' ? (
+                            ) : view === 'invoices' || view === 'pdf_list' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-2xl border border-slate-100 shadow-sm mx-3 my-2">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
                                         <div>
-                                            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Invoices</h2>
+                                            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
@@ -5078,13 +5146,22 @@ export default function Dashboard() {
                                                                             </div>
 
                                                                             <div className="flex items-center justify-center">
-                                                                                <button
-                                                                                    onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                    className="inline-flex items-center justify-center gap-1 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
-                                                                                >
-                                                                                    <FileText className="w-3.5 h-3.5" />
-                                                                                    <span className="uppercase tracking-wider">View</span>
-                                                                                </button>
+                                                                                {view === 'pdf_list' ? (
+                                                                                    <div className="flex flex-wrap items-center justify-end gap-1">
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-1.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <button
+                                                                                        onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
+                                                                                        className="inline-flex items-center justify-center gap-1 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                    >
+                                                                                        <FileText className="w-3.5 h-3.5" />
+                                                                                        <span className="uppercase tracking-wider">View</span>
+                                                                                    </button>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     );
