@@ -2,7 +2,7 @@ import Dashboard from '@/components/Dashboard';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+    <main className="h-[var(--app-height,100dvh)] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] overflow-hidden">
       <Dashboard />
     </main>
   );
