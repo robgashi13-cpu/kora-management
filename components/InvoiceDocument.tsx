@@ -5,6 +5,7 @@ import { CarSale } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
+import { PdfTemplateEntry } from './PdfTemplateBuilder';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
@@ -14,6 +15,7 @@ export interface InvoiceDocumentProps {
     taxAmount?: number;
     priceSource?: InvoicePriceSource;
     priceValue?: number;
+    template?: PdfTemplateEntry;
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
@@ -27,7 +29,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, renderField }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, renderField, template }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,
@@ -103,7 +105,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             style={{ height: '52px', width: 'auto' }}
                         />
                         <div className="invoice-title">
-                            <div className="invoice-title-label">INVOICE</div>
+                            <div className="invoice-title-label">{template?.title || 'INVOICE'}</div>
                             <div className="invoice-title-meta">Ref: {referenceId}</div>
                         </div>
                     </div>
@@ -117,6 +119,8 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         </div>
                     </div>
                 </div>
+
+                {!!template?.body && <div className="px-6 pt-2 text-[0.72rem] whitespace-pre-wrap text-slate-700">{template.body}</div>}
 
                 {/* Client & Invoice Details */}
                 <div className="invoice-section invoice-client" style={{ borderColor: '#000000' }}>

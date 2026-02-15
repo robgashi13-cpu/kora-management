@@ -9,12 +9,14 @@ import EditablePreviewModal from './EditablePreviewModal';
 import InvoiceModal from './InvoiceModal';
 import InvoicePriceModal from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
+import { PDF_TEMPLATE_DEFINITIONS, PdfTemplateMap } from './PdfTemplateBuilder';
 
 interface Props {
     isOpen: boolean;
     sale: CarSale | null;
     onClose: () => void;
     onSave: (overrides: ShitblerjeOverrides) => Promise<void>;
+    pdfTemplates?: PdfTemplateMap;
 }
 
 const YEARS = Array.from({ length: 26 }, (_, i) => 2000 + i).reverse();
@@ -22,7 +24,7 @@ const COLORS = [
     'Black', 'White', 'Silver', 'Grey', 'Blue', 'Red', 'Green', 'Brown', 'Beige', 'Gold', 'Yellow', 'Orange', 'Purple', 'Other'
 ];
 
-export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: Props) {
+export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdfTemplates }: Props) {
     const [formData, setFormData] = useState<ShitblerjeOverrides>({});
     const [isSaving, setIsSaving] = useState(false);
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
@@ -256,7 +258,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                         <div className="space-y-3">
                             <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Documents</h3>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <p className="text-sm text-slate-500">Generate Shitblerje, Marrëveshje, or Invoice.</p>
+                                <p className="text-sm text-slate-500">{PDF_TEMPLATE_DEFINITIONS.map((item) => pdfTemplates?.[item.id]?.title || item.label).join(', ')}.</p>
                                 <button
                                     type="button"
                                     onClick={() => setShowDocumentMenu(true)}
@@ -312,7 +314,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-300 hover:bg-slate-50/40 transition"
                             >
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Deposit Contract</div>
+                                    <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.deposit?.title || 'Deposit Contract'}</div>
                                     <div className="text-xs text-slate-500">Marrëveshje për Kapar</div>
                                 </div>
                                 <FileText className="w-4 h-4 text-slate-700" />
@@ -323,7 +325,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                             >
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Shitblerje Contract</div>
+                                    <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.full_shitblerje?.title || 'Shitblerje Contract'}</div>
                                     <div className="text-xs text-slate-500">Full Contract</div>
                                 </div>
                                 <FileText className="w-4 h-4 text-slate-600" />
@@ -334,7 +336,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                             >
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Marrëveshje Contract</div>
+                                    <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.full_marreveshje?.title || 'Marrëveshje Contract'}</div>
                                     <div className="text-xs text-slate-500">Full Contract</div>
                                 </div>
                                 <FileText className="w-4 h-4 text-slate-600" />
@@ -349,7 +351,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                             >
                                 <div>
-                                    <div className="text-sm font-semibold text-slate-900">Invoice</div>
+                                    <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.invoice?.title || 'Invoice'}</div>
                                     <div className="text-xs text-slate-500">Preview & download invoice</div>
                                 </div>
                                 <FileText className="w-4 h-4 text-emerald-500" />
@@ -491,6 +493,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     documentType={contractType}
                     onClose={() => setContractType(null)}
                     onSaveToSale={() => {}}
+                    templates={pdfTemplates}
                 />
             )}
 
@@ -504,6 +507,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave }: P
                     taxAmount={invoiceTaxAmount}
                     priceSource={invoicePriceSource || 'sold'}
                     priceValue={resolveInvoicePriceValue(previewSale, invoicePriceSource || 'sold')}
+                    template={pdfTemplates?.invoice}
                 />
             )}
 

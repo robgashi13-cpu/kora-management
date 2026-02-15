@@ -21,6 +21,7 @@ interface Props {
     hideHeader?: boolean;
     currentProfile?: string | null;
     existingSales?: CarSale[];
+    pdfTemplates?: PdfTemplateMap;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -49,8 +50,9 @@ const COLORS = [
 ];
 
 import EditablePreviewModal from './EditablePreviewModal';
+import { PDF_TEMPLATE_DEFINITIONS, PdfTemplateMap } from './PdfTemplateBuilder';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null, existingSales = [] }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null, existingSales = [], pdfTemplates }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -729,7 +731,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div>
                                 <div className="text-sm font-semibold text-slate-700">Documents</div>
-                                <p className="text-sm text-slate-500">Deposit, Shitblerje, Marrëveshje, or Invoice.</p>
+                                <p className="text-sm text-slate-500">{PDF_TEMPLATE_DEFINITIONS.map((item) => pdfTemplates?.[item.id]?.title || item.label).join(', ')}.</p>
                             </div>
                             <button
                                 type="button"
@@ -798,7 +800,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-300 hover:bg-slate-50/40 transition"
                     >
                         <div>
-                            <div className="text-sm font-semibold text-slate-900">Deposit Contract</div>
+                            <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.deposit?.title || 'Deposit Contract'}</div>
                             <div className="text-xs text-slate-500">Marrëveshje për Kapar</div>
                         </div>
                         <FileText className="w-4 h-4 text-slate-700" />
@@ -809,7 +811,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                     >
                         <div>
-                            <div className="text-sm font-semibold text-slate-900">Shitblerje Contract</div>
+                            <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.full_shitblerje?.title || 'Shitblerje Contract'}</div>
                             <div className="text-xs text-slate-500">Full Contract</div>
                         </div>
                         <FileText className="w-4 h-4 text-slate-600" />
@@ -820,7 +822,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                     >
                         <div>
-                            <div className="text-sm font-semibold text-slate-900">Marrëveshje Contract</div>
+                            <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.full_marreveshje?.title || 'Marrëveshje Contract'}</div>
                             <div className="text-xs text-slate-500">Full Contract</div>
                         </div>
                         <FileText className="w-4 h-4 text-slate-600" />
@@ -831,7 +833,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                     >
                         <div>
-                            <div className="text-sm font-semibold text-slate-900">Invoice</div>
+                            <div className="text-sm font-semibold text-slate-900">{pdfTemplates?.invoice?.title || 'Invoice'}</div>
                             <div className="text-xs text-slate-500">Preview & download invoice</div>
                         </div>
                         <FileText className="w-4 h-4 text-emerald-500" />
@@ -987,6 +989,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         taxAmount={invoiceTaxAmount}
                         priceSource={invoicePriceSource || 'sold'}
                         onSaveToSale={handlePreviewSaveToSale}
+                        templates={pdfTemplates}
                     />
                 )}
                 {contractType && (
@@ -996,6 +999,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         sale={formData as CarSale}
                         documentType={contractType}
                         onSaveToSale={handlePreviewSaveToSale}
+                        templates={pdfTemplates}
                     />
                 )}
             </div>
@@ -1024,6 +1028,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     taxAmount={invoiceTaxAmount}
                     priceSource={invoicePriceSource || 'sold'}
                     onSaveToSale={handlePreviewSaveToSale}
+                    templates={pdfTemplates}
                 />
             )}
             {contractType && (
@@ -1033,6 +1038,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     sale={formData as CarSale}
                     documentType={contractType}
                     onSaveToSale={handlePreviewSaveToSale}
+                    templates={pdfTemplates}
                 />
             )}
             {showViewSale && existingSale && (
