@@ -4,8 +4,8 @@ html,
 body {
   height: 100%;
   width: 100%;
-  overflow-y: hidden;
-  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-x: auto;
   background-color: hsl(var(--background));
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   overscroll-behavior: none;
@@ -22,7 +22,7 @@ body {
 #root {
   min-height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 html {
@@ -199,7 +199,14 @@ textarea {
 :root {
   --cols-admin: 26px minmax(150px, 1.8fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 82px 90px 104px 56px 64px 82px 100px 92px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
   --cols-user: 26px minmax(160px, 1.9fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 90px 104px 56px 64px 100px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
-  --row-height-compact: 36px;
+  --row-height-compact: 30px;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --cols-admin: 24px minmax(120px, 1.6fr) 44px 60px minmax(96px, 1.15fr) minmax(100px, 1.2fr) minmax(86px, 1fr) minmax(86px, 1fr) 72px 80px 90px 48px 52px 74px 84px 80px minmax(78px, 0.9fr) minmax(70px, 0.8fr) 40px;
+    --cols-user: 24px minmax(124px, 1.65fr) 44px 60px minmax(96px, 1.15fr) minmax(100px, 1.2fr) minmax(86px, 1fr) minmax(86px, 1fr) 76px 86px 48px 52px 90px minmax(78px, 0.9fr) minmax(70px, 0.8fr) 40px;
+  }
 }
 
 @media (min-width: 1367px) {
@@ -212,9 +219,9 @@ textarea {
 
 /* Compact table row styles with improved readability */
 .table-row-compact > div {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  font-size: 0.75rem;
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  font-size: 0.72rem;
   line-height: 1.2;
   min-height: var(--row-height-compact);
   min-width: 0;
@@ -226,17 +233,21 @@ textarea {
 
 @media (min-width: 1024px) {
   .table-row-compact > div {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
-    font-size: 0.8125rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    font-size: 0.76rem;
   }
 }
 
 @media (min-width: 1367px) {
+  :root {
+    --row-height-compact: 34px;
+  }
+
   .table-row-compact > div {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.875rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.8rem;
   }
 }
 
