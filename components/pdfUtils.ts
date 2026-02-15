@@ -279,15 +279,18 @@ type PdfGenerationOptions = {
   filename: string;
   onClone?: (clonedDoc: Document) => void;
   pagebreakMode?: Array<'css' | 'legacy' | 'avoid-all' | 'avoid'>;
+  editableText?: boolean;
 };
 
 export const generatePdf = async ({
   element,
   filename,
   onClone,
-  pagebreakMode
+  pagebreakMode,
+  editableText = true
 }: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
   await waitForImages(element);
+  const editableFieldData = editableText === false ? null : collectPdfTextFields(element);
 
   const rect = element.getBoundingClientRect();
   const renderWidth = Math.ceil(rect.width || element.scrollWidth || element.offsetWidth || 0);
@@ -300,7 +303,7 @@ export const generatePdf = async ({
     filename,
     image: { type: 'jpeg' as const, quality: 0.92 },
     html2canvas: {
-      scale: 3,
+      scale: 2,
       ...(renderWidth > 0 && renderHeight > 0
         ? {
             width: renderWidth,
@@ -330,6 +333,9 @@ export const generatePdf = async ({
   };
 
   const pdf = await html2pdf().set(opt).from(element).toPdf().get('pdf');
+  if (editableFieldData) {
+    addPdfFormFields(pdf, editableFieldData);
+  }
   if (typeof pdf.viewerPreferences === 'function') {
     pdf.viewerPreferences({
       PrintScaling: 'None',
