@@ -108,6 +108,14 @@ const InlineEditableCell = memo(function InlineEditableCell({
     }
   }, [handleSave]);
 
+  const handleDisplayKeyDown = useCallback((e: React.KeyboardEvent<HTMLSpanElement>) => {
+    if (disabled) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleStartEdit();
+    }
+  }, [disabled, handleStartEdit]);
+
   const displayValue = formatDisplay 
     ? formatDisplay(value) 
     : value !== undefined && value !== null && value !== '' 
@@ -162,8 +170,12 @@ const InlineEditableCell = memo(function InlineEditableCell({
         <span className="inline-cell-display-wrapper">
           <span
             onClick={handleStartEdit}
+            onKeyDown={handleDisplayKeyDown}
+            role={disabled ? undefined : 'button'}
+            tabIndex={disabled ? -1 : 0}
             className={`inline-cell-display ${disabled ? 'inline-cell-disabled' : ''} ${className}`}
             title={disabled ? String(displayValue) : `${displayValue} (Click to edit)`}
+            aria-label={disabled ? undefined : `Edit value ${displayValue}`}
           >
             {displayValue}
           </span>
