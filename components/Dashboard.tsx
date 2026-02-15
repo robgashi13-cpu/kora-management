@@ -2813,7 +2813,31 @@ export default function Dashboard() {
             }
         };
         loadAuditLogs();
+        const interval = window.setInterval(() => { void loadAuditLogs(); }, 10000);
+        return () => window.clearInterval(interval);
     }, [auditPage, isRecordAdmin, view, supabaseUrl, supabaseKey]);
+
+    useEffect(() => {
+        if (!viewSaleModalItem) return;
+        void logAuditEvent({
+            actionType: 'VIEW',
+            entityType: 'sale',
+            entityId: viewSaleModalItem.id,
+            afterData: { label: `${viewSaleModalItem.brand} ${viewSaleModalItem.model}`.trim(), vin: viewSaleModalItem.vin },
+            pageContext: 'view_sale_modal'
+        });
+    }, [viewSaleModalItem, logAuditEvent]);
+
+    useEffect(() => {
+        if (!documentPreview) return;
+        void logAuditEvent({
+            actionType: 'PREVIEW',
+            entityType: 'pdf_document',
+            entityId: `${documentPreview.type}:${documentPreview.sale.id}`,
+            afterData: { saleId: documentPreview.sale.id, documentType: documentPreview.type, vin: documentPreview.sale.vin },
+            pageContext: 'documents'
+        });
+    }, [documentPreview, logAuditEvent]);
 
     useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
@@ -4771,6 +4795,7 @@ export default function Dashboard() {
                                     templates={pdfTemplates}
                                     onChange={setPdfTemplates}
                                     onSave={savePdfTemplates}
+                                    onAutoSave={() => { void savePdfTemplates(); }}
                                     saving={isSavingPdfTemplates}
                                 />
                             ) : view === 'settings' ? (
@@ -5314,6 +5339,7 @@ export default function Dashboard() {
                                     currentProfile={userProfile}
                                     availableProfiles={profileOptions}
                                     existingSales={sales}
+                                    pdfTemplates={pdfTemplates}
                                 />
                             </div>
                         </motion.div>
@@ -5325,6 +5351,7 @@ export default function Dashboard() {
                 sale={editShitblerjeSale}
                 onClose={() => setEditShitblerjeSale(null)}
                 onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
+                pdfTemplates={pdfTemplates}
             />
 
             {/* Contextual FAB for Inspections/Autosallon */}
@@ -5337,6 +5364,7 @@ export default function Dashboard() {
                     withDogane={documentPreview.withDogane}
                     showBankOnly={documentPreview.showBankOnly}
                     onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
+                    templates={pdfTemplates}
                 />
             )}
 

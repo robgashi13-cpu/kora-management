@@ -4,12 +4,14 @@ import React from 'react';
 import { CarSale, ContractType } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
+import { PdfTemplateEntry } from './PdfTemplateBuilder';
 
 interface ContractDocumentProps {
     sale: CarSale;
     type: ContractType;
     documentRef?: React.Ref<HTMLDivElement>;
     withStamp?: boolean;
+    template?: PdfTemplateEntry;
 }
 
 // Helper function to safely format values with fallbacks
@@ -36,7 +38,7 @@ const formatDate = (dateString: string | undefined | null): string => {
     }
 };
 
-export default function ContractDocument({ sale, type, documentRef, withStamp = false }: ContractDocumentProps) {
+export default function ContractDocument({ sale, type, documentRef, withStamp = false, template }: ContractDocumentProps) {
     // Guard against undefined sale
     if (!sale) {
         return (
@@ -86,7 +88,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="text-center mb-2 pb-1 border-b" style={{ borderColor: '#000000' }}>
                         <img src="/logo.jpg" className="mx-auto h-10 mb-1" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KORAUTO</h1>
-                        <div className="text-xs font-bold uppercase" style={{ color: '#000000' }}>KONTRATË PËR KAPAR</div>
+                        <div className="text-xs font-bold uppercase" style={{ color: '#000000' }}>{template?.title || 'KONTRATË PËR KAPAR'}</div>
+                        {!!template?.body && <div className="text-[10px] mt-1 whitespace-pre-wrap">{template.body}</div>}
                     </div>
 
                     {/* Reference and Date */}
@@ -232,7 +235,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     {/* ===== PAGE 1 ===== */}
                     <div className="page-1 relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
-                        <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>MARRËVESHJE INTERNE</h1>
+                        <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>{template?.title || 'MARRËVESHJE INTERNE'}</h1>
+                        {!!template?.body && <p className="text-[8pt] mb-2 whitespace-pre-wrap">{template.body}</p>}
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 
@@ -475,7 +479,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             {type === 'full_shitblerje' && (
                 <div className="max-w-2xl mx-auto" style={{ fontSize: '8.5pt', lineHeight: 1.3 }}>
                     <img src="/logo.jpg" className="mx-auto h-12 mb-2" alt="Logo" />
-                    <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>KONTRATË SHITBLERJE</h1>
+                    <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>{template?.title || 'KONTRATË SHITBLERJE'}</h1>
                     <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Data: {today}</div>
                     <div className="font-bold mb-2 text-xs" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 

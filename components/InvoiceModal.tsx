@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { InvoicePriceSource } from './invoicePricing';
 import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';
+import { PdfTemplateEntry } from './PdfTemplateBuilder';
 
 interface Props {
     isOpen: boolean;
@@ -16,9 +17,10 @@ interface Props {
     taxAmount?: number;
     priceSource?: InvoicePriceSource;
     priceValue?: number;
+    template?: PdfTemplateEntry;
 }
 
-export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue }: Props) {
+export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue, template }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [withStamp, setWithStamp] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -204,6 +206,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                     </div>
                     <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none" aria-hidden="true">
                         <InvoiceDocument
+                        template={template}
                             sale={sale}
                             withDogane={withDogane}
                             withStamp={withStamp}

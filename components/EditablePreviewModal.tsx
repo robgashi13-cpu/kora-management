@@ -13,6 +13,7 @@ import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { InvoicePriceSource } from './invoicePricing';
+import { PdfTemplateMap } from './PdfTemplateBuilder';
 
 interface EditablePreviewModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ interface EditablePreviewModalProps {
   taxAmount?: number;
   priceSource?: InvoicePriceSource;
   priceValue?: number;
+  templates?: PdfTemplateMap;
 }
 
 export default function EditablePreviewModal({
@@ -37,7 +39,8 @@ export default function EditablePreviewModal({
   showBankOnly = false,
   taxAmount,
   priceSource,
-  priceValue
+  priceValue,
+  templates
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -480,6 +483,7 @@ export default function EditablePreviewModal({
             {documentType === 'invoice' ? (
               <InvoiceDocument
                 sale={previewSale}
+                template={templates?.invoice}
                 withDogane={withDogane}
                 withStamp={withStamp}
                 showBankOnly={showBankOnly}
@@ -493,6 +497,7 @@ export default function EditablePreviewModal({
               <ContractDocument
                 sale={previewSale}
                 type={documentType as any}
+                template={templates?.[documentType as keyof PdfTemplateMap]}
                 withStamp={withStamp}
                 documentRef={printRef}
               />
