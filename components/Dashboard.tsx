@@ -3442,7 +3442,7 @@ export default function Dashboard() {
                 <div className="relative">
                     <button
                         onClick={() => setShowProfileMenu(!showProfileMenu)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900 transition-all group"
+                        className="ui-control w-full flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                     >
                         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-900 font-bold shadow-inner group-hover:scale-105 transition-transform">
                             {userProfile ? userProfile[0].toUpperCase() : 'U'}
@@ -3515,7 +3515,7 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                            className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                 ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
@@ -3551,7 +3551,7 @@ export default function Dashboard() {
                                                     if (item.category) setActiveCategory(item.category as any);
                                                     setIsMobileMenuOpen(false);
                                                 }}
-                                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                                className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                     ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                     : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                     }`}
@@ -3609,7 +3609,7 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                            className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                 ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
@@ -3642,7 +3642,7 @@ export default function Dashboard() {
                                             if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
                                             setIsMobileMenuOpen(false);
                                         }}
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${isActive
+                                        className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                             ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                             : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                             }`}
@@ -3658,7 +3658,7 @@ export default function Dashboard() {
                                                     event.stopPropagation();
                                                     setActiveCustomDashboardMenuId((prev) => (prev === item.id ? null : item.id));
                                                 }}
-                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-900 text-slate-400"
+                                                className="ui-control absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-zinc-900 text-slate-400"
                                                 aria-label={`Dashboard options for ${item.label}`}
                                             >
                                                 <MoreHorizontal className="w-4 h-4" />
@@ -3712,7 +3712,7 @@ export default function Dashboard() {
                             handleCreateCustomDashboard();
                             setIsMobileMenuOpen(false);
                         }}
-                        className="h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
+                        className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <FolderPlus className="w-5 h-5" />
                     </button>
@@ -3720,7 +3720,7 @@ export default function Dashboard() {
                         type="button"
                         onClick={() => { const nextTheme = theme === 'dark' ? 'light' : 'dark'; applyTheme(nextTheme); void logAuditEvent({ actionType: 'UPDATE', entityType: 'theme', entityId: 'theme_mode', beforeData: { theme }, afterData: { theme: nextTheme }, pageContext: 'sidebar' }); }}
                         aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                        className="h-11 rounded-xl border border-slate-700 bg-black text-white hover:border-slate-500 transition-colors inline-flex items-center justify-center gap-1.5"
+                        className="ui-control h-11 rounded-xl border border-slate-700 bg-black text-white hover:border-slate-500 transition-colors inline-flex items-center justify-center gap-1.5"
                     >
                         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         <span className="text-[11px] font-semibold">{theme === 'dark' ? 'Dark' : 'Light'}</span>
@@ -3733,7 +3733,7 @@ export default function Dashboard() {
                             setView('settings');
                             setIsMobileMenuOpen(false);
                         }}
-                        className="h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
+                        className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <Settings className="w-5 h-5" />
                     </button>
@@ -3815,14 +3815,16 @@ export default function Dashboard() {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
-                                className={`p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? '' : 'md:hidden'}`}
+                                aria-label="Open navigation menu"
+                                className={`ui-control p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? '' : 'md:hidden'}`}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                className={`p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}
+                                className={`ui-control p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}
                                 title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
+                                aria-label={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
@@ -3839,6 +3841,7 @@ export default function Dashboard() {
                                 <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600'}`} />
                                 <input
                                     placeholder="Search sales..."
+                                    aria-label="Search sales"
                                     className={`w-full rounded-2xl pl-11 pr-4 py-2 text-sm border transition-all outline-none ${theme === 'dark'
                                         ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30 focus:ring-4 focus:ring-white/10'
                                         : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5'}`}
@@ -3851,7 +3854,7 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
-                                className={`p-2.5 rounded-xl transition-all ${isSyncing
+                                className={`ui-control p-2.5 rounded-xl transition-all ${isSyncing
                                     ? `${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} animate-spin`
                                     : theme === 'dark'
                                         ? 'text-slate-400 hover:text-slate-100 hover:bg-white/10'
@@ -3865,9 +3868,10 @@ export default function Dashboard() {
                                 <div className="relative hidden sm:block">
                                     <ArrowUpDown className={`w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
                                     <select
+                                        aria-label="Sort sales"
                                         value={sortBy}
                                         onChange={(e) => { setSortBy(e.target.value); if (e.target.value === 'nameAlphabetic') setSortDir('asc'); else setSortDir('desc'); }}
-                                        className={`text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none transition-all appearance-none cursor-pointer font-medium border ${theme === 'dark'
+                                        className={`ui-control text-sm rounded-xl pl-9 pr-8 py-2.5 outline-none transition-all appearance-none cursor-pointer font-medium border ${theme === 'dark'
                                             ? 'bg-white/5 border-white/15 text-slate-100 focus:bg-white/10 focus:border-white/30'
                                             : 'bg-slate-100 border-transparent text-slate-700 focus:bg-white focus:border-slate-300'}`}
                                     >
@@ -3882,7 +3886,8 @@ export default function Dashboard() {
 
                                 <button
                                     onClick={() => openSaleForm(null)}
-                                    className={`px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 border ${theme === 'dark'
+                                    aria-label="Create new sale"
+                                    className={`ui-control px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 border ${theme === 'dark'
                                         ? 'bg-white text-black border-white hover:bg-slate-100 shadow-lg shadow-black/25'
                                         : 'bg-black text-white border-black hover:bg-slate-900 shadow-lg shadow-slate-900/20'}`}
                                 >
@@ -3899,7 +3904,8 @@ export default function Dashboard() {
                             <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                                 placeholder="Search sales..."
-                                className={`w-full rounded-xl pl-11 pr-4 py-2.5 text-sm border transition-all outline-none ${theme === 'dark'
+                                aria-label="Search sales"
+                                className={`ui-control w-full rounded-xl pl-11 pr-4 py-2.5 text-sm border transition-all outline-none ${theme === 'dark'
                                     ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
                                     : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
                                 value={searchTerm}
@@ -3916,7 +3922,7 @@ export default function Dashboard() {
                             {view === 'dashboard' ? (<>
                                 <div
                                     ref={scrollContainerRef}
-                                    className={`border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
+                                    className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
                                 >
                                     <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                         style={{

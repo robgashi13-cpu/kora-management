@@ -137,6 +137,43 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+:focus-visible {
+  scroll-margin: 96px;
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea {
+  min-height: 40px;
+}
+
+.ui-control {
+  min-height: 42px;
+  border-radius: 0.875rem;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 140ms ease, box-shadow 180ms ease;
+}
+
+.ui-control:active {
+  transform: scale(0.98);
+}
+
+.premium-card {
+  border-radius: 1rem;
+  border: 1px solid hsl(220 14% 90%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Hide scrollbar */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
