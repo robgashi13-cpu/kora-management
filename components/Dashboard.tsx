@@ -19,7 +19,7 @@ import ProfileSelector from './ProfileSelector';
 import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
-import PdfTemplateBuilder, { defaultPdfTemplates, PdfTemplateMap } from './PdfTemplateBuilder';
+import PdfTemplateBuilder, { defaultPdfTemplates, PdfTemplateMap, sanitizePdfTemplateMap } from './PdfTemplateBuilder';
 import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
@@ -641,7 +641,7 @@ export default function Dashboard() {
     const [analyzing, setAnalyzing] = useState(false);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [syncError, setSyncError] = useState<string>('');
-    const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateMap>(defaultPdfTemplates());
+    const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateMap>(sanitizePdfTemplateMap(defaultPdfTemplates()));
     const [isSavingPdfTemplates, setIsSavingPdfTemplates] = useState(false);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
@@ -1157,12 +1157,13 @@ export default function Dashboard() {
     const savePdfTemplates = useCallback(async () => {
         setIsSavingPdfTemplates(true);
         try {
-            await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(pdfTemplates) });
+            const sanitizedTemplates = sanitizePdfTemplateMap(pdfTemplates);
+            await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(sanitizedTemplates) });
             if (supabaseUrl && supabaseKey) {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
                 await client.from('sales').upsert({
                     id: 'config_pdf_templates',
-                    attachments: { templates: pdfTemplates, updatedAt: new Date().toISOString() }
+                    attachments: { templates: sanitizedTemplates, updatedAt: new Date().toISOString() }
                 });
             }
         } finally {
@@ -1175,9 +1176,9 @@ export default function Dashboard() {
             const local = await Preferences.get({ key: 'pdf_templates' });
             if (local.value) {
                 try {
-                    setPdfTemplates({ ...defaultPdfTemplates(), ...JSON.parse(local.value) });
+                    setPdfTemplates(sanitizePdfTemplateMap({ ...defaultPdfTemplates(), ...JSON.parse(local.value) }));
                 } catch {
-                    setPdfTemplates(defaultPdfTemplates());
+                    setPdfTemplates(sanitizePdfTemplateMap(defaultPdfTemplates()));
                 }
             }
 
@@ -1186,7 +1187,7 @@ export default function Dashboard() {
                 const { data } = await client.from('sales').select('attachments').eq('id', 'config_pdf_templates').single();
                 const cloudTemplates = data?.attachments?.templates;
                 if (cloudTemplates && typeof cloudTemplates === 'object') {
-                    const merged = { ...defaultPdfTemplates(), ...cloudTemplates };
+                    const merged = sanitizePdfTemplateMap({ ...defaultPdfTemplates(), ...cloudTemplates });
                     setPdfTemplates(merged);
                     await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(merged) });
                 }

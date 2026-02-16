@@ -13,6 +13,22 @@ export type PdfTemplateEntry = {
 
 export type PdfTemplateMap = Record<PdfTemplateType, PdfTemplateEntry>;
 
+const BLOCKED_TEMPLATE_TEXT_PATTERN = /ky template kontrollon tekstin shtes[eë]\s+t[ëe]\s+fatur[ëe]s/gi;
+
+export const sanitizePdfTemplateBody = (body: unknown): string => {
+  if (typeof body !== 'string') return '';
+  return body.replace(BLOCKED_TEMPLATE_TEXT_PATTERN, '');
+};
+
+export const sanitizePdfTemplateMap = (templates: PdfTemplateMap): PdfTemplateMap => {
+  const next = { ...templates };
+  (Object.keys(next) as PdfTemplateType[]).forEach((key) => {
+    if (!next[key]) return;
+    next[key] = { ...next[key], body: sanitizePdfTemplateBody(next[key].body) };
+  });
+  return next;
+};
+
 export const PDF_TEMPLATE_DEFINITIONS: Array<{ id: PdfTemplateType; label: string; description: string }> = [
   { id: 'full_shitblerje', label: 'Kontrata e shitblerjes', description: 'Kontrata kryesore e shitblerjes.' },
   { id: 'deposit', label: 'Deposite', description: 'Marrëveshje për kapar/depozitë.' },
@@ -104,7 +120,7 @@ export default function PdfTemplateBuilder({ templates, onChange, onSave, onAuto
               value={activeTemplate.body}
               onChange={(e) => onChange({
                 ...templates,
-                [active]: { ...activeTemplate, body: e.target.value, updatedAt: new Date().toISOString() },
+                [active]: { ...activeTemplate, body: sanitizePdfTemplateBody(e.target.value), updatedAt: new Date().toISOString() },
               })}
               className="w-full min-h-[380px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
               placeholder="Edit all template text"

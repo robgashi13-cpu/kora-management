@@ -5,7 +5,7 @@ import { CarSale } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
-import { PdfTemplateEntry } from './PdfTemplateBuilder';
+import { PdfTemplateEntry, sanitizePdfTemplateBody } from './PdfTemplateBuilder';
 
 export interface InvoiceDocumentProps {
     sale: CarSale;
@@ -120,7 +120,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     </div>
                 </div>
 
-                {!!template?.body && <div className="px-6 pt-2 text-[0.72rem] whitespace-pre-wrap text-slate-700">{template.body}</div>}
+                {!!template?.body && <div className="px-6 pt-2 text-[0.72rem] whitespace-pre-wrap text-slate-700">{sanitizePdfTemplateBody(template.body)}</div>}
 
                 {/* Client & Invoice Details */}
                 <div className="invoice-section invoice-client" style={{ borderColor: '#000000' }}>

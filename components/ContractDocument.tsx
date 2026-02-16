@@ -4,7 +4,7 @@ import React from 'react';
 import { CarSale, ContractType } from '@/app/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
-import { PdfTemplateEntry } from './PdfTemplateBuilder';
+import { PdfTemplateEntry, sanitizePdfTemplateBody } from './PdfTemplateBuilder';
 
 interface ContractDocumentProps {
     sale: CarSale;
@@ -89,7 +89,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <img src="/logo.jpg" className="mx-auto h-10 mb-1" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase" style={{ color: '#000000' }}>KORAUTO</h1>
                         <div className="text-xs font-bold uppercase" style={{ color: '#000000' }}>{template?.title || 'KONTRATË PËR KAPAR'}</div>
-                        {!!template?.body && <div className="text-[10px] mt-1 whitespace-pre-wrap">{template.body}</div>}
+                        {!!template?.body && <div className="text-[10px] mt-1 whitespace-pre-wrap">{sanitizePdfTemplateBody(template.body)}</div>}
                     </div>
 
                     {/* Reference and Date */}
@@ -236,7 +236,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     <div className="page-1 relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />
                         <h1 className="text-sm font-bold uppercase mb-2 text-center" style={{ color: '#000000' }}>{template?.title || 'MARRËVESHJE INTERNE'}</h1>
-                        {!!template?.body && <p className="text-[8pt] mb-2 whitespace-pre-wrap">{template.body}</p>}
+                        {!!template?.body && <p className="text-[8pt] mb-2 whitespace-pre-wrap">{sanitizePdfTemplateBody(template.body)}</p>}
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Data: {today}</div>
                         <div className="font-bold mb-2" style={{ color: '#000000' }}>Nr. Ref: {referenceId}</div>
 
