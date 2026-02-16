@@ -369,13 +369,13 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                 {s.group && (
                     <button
                         onClick={(e) => { e.stopPropagation(); onRemoveFromGroup?.(s.id); }}
-                        className={`row-action-button transition-colors p-1.5 rounded-lg ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
+                        className={`row-action-button transition-colors p-1 rounded-md ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`}
                         title="Remove from group"
                     >
                         <X className="w-4 h-4" />
                     </button>
                 )}
-                <button onClick={(e) => openInvoice(s, e)} className={`row-action-button transition-colors p-1.5 rounded-lg ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`} title="View Invoice">
+                <button onClick={(e) => openInvoice(s, e)} className={`row-action-button transition-colors p-1 rounded-md ${theme === 'dark' ? 'text-slate-100 hover:text-white' : 'text-slate-700 hover:text-slate-900'} ${isSoldRow ? '' : 'hover:bg-slate-100 dark:hover:bg-slate-700/40'}`} title="View Invoice">
                     <FileText className="w-4 h-4" />
                 </button>
             </div>
@@ -3451,7 +3451,7 @@ export default function Dashboard() {
                             <div className="text-sm font-bold text-white truncate">{userProfile}</div>
                             <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Switch Profile</div>
                         </div>
-                        <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                        <ChevronUp className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors duration-150" />
                     </button>
 
                     {showProfileMenu && (
@@ -3483,7 +3483,7 @@ export default function Dashboard() {
                                 <Plus className="w-4 h-4" /> Add Profile
                             </button>
                             <div className="h-px bg-zinc-800 my-2" />
-                            <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors">
+                            <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors duration-150">
                                 <LogOut className="w-4 h-4" /> Log Out
                             </button>
                         </div>
@@ -3497,12 +3497,12 @@ export default function Dashboard() {
                         <button
                             type="button"
                             onClick={() => setIsSalesGroupOpen((prev) => !prev)}
-                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors duration-150"
                         >
                             <span>Sales Flow</span>
                             {isSalesGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
+                        <div className={`grid overflow-hidden sidebar-group-panel ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {salesGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
@@ -3515,8 +3515,8 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
-                                                ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                            className={`ui-control sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                                ? 'bg-zinc-100 text-black shadow-md shadow-black/20'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
@@ -3533,12 +3533,12 @@ export default function Dashboard() {
                         <button
                             type="button"
                             onClick={() => setIsOperationsGroupOpen((prev) => !prev)}
-                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors duration-150"
                         >
                             <span>Operations</span>
                             {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
+                        <div className={`grid overflow-hidden sidebar-group-panel ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {operationsGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
@@ -3551,8 +3551,8 @@ export default function Dashboard() {
                                                     if (item.category) setActiveCategory(item.category as any);
                                                     setIsMobileMenuOpen(false);
                                                 }}
-                                                className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
-                                                    ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                className={`ui-control sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                                    ? 'bg-zinc-100 text-black shadow-md shadow-black/20'
                                                     : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                     }`}
                                             >
@@ -3567,7 +3567,7 @@ export default function Dashboard() {
                                                         setIsMobileMenuOpen(false);
                                                     }}
                                                     className={`w-full flex items-center gap-2.5 px-3 py-1.5 ml-3 rounded-lg text-[11px] font-semibold transition-all ${currentNavId === pdfNavItem.id
-                                                        ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                                        ? 'bg-zinc-100 text-black shadow-md shadow-black/20'
                                                         : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                         }`}
                                                 >
@@ -3586,12 +3586,12 @@ export default function Dashboard() {
                         <button
                             type="button"
                             onClick={() => setIsFinanceGroupOpen((prev) => !prev)}
-                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors duration-150"
                         >
                             <span>Finance/Control</span>
                             {isFinanceGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
-                        <div className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out will-change-[grid-template-rows,opacity] ${isFinanceGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
+                        <div className={`grid overflow-hidden sidebar-group-panel ${isFinanceGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {financeControlGroupItems.map((item) => {
                                     if (item.adminOnly && !isAdmin) return null;
@@ -3609,8 +3609,8 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
-                                                ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                            className={`ui-control sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                                ? 'bg-zinc-100 text-black shadow-md shadow-black/20'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
@@ -3642,8 +3642,8 @@ export default function Dashboard() {
                                             if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
                                             setIsMobileMenuOpen(false);
                                         }}
-                                        className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
-                                            ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
+                                        className={`ui-control sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                            ? 'bg-zinc-100 text-black shadow-md shadow-black/20'
                                             : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                             }`}
                                     >
@@ -3772,14 +3772,14 @@ export default function Dashboard() {
                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                             <strong className="text-red-700 text-sm font-semibold">Sync Issues Detected</strong>
                         </div>
-                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors"><X className="w-4 h-4 text-red-500" /></button>
+                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors duration-150"><X className="w-4 h-4 text-red-500" /></button>
                     </div>
                     <p className="text-xs font-mono text-red-600 break-words leading-relaxed">{syncError}</p>
                 </div>
             )}
 
             {/* Desktop Sidebar */}
-            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[max-width,opacity] duration-300 ease-out will-change-[max-width,opacity] ${isSidebarCollapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-64 opacity-100'}`}>
+            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[width,opacity,transform] duration-200 ease-out will-change-[width,opacity,transform] origin-left ${isSidebarCollapsed ? 'w-0 -translate-x-2 opacity-0 pointer-events-none' : 'w-64 translate-x-0 opacity-100'}`}>
                 <SidebarContent />
             </aside>
 
@@ -3807,7 +3807,7 @@ export default function Dashboard() {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col min-w-0 relative transition-[width] duration-300 ease-in-out">
+            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
                 <header className={`backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-40 transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
@@ -3915,7 +3915,7 @@ export default function Dashboard() {
                     </div>
                 </header>
 
-                <main className={`flex-1 overflow-visible ${forceMobileLayout ? '' : 'md:overflow-hidden'} bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0`}>
+                <main className={`flex-1 overflow-hidden bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0`}>
                     {view !== 'sale_form' && (
                         <>
 
@@ -4490,7 +4490,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`mobile-car-row-compact p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4520,8 +4520,8 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                            <div className="font-semibold text-slate-900 text-[11px] sm:text-[12px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
@@ -4529,7 +4529,7 @@ export default function Dashboard() {
                                                                                                     'text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
+                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
                                                                                         <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
@@ -4643,7 +4643,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`mobile-car-row-compact p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                        className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4757,7 +4757,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                            className={`mobile-car-row-compact p-1.5 sm:p-2 flex items-center gap-2 sm:gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                            className={`mobile-car-row-compact flex items-center gap-2 sm:gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4787,8 +4787,8 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                            <div className="font-semibold text-slate-900 text-[11px] sm:text-[12px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
@@ -4796,7 +4796,7 @@ export default function Dashboard() {
                                                                                                     'text-slate-500'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-1 grid grid-cols-2 gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-slate-600">
+                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
                                                                                         <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
                                                                                         {(isAdmin || sale.soldBy === userProfile) ? (
@@ -4905,7 +4905,7 @@ export default function Dashboard() {
                                         <div className="h-px bg-slate-200 my-3 md:my-4" />
                                         <button onClick={saveSettings} className="w-full bg-black text-white font-bold py-2.5 md:py-3 rounded-xl">Save Settings</button>
                                         <div className="h-px bg-slate-200 my-3 md:my-4" />
-                                        <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors">Delete All Data</button>
+                                        <button onClick={handleDeleteAll} className="w-full border border-red-200 text-red-600 py-2.5 md:py-3 rounded-xl hover:bg-red-50 transition-colors duration-150">Delete All Data</button>
                                     </div>
                                 </div>
                             ) : view === 'record' ? (
@@ -5245,7 +5245,7 @@ export default function Dashboard() {
                                                                         handleRemoveSelectedFromGroup(ids);
                                                                         setShowGroupMenu(false);
                                                                     }}
-                                                                    className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
+                                                                    className="w-full px-3 py-2 text-left text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors duration-150"
                                                                 >
                                                                     Ungrouped
                                                                 </button>
@@ -5274,10 +5274,10 @@ export default function Dashboard() {
                                             </button>
                                             {showMoveMenu && (
                                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 bg-white border border-slate-200 rounded-xl p-2 shadow-xl flex flex-col gap-1 w-32 z-50 animate-in fade-in zoom-in-95 duration-150">
-                                                    <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Sales</button>
-                                                    <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Shipped</button>
-                                                    <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Inspections</button>
-                                                    <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">Autosallon</button>
+                                                    <button onClick={() => { handleBulkMove('In Progress'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-150">Sales</button>
+                                                    <button onClick={() => { handleBulkMove('Shipped'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-150">Shipped</button>
+                                                    <button onClick={() => { handleBulkMove('Inspection'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-150">Inspections</button>
+                                                    <button onClick={() => { handleBulkMove('Autosallon'); setShowMoveMenu(false); }} className="px-3 py-2 text-left text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors duration-150">Autosallon</button>
                                                 </div>
                                             )}
                                         </div>
@@ -5400,7 +5400,7 @@ export default function Dashboard() {
                                     {editingSale && (
                                         <button
                                             onClick={() => setViewSaleModalItem(editingSale)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors duration-150"
                                         >
                                             <Eye className="w-4 h-4" />
                                             <span>View Sale</span>
@@ -5467,7 +5467,7 @@ export default function Dashboard() {
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors duration-150"
                                     placeholder="Password"
                                     value={passwordInput}
                                     onChange={e => setPasswordInput(e.target.value)}
@@ -5491,7 +5491,7 @@ export default function Dashboard() {
                                 Remember me on this device
                             </label>
                             <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-150">Cancel</button>
                                 <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-colors shadow-sm">Submit</button>
                             </div>
                         </div>
