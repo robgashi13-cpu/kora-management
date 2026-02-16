@@ -665,6 +665,21 @@ body:not([data-theme='dark']) .cars-sold-row .row-action-button {
   user-select: none;
 }
 
+@media (max-width: 767px) {
+  .cars-sold-row,
+  .cars-sold-row > div,
+  .cars-sold-row button,
+  .cars-sold-row [role='button'] {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #e2e8f0 !important;
+  }
+
+  main:has(.cars-sold-row) {
+    background-color: #ffffff !important;
+  }
+}
+
 .cars-sold-row .status-badge,
 .cars-sold-row .payment-badge {
   color: inherit;
