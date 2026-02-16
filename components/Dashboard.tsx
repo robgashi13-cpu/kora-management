@@ -4490,7 +4490,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                className={`mobile-car-row-compact p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4643,7 +4643,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                        className={`mobile-car-row-compact p-1 sm:p-1.5 flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4757,7 +4757,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                            className={`p-2.5 flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                            className={`mobile-car-row-compact p-1.5 sm:p-2 flex items-center gap-2 sm:gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4961,7 +4961,7 @@ export default function Dashboard() {
                                             </div>
                                             <div className="divide-y divide-slate-100">
                                                 {balanceDueSales.map((sale) => (
-                                                    <div key={sale.id} data-list-row="true" className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-3 text-sm">
+                                                    <div key={sale.id} data-list-row="true" className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
                                                         <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
                                                         <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                         <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
@@ -4986,7 +4986,7 @@ export default function Dashboard() {
                                                     <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-sm font-bold text-slate-800">{groupName}</div>
                                                     <div className="divide-y divide-slate-100">
                                                         {groupSales.map((sale) => (
-                                                            <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-4 py-3 text-sm">
+                                                            <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
                                                                 <div className="font-semibold text-slate-900">{sale.brand} {sale.model}</div>
                                                                 <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                 <select value={getClientTransportPaidStatus(sale)} onChange={(e) => updateTransportField(sale.id, 'transportPaid', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold" disabled={sale.includeTransport} title={sale.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>

@@ -199,7 +199,7 @@ textarea {
 :root {
   --cols-admin: 26px minmax(150px, 1.8fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 82px 90px 104px 56px 64px 82px 100px 92px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
   --cols-user: 26px minmax(160px, 1.9fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 90px 104px 56px 64px 100px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
-  --row-height-compact: 36px;
+  --row-height-compact: 32px;
 }
 
 @media (max-width: 1024px) {
@@ -213,16 +213,16 @@ textarea {
   :root {
     --cols-admin: 30px minmax(185px, 2.2fr) 60px 80px minmax(130px, 1.5fr) minmax(150px, 1.6fr) minmax(120px, 1.3fr) minmax(120px, 1.3fr) 96px 106px 120px 66px 76px 96px 120px 110px minmax(104px, 1.1fr) minmax(96px, 1fr) 52px;
     --cols-user: 30px minmax(195px, 2.2fr) 60px 80px minmax(130px, 1.5fr) minmax(150px, 1.6fr) minmax(120px, 1.3fr) minmax(120px, 1.3fr) 104px 120px 66px 76px 120px minmax(104px, 1.1fr) minmax(96px, 1fr) 52px;
-    --row-height-compact: 40px;
+    --row-height-compact: 36px;
   }
 }
 
 /* Compact table row styles with improved readability */
 .table-row-compact > div {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  font-size: 0.75rem;
-  line-height: 1.2;
+  padding-top: 0.1875rem;
+  padding-bottom: 0.1875rem;
+  font-size: 0.71875rem;
+  line-height: 1.15;
   min-height: var(--row-height-compact);
   min-width: 0;
   overflow: hidden;
@@ -233,18 +233,45 @@ textarea {
 
 @media (min-width: 1024px) {
   .table-row-compact > div {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
-    font-size: 0.8125rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.75rem;
   }
 }
 
 @media (min-width: 1367px) {
   .table-row-compact > div {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-    font-size: 0.875rem;
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+    font-size: 0.8125rem;
   }
+}
+
+[data-list-row='true'] {
+  min-height: var(--row-height-compact);
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  font-size: 0.78125rem;
+  line-height: 1.2;
+}
+
+@media (min-width: 1024px) {
+  [data-list-row='true'] {
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+    font-size: 0.8125rem;
+  }
+}
+
+.mobile-car-row-compact {
+  min-height: 54px;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.mobile-car-row-compact button,
+.mobile-car-row-compact [role='button'] {
+  min-height: 32px;
 }
 
 /* Ensure stable row heights during edit */
