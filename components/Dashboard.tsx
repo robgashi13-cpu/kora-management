@@ -3515,12 +3515,12 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                            className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                 ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
-                                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                            <item.icon className={`w-4 h-4 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
                                             <span className="flex-1 text-left truncate">{item.label}</span>
                                         </button>
                                     );
@@ -3551,12 +3551,12 @@ export default function Dashboard() {
                                                     if (item.category) setActiveCategory(item.category as any);
                                                     setIsMobileMenuOpen(false);
                                                 }}
-                                                className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                                className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                     ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                     : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                     }`}
                                             >
-                                                <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                                <item.icon className={`w-4 h-4 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
                                                 <span className="flex-1 text-left truncate">{item.label}</span>
                                             </button>
                                             {item.id === 'INVOICES' && pdfNavItem && (!pdfNavItem.adminOnly || isAdmin) && (
@@ -3566,7 +3566,7 @@ export default function Dashboard() {
                                                         if (pdfNavItem.category) setActiveCategory(pdfNavItem.category as any);
                                                         setIsMobileMenuOpen(false);
                                                     }}
-                                                    className={`w-full flex items-center gap-3 px-4 py-2.5 ml-3 rounded-xl text-xs font-semibold transition-all ${currentNavId === pdfNavItem.id
+                                                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 ml-3 rounded-lg text-[11px] font-semibold transition-all ${currentNavId === pdfNavItem.id
                                                         ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                         : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                         }`}
@@ -3609,12 +3609,12 @@ export default function Dashboard() {
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
                                             }}
-                                            className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                            className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                                 ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                                 : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                                 }`}
                                         >
-                                            <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                            <item.icon className={`w-4 h-4 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
                                             <span className="flex-1 text-left truncate">{item.label}</span>
                                             {badge && (
                                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive ? 'bg-black/10 text-black' : 'bg-zinc-800 text-slate-300'}`}>
@@ -3642,12 +3642,12 @@ export default function Dashboard() {
                                             if (item.view === 'custom_dashboard') setActiveCustomDashboardId(item.id);
                                             setIsMobileMenuOpen(false);
                                         }}
-                                        className={`ui-control w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
+                                        className={`ui-control w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${isActive
                                             ? 'bg-zinc-100 text-black shadow-lg shadow-black/30'
                                             : 'text-slate-300 hover:bg-zinc-900 hover:text-white'
                                             }`}
                                     >
-                                        <item.icon className={`w-5 h-5 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
+                                        <item.icon className={`w-4 h-4 ${isActive ? 'text-slate-900' : 'text-slate-500'}`} />
                                         <span className="flex-1 text-left truncate">{item.label}</span>
                                     </button>
                                     {isCustomDashboardItem && (
