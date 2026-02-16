@@ -140,11 +140,11 @@ select:focus-visible {
   scroll-margin: 96px;
 }
 
-button,
-[role="button"],
 input,
 select,
-textarea {
+textarea,
+[role="button"].ui-control,
+button.ui-control {
   min-height: 40px;
 }
 
@@ -198,7 +198,7 @@ textarea {
 :root {
   --cols-admin: 26px minmax(150px, 1.8fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 82px 90px 104px 56px 64px 82px 100px 92px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
   --cols-user: 26px minmax(160px, 1.9fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 90px 104px 56px 64px 100px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
-  --row-height-compact: 32px;
+  --row-height-compact: 28px;
 }
 
 @media (max-width: 1024px) {
@@ -218,10 +218,10 @@ textarea {
 
 /* Compact table row styles with improved readability */
 .table-row-compact > div {
-  padding-top: 0.1875rem;
-  padding-bottom: 0.1875rem;
-  font-size: 0.71875rem;
-  line-height: 1.15;
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+  font-size: 0.6875rem;
+  line-height: 1.1;
   min-height: var(--row-height-compact);
   min-width: 0;
   overflow: hidden;
@@ -232,45 +232,58 @@ textarea {
 
 @media (min-width: 1024px) {
   .table-row-compact > div {
+    padding-top: 0.1875rem;
+    padding-bottom: 0.1875rem;
+    font-size: 0.71875rem;
+  }
+}
+
+@media (min-width: 1367px) {
+  .table-row-compact > div {
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
     font-size: 0.75rem;
   }
 }
 
-@media (min-width: 1367px) {
-  .table-row-compact > div {
-    padding-top: 0.3125rem;
-    padding-bottom: 0.3125rem;
-    font-size: 0.8125rem;
-  }
-}
-
 [data-list-row='true'] {
   min-height: var(--row-height-compact);
-  padding-top: 0.4rem;
-  padding-bottom: 0.4rem;
-  font-size: 0.78125rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.71875rem;
   line-height: 1.2;
 }
 
 @media (min-width: 1024px) {
   [data-list-row='true'] {
-    padding-top: 0.45rem;
-    padding-bottom: 0.45rem;
-    font-size: 0.8125rem;
+    padding-top: 0.3125rem;
+    padding-bottom: 0.3125rem;
+    font-size: 0.75rem;
   }
 }
 
 .mobile-car-row-compact {
-  min-height: 54px;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
+  min-height: 44px;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
 }
 
 .mobile-car-row-compact button,
 .mobile-car-row-compact [role='button'] {
-  min-height: 32px;
+  min-height: 30px;
+}
+
+.sidebar-group-panel {
+  transition: grid-template-rows 180ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+  will-change: grid-template-rows, opacity;
+}
+
+.sidebar-nav-item {
+  transition: background-color 140ms ease, color 140ms ease, transform 120ms ease, box-shadow 160ms ease;
+}
+
+.sidebar-nav-item:active {
+  transform: translateY(1px);
 }
 
 /* Ensure stable row heights during edit */
@@ -717,7 +730,7 @@ body:not([data-theme='dark']) .cars-sold-row .row-action-button {
   background-clip: text;
 }
 
-html, body, #__next, #root, * {
+html, body, #__next, #root {
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
