@@ -20,7 +20,7 @@ import InlineEditableCell from './InlineEditableCell';
 import ContractDocument from './ContractDocument';
 import InvoiceDocument from './InvoiceDocument';
 import PdfTemplateBuilder, { defaultPdfTemplates, PdfTemplateMap, sanitizePdfTemplateMap } from './PdfTemplateBuilder';
-import { normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { generatePdf } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createClient } from '@supabase/supabase-js';
@@ -1630,57 +1630,29 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
-        if (invoiceElement) {
-            await waitForImages(invoiceElement);
-        }
-
-        // @ts-ignore
-        const html2pdf = (await import('html2pdf.js')).default;
-        const opt = {
-            margin: 0,
-            filename: `Invoice_${sale.vin || sale.id}.pdf`,
-            image: { type: 'jpeg' as const, quality: 0.92 },
-            html2canvas: {
-                scale: 4,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                imageTimeout: 10000,
-                onclone: (clonedDoc: Document) => {
-                    sanitizePdfCloneStyles(clonedDoc);
-                    normalizePdfLayout(clonedDoc);
-                    const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                    clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                        if (invoiceNode && node.closest('#invoice-content')) {
-                            return;
-                        }
-                        node.remove();
-                    });
-                }
-            },
-            jsPDF: {
-                unit: 'mm' as const,
-                format: 'a4' as const,
-                orientation: 'portrait' as const,
-                compress: true,
-                putOnlyUsedFonts: true
-            },
-            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-        };
-
-        const pdf = html2pdf().set(opt).from(invoiceElement || container);
-        const dataUri = await pdf.outputPdf('datauristring');
+        const filename = `Invoice_${sale.vin || sale.id}.pdf`;
+        const { blob } = await generatePdf({
+            element: invoiceElement || container,
+            filename,
+            editableText: false,
+            onClone: (clonedDoc) => {
+                const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                    if (invoiceNode && node.closest('#invoice-content')) {
+                        return;
+                    }
+                    node.remove();
+                });
+            }
+        });
 
         root.unmount();
         container.remove();
 
-        const base64 = dataUri.split(',')[1];
-        if (!base64) {
-            throw new Error('Failed to generate invoice PDF data.');
-        }
+        const base64 = await blobToBase64(blob);
 
         return {
-            fileName: `Invoice_${sale.vin || sale.id}.pdf`,
+            fileName: filename,
             base64
         };
     };
@@ -1700,53 +1672,43 @@ export default function Dashboard() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         const contractElement = container.querySelector('[data-contract-document]') as HTMLElement | null;
-        if (contractElement) {
-            await waitForImages(contractElement);
-        }
-
-        // @ts-ignore
-        const html2pdf = (await import('html2pdf.js')).default;
         const fileName = `Contract_${type}_${sale.vin || sale.id}.pdf`;
-        const opt = {
-            margin: 0,
+        const { blob } = await generatePdf({
+            element: contractElement || container,
             filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.92 },
-            html2canvas: {
-                scale: 4,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                imageTimeout: 10000,
-                onclone: (clonedDoc: Document) => {
-                    sanitizePdfCloneStyles(clonedDoc);
-                    normalizePdfLayout(clonedDoc);
-                }
-            },
-            jsPDF: {
-                unit: 'mm' as const,
-                format: 'a4' as const,
-                orientation: 'portrait' as const,
-                compress: true,
-                putOnlyUsedFonts: true
-            },
-            pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-        };
-
-        const pdf = html2pdf().set(opt).from(contractElement || container);
-        const dataUri = await pdf.outputPdf('datauristring');
+            editableText: false
+        });
 
         root.unmount();
         container.remove();
 
-        const base64 = dataUri.split(',')[1];
-        if (!base64) {
-            throw new Error('Failed to generate contract PDF data.');
-        }
+        const base64 = await blobToBase64(blob);
 
         return {
             fileName,
             base64
         };
+    };
+
+    const blobToBase64 = async (blob: Blob): Promise<string> => {
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onerror = () => reject(new Error('Failed to read file.'));
+            reader.onload = () => {
+                const result = reader.result;
+                if (typeof result !== 'string') {
+                    reject(new Error('Failed to encode file.'));
+                    return;
+                }
+                const base64 = result.split(',')[1];
+                if (!base64) {
+                    reject(new Error('Failed to encode file.'));
+                    return;
+                }
+                resolve(base64);
+            };
+            reader.readAsDataURL(blob);
+        });
     };
 
     const handleDownloadSelectedInvoices = async (selectedSales: CarSale[]) => {

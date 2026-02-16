@@ -11,7 +11,7 @@ import InvoiceDocument from './InvoiceDocument';
 import ContractDocument from './ContractDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
-import { downloadPdfBlob, normalizePdfLayout, sanitizePdfCloneStyles, waitForImages } from './pdfUtils';
+import { generatePdf, downloadPdfBlob } from './pdfUtils';
 import { InvoicePriceSource } from './invoicePricing';
 import { PdfTemplateMap } from './PdfTemplateBuilder';
 
@@ -164,46 +164,21 @@ export default function EditablePreviewModal({
         return;
       }
 
-      const opt = {
-        margin: 0,
-        filename: `${documentType}_${getValue('vin') || 'doc'}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.92 },
-        html2canvas: {
-          scale: 4,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false,
-          imageTimeout: 10000,
-          onclone: (clonedDoc: Document) => {
-            sanitizePdfCloneStyles(clonedDoc);
-            normalizePdfLayout(clonedDoc);
-          }
-        },
-        jsPDF: {
-          unit: 'mm' as const,
-          format: 'a4' as const,
-          orientation: 'portrait' as const,
-          compress: true,
-          putOnlyUsedFonts: true
-        },
-        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] as const }
-      };
-
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
-
-      await waitForImages(element);
+      const filename = `${documentType}_${getValue('vin') || 'doc'}.pdf`;
+      const { blob } = await generatePdf({
+        element,
+        filename,
+        editableText: false
+      });
 
       if (!Capacitor.isNativePlatform()) {
-        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
-        const downloadResult = await downloadPdfBlob(pdfBlob, opt.filename);
+        const downloadResult = await downloadPdfBlob(blob, filename);
         if (!downloadResult.opened) {
           setStatusMessage('Popup blocked. The PDF opened in this tab so you can save or share it.');
         }
       } else {
-        const pdfBase64 = await html2pdf().set(opt).from(element).outputPdf('datauristring');
         const fileName = `${documentType}_${getValue('vin') || Date.now()}.pdf`;
-        const base64Data = pdfBase64.split(',')[1];
+        const base64Data = await blobToBase64(blob);
 
         const savedFile = await Filesystem.writeFile({
           path: fileName,
@@ -549,3 +524,24 @@ export default function EditablePreviewModal({
     </div>
   );
 }
+
+const blobToBase64 = async (blob: Blob): Promise<string> => {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('Failed to encode file.'));
+        return;
+      }
+      const base64 = result.split(',')[1];
+      if (!base64) {
+        reject(new Error('Failed to encode file.'));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.readAsDataURL(blob);
+  });
+};

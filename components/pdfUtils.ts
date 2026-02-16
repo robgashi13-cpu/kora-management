@@ -292,9 +292,22 @@ export const generatePdf = async ({
   await waitForImages(element);
   const editableFieldData = editableText === false ? null : collectPdfTextFields(element);
 
+  const A4_WIDTH_MM = 210;
+  const A4_HEIGHT_MM = 297;
+  const BASE_DPI = 96;
+  const mmToPx = (mm: number) => (mm / 25.4) * BASE_DPI;
+  const fallbackWidthPx = Math.round(mmToPx(A4_WIDTH_MM));
+  const fallbackHeightPx = Math.round(mmToPx(A4_HEIGHT_MM));
+
   const rect = element.getBoundingClientRect();
-  const renderWidth = Math.ceil(rect.width || element.scrollWidth || element.offsetWidth || 0);
-  const renderHeight = Math.ceil(rect.height || element.scrollHeight || element.offsetHeight || 0);
+  const renderWidth = Math.max(
+    fallbackWidthPx,
+    Math.round(rect.width || element.scrollWidth || element.offsetWidth || 0)
+  );
+  const renderHeight = Math.max(
+    fallbackHeightPx,
+    Math.round(rect.height || element.scrollHeight || element.offsetHeight || 0)
+  );
 
   // @ts-ignore
   const html2pdf = (await import('html2pdf.js')).default;
@@ -304,14 +317,10 @@ export const generatePdf = async ({
     image: { type: 'jpeg' as const, quality: 0.92 },
     html2canvas: {
       scale: 2,
-      ...(renderWidth > 0 && renderHeight > 0
-        ? {
-            width: renderWidth,
-            height: renderHeight,
-            windowWidth: renderWidth,
-            windowHeight: renderHeight
-          }
-        : {}),
+      width: renderWidth,
+      height: renderHeight,
+      windowWidth: renderWidth,
+      windowHeight: renderHeight,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
@@ -327,7 +336,8 @@ export const generatePdf = async ({
       format: 'a4' as const,
       orientation: 'portrait' as const,
       compress: true,
-      putOnlyUsedFonts: true
+      putOnlyUsedFonts: true,
+      precision: 16
     },
     pagebreak: { mode: pagebreakMode ?? ['css', 'legacy', 'avoid-all'] }
   };
