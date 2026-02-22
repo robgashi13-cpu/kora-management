@@ -61,6 +61,17 @@ const getSchemaCacheErrorDetails = (error: any) => {
     return { isSchemaCacheIssue, columnToDrop: columnMatch?.[1], message };
 };
 
+const getQuotaExceededMessage = (error: any): string | null => {
+    const message = [error?.message, error?.details, error?.hint, error?.code]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    const quotaHints = ['quota', 'exceeded', 'billing', 'insufficient', 'limit reached', 'resource exhausted', 'over capacity'];
+    const matchedHints = quotaHints.filter((hint) => message.includes(hint));
+    if (matchedHints.length < 2 && !message.includes('quota exceeded')) return null;
+    return 'Cloud sync quota is exceeded. Local changes are saved, but remote sync is temporarily paused. Please upgrade/reset your Supabase quota and retry.';
+};
+
 // Helper to map Local (camel) to Remote (snake)
 // CRITICAL: Every field that exists as a DB column MUST be mapped here to persist correctly
 const toRemote = (sale: CarSale, userProfile: string) => {
@@ -189,6 +200,23 @@ export const syncSalesWithSupabase = async (
         const salesToPush = roleScopedSales.map(s => toRemote(s, userProfile));
         let latestUpsertedRows: any[] = [];
         if (salesToPush.length > 0) {
+            const syncInChunks = async (payload: Record<string, unknown>[]) => {
+                const BATCH_SIZE = 100;
+                const aggregatedRows: any[] = [];
+                for (let i = 0; i < payload.length; i += BATCH_SIZE) {
+                    const chunk = payload.slice(i, i + BATCH_SIZE);
+                    const { data: chunkRows, error: chunkError } = await client
+                        .from('sales')
+                        .upsert(chunk, { onConflict: 'id' })
+                        .select('*');
+                    if (chunkError) {
+                        return { data: null, error: chunkError };
+                    }
+                    aggregatedRows.push(...(chunkRows || []));
+                }
+                return { data: aggregatedRows, error: null };
+            };
+
             let payloadToPush = salesToPush;
             const droppedColumns = new Set<string>();
             let refreshedSchemaCache = false;
@@ -196,10 +224,7 @@ export const syncSalesWithSupabase = async (
             const maxAttempts = Math.max(4, Object.keys(salesToPush[0] ?? {}).length + 2);
 
             for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-                const { data: upsertedRows, error: upsertError } = await client
-                    .from('sales')
-                    .upsert(payloadToPush, { onConflict: 'id' })
-                    .select('*');
+                const { data: upsertedRows, error: upsertError } = await syncInChunks(payloadToPush);
 
                 if (!upsertError) {
                     const pushedIds = payloadToPush
@@ -236,6 +261,11 @@ export const syncSalesWithSupabase = async (
                 }
 
                 const { isSchemaCacheIssue, columnToDrop } = getSchemaCacheErrorDetails(upsertError);
+                const quotaMessage = getQuotaExceededMessage(upsertError);
+
+                if (quotaMessage) {
+                    return { success: false, error: quotaMessage };
+                }
 
                 if (!isSchemaCacheIssue) {
                     lastError = upsertError;
