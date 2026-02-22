@@ -54,6 +54,13 @@ const isLegacyAdminProfile = (name?: string | null) => {
     return name.trim().toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase();
 };
 
+
+const isQuotaSyncIssue = (message?: string | null) => {
+    if (!message) return false;
+    const normalized = message.toLowerCase();
+    return normalized.includes('quota') && (normalized.includes('exceeded') || normalized.includes('limit'));
+};
+
 const normalizeAvatarMap = (avatars: Record<string, string>) => {
     const normalized: Record<string, string> = {};
     Object.entries(avatars).forEach(([name, value]) => {
@@ -2932,10 +2939,15 @@ export default function Dashboard() {
         try {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.json, .xlsx';
+            input.accept = '.json,.xlsx,.csv';
             input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
+                    if (file.size > 12 * 1024 * 1024) {
+                        setImportStatus('');
+                        alert('File is too large. Please import files smaller than 12MB.');
+                        return;
+                    }
                     setImportStatus('Reading file...');
                     await new Promise(r => setTimeout(r, 100));
 
@@ -2984,11 +2996,11 @@ export default function Dashboard() {
                         return;
                     }
 
-                    if (file.name.endsWith('.xlsx')) {
+                    if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
                         try {
                             const XLSX = await import('xlsx');
                             const arrayBuffer = await file.arrayBuffer();
-                            const workbook = XLSX.read(arrayBuffer);
+                            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                             const sheet = workbook.Sheets[workbook.SheetNames[0]];
                             const jsonData = XLSX.utils.sheet_to_json(sheet);
                             setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
@@ -3053,8 +3065,14 @@ export default function Dashboard() {
                                     importedSales = await processImportedData(apiKey, jsonData, setImportStatus);
                                 } catch (e) { importedSales = mapStandardImport(jsonData); }
                             }
-                            updateSalesAndSave([...sales, ...importedSales]);
-                            setImportStatus('');
+                            const mergedSales = new Map<string, CarSale>();
+                            [...sales, ...importedSales].forEach((sale) => {
+                                const key = sale.id || `${sale.vin || ''}-${sale.brand || ''}-${sale.model || ''}`;
+                                mergedSales.set(key, sale);
+                            });
+                            await updateSalesAndSave(Array.from(mergedSales.values()));
+                            setImportStatus(`Imported ${importedSales.length} rows successfully`);
+                            setTimeout(() => setImportStatus(''), 1200);
 
                         } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
                     }
@@ -3066,7 +3084,24 @@ export default function Dashboard() {
 
     const deferredSearchTerm = useDeferredValue(searchTerm);
 
-    const filteredSales = React.useMemo(() => sales.filter(s => {
+    const searchableSales = React.useMemo(() => sales.map((sale) => {
+        const searchBlob = [
+            sale.id,
+            sale.brand,
+            sale.model,
+            sale.vin,
+            sale.buyerName,
+            sale.sellerName,
+            sale.shippingName,
+            sale.status,
+            sale.plateNumber,
+            sale.group,
+            sale.notes
+        ].filter(Boolean).join(' ').toLowerCase();
+        return { sale, searchBlob };
+    }), [sales]);
+
+    const filteredSales = React.useMemo(() => searchableSales.map(({ sale: s, searchBlob }) => ({ s, searchBlob })).filter(({ s, searchBlob }) => {
         // Filter out system config rows
         if (s.id === 'config_profile_avatars') return false;
 
@@ -3096,8 +3131,8 @@ export default function Dashboard() {
 
         const term = deferredSearchTerm.toLowerCase().trim();
         if (!term) return true;
-        return JSON.stringify(s).toLowerCase().includes(term);
-    }).sort((a, b) => {
+        return searchBlob.includes(term);
+    }).map(({ s }) => s).sort((a, b) => {
         // Apply sorting
         let aVal: any = '';
         let bVal: any = '';
@@ -3129,7 +3164,7 @@ export default function Dashboard() {
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         }
         return 0;
-    }), [sales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir, isAdmin]);
+    }), [searchableSales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir, isAdmin]);
     const soldInvoiceSales = React.useMemo(
         () => filteredSales.filter(sale => (sale.soldPrice || 0) > 0 || sale.status === 'Completed'),
         [filteredSales]
@@ -3729,15 +3764,15 @@ export default function Dashboard() {
 
             {/* Global Sync Error Toast */}
             {syncError && (
-                <div className="fixed top-20 right-4 z-[90] bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl shadow-lg max-w-md">
+                <div className={`fixed top-20 right-4 z-[90] p-4 rounded-xl shadow-lg max-w-md ${isQuotaSyncIssue(syncError) ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
                     <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <strong className="text-red-700 text-sm font-semibold">Sync Issues Detected</strong>
+                            <div className={`w-2 h-2 rounded-full animate-pulse ${isQuotaSyncIssue(syncError) ? 'bg-amber-500' : 'bg-red-500'}`} />
+                            <strong className={`text-sm font-semibold ${isQuotaSyncIssue(syncError) ? 'text-amber-700' : 'text-red-700'}`}>{isQuotaSyncIssue(syncError) ? 'Cloud Sync Quota Reached' : 'Sync Issues Detected'}</strong>
                         </div>
-                        <button onClick={() => setSyncError('')} className="p-1 hover:bg-red-100 rounded-lg transition-colors duration-150"><X className="w-4 h-4 text-red-500" /></button>
+                        <button onClick={() => setSyncError('')} className={`p-1 rounded-lg transition-colors duration-150 ${isQuotaSyncIssue(syncError) ? 'hover:bg-amber-100' : 'hover:bg-red-100'}`}><X className={`w-4 h-4 ${isQuotaSyncIssue(syncError) ? 'text-amber-500' : 'text-red-500'}`} /></button>
                     </div>
-                    <p className="text-xs font-mono text-red-600 break-words leading-relaxed">{syncError}</p>
+                    <p className={`text-xs font-mono break-words leading-relaxed ${isQuotaSyncIssue(syncError) ? 'text-amber-700' : 'text-red-600'}`}>{syncError}</p>
                 </div>
             )}
 
