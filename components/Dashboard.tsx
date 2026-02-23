@@ -400,6 +400,9 @@ const INITIAL_SALES: CarSale[] = [];
 const UI_STATE_STORAGE_KEY = 'dashboard_ui_state_v1';
 const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
 const ROW_TAP_MOVE_THRESHOLD = 10;
+const AUTO_SYNC_INTERVAL_MS = 5000;
+const AUTO_SYNC_IDLE_PULL_INTERVAL_MS = 45000;
+const AUTO_SYNC_QUOTA_BACKOFF_MS = 120000;
 type InputMode = 'mouse' | 'touch';
 
 const isMercedesB200Sale = (sale: CarSale) => {
@@ -671,6 +674,8 @@ export default function Dashboard() {
     const didRestoreUiStateRef = useRef(false);
     const mobileRowTapStateRef = useRef<Record<string, { x: number; y: number; moved: boolean; active: boolean }>>({});
     const interactionGuardRef = useRef<Record<number, { x: number; y: number; moved: boolean }>>({});
+    const lastSuccessfulSyncAtRef = useRef(0);
+    const syncBackoffUntilRef = useRef(0);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -2538,7 +2543,7 @@ export default function Dashboard() {
             if (!isFormOpenRef.current) {
                 void performAutoSync(supabaseUrl, supabaseKey, userProfile);
             }
-        }, 5000);
+        }, AUTO_SYNC_INTERVAL_MS);
         return () => window.clearInterval(timer);
     }, [userProfile, supabaseUrl, supabaseKey]);
 
@@ -2548,24 +2553,34 @@ export default function Dashboard() {
         profile: string,
         currentLocalSales?: CarSale[]
     ): Promise<{ success: boolean; error?: string }> => {
+        const now = Date.now();
+        if (syncBackoffUntilRef.current > now) {
+            return { success: false, error: 'Cloud sync is temporarily paused due to quota limits.' };
+        }
+
+        let localSalesToSync = currentLocalSales;
+        if (!localSalesToSync) {
+            const scopedSalesKey = getSalesStorageKey(userProfile || localStorage.getItem(SESSION_PROFILE_STORAGE_KEY));
+            const { value } = await Preferences.get({ key: scopedSalesKey });
+            localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
+        }
+        if (!localSalesToSync) localSalesToSync = [];
+
+        const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
+        const hasDirtyItems = dirtyItems.length > 0;
+        const shouldRunIdlePull = now - lastSuccessfulSyncAtRef.current >= AUTO_SYNC_IDLE_PULL_INTERVAL_MS;
+        if (!hasDirtyItems && !shouldRunIdlePull) {
+            return { success: true };
+        }
+
         setIsSyncing(true);
-        setSyncError(''); // Clear previous errors
         console.log("Starting AutoSync to:", url);
         let syncErrorMessage = '';
 
         try {
-            let localSalesToSync = currentLocalSales;
-            if (!localSalesToSync) {
-                const scopedSalesKey = getSalesStorageKey(userProfile || localStorage.getItem(SESSION_PROFILE_STORAGE_KEY));
-                const { value } = await Preferences.get({ key: scopedSalesKey });
-                localSalesToSync = value ? JSON.parse(value) : (sales.length > 0 ? sales : []);
-            }
-            if (!localSalesToSync) localSalesToSync = [];
-
             const client = createSupabaseClient(url.trim(), key.trim());
 
             // 1. Identify Dirty Items to Push
-            const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
             if (localSalesToSync.length > 0 && dirtyIds.current.size === 0) {
                 console.log("No local changes to push (Clean Sync)");
             }
@@ -2587,6 +2602,7 @@ export default function Dashboard() {
             }
             if (salesRes.success) {
                 console.log("Sales Sync Success - content synced");
+                setSyncError('');
                 if (salesRes.data) {
                     const mergedById = new Map<string, CarSale>();
                     salesRes.data.forEach((sale: CarSale) => {
@@ -2621,6 +2637,9 @@ export default function Dashboard() {
                 }
             } else if (salesRes.error) {
                 console.error("Sales Sync Failed:", salesRes.error);
+                if (isQuotaSyncIssue(salesRes.error)) {
+                    syncBackoffUntilRef.current = Date.now() + AUTO_SYNC_QUOTA_BACKOFF_MS;
+                }
                 setSyncError(`Sales Sync Failed: ${salesRes.error} `);
             }
             if (salesRes.success && salesRes.error) {
@@ -2638,6 +2657,7 @@ export default function Dashboard() {
                 console.log("TX Sync Success:", txRes.data.length);
                 setTransactions(txRes.data);
                 await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
+                lastSuccessfulSyncAtRef.current = Date.now();
             } else if (txRes.error) {
                 console.error("TX Sync Failed:", txRes.error);
                 setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
@@ -2646,6 +2666,9 @@ export default function Dashboard() {
         } catch (e: any) {
             console.error("Auto Sync Exception", e);
             syncErrorMessage = e.message || 'Sync Exception';
+            if (isQuotaSyncIssue(syncErrorMessage)) {
+                syncBackoffUntilRef.current = Date.now() + AUTO_SYNC_QUOTA_BACKOFF_MS;
+            }
             setSyncError(`Sync Exception: ${e.message} `);
         }
         finally { setIsSyncing(false); }
