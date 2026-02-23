@@ -68,6 +68,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string; savedAt?: string }>({ saving: false });
+    const [uploadState, setUploadState] = useState<{ active: boolean; message?: string }>({ active: false });
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
@@ -247,36 +248,56 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
         const files = e.target.files;
-        if (files && files.length > 0) {
-            const newAttachments: Attachment[] = [];
+        if (!files || files.length === 0) return;
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.size > 10 * 1024 * 1024) { // Increased limit to 10MB
-                    alert(`File ${file.name} is too large. Max 10MB allowed.`);
-                    continue;
-                }
+        setUploadState({ active: true, message: `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...` });
+        const newAttachments: Attachment[] = [];
 
-                await new Promise<void>((resolve) => {
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`File ${file.name} is too large. Max 10MB allowed.`);
+                continue;
+            }
+
+            try {
+                const attachment = await new Promise<Attachment>((resolve, reject) => {
                     const reader = new FileReader();
+                    reader.onerror = () => reject(new Error(`Failed to read ${file.name}.`));
                     reader.onload = () => {
-                        newAttachments.push({
+                        if (typeof reader.result !== 'string') {
+                            reject(new Error(`Invalid file payload for ${file.name}.`));
+                            return;
+                        }
+                        resolve({
                             name: file.name,
-                            data: reader.result as string,
+                            data: reader.result,
                             type: file.type,
                             size: file.size
                         });
-                        resolve();
                     };
                     reader.readAsDataURL(file);
                 });
+                newAttachments.push(attachment);
+            } catch (error) {
+                console.error(error);
             }
-
-            setFormData(prev => ({
-                ...prev,
-                [field]: [...(prev[field] || []), ...newAttachments]
-            }));
         }
+
+        if (newAttachments.length > 0) {
+            setFormData(prev => {
+                const existing = prev[field] || [];
+                const deduped = newAttachments.filter(next => !existing.some(file => file.name === next.name && file.size === next.size));
+                return {
+                    ...prev,
+                    [field]: [...existing, ...deduped]
+                };
+            });
+        }
+
+        e.target.value = '';
+        setUploadState({ active: false, message: newAttachments.length > 0 ? `${newAttachments.length} file${newAttachments.length > 1 ? 's' : ''} uploaded.` : 'No files uploaded.' });
+        window.setTimeout(() => setUploadState({ active: false }), 1200);
     };
 
     const removeFile = (field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices', index: number) => {
@@ -488,10 +509,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     {label}
                     <span className="normal-case text-[10px] font-semibold text-slate-400 ml-1">(Optional)</span>
                 </label>
-                <label className="cursor-pointer text-slate-500 hover:text-slate-400 transition-colors bg-slate-500/10 hover:bg-slate-800/20 px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1">
+                <div className="flex items-center gap-2">
+                    {uploadState.message ? <span className="text-[10px] text-slate-400">{uploadState.message}</span> : null}
+                    <label className={`cursor-pointer transition-colors px-2 py-1 rounded text-[10px] font-bold uppercase flex items-center gap-1 ${uploadState.active ? 'text-slate-300 bg-slate-100 cursor-not-allowed' : 'text-slate-500 hover:text-slate-400 bg-slate-500/10 hover:bg-slate-800/20'}`}>
                     <Paperclip className="w-3 h-3" /> Add
-                    <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(e) => handleFileChange(e, field)} />
-                </label>
+                    <input type="file" className="hidden" multiple accept="image/*,.pdf" onChange={(e) => handleFileChange(e, field)} disabled={uploadState.active} />
+                    </label>
+                </div>
             </div>
 
             <div className="flex-1 flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar scroll-container">
@@ -521,7 +545,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             initial={inline ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 24, mass: 0.7 }}
             onClick={(e) => e.stopPropagation()}
             className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-[min(98vw,96rem)] max-w-[96rem] rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
         >
