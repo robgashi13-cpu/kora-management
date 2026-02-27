@@ -23,7 +23,6 @@ import PdfTemplateBuilder, { defaultPdfTemplates, PdfTemplateMap, sanitizePdfTem
 import { generatePdf } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
-import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 
 const getBankFee = (price: number) => {
@@ -1115,8 +1114,8 @@ export default function Dashboard() {
 
             if (supabaseUrl && supabaseKey) {
                 try {
-                    const client = createClient(supabaseUrl, supabaseKey);
-                    const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                    const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                    const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
                     if (data?.attachments?.avatars) {
                         current = normalizeAvatarMap({ ...current, ...data.attachments.avatars });
                         setProfileAvatars(current);
@@ -1147,7 +1146,7 @@ export default function Dashboard() {
 
         if (supabaseUrl && supabaseKey) {
             try {
-                const client = createClient(supabaseUrl, supabaseKey);
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
                 await client.from('sales').upsert({
                     id: 'config_profile_avatars',
                     brand: 'CONFIG',
@@ -1196,7 +1195,7 @@ export default function Dashboard() {
 
             if (supabaseUrl && supabaseKey) {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_pdf_templates').single();
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_pdf_templates').maybeSingle();
                 const cloudTemplates = data?.attachments?.templates;
                 if (cloudTemplates && typeof cloudTemplates === 'object') {
                     const merged = sanitizePdfTemplateMap({ ...defaultPdfTemplates(), ...cloudTemplates });
@@ -1213,7 +1212,7 @@ export default function Dashboard() {
     const syncProfilesToCloud = async (profiles: string[]) => {
         if (!supabaseUrl || !supabaseKey) return;
         try {
-            const client = createClient(supabaseUrl, supabaseKey);
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
             await client.from('sales').upsert({
                 id: 'config_profile_avatars',
                 brand: 'CONFIG',
@@ -1237,8 +1236,8 @@ export default function Dashboard() {
 
         const syncProfilesFromCloud = async () => {
             try {
-                const client = createClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').single();
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
                 if (data?.attachments?.profiles) {
                     const cloudProfiles: string[] = normalizeProfiles(data.attachments.profiles);
                     // Use cloud as source of truth - don't merge with defaults

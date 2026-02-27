@@ -10,6 +10,15 @@ const normalizeProfileName = (name?: string | null) => {
 
 const isAdminProfile = (profile?: string | null) => normalizeProfileName(profile) === ADMIN_PROFILE;
 
+const clientCache = new Map<string, SupabaseClient>();
+
+const encodeStorageKey = (value: string) => {
+    if (typeof btoa === 'function') {
+        return btoa(value);
+    }
+    return Buffer.from(value, 'utf-8').toString('base64');
+};
+
 const canAccessSale = (sale: CarSale, profile: string) => {
     if (isAdminProfile(profile)) return true;
     const normalizedProfile = normalizeProfileName(profile);
@@ -17,7 +26,19 @@ const canAccessSale = (sale: CarSale, profile: string) => {
 };
 
 export const createSupabaseClient = (url: string, key: string): SupabaseClient => {
-    return createClient(url, key, {
+    const cacheKey = `${url}::${key}`;
+    const cachedClient = clientCache.get(cacheKey);
+    if (cachedClient) {
+        return cachedClient;
+    }
+
+    const client = createClient(url, key, {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+            storageKey: `kora-supabase-${encodeStorageKey(url).replace(/[^a-zA-Z0-9_-]/g, '')}`,
+        },
         global: {
             fetch: (input, init) => {
                 const headers = new Headers(init?.headers || {});
@@ -37,6 +58,9 @@ export const createSupabaseClient = (url: string, key: string): SupabaseClient =
             }
         }
     });
+
+    clientCache.set(cacheKey, client);
+    return client;
 };
 
 const tryRefreshSchemaCache = async (client: SupabaseClient) => {

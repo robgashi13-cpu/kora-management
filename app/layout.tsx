@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
 
 export const metadata: Metadata = {
   title: "KORAUTO",
@@ -17,13 +16,11 @@ export const metadata: Metadata = {
   manifest: "/manifest.json"
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: "cover",
+  viewportFit: "cover"
 };
 
 export default function RootLayout({
