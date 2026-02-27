@@ -22,3 +22,11 @@ A high-tech, modern car sales management dashboard designed for iOS and iPad.
 5. Tap **Add to Home Screen**.
 6. Launch the app from your home screen.
 # KORAUTOMANAGMENT
+
+## Admin Authentication Configuration
+Set the following server-side environment variables before using admin login:
+
+- `ADMIN_PASSWORD_SALT`
+- `ADMIN_PASSWORD_HASH` (base64 SHA-256 of `${ADMIN_PASSWORD_SALT}:<admin-password>`)
+
+Admin password validation is handled by `/api/admin-auth`; no plaintext admin secret should exist in client code.

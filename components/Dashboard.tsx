@@ -24,6 +24,7 @@ import { generatePdf } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
+import { verifyAdminPassword } from '@/services/adminAuth';
 
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -34,8 +35,9 @@ const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amoun
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
 const ADMIN_PROFILE = 'Robert';
-const ADMIN_PASSWORD = 'Robertoo1396$';
 const LEGACY_ADMIN_PROFILE = 'Admin';
+const PROFILE_AVATARS_CONFIG_KEY = 'profile_avatars';
+const PDF_TEMPLATES_CONFIG_KEY = 'pdf_templates';
 
 const normalizeProfileName = (name?: string | null | unknown) => {
     if (typeof name !== 'string' || !name) return '';
@@ -1115,9 +1117,10 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey) {
                 try {
                     const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                    const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
-                    if (data?.attachments?.avatars) {
-                        current = normalizeAvatarMap({ ...current, ...data.attachments.avatars });
+                    const { data } = await client.from('app_config').select('value').eq('key', PROFILE_AVATARS_CONFIG_KEY).maybeSingle();
+                    const configValue = data?.value as any;
+                    if (configValue?.avatars) {
+                        current = normalizeAvatarMap({ ...current, ...configValue.avatars });
                         setProfileAvatars(current);
                         await Preferences.set({ key: 'profile_avatars', value: JSON.stringify(current) });
                     } else {
@@ -1147,19 +1150,10 @@ export default function Dashboard() {
         if (supabaseUrl && supabaseKey) {
             try {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                await client.from('sales').upsert({
-                    id: 'config_profile_avatars',
-                    brand: 'CONFIG',
-                    model: 'AVATARS',
-                    status: 'Completed',
-                    year: new Date().getFullYear(),
-                    km: 0,
-                    cost_to_buy: 0,
-                    sold_price: 0,
-                    amount_paid_cash: 0,
-                    amount_paid_bank: 0,
-                    deposit: 0,
-                    attachments: { avatars: updated, profiles: availableProfiles }
+                await client.from('app_config').upsert({
+                    key: PROFILE_AVATARS_CONFIG_KEY,
+                    value: { avatars: updated, profiles: availableProfiles },
+                    updated_by: userProfile
                 });
             } catch (e) { console.error("Avatar Upload Error", e); }
         }
@@ -1172,9 +1166,10 @@ export default function Dashboard() {
             await Preferences.set({ key: 'pdf_templates', value: JSON.stringify(sanitizedTemplates) });
             if (supabaseUrl && supabaseKey) {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                await client.from('sales').upsert({
-                    id: 'config_pdf_templates',
-                    attachments: { templates: sanitizedTemplates, updatedAt: new Date().toISOString() }
+                await client.from('app_config').upsert({
+                    key: PDF_TEMPLATES_CONFIG_KEY,
+                    value: { templates: sanitizedTemplates, updatedAt: new Date().toISOString() },
+                    updated_by: userProfile
                 });
             }
         } finally {
@@ -1195,8 +1190,8 @@ export default function Dashboard() {
 
             if (supabaseUrl && supabaseKey) {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_pdf_templates').maybeSingle();
-                const cloudTemplates = data?.attachments?.templates;
+                const { data } = await client.from('app_config').select('value').eq('key', PDF_TEMPLATES_CONFIG_KEY).maybeSingle();
+                const cloudTemplates = (data?.value as any)?.templates;
                 if (cloudTemplates && typeof cloudTemplates === 'object') {
                     const merged = sanitizePdfTemplateMap({ ...defaultPdfTemplates(), ...cloudTemplates });
                     setPdfTemplates(merged);
@@ -1213,19 +1208,10 @@ export default function Dashboard() {
         if (!supabaseUrl || !supabaseKey) return;
         try {
             const client = createSupabaseClient(supabaseUrl, supabaseKey);
-            await client.from('sales').upsert({
-                id: 'config_profile_avatars',
-                brand: 'CONFIG',
-                model: 'AVATARS',
-                status: 'Completed',
-                year: new Date().getFullYear(),
-                km: 0,
-                cost_to_buy: 0,
-                sold_price: 0,
-                amount_paid_cash: 0,
-                amount_paid_bank: 0,
-                deposit: 0,
-                attachments: { avatars: profileAvatars, profiles: profiles }
+            await client.from('app_config').upsert({
+                key: PROFILE_AVATARS_CONFIG_KEY,
+                value: { avatars: profileAvatars, profiles: profiles },
+                updated_by: userProfile
             });
         } catch (e) { console.error("Profile Sync Error", e); }
     };
@@ -1237,9 +1223,10 @@ export default function Dashboard() {
         const syncProfilesFromCloud = async () => {
             try {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data } = await client.from('sales').select('attachments').eq('id', 'config_profile_avatars').maybeSingle();
-                if (data?.attachments?.profiles) {
-                    const cloudProfiles: string[] = normalizeProfiles(data.attachments.profiles);
+                const { data } = await client.from('app_config').select('value').eq('key', PROFILE_AVATARS_CONFIG_KEY).maybeSingle();
+                const configValue = data?.value as any;
+                if (configValue?.profiles) {
+                    const cloudProfiles: string[] = normalizeProfiles(configValue.profiles);
                     // Use cloud as source of truth - don't merge with defaults
                     setAvailableProfiles(cloudProfiles);
                     await Preferences.set({ key: 'available_profiles', value: JSON.stringify(cloudProfiles) });
@@ -1274,19 +1261,21 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey]);
 
 
-    const handlePasswordSubmit = () => {
-        if (passwordInput === ADMIN_PASSWORD) {
-            const normalizedProfile = normalizeProfileName(pendingProfile);
-            setUserProfile(normalizedProfile);
-            persistUserProfile(normalizedProfile);
-            setShowProfileMenu(false);
-            performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
-            setShowPasswordModal(false);
-            setPasswordInput('');
-            setPendingProfile('');
-        } else {
+    const handlePasswordSubmit = async () => {
+        const isValid = await verifyAdminPassword(passwordInput);
+        if (!isValid) {
             alert('Incorrect Password!');
+            return;
         }
+
+        const normalizedProfile = normalizeProfileName(pendingProfile);
+        setUserProfile(normalizedProfile);
+        persistUserProfile(normalizedProfile);
+        setShowProfileMenu(false);
+        performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
+        setShowPasswordModal(false);
+        setPasswordInput('');
+        setPendingProfile('');
     };
 
 
@@ -2961,7 +2950,7 @@ export default function Dashboard() {
         try {
             const input = document.createElement('input');
             input.type = 'file';
-            input.accept = '.json,.xlsx,.csv';
+            input.accept = '.json,.csv';
             input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
@@ -3018,13 +3007,18 @@ export default function Dashboard() {
                         return;
                     }
 
-                    if (file.name.endsWith('.xlsx') || file.name.endsWith('.csv')) {
+                    if (file.name.endsWith('.csv')) {
                         try {
-                            const XLSX = await import('xlsx');
-                            const arrayBuffer = await file.arrayBuffer();
-                            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const jsonData = XLSX.utils.sheet_to_json(sheet);
+                            const csvText = await file.text();
+                            const [headerLine, ...lines] = csvText.split(/\r?\n/).filter(Boolean);
+                            const headers = headerLine ? headerLine.split(',').map(h => h.trim()) : [];
+                            const jsonData = lines.map((line) => {
+                                const values = line.split(',');
+                                return headers.reduce((acc: Record<string, string>, header, index) => {
+                                    acc[header] = (values[index] || '').trim();
+                                    return acc;
+                                }, {});
+                            });
                             setImportStatus(`Found ${jsonData.length} rows.Analyzing structure...`);
 
                             // Helper for standard mapping
@@ -3096,7 +3090,12 @@ export default function Dashboard() {
                             setImportStatus(`Imported ${importedSales.length} rows successfully`);
                             setTimeout(() => setImportStatus(''), 1200);
 
-                        } catch (e) { alert('Invalid JSON: ' + e); setImportStatus(''); }
+                        } catch (e) { alert('Invalid CSV: ' + e); setImportStatus(''); }
+                    }
+
+                    if (file.name.endsWith('.xlsx')) {
+                        setImportStatus('XLSX import has been disabled for security. Please convert to CSV and retry.');
+                        return;
                     }
                 }
             };
@@ -3124,9 +3123,6 @@ export default function Dashboard() {
     }), [sales]);
 
     const filteredSales = React.useMemo(() => searchableSales.map(({ sale: s, searchBlob }) => ({ s, searchBlob })).filter(({ s, searchBlob }) => {
-        // Filter out system config rows
-        if (s.id === 'config_profile_avatars') return false;
-
         // Restrict visibility for non-admin users to their own sales
         if (!isAdmin) {
             const normalizedUser = normalizeProfileName(userProfile);
@@ -3382,6 +3378,7 @@ export default function Dashboard() {
             avatars={profileAvatars}
             onEditAvatar={handleEditAvatar}
             rememberDefault={rememberProfile}
+            verifyAdminPassword={verifyAdminPassword}
         />;
     }
 

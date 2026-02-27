@@ -17,11 +17,11 @@ interface ProfileSelectorProps {
     avatars: Record<string, string>;
     onEditAvatar: (name: string, base64: string) => void;
     rememberDefault?: boolean;
+    verifyAdminPassword: (password: string) => Promise<boolean>;
 }
 
-export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false }: ProfileSelectorProps) {
+export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false, verifyAdminPassword }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
-    const ADMIN_PASSWORD = 'Robertoo1396$';
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -76,22 +76,24 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         }
     };
 
-    const confirmPassword = () => {
-        if (password === ADMIN_PASSWORD) {
-            if (adminAction === 'select' && pendingProfile) {
-                onSelect(pendingProfile, rememberMe);
-                setPendingProfile(null);
-            }
-            if (adminAction === 'add') {
-                setIsAdding(true);
-            }
-            setShowPasswordModal(false);
-            setAdminAction(null);
-            setPassword('');
-            setShowPassword(false);
-        } else {
-            alert("Incorrect Password!");
+    const confirmPassword = async () => {
+        const isValid = await verifyAdminPassword(password);
+        if (!isValid) {
+            alert('Incorrect Password!');
+            return;
         }
+
+        if (adminAction === 'select' && pendingProfile) {
+            onSelect(pendingProfile, rememberMe);
+            setPendingProfile(null);
+        }
+        if (adminAction === 'add') {
+            setIsAdding(true);
+        }
+        setShowPasswordModal(false);
+        setAdminAction(null);
+        setPassword('');
+        setShowPassword(false);
     };
 
     const handleAdd = () => {
