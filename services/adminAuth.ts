@@ -1,12 +1,10 @@
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-
 export const verifyAdminPassword = async (password: string): Promise<boolean> => {
   if (!password) return false;
 
   try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth`, {
+    const response = await fetch('/api/admin-auth', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ password }),
     });
 
