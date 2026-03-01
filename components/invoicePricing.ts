@@ -1,4 +1,4 @@
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 
 export type InvoicePriceSource = 'sold' | 'paid_bank';
 

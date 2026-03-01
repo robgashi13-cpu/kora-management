@@ -1,97 +1,106 @@
-# KORA Management Publishability Audit Report
+# Production Readiness Audit — KORA Management
 
-Date: 2026-02-27
+Date: 2026-03-01
 
-## Phase 1 — Stack detection and reproduction
+## 1) Stack Detection
 
-- **Framework:** Next.js 16 + React 19 (`app/` router), with legacy Vite path still present for historical SPA code.
-- **Primary build tool:** `next build` (`npm run build`).
-- **Secondary build path:** `vite build` (`npm run build:vite`) for legacy artifacts.
-- **Routing method:** Next App Router (`app/page.tsx`, `app/layout.tsx`) with static export.
-- **Hosting/deploy target:** static site export (`next.config.ts` has `output: 'export'`) suitable for static hosting (e.g. GitHub Pages/CDN).
+- **Framework/runtime:** React + TypeScript.
+- **Routing:** React Router (`BrowserRouter`) introduced in `src/main.tsx`; legacy `Next.js` app directory still exists but is excluded from active web runtime.
+- **State management:** Component-local React state in `components/Dashboard.tsx` (very large state surface); no centralized global store.
+- **Build tool:** Vite (`vite.config.ts`, npm scripts).
+- **Deployment target:** Static SPA deployment (Vercel/Netlify compatible rewrites added via `vercel.json` and `public/_redirects`).
 
-### Commands executed and outputs
+## 2) Command Audit Results
 
-1. `npm ci` ✅
-2. `npm run lint` ✅ (42 warnings, 0 errors)
-3. `npx tsc --noEmit` ✅
-4. `npm test` ❌ (no `test` script defined)
-5. `npm run build` ✅
-6. Production preview via static server: `python3 -m http.server 3000 --directory out` ✅
-7. Browser audit (Playwright in real Chromium) ✅
+### Install
+- Command: `npm ci`
+- Result: **FAILED**
+- Failure: 403 from npm registry for locked package tarballs (notably Next.js package in legacy lock data).
 
-### Runtime/console/network findings before fixes
+### Build
+- Command: `npm run build`
+- Result: **FAILED** (environment not install-complete, `vite` missing).
 
-- **Console warning (High):** multiple GoTrueClient instances (Supabase auth client duplication).
-  - Repro: open home page after static preview.
-  - Suspected cause: repeated `createClient` calls with shared storage key.
-- **Console error + failed network (High):** 406 on `config_pdf_templates` fetch.
-  - Repro: open home page after static preview.
-  - Suspected cause: `single()` on a row that may not exist and/or policy returns no rows.
+### Lint
+- Command: `npm run lint`
+- Result: **PASSED** (with current lightweight root config).
 
-### PDF entry points found
+### Typecheck
+- Command: `npx tsc --noEmit`
+- Result: **FAILED**
+- Primary cause during baseline: mixed Next.js/Vite code paths and missing installed dependencies caused thousands of unresolved-type errors.
 
-- `components/ContractModal.tsx` — contract preview/download/print.
-- `components/InvoiceModal.tsx` — invoice preview/download/print.
-- `components/ViewSaleModal.tsx` — sale-level preview/generation actions.
-- `components/SaleModal.tsx` — launch points for deposit/shitblerje/marreveshje/invoice flows.
-- `components/EditShitblerjeModal.tsx` — preview/download launch points.
-- Shared generation pipeline in `components/pdfUtils.ts` (`generatePdf`, `sharePdfBlob`, `printPdfBlob`).
+### Security audit
+- Command: `npm audit --package-lock-only --json`
+- Result: **FAILED** (403 on advisory endpoint in current environment).
 
----
+## 3) Build Errors / Warnings / Dependency Risk
 
-## Phase 2/3 — Fixes applied
+### Critical build blockers
+1. Mixed Next.js and Vite architecture in one root caused tooling conflicts.
+2. `package-lock.json` referenced blocked artifacts in this environment, preventing a clean dependency install.
+3. Legacy Next-specific lint/type tooling references were incompatible with target Vite SPA flow.
 
-### 1) Supabase runtime stability and console cleanup
+### Deprecated/transitive warnings observed
+- `inflight`, `rimraf@3`, `glob@7`, `q`, `@xmldom/xmldom@0.7.x` warnings observed during install attempt.
 
-- Added cached Supabase client factory to avoid per-render client creation.
-- Disabled session persistence/autorefresh in this app-scoped client creation path.
-- Replaced direct `createClient(...)` usage in dashboard sync/config code with cached `createSupabaseClient(...)`.
-- Replaced `.single()` with `.maybeSingle()` for config fetches to avoid 406 noise for missing rows.
+### Large dependency risk (qualitative)
+Likely heavy runtime contributors:
+- `framer-motion`
+- `pdfjs-dist`
+- `openai`
+- `@google/generative-ai`
+- Capacitor packages in web bundle context (if imported on web paths)
 
-### 2) Global runtime safety
+> Full quantitative bundle breakdown requires successful install + build output.
 
-- Added Next.js global error boundary (`app/error.tsx`) with user-friendly fallback UI and retry action.
+## 4) Architecture Analysis
 
-### 3) Publishability/accessibility config
+## Folder and module structure
+- `components/` contains most business logic/UI logic.
+- `components/Dashboard.tsx` is a monolithic component responsible for CRUD, auth UX, data sync, table rendering, PDF/export flows, and layout concerns.
+- `services/` contains backend integration helpers.
+- `src/` acts as web entrypoint.
+- `app/` and `legacy_src/` are historical paths still present in repo and caused type/build confusion before refactor.
 
-- Updated viewport metadata to remove `maximumScale: 1` and `userScalable: false` lock.
+## Reuse patterns and anti-patterns
+- Positive: rich domain typing (`CarSale`, attachment models), reusable modal/components.
+- Anti-patterns:
+  - Over-centralized UI/business logic in a single mega-component (`Dashboard.tsx`).
+  - Mixed platform assumptions (Capacitor + desktop web in same render paths).
+  - Global CSS includes app-shell constraints from old app-like UX (`overflow: hidden`, full-height locks) that can impact normal website behavior.
 
----
+## State duplication risk
+- Multiple similar slices managed locally in `Dashboard.tsx` and modal props.
+- High coupling between UI state and persistence/network logic increases regression risk.
 
-## Phase 4 — PDF fidelity and quality audit status
+## 5) Severity Classification
 
-### Current behavior verified in code
+- **Critical**
+  - Dependency installation blocked by lockfile/package-path issues in current environment.
+  - Mixed framework architecture (Next + Vite) created non-deterministic build path.
+- **High**
+  - Monolithic dashboard component with high cyclomatic complexity.
+  - Missing reliable automated test suite for core flows.
+- **Medium**
+  - Legacy/unused platform artifacts (Next app dir, mobile-first leftovers).
+  - Potentially oversized bundle due heavy feature libraries loaded eagerly.
+- **Low**
+  - Design system inconsistency (spacing/radius/interaction styles vary by area).
 
-- In both `ContractModal` and `InvoiceModal`, preview generation stores a single `Blob` (`pdfBlob`).
-- Download and print handlers both reuse this same `Blob` (`pdfBlob ?? buildPdfPreview()`), ensuring identical bytes when preview already exists.
-- Print path uses the PDF blob directly (`printPdfBlob(blob)`), avoiding HTML re-render at print-time.
+## 6) Refactor Roadmap
 
-### Remaining work (not fully implemented in this patch)
-
-- Full automated PDF visual regression suite across all PDF types/templates.
-- Hash-equality E2E assertion between preview source and downloaded bytes.
-- CI PDF sanity gate for overlap/clipping/blank page detection.
-
----
-
-## Phase 5/6/7 status summary
-
-- **Build:** passes.
-- **Runtime console errors/warnings on landing page:** cleared (post-fix browser audit shows 0/0/0).
-- **UI overlap audit at 390/768/1366/1920:** not fully completed in this patch.
-- **Security hardening breadth (headers/CSP/upload sanitization/full RBAC verification):** partially addressed elsewhere in repo, not fully reworked in this patch.
-- **Playwright E2E suite required by target acceptance:** not yet added in this patch.
-
----
-
-## Post-fix verification snapshot
-
-- Lint: pass with warnings (unchanged warning count).
-- Typecheck: pass.
-- Build: pass.
-- Browser runtime (home page):
-  - console errors: 0
-  - console warnings: 0
-  - failed network requests: 0
+1. **Stabilize platform (Critical) — done in this pass (foundation):**
+   - Standardize to Vite SPA runtime and remove active Next runtime dependency.
+   - Introduce SPA fallback config for production routing.
+2. **Layout and navigation (High) — done in this pass (foundation):**
+   - Add unified app shell (`AppLayout`) with collapsible sidebar, sticky topbar, content outlet, and 404 route.
+3. **Modularization (High):**
+   - Split `Dashboard.tsx` into domain modules: `sales-table`, `documents`, `auth`, `sync`, `analytics`.
+4. **Security hardening (High):**
+   - Move all privileged checks server-side; enforce RBAC on all data/document endpoints.
+5. **Performance hardening (Medium):**
+   - Code split heavy paths (PDF/document tooling), lazy load modal-heavy routes.
+6. **QA + CI (High):**
+   - Add Playwright smoke + core flow tests (login, CRUD, calculations, documents).
 

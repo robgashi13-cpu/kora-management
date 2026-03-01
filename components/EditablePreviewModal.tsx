@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { X, Download, Printer, Loader2, Save, RotateCcw, AlertCircle, Check, ArrowLeft } from 'lucide-react';
-import { CarSale, ContractType } from '@/app/types';
+import { CarSale, ContractType } from '@/src/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';

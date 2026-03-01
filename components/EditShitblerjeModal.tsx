@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { X, FileText, ArrowLeft, Eye } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
-import { CarSale, ShitblerjeOverrides, ContractType } from '@/app/types';
+import { CarSale, ShitblerjeOverrides, ContractType } from '@/src/types';
 import { motion } from 'framer-motion';
 import EditablePreviewModal from './EditablePreviewModal';
 import InvoiceModal from './InvoiceModal';

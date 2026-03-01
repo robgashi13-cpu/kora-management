@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 
 const ADMIN_PROFILE = 'Robert';
 

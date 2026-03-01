@@ -14,7 +14,7 @@ import {
   Plus,
   Minus
 } from 'lucide-react';
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface GroupManagerProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CarSale, ContractType } from '@/app/types';
+import { CarSale, ContractType } from '@/src/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
 import { PdfTemplateEntry, sanitizePdfTemplateBody } from './PdfTemplateBuilder';

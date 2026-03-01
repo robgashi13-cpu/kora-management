@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
 import StampImage from './StampImage';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
