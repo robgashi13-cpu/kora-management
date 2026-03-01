@@ -967,7 +967,7 @@ button:active,
   overflow: auto;
   min-height: 0;
   flex: 1;
-  padding-bottom: max(80px, calc(80px + var(--sab)));
+  padding-bottom: clamp(10px, 2.5vw, 14px);
 }
 
 .app-mobile-nav {

@@ -4,7 +4,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Dashboard from '../components/Dashboard';
 import '../app/globals.css';
 import AppLayout from './AppLayout';
-import PlaceholderPage from './PlaceholderPage';
 import NotFoundPage from './NotFoundPage';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -15,8 +14,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
-            <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+            <Route path="/reports" element={<Navigate to="/" replace />} />
+            <Route path="/settings" element={<Navigate to="/" replace />} />
             <Route path="/home" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
