@@ -918,6 +918,7 @@ button:active,
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  min-height: 100svh;
 }
 
 .app-title {
@@ -957,27 +958,30 @@ button:active,
   z-index: 30;
   border-bottom: 1px solid hsl(var(--border));
   background: rgba(255, 255, 255, 0.86);
-  padding: 16px 20px;
+  padding: max(12px, calc(12px + var(--sat))) clamp(12px, 4vw, 20px) 12px;
   backdrop-filter: saturate(140%) blur(14px);
 }
 
 .app-content {
-  padding: 12px;
+  padding: clamp(10px, 2.5vw, 14px);
   overflow: auto;
   min-height: 0;
   flex: 1;
-  padding-bottom: max(16px, calc(16px + var(--sab)));
+  padding-bottom: max(80px, calc(80px + var(--sab)));
 }
 
 .app-mobile-nav {
-  position: sticky;
+  position: fixed;
   bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: clamp(6px, 1.6vw, 10px);
   border-top: 1px solid hsl(var(--border));
   background: rgba(255, 255, 255, 0.92);
-  padding: 8px 12px max(8px, calc(8px + var(--sab)));
+  padding: 8px max(10px, calc(10px + var(--sal))) max(10px, calc(10px + var(--sab))) max(10px, calc(10px + var(--sar)));
   backdrop-filter: saturate(120%) blur(10px);
 }
 
@@ -992,6 +996,7 @@ button:active,
   font-size: 11px;
   font-weight: 600;
   min-height: 46px;
+  min-height: 48px;
 }
 
 .mobile-nav-item-active {
@@ -1001,7 +1006,7 @@ button:active,
 
 @media (max-width: 768px) {
   .app-topbar {
-    padding: 12px 16px;
+    padding-top: max(10px, calc(10px + var(--sat)));
   }
 
   .app-title {
@@ -1009,6 +1014,24 @@ button:active,
   }
 
   .app-content {
-    padding: 12px;
+    padding-inline: clamp(8px, 2.8vw, 14px);
   }
+}
+
+.mobile-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+  padding-bottom: max(0.75rem, calc(0.75rem + var(--sab)));
+  background: rgba(248, 250, 252, 0.95);
+  border-top: 1px solid hsl(var(--border));
+  backdrop-filter: blur(8px);
+}
+
+.mobile-sticky-actions button {
+  min-height: 44px;
 }

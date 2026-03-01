@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { X, ArrowLeft, FileText, Eye } from 'lucide-react';
+import { X, ArrowLeft, FileText, Eye, Edit, FolderOpen, MoreHorizontal, Download, Printer } from 'lucide-react';
 import { CarSale, Attachment } from '@/src/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
@@ -13,6 +13,7 @@ interface Props {
     sale: CarSale | null;
     onClose: () => void;
     isAdmin?: boolean;
+    onEdit?: (sale: CarSale) => void;
 }
 
 const getBankFee = (price: number) => {
@@ -27,10 +28,11 @@ const calculateBalance = (sale: CarSale) =>
 const calculateProfit = (sale: CarSale) => 
     ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }: Props) {
+export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, onEdit }: Props) {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [pdfMessage, setPdfMessage] = useState<string | null>(null);
+    const [activeFile, setActiveFile] = useState<Attachment | null>(null);
 
     if (!isOpen || !sale) return null;
 
@@ -122,6 +124,28 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
         </div>
     );
 
+    const handleDownloadAttachment = async (file: Attachment) => {
+        if (!file.data) return;
+        const response = await fetch(file.data);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name || 'document';
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handlePrintAttachment = async (file: Attachment) => {
+        if (!file.data) return;
+        const response = await fetch(file.data);
+        const blob = await response.blob();
+        const openResult = await openPdfBlob(blob);
+        if (!openResult.opened) {
+            window.print();
+        }
+    };
+
     const FileList = ({ files, label }: { files: Attachment[] | undefined; label: string }) => (
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 h-full">
             <label className="text-[11px] uppercase text-slate-500 font-bold block mb-2">{label}</label>
@@ -130,14 +154,19 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                     files.map((file, idx) => (
                         <div
                             key={idx}
-                            className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-50 transition-all"
-                            onClick={() => viewFile(file)}
+                            className="flex items-center justify-between gap-2 bg-white p-2 rounded-lg border border-slate-200"
                         >
-                            <div className="flex items-center gap-2 overflow-hidden">
+                            <button type="button" className="flex items-center gap-2 overflow-hidden min-w-0 text-left" onClick={() => viewFile(file)}>
                                 <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
                                 <span className="text-xs text-slate-600 truncate">{file.name}</span>
-                            </div>
-                            <Eye className="w-3 h-3 text-slate-400" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveFile(file)}
+                                className="min-h-[44px] px-3 text-xs font-semibold rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50"
+                            >
+                                Actions
+                            </button>
                         </div>
                     ))
                 ) : (
@@ -324,6 +353,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
 
                         {/* Attachments */}
                         <Section title="Attachments">
+                            <div data-documents-section="true" />
                             <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                                 <FileList files={sale.bankReceipts} label="Bank Receipts" />
                                 <FileList files={sale.bankInvoices} label="Bank Invoices" />
@@ -351,7 +381,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                     </div>
 
                     {/* Footer */}
-                    <div className="flex justify-end gap-3 px-5 py-4 border-t border-slate-200 bg-slate-50">
+                    <div className="hidden md:flex justify-end gap-3 px-5 py-4 border-t border-slate-200 bg-slate-50">
                         <button
                             type="button"
                             onClick={onClose}
@@ -360,8 +390,33 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false }
                             Close
                         </button>
                     </div>
+                    <div className="mobile-sticky-actions md:hidden" aria-label="Sale actions">
+                        <button type="button" onClick={() => onEdit?.(sale)} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
+                            <Edit className="w-4 h-4 mx-auto mb-1" />Edit
+                        </button>
+                        <button type="button" onClick={() => document.querySelector('[data-documents-section="true"]')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+                            <FolderOpen className="w-4 h-4 mx-auto mb-1" />Documents
+                        </button>
+                        <button type="button" onClick={handleViewPdf} disabled={isGeneratingPdf} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+                            <MoreHorizontal className="w-4 h-4 mx-auto mb-1" />PDF
+                        </button>
+                    </div>
                 </motion.div>
             </div>
+
+
+            {activeFile && (
+                <div className="fixed inset-0 z-[120] bg-slate-900/55 p-4 flex items-end md:items-center justify-center" onClick={() => setActiveFile(null)}>
+                    <div className="w-full max-w-sm rounded-t-2xl md:rounded-2xl bg-white border border-slate-200 p-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-12 h-1.5 rounded-full bg-slate-200 mx-auto md:hidden" />
+                        <p className="text-sm font-semibold text-slate-900 truncate">{activeFile.name}</p>
+                        <button type="button" className="w-full min-h-[44px] rounded-xl border border-slate-200" onClick={() => { viewFile(activeFile); setActiveFile(null); }}><Eye className="w-4 h-4 inline mr-2" />Preview</button>
+                        <button type="button" className="w-full min-h-[44px] rounded-xl border border-slate-200" onClick={() => { handleDownloadAttachment(activeFile); setActiveFile(null); }}><Download className="w-4 h-4 inline mr-2" />Download</button>
+                        <button type="button" className="w-full min-h-[44px] rounded-xl border border-slate-200" onClick={() => { handlePrintAttachment(activeFile); setActiveFile(null); }}><Printer className="w-4 h-4 inline mr-2" />Print</button>
+                        <button type="button" className="w-full min-h-[44px] rounded-xl bg-slate-900 text-white" onClick={() => setActiveFile(null)}>Close</button>
+                    </div>
+                </div>
+            )}
 
             {/* Image Preview */}
             {previewImage && (
