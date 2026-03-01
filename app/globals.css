@@ -907,3 +907,70 @@ button:active,
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+/* Website shell */
+.app-shell {
+  display: flex;
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  padding: 16px;
+  border-right: 1px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(140%) blur(10px);
+  transition: width 180ms ease;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.nav-item:hover {
+  background-color: #f1f5f9;
+}
+
+.nav-item-active {
+  background-color: #0f172a;
+  color: #fff;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid hsl(var(--border));
+  background: rgba(248, 250, 252, 0.92);
+  padding: 16px 20px;
+  backdrop-filter: blur(8px);
+}
+
+.app-content {
+  padding: 20px;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100% !important;
+    height: auto;
+    position: static;
+    border-right: 0;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
-import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus } from '@/app/types';
+import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus } from '@/src/types';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { CarSale, ContractType } from '@/app/types';
+import { CarSale, ContractType } from '@/src/types';
 import { X, Printer, Loader2, AlertCircle } from 'lucide-react';
 import ContractDocument from './ContractDocument';
 import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';

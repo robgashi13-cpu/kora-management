@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { X } from 'lucide-react';
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 interface InvoicePriceModalProps {

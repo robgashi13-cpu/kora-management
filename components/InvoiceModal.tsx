@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { InvoicePriceSource } from './invoicePricing';

@@ -1,6 +1,6 @@
 'use client';
 
-import { CarSale } from '@/app/types';
+import { CarSale } from '@/src/types';
 
 export const applyShitblerjeOverrides = (sale: CarSale): CarSale => {
     const overrides = sale.shitblerjeOverrides;
