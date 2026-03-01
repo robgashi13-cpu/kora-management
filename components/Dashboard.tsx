@@ -3843,13 +3843,15 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[width,opacity,transform] duration-200 ease-out will-change-[width,opacity,transform] origin-left ${isSidebarCollapsed ? 'w-0 -translate-x-2 opacity-0 pointer-events-none' : 'w-64 translate-x-0 opacity-100'}`}>
-                <SidebarContent />
-            </aside>
+            {!isFormOpen && (
+                <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[width,opacity,transform] duration-200 ease-out will-change-[width,opacity,transform] origin-left ${isSidebarCollapsed ? 'w-0 -translate-x-2 opacity-0 pointer-events-none' : 'w-64 translate-x-0 opacity-100'}`}>
+                    <SidebarContent />
+                </aside>
+            )}
 
             {/* Mobile Drawer */}
             <AnimatePresence>
-                {isMobileMenuOpen && (
+                {!isFormOpen && isMobileMenuOpen && (
                     <>
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -3872,6 +3874,7 @@ export default function Dashboard() {
             </AnimatePresence>
 
             <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
+                {!isFormOpen && (
                 <header className={`backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-40 transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
@@ -3948,16 +3951,6 @@ export default function Dashboard() {
                                     <ChevronDown className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
                                 </div>
 
-                                <button
-                                    onClick={() => openSaleForm(null)}
-                                    aria-label="Create new sale"
-                                    className={`ui-control px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 border ${theme === 'dark'
-                                        ? 'bg-white text-black border-white hover:bg-slate-100 shadow-lg shadow-black/25'
-                                        : 'bg-black text-white border-black hover:bg-slate-900 shadow-lg shadow-slate-900/20'}`}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="hidden lg:inline">New Sale</span>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -3978,8 +3971,9 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </header>
+                )}
 
-                <main className={`flex-1 overflow-hidden bg-slate-50/70 p-2.5 md:p-6 flex flex-col relative min-h-0`}>
+                <main className={`flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
                     {view !== 'sale_form' && (
                         <>
 
@@ -5444,14 +5438,14 @@ export default function Dashboard() {
             <AnimatePresence>
                 {view === 'sale_form' && (
                     <motion.div
-                        className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
+                        className="fixed inset-0 z-[80] flex items-stretch justify-stretch bg-white"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                     >
                         <motion.div
-                            className="relative w-full max-w-5xl max-h-[85vh] bg-white border border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+                            className="relative w-full h-full bg-white flex flex-col overflow-hidden"
                             initial={{ opacity: 0, y: 24 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 24 }}
@@ -5466,7 +5460,7 @@ export default function Dashboard() {
                             >
                                 <X className="w-5 h-5 mx-auto" />
                             </button>
-                            <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-slate-200 bg-slate-50/80">
+                            <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-slate-200 bg-slate-50/90">
                                 <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
                                     <ArrowRight className="w-4 h-4 rotate-180" />
                                     {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
@@ -5482,7 +5476,7 @@ export default function Dashboard() {
                                             <span>View Sale</span>
                                         </button>
                                     )}
-                                    <div className="w-10 sm:w-20" />
+                                    <div className="w-8 sm:w-20" />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto scroll-container bg-white">
