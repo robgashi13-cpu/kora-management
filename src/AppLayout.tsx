@@ -11,8 +11,8 @@ export default function AppLayout() {
   return (
     <div className="app-shell min-h-dvh bg-slate-50 text-slate-900">
       <header className="app-topbar">
-        <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-          <h1 className="text-base font-semibold tracking-tight text-slate-900 md:text-lg">KorAuto Management</h1>
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-3 md:items-center">
+          <h1 className="app-title">KorAuto Management</h1>
           <nav className="hidden items-center gap-2 md:flex" aria-label="Primary">
             {navItems.map(({ to, label, icon: Icon }) => (
               <NavLink
