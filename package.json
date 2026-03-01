@@ -8,7 +8,8 @@
     "build:dev": "BROWSERSLIST_IGNORE_OLD_DATA=true BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true vite build --mode development",
     "start": "BROWSERSLIST_IGNORE_OLD_DATA=true BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true vite preview --port 3005",
     "lint": "eslint",
-    "check": "npm run lint && npm run build"
+    "check": "npm run lint && npm run build",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",
@@ -44,7 +45,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@playwright/test": "^1.54.2"
   },
   "engines": {
     "node": ">=20.9.0"
