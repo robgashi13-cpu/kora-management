@@ -911,18 +911,7 @@ button:active,
 /* Website shell */
 .app-shell {
   display: flex;
-}
-
-.app-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  padding: 16px;
-  border-right: 1px solid hsl(var(--border));
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: saturate(140%) blur(10px);
-  transition: width 180ms ease;
-  flex-shrink: 0;
+  flex-direction: column;
 }
 
 .nav-item {
@@ -930,13 +919,15 @@ button:active,
   align-items: center;
   gap: 10px;
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   font-size: 14px;
   color: #334155;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .nav-item:hover {
   background-color: #f1f5f9;
+  transform: translateY(-1px);
 }
 
 .nav-item-active {
@@ -947,30 +938,57 @@ button:active,
 .app-topbar {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 30;
   border-bottom: 1px solid hsl(var(--border));
-  background: rgba(248, 250, 252, 0.92);
+  background: rgba(255, 255, 255, 0.86);
   padding: 16px 20px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: saturate(140%) blur(14px);
 }
 
 .app-content {
-  padding: 20px;
+  padding: 16px;
   overflow: auto;
   min-height: 0;
   flex: 1;
+  padding-bottom: max(20px, calc(20px + var(--sab)));
+}
+
+.app-mobile-nav {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  border-top: 1px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.92);
+  padding: 8px 12px max(8px, calc(8px + var(--sab)));
+  backdrop-filter: saturate(120%) blur(10px);
+}
+
+.mobile-nav-item {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 12px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.mobile-nav-item-active {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 @media (max-width: 768px) {
-  .app-shell {
-    flex-direction: column;
+  .app-topbar {
+    padding: 12px 16px;
   }
 
-  .app-sidebar {
-    width: 100% !important;
-    height: auto;
-    position: static;
-    border-right: 0;
-    border-bottom: 1px solid hsl(var(--border));
+  .app-content {
+    padding: 12px;
   }
 }

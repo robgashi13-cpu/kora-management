@@ -1,6 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Settings, FileText, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useState } from 'react';
+import { LayoutDashboard, Settings, FileText } from 'lucide-react';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -9,40 +8,44 @@ const navItems = [
 ];
 
 export default function AppLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
     <div className="app-shell min-h-dvh bg-slate-50 text-slate-900">
-      <aside className={`app-sidebar ${collapsed ? 'w-20' : 'w-64'}`}>
-        <button
-          className="ui-control mb-6 inline-flex w-full items-center justify-center border border-slate-200 bg-white text-slate-700"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label="Toggle sidebar"
-        >
-          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-        </button>
-        <nav className="space-y-2">
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
-            >
-              <Icon size={18} />
-              {!collapsed && <span>{label}</span>}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
+      <header className="app-topbar">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+          <h1 className="text-base font-semibold tracking-tight text-slate-900 md:text-lg">KorAuto Management</h1>
+          <nav className="hidden items-center gap-2 md:flex" aria-label="Primary">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+      </header>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="app-topbar">
-          <h1 className="text-base font-semibold tracking-tight">KorAuto Management</h1>
-        </header>
-        <main className="app-content">
-          <Outlet />
-        </main>
-      </div>
+      <main className="app-content">
+        <Outlet />
+      </main>
+
+      <nav className="app-mobile-nav md:hidden" aria-label="Primary mobile">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) => `mobile-nav-item ${isActive ? 'mobile-nav-item-active' : ''}`}
+          >
+            <Icon size={16} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 }

@@ -494,6 +494,9 @@ export default function Dashboard() {
     const [isSalesGroupOpen, setIsSalesGroupOpen] = useState(true);
     const [isOperationsGroupOpen, setIsOperationsGroupOpen] = useState(true);
     const [isFinanceGroupOpen, setIsFinanceGroupOpen] = useState(true);
+    const [balanceDueSearch, setBalanceDueSearch] = useState('');
+    const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
+    const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
@@ -3122,15 +3125,16 @@ export default function Dashboard() {
         return { sale, searchBlob };
     }), [sales]);
 
+    const canAccessSale = useCallback((sale: CarSale) => {
+        if (isAdmin) return true;
+        const normalizedUser = normalizeProfileName(userProfile);
+        const normalizedSoldBy = normalizeProfileName(sale.soldBy);
+        const normalizedSellerName = normalizeProfileName(sale.sellerName);
+        return normalizedSoldBy === normalizedUser || normalizedSellerName === normalizedUser;
+    }, [isAdmin, userProfile]);
+
     const filteredSales = React.useMemo(() => searchableSales.map(({ sale: s, searchBlob }) => ({ s, searchBlob })).filter(({ s, searchBlob }) => {
-        // Restrict visibility for non-admin users to their own sales
-        if (!isAdmin) {
-            const normalizedUser = normalizeProfileName(userProfile);
-            const normalizedSoldBy = normalizeProfileName(s.soldBy);
-            const normalizedSellerName = normalizeProfileName(s.sellerName);
-            const canAccessOwnRecord = normalizedSoldBy === normalizedUser || normalizedSellerName === normalizedUser;
-            if (!canAccessOwnRecord) return false;
-        }
+        if (!canAccessSale(s)) return false;
 
 
         if (activeCategory === 'SALES') {
@@ -3182,7 +3186,7 @@ export default function Dashboard() {
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         }
         return 0;
-    }), [searchableSales, userProfile, activeCategory, deferredSearchTerm, sortBy, sortDir, isAdmin]);
+    }), [searchableSales, canAccessSale, activeCategory, deferredSearchTerm, sortBy, sortDir, isAdmin]);
     const soldInvoiceSales = React.useMemo(
         () => filteredSales.filter(sale => (sale.soldPrice || 0) > 0 || sale.status === 'Completed'),
         [filteredSales]
@@ -3224,12 +3228,55 @@ export default function Dashboard() {
         [transportSales]
     );
 
-    const balanceDueSales = React.useMemo(
-        () => filteredSales
-            .filter((sale) => calculateBalance(sale) > 0)
+    const shippedBalanceSales = React.useMemo(
+        () => sales
+            .filter((sale) => canAccessSale(sale) && sale.status === 'Shipped' && calculateBalance(sale) > 0)
             .sort((a, b) => calculateBalance(b) - calculateBalance(a)),
-        [filteredSales]
+        [sales, canAccessSale]
     );
+
+    const soldBalanceSales = React.useMemo(
+        () => sales
+            .filter((sale) => {
+                if (!canAccessSale(sale)) return false;
+                const isSold = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
+                return isSold && calculateBalance(sale) > 0;
+            })
+            .sort((a, b) => calculateBalance(b) - calculateBalance(a)),
+        [sales, canAccessSale]
+    );
+
+    const shippedOnlyBalanceSales = React.useMemo(() => {
+        const soldIds = new Set(soldBalanceSales.map((sale) => sale.id));
+        return shippedBalanceSales.filter((sale) => !soldIds.has(sale.id));
+    }, [shippedBalanceSales, soldBalanceSales]);
+
+    const balanceDueSales = React.useMemo(() => {
+        const map = new Map<string, CarSale>();
+        soldBalanceSales.forEach((sale) => map.set(sale.id, sale));
+        shippedOnlyBalanceSales.forEach((sale) => map.set(sale.id, sale));
+        return Array.from(map.values()).sort((a, b) => calculateBalance(b) - calculateBalance(a));
+    }, [soldBalanceSales, shippedOnlyBalanceSales]);
+
+    const shippedBalanceTotal = React.useMemo(() => shippedOnlyBalanceSales.reduce((sum, sale) => sum + calculateBalance(sale), 0), [shippedOnlyBalanceSales]);
+    const soldBalanceTotal = React.useMemo(() => soldBalanceSales.reduce((sum, sale) => sum + calculateBalance(sale), 0), [soldBalanceSales]);
+    const grandBalanceTotal = shippedBalanceTotal + soldBalanceTotal;
+
+    const balanceDueRows = React.useMemo(() => {
+        const shippedRows = shippedOnlyBalanceSales.map((sale) => ({ sale, scopeStatus: 'shipped' as const }));
+        const soldRows = soldBalanceSales.map((sale) => ({ sale, scopeStatus: 'sold' as const }));
+        const merged = [...soldRows, ...shippedRows];
+        const term = balanceDueSearch.trim().toLowerCase();
+        return merged
+            .filter((row) => {
+                if (balanceDueStatusFilter !== 'all' && row.scopeStatus !== balanceDueStatusFilter) return false;
+                if (!term) return true;
+                const s = row.sale;
+                const blob = [s.brand, s.model, s.plateNumber, s.vin, s.id].filter(Boolean).join(' ').toLowerCase();
+                return blob.includes(term);
+            })
+            .sort((a, b) => balanceDueSort === 'desc' ? calculateBalance(b.sale) - calculateBalance(a.sale) : calculateBalance(a.sale) - calculateBalance(b.sale));
+    }, [soldBalanceSales, shippedOnlyBalanceSales, balanceDueSearch, balanceDueStatusFilter, balanceDueSort]);
 
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
@@ -4964,24 +5011,36 @@ export default function Dashboard() {
                             ) : view === 'balance_due' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
-                                    <p className="text-xs text-slate-500 mb-3">Cars that are not fully paid by client.</p>
-                                    {balanceDueSales.length === 0 ? (
-                                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                                            No outstanding balances.
-                                        </div>
+                                    <p className="text-xs text-slate-500 mb-3">Aggregated for sold and shipped cars with no double-counting in grand total.</p>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
+                                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
+                                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
+                                    </div>
+
+                                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
+                                        <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                                        <select value={balanceDueStatusFilter} onChange={(e) => setBalanceDueStatusFilter(e.target.value as 'all' | 'shipped' | 'sold')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All statuses</option><option value="shipped">Shipped only</option><option value="sold">Sold only</option></select>
+                                        <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
+                                    </div>
+
+                                    {balanceDueRows.length === 0 ? (
+                                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
                                     ) : (
                                         <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                            <div className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                <div>Car</div>
-                                                <div>VIN / Plate</div>
-                                                <div className="text-right">Balance Due</div>
+                                            <div className="grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                             </div>
                                             <div className="divide-y divide-slate-100">
-                                                {balanceDueSales.map((sale) => (
-                                                    <div key={sale.id} data-list-row="true" className="grid grid-cols-[1.3fr_1fr_130px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
+                                                {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                    <div key={`${scopeStatus}-${sale.id}`} data-list-row="true" className="grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
                                                         <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
+                                                        <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
                                                         <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                         <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
+                                                        <div className="text-slate-600">{sale.shippingDate || '-'}</div>
+                                                        <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
                                                     </div>
                                                 ))}
                                             </div>

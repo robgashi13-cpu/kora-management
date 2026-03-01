@@ -104,3 +104,29 @@ Likely heavy runtime contributors:
 6. **QA + CI (High):**
    - Add Playwright smoke + core flow tests (login, CRUD, calculations, documents).
 
+
+## 7) March 2026 UI/Nav/Balance-Due remediation update
+
+### Detected stack
+- React 18 + TypeScript + Vite SPA.
+- React Router (BrowserRouter) with route-level app shell in `src/main.tsx` and `src/AppLayout.tsx`.
+
+### Task 1 — nav restoration (Dashboard / Reports / Settings)
+- Restored primary nav structure/order to `Dashboard`, `Reports`, `Settings` using route-native `NavLink` active behavior.
+- Repositioned nav from sidebar shell to topbar (desktop) + bottom tab rail (mobile) while keeping the same routing targets (`/`, `/reports`, `/settings`).
+- Commit/file provenance checked from `git log` over `src/AppLayout.tsx` and `src/main.tsx` (layout refactor commit `7f70741`).
+
+### Task 3 — Balance Due aggregation correction
+- Formula reused from existing logic path: `calculateBalance(sale)` in `components/Dashboard.tsx`.
+- Scope now includes sold + shipped with no double-counting in grand total:
+  - `sold`: `status === 'Completed' || soldPrice > 0`
+  - `shipped-only`: `status === 'Shipped'` excluding any IDs already included in sold set
+- Added summary cards (grand total, shipped subtotal+count, sold subtotal+count).
+- Added searchable/filterable/sortable table with status and ship/sale-related date columns.
+
+### Screenshots
+- See artifacts captured during QA run:
+  - `artifacts/dashboard-390.png`
+  - `artifacts/dashboard-768.png`
+  - `artifacts/dashboard-1366.png`
+  - `artifacts/dashboard-1920.png`
