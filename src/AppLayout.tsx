@@ -9,8 +9,8 @@ const navItems = [
 
 export default function AppLayout() {
   return (
-    <div className="app-shell min-h-dvh bg-slate-50 text-slate-900">
-      <header className="app-topbar">
+    <div className="app-shell min-h-dvh bg-slate-50 text-slate-900" data-mobile-shell="true">
+      <header className="app-topbar" role="banner">
         <div className="flex min-w-0 flex-1 items-start justify-between gap-3 md:items-center">
           <h1 className="app-title">KorAuto Management</h1>
           <nav className="hidden items-center gap-2 md:flex" aria-label="Primary">
@@ -29,7 +29,7 @@ export default function AppLayout() {
         </div>
       </header>
 
-      <main className="app-content">
+      <main className="app-content" role="main">
         <Outlet />
       </main>
 

@@ -356,12 +356,12 @@ export default function EditablePreviewModal({
         : 'Full Contract - Shitblerje';
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200"
+        className="bg-white w-full max-w-5xl h-[100dvh] md:h-[95vh] rounded-none md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border border-slate-200"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -417,7 +417,7 @@ export default function EditablePreviewModal({
               <button
                 onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
               >
                 {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
                 {isDownloading ? 'Generating...' : 'Download'}
@@ -425,7 +425,7 @@ export default function EditablePreviewModal({
               <button
                 onClick={handlePrint}
                 disabled={isDownloading}
-                className="flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm disabled:opacity-50"
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm disabled:opacity-50"
               >
                 <Printer className="w-3 h-3" />
                 Print
@@ -453,7 +453,7 @@ export default function EditablePreviewModal({
         </div>
 
         {/* Document Preview */}
-        <div className="flex-1 overflow-auto scroll-container bg-slate-100 p-4 md:p-8">
+        <div className="flex-1 overflow-auto scroll-container bg-slate-100 p-2 pb-24 md:p-8 md:pb-8">
           <div className="flex justify-center">
             {documentType === 'invoice' ? (
               <InvoiceDocument
@@ -478,6 +478,17 @@ export default function EditablePreviewModal({
               />
             )}
           </div>
+        </div>
+        <div className="mobile-sticky-actions md:hidden" aria-label="PDF preview actions">
+          <button onClick={handleDownload} disabled={isDownloading} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
+            <Download className="w-4 h-4 mx-auto mb-1" />{isDownloading ? 'Generating...' : 'Download'}
+          </button>
+          <button onClick={handlePrint} disabled={isDownloading} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+            <Printer className="w-4 h-4 mx-auto mb-1" />Print
+          </button>
+          <button onClick={onClose} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+            <X className="w-4 h-4 mx-auto mb-1" />Close
+          </button>
         </div>
       </motion.div>
 
