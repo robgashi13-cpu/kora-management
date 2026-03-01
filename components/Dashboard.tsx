@@ -418,13 +418,12 @@ const repairMercedesB200Visibility = (salesToRepair: CarSale[]) => {
     const repaired = salesToRepair.map((sale) => {
         if (!isMercedesB200Sale(sale)) return sale;
 
-        const nextStatus = ['Shipped', 'Inspection', 'Autosallon'].includes(sale.status) ? 'Completed' : sale.status;
         const nextSoldBy = normalizeProfileName(sale.soldBy || sale.sellerName || ADMIN_PROFILE);
         const nextSellerName = normalizeProfileName(sale.sellerName || sale.soldBy || ADMIN_PROFILE);
 
         const updatedSale = {
             ...sale,
-            status: nextStatus,
+            status: 'Shipped',
             soldBy: nextSoldBy,
             sellerName: nextSellerName
         };
@@ -4400,7 +4399,7 @@ export default function Dashboard() {
 
                                         {/* Footer Totals */}
                                         <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                            <div className="p-3 text-right col-span-8 text-slate-600">Totals</div>
+                                            <div className="p-3 text-right col-span-8 text-slate-600"></div>
                                             {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
                                             <div className="p-3 text-right font-mono financial-positive-text">€{totalSold.toLocaleString()}</div>
                                             <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
@@ -4990,7 +4989,7 @@ export default function Dashboard() {
                                                             <summary className="cursor-pointer">Before / After / Field Diff</summary>
                                                             <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ diff: log.field_changes, before: log.before_data, after: log.after_data, metadata: log.metadata, route: log.route, occurred_at: log.occurred_at }, null, 2)}</pre>
                                                         </details>
-                                                    </div>
+                                                    </button>
                                                 ))}
                                             </div>
                                             <div className="mt-3 flex items-center justify-end gap-2">
@@ -5028,14 +5027,20 @@ export default function Dashboard() {
                                             </div>
                                             <div className="divide-y divide-slate-100">
                                                 {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                    <div key={`${scopeStatus}-${sale.id}`} data-list-row="true" className="grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
-                                                        <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
+                                                    <button
+                                                        key={`${scopeStatus}-${sale.id}`}
+                                                        type="button"
+                                                        data-list-row="true"
+                                                        onClick={() => handleSaleInteraction(sale)}
+                                                        className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
                                                         <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
                                                         <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                         <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
                                                         <div className="text-slate-600">{sale.shippingDate || '-'}</div>
                                                         <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
-                                                    </div>
+                                                    </button>
                                                 ))}
                                             </div>
                                         </div>

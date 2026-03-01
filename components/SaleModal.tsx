@@ -547,7 +547,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24, mass: 0.7 }}
             onClick={(e) => e.stopPropagation()}
-            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'bg-white border border-slate-200 w-[min(98vw,96rem)] max-w-[96rem] rounded-2xl shadow-2xl relative flex flex-col max-h-[calc(100vh-6rem)] min-h-0'}`}
+            className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'relative w-full h-full bg-white flex flex-col overflow-hidden min-h-0'}`}
         >
             {!hideHeader && (
                 <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
@@ -1032,11 +1032,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(3rem,env(safe-area-inset-top))]"
+            className="fixed inset-0 z-[120] flex items-stretch justify-stretch bg-white"
             onClick={handleBackdropClick}
         >
-            <div className="absolute inset-0 bg-slate-900/60" />
-            {previewOverlay}
+                        {previewOverlay}
             {Content}
             {documentMenu}
             {invoicePriceModal}
