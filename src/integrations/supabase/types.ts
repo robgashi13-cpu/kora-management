@@ -14,36 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      bank_transactions: {
-        Row: {
-          amount: number | null
-          category: string | null
-          created_at: string
-          date: string | null
-          description: string | null
-          id: string
-          last_edited_by: string | null
-        }
-        Insert: {
-          amount?: number | null
-          category?: string | null
-          created_at?: string
-          date?: string | null
-          description?: string | null
-          id: string
-          last_edited_by?: string | null
-        }
-        Update: {
-          amount?: number | null
-          category?: string | null
-          created_at?: string
-          date?: string | null
-          description?: string | null
-          id?: string
-          last_edited_by?: string | null
-        }
-        Relationships: []
-      }
       sales: {
         Row: {
           amount_paid_bank: number | null
@@ -163,13 +133,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      reassign_profile_and_delete: {
-        Args: {
-          from_profile: string
-          to_profile: string
-        }
-        Returns: void
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
