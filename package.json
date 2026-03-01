@@ -23,6 +23,7 @@
     "@vitejs/plugin-react-swc": "^4.2.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "fflate": "^0.8.2",
     "framer-motion": "^12.23.25",
     "html2pdf.js": "^0.12.1",
     "lovable-tagger": "^1.1.13",
