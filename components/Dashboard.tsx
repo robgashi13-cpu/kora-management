@@ -401,6 +401,8 @@ const INITIAL_SALES: CarSale[] = [];
 const UI_STATE_STORAGE_KEY = 'dashboard_ui_state_v1';
 const SESSION_PROFILE_STORAGE_KEY = 'session_profile';
 const ROW_TAP_MOVE_THRESHOLD = 10;
+const SOLD_ROW_SWIPE_REVEAL_THRESHOLD = 72;
+const SOLD_ROW_ACTION_WIDTH = 136;
 const AUTO_SYNC_INTERVAL_MS = 5000;
 const AUTO_SYNC_IDLE_PULL_INTERVAL_MS = 45000;
 const AUTO_SYNC_QUOTA_BACKOFF_MS = 120000;
@@ -669,6 +671,7 @@ export default function Dashboard() {
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [openSoldSwipeRowId, setOpenSoldSwipeRowId] = useState<string | null>(null);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
     const forceMobileLayout = false;
     const isFormOpen = view === 'sale_form';
@@ -750,6 +753,11 @@ export default function Dashboard() {
         if (hasMovedPointer) {
             event.preventDefault();
             event.stopPropagation();
+        }
+
+        const target = event.target as HTMLElement | null;
+        if (!target?.closest('[data-sold-swipe-row="true"]')) {
+            setOpenSoldSwipeRowId(null);
         }
     };
 
@@ -4519,6 +4527,35 @@ export default function Dashboard() {
                                                                             className="relative border-b border-slate-200"
                                                                         >
                                                                             {/* Background Actions (Swipe Left) */}
+                                                                            {isSoldSale && (
+                                                                                <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-slate-900">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={(event) => {
+                                                                                            event.stopPropagation();
+                                                                                            setOpenSoldSwipeRowId(null);
+                                                                                            openInvoice(sale, event);
+                                                                                        }}
+                                                                                        className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[10px] font-semibold text-white"
+                                                                                    >
+                                                                                        <FileText className="h-3.5 w-3.5" />
+                                                                                        Invoice
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={(event) => {
+                                                                                            event.stopPropagation();
+                                                                                            setOpenSoldSwipeRowId(null);
+                                                                                            handleMobileSaleClick(sale, true);
+                                                                                        }}
+                                                                                        className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/20 px-2.5 text-[10px] font-semibold text-white"
+                                                                                        aria-label="More actions"
+                                                                                    >
+                                                                                        <MoreHorizontal className="h-3.5 w-3.5" />
+                                                                                        More
+                                                                                    </button>
+                                                                                </div>
+                                                                            )}
                                                                             {!isSoldSale && (
                                                                                 <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
                                                                                     {groupingEnabled && sale.group && sale.status !== 'Completed' && (
@@ -4536,13 +4573,20 @@ export default function Dashboard() {
                                                                             {/* Foreground Card */}
                                                                             <motion.div
                                                                                 layout
-                                                                                drag={isSoldSale ? false : 'x'}
+                                                                                drag="x"
                                                                                 dragDirectionLock
                                                                                 dragConstraints={{ left: 0, right: 0 }}
                                                                                 dragElastic={{ left: 0.8, right: 0 }}
-                                                                                dragSnapToOrigin
+                                                                                dragSnapToOrigin={!isSoldSale}
                                                                                 onDragEnd={(e, { offset }) => {
-                                                                                    if (isSoldSale) return;
+                                                                                    if (isSoldSale) {
+                                                                                        if (offset.x < -SOLD_ROW_SWIPE_REVEAL_THRESHOLD) {
+                                                                                            setOpenSoldSwipeRowId(sale.id);
+                                                                                        } else if (offset.x > 36) {
+                                                                                            setOpenSoldSwipeRowId(null);
+                                                                                        }
+                                                                                        return;
+                                                                                    }
 
                                                                                     const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                                     if (offset.x < -165) {
@@ -4554,12 +4598,21 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
+                                                                                animate={isSoldSale ? { x: openSoldSwipeRowId === sale.id ? -SOLD_ROW_ACTION_WIDTH : 0 } : undefined}
+                                                                                transition={isSoldSale ? { duration: 0.16, ease: 'easeOut' } : undefined}
+                                                                                data-sold-swipe-row="true"
                                                                                 className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                 onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
-                                                                                onClick={() => handleMobileSaleClick(sale, isSoldSale)}
+                                                                                onClick={() => {
+                                                                                    if (isSoldSale && openSoldSwipeRowId === sale.id) {
+                                                                                        setOpenSoldSwipeRowId(null);
+                                                                                        return;
+                                                                                    }
+                                                                                    handleMobileSaleClick(sale, isSoldSale);
+                                                                                }}
                                                                                 onContextMenu={(e) => {
                                                                                     if (selectedIds.size > 0 && !isSoldSale) {
                                                                                         e.preventDefault();
@@ -4592,6 +4645,19 @@ export default function Dashboard() {
                                                                                                 sale.status === 'Inspection' ? 'text-amber-700' :
                                                                                                     'text-slate-500'
                                                                                             }`}>{sale.status}</span>
+                                                                                        {isSoldSale && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(event) => {
+                                                                                                    event.stopPropagation();
+                                                                                                    setOpenSoldSwipeRowId((current) => current === sale.id ? null : sale.id);
+                                                                                                }}
+                                                                                                className="inline-flex min-h-[32px] items-center justify-center rounded-md border border-slate-200 bg-white px-1.5 text-slate-600"
+                                                                                                aria-label="More actions"
+                                                                                            >
+                                                                                                <MoreHorizontal className="h-3.5 w-3.5" />
+                                                                                            </button>
+                                                                                        )}
                                                                                     </div>
                                                                                     <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
@@ -4674,6 +4740,35 @@ export default function Dashboard() {
                                                                                     animate={{ opacity: 1 }}
                                                                                     className="relative border-b border-slate-200"
                                                                                 >
+                                                                                    {isSoldSale && (
+                                                                                        <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-slate-900">
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(event) => {
+                                                                                                    event.stopPropagation();
+                                                                                                    setOpenSoldSwipeRowId(null);
+                                                                                                    openInvoice(sale, event);
+                                                                                                }}
+                                                                                                className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[10px] font-semibold text-white"
+                                                                                            >
+                                                                                                <FileText className="h-3.5 w-3.5" />
+                                                                                                Invoice
+                                                                                            </button>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(event) => {
+                                                                                                    event.stopPropagation();
+                                                                                                    setOpenSoldSwipeRowId(null);
+                                                                                                    handleMobileSaleClick(sale, true);
+                                                                                                }}
+                                                                                                className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/20 px-2.5 text-[10px] font-semibold text-white"
+                                                                                                aria-label="More actions"
+                                                                                            >
+                                                                                                <MoreHorizontal className="h-3.5 w-3.5" />
+                                                                                                More
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    )}
                                                                                     {!isSoldSale && (
                                                                                         <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
                                                                                             {groupingEnabled && sale.group && sale.status !== 'Completed' && (
@@ -4689,13 +4784,20 @@ export default function Dashboard() {
                                                                                     )}
                                                                                     <motion.div
                                                                                         layout
-                                                                                        drag={isSoldSale ? false : 'x'}
+                                                                                        drag="x"
                                                                                         dragDirectionLock
                                                                                         dragConstraints={{ left: 0, right: 0 }}
                                                                                         dragElastic={{ left: 0.8, right: 0 }}
-                                                                                        dragSnapToOrigin
+                                                                                        dragSnapToOrigin={!isSoldSale}
                                                                                         onDragEnd={(e, { offset }) => {
-                                                                                            if (isSoldSale) return;
+                                                                                            if (isSoldSale) {
+                                                                                            if (offset.x < -SOLD_ROW_SWIPE_REVEAL_THRESHOLD) {
+                                                                                                setOpenSoldSwipeRowId(sale.id);
+                                                                                            } else if (offset.x > 36) {
+                                                                                                setOpenSoldSwipeRowId(null);
+                                                                                            }
+                                                                                            return;
+                                                                                        }
 
                                                                                             const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                                             if (offset.x < -165) {
@@ -4707,12 +4809,21 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                        animate={isSoldSale ? { x: openSoldSwipeRowId === sale.id ? -SOLD_ROW_ACTION_WIDTH : 0 } : undefined}
+                                                                                        transition={isSoldSale ? { duration: 0.16, ease: 'easeOut' } : undefined}
+                                                                                        data-sold-swipe-row="true"
+                                                                                className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                         onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
-                                                                                        onClick={() => handleMobileSaleClick(sale, isSoldSale)}
+                                                                                        onClick={() => {
+                                                                                    if (isSoldSale && openSoldSwipeRowId === sale.id) {
+                                                                                        setOpenSoldSwipeRowId(null);
+                                                                                        return;
+                                                                                    }
+                                                                                    handleMobileSaleClick(sale, isSoldSale);
+                                                                                }}
                                                                                         onContextMenu={(e) => {
                                                                                             if (selectedIds.size > 0 && !isSoldSale) {
                                                                                                 e.preventDefault();
@@ -4788,6 +4899,35 @@ export default function Dashboard() {
                                                         animate={{ opacity: 1 }}
                                                         className="relative border-b border-slate-200"
                                                     >
+                                                        {isSoldSale && (
+                                                            <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-slate-900">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        setOpenSoldSwipeRowId(null);
+                                                                        openInvoice(sale, event);
+                                                                    }}
+                                                                    className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[10px] font-semibold text-white"
+                                                                >
+                                                                    <FileText className="h-3.5 w-3.5" />
+                                                                    Invoice
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        setOpenSoldSwipeRowId(null);
+                                                                        handleMobileSaleClick(sale, true);
+                                                                    }}
+                                                                    className="inline-flex min-h-[40px] items-center gap-1 rounded-lg bg-white/20 px-2.5 text-[10px] font-semibold text-white"
+                                                                    aria-label="More actions"
+                                                                >
+                                                                    <MoreHorizontal className="h-3.5 w-3.5" />
+                                                                    More
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                         {!isSoldSale && (
                                                             <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
                                                                 {groupingEnabled && sale.group && sale.status !== 'Completed' && (
@@ -4803,13 +4943,20 @@ export default function Dashboard() {
                                                         )}
                                                         <motion.div
                                                             layout
-                                                            drag={isSoldSale ? false : 'x'}
+                                                            drag="x"
                                                             dragDirectionLock
                                                             dragConstraints={{ left: 0, right: 0 }}
                                                             dragElastic={{ left: 0.8, right: 0 }}
-                                                            dragSnapToOrigin
+                                                            dragSnapToOrigin={!isSoldSale}
                                                             onDragEnd={(e, { offset }) => {
-                                                                if (isSoldSale) return;
+                                                                if (isSoldSale) {
+                                                                                            if (offset.x < -SOLD_ROW_SWIPE_REVEAL_THRESHOLD) {
+                                                                                                setOpenSoldSwipeRowId(sale.id);
+                                                                                            } else if (offset.x > 36) {
+                                                                                                setOpenSoldSwipeRowId(null);
+                                                                                            }
+                                                                                            return;
+                                                                                        }
 
                                                                 const canRemoveFromGroup = groupingEnabled && sale.group && sale.status !== 'Completed';
                                                                 if (offset.x < -165) {
@@ -4821,12 +4968,21 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
+                                                            animate={isSoldSale ? { x: openSoldSwipeRowId === sale.id ? -SOLD_ROW_ACTION_WIDTH : 0 } : undefined}
+                                                            transition={isSoldSale ? { duration: 0.16, ease: 'easeOut' } : undefined}
+                                                            data-sold-swipe-row="true"
                                                             className={`mobile-car-row-compact flex items-center gap-2 sm:gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                             onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
-                                                            onClick={() => handleMobileSaleClick(sale, isSoldSale)}
+                                                            onClick={() => {
+                                                                                    if (isSoldSale && openSoldSwipeRowId === sale.id) {
+                                                                                        setOpenSoldSwipeRowId(null);
+                                                                                        return;
+                                                                                    }
+                                                                                    handleMobileSaleClick(sale, isSoldSale);
+                                                                                }}
                                                             onContextMenu={(e) => {
                                                                 if (selectedIds.size > 0 && !isSoldSale) {
                                                                     e.preventDefault();
@@ -4859,6 +5015,19 @@ export default function Dashboard() {
                                                                                                 sale.status === 'Inspection' ? 'text-amber-700' :
                                                                                                     'text-slate-500'
                                                                                             }`}>{sale.status}</span>
+                                                                                        {isSoldSale && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={(event) => {
+                                                                                                    event.stopPropagation();
+                                                                                                    setOpenSoldSwipeRowId((current) => current === sale.id ? null : sale.id);
+                                                                                                }}
+                                                                                                className="inline-flex min-h-[32px] items-center justify-center rounded-md border border-slate-200 bg-white px-1.5 text-slate-600"
+                                                                                                aria-label="More actions"
+                                                                                            >
+                                                                                                <MoreHorizontal className="h-3.5 w-3.5" />
+                                                                                            </button>
+                                                                                        )}
                                                                                     </div>
                                                                                     <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
                                                                                         <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
