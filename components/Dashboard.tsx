@@ -4989,7 +4989,7 @@ export default function Dashboard() {
                                                             <summary className="cursor-pointer">Before / After / Field Diff</summary>
                                                             <pre className="mt-1 whitespace-pre-wrap break-all">{JSON.stringify({ diff: log.field_changes, before: log.before_data, after: log.after_data, metadata: log.metadata, route: log.route, occurred_at: log.occurred_at }, null, 2)}</pre>
                                                         </details>
-                                                    </button>
+                                                    </div>
                                                 ))}
                                             </div>
                                             <div className="mt-3 flex items-center justify-end gap-2">
