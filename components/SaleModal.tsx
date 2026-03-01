@@ -589,7 +589,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className="px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 flex flex-col gap-8 md:gap-10"
+                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-5 md:gap-6' : 'px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 gap-8 md:gap-10'} flex flex-col`}
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">

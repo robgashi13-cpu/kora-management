@@ -178,17 +178,17 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
 
     return (
         <>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4" onClick={onClose}>
+            <div className="fixed inset-0 z-[100] flex items-stretch justify-stretch bg-white" onClick={onClose}>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.97 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.15 }}
-                    className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col my-auto overflow-hidden"
+                    className="w-full h-full bg-white flex flex-col overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 flex-shrink-0 bg-gradient-to-r from-slate-50 to-white">
+                    <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-slate-200 flex-shrink-0 bg-slate-50">
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={onClose}
@@ -231,7 +231,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-5 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {pdfMessage && (
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                                 {pdfMessage}
