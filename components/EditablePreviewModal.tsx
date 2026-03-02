@@ -369,7 +369,7 @@ export default function EditablePreviewModal({
         : 'Full Contract - Shitblerje';
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-4 pt-[max(1rem,env(safe-area-inset-top))] bg-slate-900/50 backdrop-blur-md">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-4 bg-slate-900/55 backdrop-blur-md">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -379,7 +379,7 @@ export default function EditablePreviewModal({
       >
         {/* Header */}
         <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
-          <div className="flex justify-between items-center p-4">
+          <div className="flex justify-between items-center p-3 md:p-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
@@ -392,7 +392,7 @@ export default function EditablePreviewModal({
               <h2 className="text-lg font-bold text-slate-800">
                 Preview & Edit {documentTitle}
               </h2>
-              <span className="text-xs bg-slate-50 text-slate-900 px-2 py-1 rounded-full font-medium">
+              <span className="hidden sm:inline text-xs bg-slate-50 text-slate-900 px-2 py-1 rounded-full font-medium">
                 Click any value to edit
               </span>
             </div>
@@ -466,7 +466,7 @@ export default function EditablePreviewModal({
         </div>
 
         {/* Document Preview */}
-        <div className="flex-1 overflow-auto scroll-container bg-slate-100 p-2 pb-24 md:p-8 md:pb-8">
+        <div className="flex-1 overflow-auto scroll-container bg-slate-100/90 p-2 pb-24 md:p-8 md:pb-8">
           <div className="flex justify-center">
             {documentType === 'invoice' ? (
               <InvoiceDocument
@@ -493,13 +493,13 @@ export default function EditablePreviewModal({
           </div>
         </div>
         <div className="mobile-sticky-actions md:hidden" aria-label="PDF preview actions">
-          <button onClick={handleDownload} disabled={isDownloading} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
+          <button aria-label="Download" onClick={handleDownload} disabled={isDownloading} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
             <Download className="w-4 h-4 mx-auto mb-1" />{isDownloading ? 'Generating...' : 'Download'}
           </button>
-          <button onClick={handlePrint} disabled={isDownloading} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+          <button aria-label="Print" onClick={handlePrint} disabled={isDownloading} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
             <Printer className="w-4 h-4 mx-auto mb-1" />Print
           </button>
-          <button onClick={onClose} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
+          <button aria-label="Close" onClick={onClose} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
             <X className="w-4 h-4 mx-auto mb-1" />Close
           </button>
         </div>

@@ -3309,6 +3309,10 @@ export default function Dashboard() {
         () => selectedInvoices.filter(sale => (sale.amountPaidBank || 0) > 0),
         [selectedInvoices]
     );
+    const mobilePrimaryInvoiceSale = React.useMemo(
+        () => selectedInvoices[0] || soldInvoiceSales[0] || null,
+        [selectedInvoices, soldInvoiceSales]
+    );
 
     const validInvoiceSales = React.useMemo(
         () => soldInvoiceSales.filter(sale => (sale.amountPaidBank || 0) > 0),
@@ -5220,14 +5224,14 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
-                                        <div>
-                                            <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
-                                            <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className="mt-2 grid w-full grid-cols-2 rounded-lg border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
-                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create Invoice</button>
-                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Invoice History</button>
+                                <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-28 pt-2 md:p-3 md:pb-3">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2">
+                                        <div className="min-w-0">
+                                            <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
+                                            <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
+                                            <div className="mt-2 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                             </div>
                                         </div>
                                         <div className="flex w-full flex-row flex-wrap items-center justify-start gap-2 md:w-auto md:justify-end">
@@ -5257,12 +5261,18 @@ export default function Dashboard() {
 
                                     {invoicesSubTab === 'history' ? (
                                         <div className="space-y-3">
-                                            <div className="flex flex-wrap gap-2">
-                                                <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="Search VIN/stock/invoice/user" className="rounded-lg border border-slate-200 px-3 py-2 text-xs" />
-                                                <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                                                    Search
+                                                    <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="VIN / stock / invoice / user" className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900" />
+                                                </label>
+                                                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                                                    Month
+                                                    <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900">
                                                     <option value="all">All months</option>
                                                     {invoiceHistoryMonths.map((month) => (<option key={month} value={month}>{formatInvoiceMonthLabel(month)}</option>))}
-                                                </select>
+                                                    </select>
+                                                </label>
                                             </div>
                                             {Object.keys(groupedInvoiceHistory).length === 0 ? <div className="text-sm text-slate-500">No invoice history yet.</div> : Object.entries(groupedInvoiceHistory).map(([month, entries]) => (
                                                 <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
@@ -5270,8 +5280,8 @@ export default function Dashboard() {
                                                     <div className="divide-y divide-slate-100">
                                                         {entries.map((entry) => (
                                                             <div key={entry.id} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
-                                                                <div>
-                                                                    <div className="font-semibold text-slate-900">{entry.carDisplay} (VIN {entry.vin || '-'} / Stock {entry.stock || '-'})</div>
+                                                                <div className="min-w-0">
+                                                                    <div className="font-semibold text-slate-900 overflow-wrap-anywhere">{entry.carDisplay} (VIN {entry.vin || '-'} / Stock {entry.stock || '-'})</div>
                                                                     <div className="text-slate-500">{new Date(entry.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • {entry.createdByDisplay} • {entry.sourceContext}</div>
                                                                 </div>
                                                                 <button type="button" onClick={() => { const sale = sales.find((item) => item.id === entry.invoiceViewRef); if (sale) setDocumentPreview({ sale, type: 'invoice', withDogane: false, showBankOnly: false }); }} className="px-2 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold">View Invoice</button>
@@ -5347,8 +5357,8 @@ export default function Dashboard() {
                                                                                             <span className="font-bold text-slate-900 text-xs md:text-sm leading-tight truncate">{s.brand} {s.model}</span>
                                                                                             <span className="text-[9px] md:text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
                                                                                         </div>
-                                                                                        <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
-                                                                                            <span className="text-[9px] md:text-[9px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                                        <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap min-w-0">
+                                                                                            <span className="text-[9px] md:text-[9px] font-mono text-slate-400 uppercase tracking-wider overflow-wrap-anywhere">VIN: {(s.vin || '').slice(-8)}</span>
                                                                                             <span className={`text-[9px] md:text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
                                                                                             <span className={`md:hidden text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tight ${transportStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>Transport {transportStatus === 'PAID' ? 'Paid' : 'Not paid'}</span>
                                                                                         </div>
@@ -5357,8 +5367,8 @@ export default function Dashboard() {
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="hidden md:block text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2">
-                                                                                <div className="truncate">{s.buyerName || '---'}</div>
+                                                                            <div className="hidden md:block text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2 min-w-0">
+                                                                                <div className="truncate overflow-wrap-anywhere">{s.buyerName || '---'}</div>
                                                                             </div>
 
                                                                             <div className="hidden md:block text-center">
@@ -5405,6 +5415,40 @@ export default function Dashboard() {
                                                     </div>
                                                 );
                                             })}
+                                        </div>
+                                    )}
+
+                                    {invoicesSubTab === 'create' && (
+                                        <div className="mobile-sticky-actions md:hidden" aria-label="Invoice mobile action bar">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
+                                                disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
+                                                className="rounded-xl bg-slate-900 text-white text-xs font-semibold"
+                                            >
+                                                <Download className="mx-auto mb-1 h-4 w-4" />
+                                                {isDownloadingInvoices ? 'Generating...' : `Download (${selectedDownloadableInvoices.length})`}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleAll(validInvoiceSales)}
+                                                className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold"
+                                            >
+                                                <CheckSquare className="mx-auto mb-1 h-4 w-4" />
+                                                Select valid
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    if (!mobilePrimaryInvoiceSale) return;
+                                                    openInvoice(mobilePrimaryInvoiceSale, event as unknown as React.MouseEvent, false, true);
+                                                }}
+                                                disabled={!mobilePrimaryInvoiceSale}
+                                                className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold disabled:opacity-50"
+                                            >
+                                                <FileText className="mx-auto mb-1 h-4 w-4" />
+                                                Preview
+                                            </button>
                                         </div>
                                     )}
                                 </div>
