@@ -5320,13 +5320,14 @@ export default function Dashboard() {
 
                                                                 {groupSales.map(s => {
                                                                     const isSelected = selectedIds.has(s.id);
+                                                                    const transportStatus = getClientTransportPaidStatus(s);
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_minmax(140px,1fr)] md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative flex items-center gap-2 px-2 py-2 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
-                                                                            <div className="md:flex md:items-center md:justify-center">
+                                                                            <div className="flex items-center justify-center md:flex md:items-center md:justify-center">
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
@@ -5336,7 +5337,7 @@ export default function Dashboard() {
                                                                                 </button>
                                                                             </div>
 
-                                                                            <div className="min-w-0">
+                                                                            <div className="min-w-0 flex-1 md:flex-none">
                                                                                 <div className="flex items-start gap-2">
                                                                                     <div className="mt-0.5 h-6 w-6 md:h-7 md:w-7 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
                                                                                         <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -5349,7 +5350,9 @@ export default function Dashboard() {
                                                                                         <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap">
                                                                                             <span className="text-[9px] md:text-[9px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
                                                                                             <span className={`text-[9px] md:text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
+                                                                                            <span className={`md:hidden text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tight ${transportStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>Transport {transportStatus === 'PAID' ? 'Paid' : 'Not paid'}</span>
                                                                                         </div>
+                                                                                        <div className="md:hidden mt-1 text-[10px] text-slate-500 truncate">{s.buyerName || 'No buyer name'}</div>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -5358,9 +5361,9 @@ export default function Dashboard() {
                                                                                 <div className="truncate">{s.buyerName || '---'}</div>
                                                                             </div>
 
-                                                                            <div className="text-center">
+                                                                            <div className="hidden md:block text-center">
                                                                                 <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Transport</div>
-                                                                                <select value={getClientTransportPaidStatus(s)} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold" disabled={s.includeTransport} title={s.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
+                                                                                <select value={transportStatus} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold" disabled={s.includeTransport} title={s.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
                                                                                     <option value="PAID">PAID</option>
                                                                                     <option value="NOT PAID">NOT PAID</option>
                                                                                 </select>
@@ -5376,18 +5379,18 @@ export default function Dashboard() {
                                                                                 <div className={`text-xs md:text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
                                                                             </div>
 
-                                                                            <div className="flex items-center justify-end">
+                                                                            <div className="flex items-center justify-end shrink-0">
                                                                                 {view === 'pdf_list' ? (
-                                                                                    <div className="flex items-center justify-end gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar">
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-2 py-1 rounded-md bg-slate-900 text-[10px] font-bold text-white">Fatura</button>
+                                                                                    <div className="flex items-center justify-end gap-1">
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100"><span className="sm:hidden">Marv.</span><span className="hidden sm:inline">Marveshje</span></button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-1.5 py-1 rounded-md bg-slate-900 text-[9px] md:text-[10px] font-bold text-white">Fatura</button>
                                                                                     </div>
                                                                                 ) : (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white min-w-[96px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                        className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white min-w-[82px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
                                                                                     >
                                                                                         <FileText className="w-3.5 h-3.5" />
                                                                                         <span className="uppercase tracking-wider">View</span>
