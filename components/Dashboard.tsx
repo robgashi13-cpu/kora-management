@@ -3874,11 +3874,12 @@ export default function Dashboard() {
 
             <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
                 {!isFormOpen && (
-                <header className={`backdrop-blur-xl border-b px-4 py-3 sticky top-0 z-40 transition-colors ${theme === 'dark'
+                <header className={`sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                    <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-3">
+                        <div className="flex items-center justify-between gap-3 md:gap-4">
+                            <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
                                 aria-label="Open navigation menu"
@@ -3894,7 +3895,7 @@ export default function Dashboard() {
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
-                            <h2 className={`text-lg font-bold hidden sm:flex items-center gap-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                            <h2 className={`text-sm sm:text-base lg:text-lg font-bold hidden sm:flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
@@ -3902,7 +3903,7 @@ export default function Dashboard() {
                             </h2>
                         </div>
 
-                        <div className={`flex-1 max-w-xl ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}>
+                        <div className={`flex-1 max-w-2xl ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}>
                             <div className="relative group">
                                 <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600'}`} />
                                 <input
@@ -3917,7 +3918,7 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-2 rounded-2xl border px-2.5 py-1.5 ${theme === 'dark' ? 'border-white/10 bg-white/[0.03]' : 'border-slate-200 bg-slate-50/80'}`}>
                             <button
                                 onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
                                 className={`ui-control p-2.5 rounded-xl transition-all ${isSyncing
@@ -3952,6 +3953,7 @@ export default function Dashboard() {
 
                             </div>
                         </div>
+                    </div>
                     </div>
 
                     {/* Mobile Search - Visible only on mobile */}
@@ -5580,7 +5582,7 @@ export default function Dashboard() {
             {view !== 'sale_form' && (
                 <button
                     onClick={() => openSaleForm(null)}
-                    className="fixed md:hidden bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-[60] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-6 z-[60] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                     aria-label="Add sale"
                     type="button"
                 >
