@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus } from '@/src/types';
+import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
@@ -22,6 +23,7 @@ interface Props {
     currentProfile?: string | null;
     existingSales?: CarSale[];
     pdfTemplates?: PdfTemplateMap;
+    onInvoiceCreated?: (sale: CarSale, sourceContext: InvoiceSourceContext) => void;
 }
 
 const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
@@ -52,7 +54,7 @@ const COLORS = [
 import EditablePreviewModal from './EditablePreviewModal';
 import { PDF_TEMPLATE_DEFINITIONS, PdfTemplateMap } from './PdfTemplateBuilder';
 
-export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null, existingSales = [], pdfTemplates }: Props) {
+export default function SaleModal({ isOpen, onClose, onSave, existingSale, inline = false, defaultStatus = 'New', isAdmin = false, availableProfiles = [], hideHeader = false, currentProfile = null, existingSales = [], pdfTemplates, onInvoiceCreated }: Props) {
     const [formData, setFormData] = useState<Partial<CarSale>>({ ...EMPTY_SALE, status: defaultStatus });
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
@@ -1014,6 +1016,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         priceSource={invoicePriceSource || 'sold'}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
+                        onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
                     />
                 )}
                 {contractType && (
@@ -1052,6 +1055,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     priceSource={invoicePriceSource || 'sold'}
                     onSaveToSale={handlePreviewSaveToSale}
                     templates={pdfTemplates}
+                    onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
                 />
             )}
             {contractType && (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { X, ArrowLeft, FileText, Eye, Edit, FolderOpen, MoreHorizontal, Download, Printer } from 'lucide-react';
 import { CarSale, Attachment } from '@/src/types';
@@ -14,6 +14,7 @@ interface Props {
     onClose: () => void;
     isAdmin?: boolean;
     onEdit?: (sale: CarSale) => void;
+    initialSection?: 'documents' | 'overview';
 }
 
 const getBankFee = (price: number) => {
@@ -28,11 +29,21 @@ const calculateBalance = (sale: CarSale) =>
 const calculateProfit = (sale: CarSale) => 
     ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 
-export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, onEdit }: Props) {
+export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, onEdit, initialSection = 'overview' }: Props) {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [pdfMessage, setPdfMessage] = useState<string | null>(null);
     const [activeFile, setActiveFile] = useState<Attachment | null>(null);
+    const documentsRef = useRef<HTMLDivElement | null>(null);
+
+
+    useEffect(() => {
+        if (!isOpen || initialSection !== 'documents') return;
+        const timer = window.setTimeout(() => {
+            documentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+        return () => window.clearTimeout(timer);
+    }, [initialSection, isOpen]);
 
     if (!isOpen || !sale) return null;
 
@@ -353,7 +364,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
 
                         {/* Attachments */}
                         <Section title="Attachments">
-                            <div data-documents-section="true" />
+                            <div data-documents-section="true" ref={documentsRef} />
                             <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                                 <FileList files={sale.bankReceipts} label="Bank Receipts" />
                                 <FileList files={sale.bankInvoices} label="Bank Invoices" />

@@ -27,6 +27,7 @@ interface EditablePreviewModalProps {
   priceSource?: InvoicePriceSource;
   priceValue?: number;
   templates?: PdfTemplateMap;
+  onInvoiceCreated?: () => void;
 }
 
 export default function EditablePreviewModal({
@@ -40,7 +41,8 @@ export default function EditablePreviewModal({
   taxAmount,
   priceSource,
   priceValue,
-  templates
+  templates,
+  onInvoiceCreated
 }: EditablePreviewModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -51,6 +53,7 @@ export default function EditablePreviewModal({
   const [withStamp, setWithStamp] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const invoiceTrackedRef = useRef(false);
 
   // Initialize editable fields from sale
   useEffect(() => {
@@ -83,6 +86,16 @@ export default function EditablePreviewModal({
     }
   }, [isOpen, documentType]);
 
+
+  useEffect(() => {
+    if (!isOpen || documentType !== 'invoice' || invoiceTrackedRef.current) return;
+    invoiceTrackedRef.current = true;
+    onInvoiceCreated?.();
+  }, [isOpen, documentType, onInvoiceCreated]);
+
+  useEffect(() => {
+    if (!isOpen) invoiceTrackedRef.current = false;
+  }, [isOpen]);
   const getValue = useCallback((key: string) => {
     return editedFields[key] !== undefined ? editedFields[key] : (sale as any)[key];
   }, [editedFields, sale]);
