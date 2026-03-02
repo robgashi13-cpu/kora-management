@@ -25,6 +25,7 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword } from '@/services/adminAuth';
+import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
@@ -38,6 +39,7 @@ const ADMIN_PROFILE = 'Robert';
 const LEGACY_ADMIN_PROFILE = 'Admin';
 const PROFILE_AVATARS_CONFIG_KEY = 'profile_avatars';
 const PDF_TEMPLATES_CONFIG_KEY = 'pdf_templates';
+const INVOICE_HISTORY_STORAGE_KEY = 'invoice_history_v1';
 
 const normalizeProfileName = (name?: string | null | unknown) => {
     if (typeof name !== 'string' || !name) return '';
@@ -644,6 +646,10 @@ export default function Dashboard() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
     const [invoiceDownloadStatus, setInvoiceDownloadStatus] = useState('');
+    const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
+    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history'>('create');
+    const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
+    const [invoiceHistoryMonthFilter, setInvoiceHistoryMonthFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
     const [apiKey, setApiKey] = useState('');
@@ -719,6 +725,52 @@ export default function Dashboard() {
             }
         };
     }, []);
+
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const raw = window.localStorage.getItem(INVOICE_HISTORY_STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw) as InvoiceHistoryEntry[];
+            if (Array.isArray(parsed)) setInvoiceHistory(parsed);
+        } catch (error) {
+            console.error('Failed to load invoice history', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        window.localStorage.setItem(INVOICE_HISTORY_STORAGE_KEY, JSON.stringify(invoiceHistory));
+    }, [invoiceHistory]);
+
+    const trackInvoiceCreated = useCallback(async (sale: CarSale, sourceContext: InvoiceSourceContext) => {
+        if (!userProfile) return;
+        const entry = createInvoiceHistoryEntry({ sale, sourceContext, createdBy: userProfile });
+        setInvoiceHistory(prev => [entry, ...prev]);
+        if (supabaseUrl && supabaseKey) {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                await client.from('invoice_history').insert({
+                    id: entry.id,
+                    invoice_id: entry.invoiceId,
+                    source_context: entry.sourceContext,
+                    related_entity_type: entry.relatedEntityType,
+                    related_entity_id: entry.relatedEntityId,
+                    car_display: entry.carDisplay,
+                    vin: entry.vin,
+                    stock: entry.stock,
+                    created_by_user_id: entry.createdByUserId,
+                    created_by_display: entry.createdByDisplay,
+                    created_at: entry.createdAt,
+                    invoice_view_ref: entry.invoiceViewRef,
+                    pdf_file_ref: entry.pdfFileRef ?? null,
+                });
+            } catch (error) {
+                console.error('Failed to sync invoice history', error);
+            }
+        }
+    }, [supabaseKey, supabaseUrl, userProfile]);
 
     const isTouchInputMode = inputMode === 'touch';
 
@@ -3354,6 +3406,25 @@ export default function Dashboard() {
         [activeGroups, groupedInvoiceSales]
     );
 
+
+    const invoiceHistoryMonths = useMemo(() => {
+        const monthKeys = Array.from(new Set(invoiceHistory.map((entry) => entry.createdAt.slice(0, 7))));
+        return monthKeys.sort((a, b) => b.localeCompare(a));
+    }, [invoiceHistory]);
+
+    const filteredInvoiceHistory = useMemo(() => {
+        const term = invoiceHistorySearch.trim().toLowerCase();
+        return invoiceHistory.filter((entry) => {
+            const monthKey = entry.createdAt.slice(0, 7);
+            if (invoiceHistoryMonthFilter !== 'all' && monthKey !== invoiceHistoryMonthFilter) return false;
+            if (!term) return true;
+            const blob = [entry.invoiceId, entry.vin, entry.stock, entry.createdByDisplay, entry.carDisplay, entry.sourceContext].filter(Boolean).join(' ').toLowerCase();
+            return blob.includes(term);
+        });
+    }, [invoiceHistory, invoiceHistoryMonthFilter, invoiceHistorySearch]);
+
+    const groupedInvoiceHistory = useMemo(() => groupInvoiceHistoryByMonth(filteredInvoiceHistory), [filteredInvoiceHistory]);
+
     const groupedTransportSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
         transportSales.forEach((sale) => {
@@ -5107,6 +5178,10 @@ export default function Dashboard() {
                                         <div>
                                             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
+                                            <div className="mt-2 inline-flex rounded-lg border border-slate-200 overflow-hidden">
+                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-1.5 text-xs font-semibold ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create Invoice</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-1.5 text-xs font-semibold ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Invoice History</button>
+                                            </div>
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
@@ -5133,7 +5208,33 @@ export default function Dashboard() {
                                         </div>
                                     </div>
 
-                                    {soldInvoiceSales.length === 0 ? (
+                                    {invoicesSubTab === 'history' ? (
+                                        <div className="space-y-3">
+                                            <div className="flex flex-wrap gap-2">
+                                                <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="Search VIN/stock/invoice/user" className="rounded-lg border border-slate-200 px-3 py-2 text-xs" />
+                                                <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs">
+                                                    <option value="all">All months</option>
+                                                    {invoiceHistoryMonths.map((month) => (<option key={month} value={month}>{formatInvoiceMonthLabel(month)}</option>))}
+                                                </select>
+                                            </div>
+                                            {Object.keys(groupedInvoiceHistory).length === 0 ? <div className="text-sm text-slate-500">No invoice history yet.</div> : Object.entries(groupedInvoiceHistory).map(([month, entries]) => (
+                                                <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
+                                                    <div className="px-3 py-2 bg-slate-50 text-sm font-semibold">{formatInvoiceMonthLabel(month)}</div>
+                                                    <div className="divide-y divide-slate-100">
+                                                        {entries.map((entry) => (
+                                                            <div key={entry.id} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
+                                                                <div>
+                                                                    <div className="font-semibold text-slate-900">{entry.carDisplay} (VIN {entry.vin || '-'} / Stock {entry.stock || '-'})</div>
+                                                                    <div className="text-slate-500">{new Date(entry.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • {entry.createdByDisplay} • {entry.sourceContext}</div>
+                                                                </div>
+                                                                <button type="button" onClick={() => { const sale = sales.find((item) => item.id === entry.invoiceViewRef); if (sale) setDocumentPreview({ sale, type: 'invoice', withDogane: false, showBankOnly: false }); }} className="px-2 py-1 rounded-md bg-slate-900 text-white text-[11px] font-semibold">View Invoice</button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : soldInvoiceSales.length === 0 ? (
                                         <div className="text-center text-slate-500 py-32 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
                                             <FileText className="w-16 h-16 mx-auto mb-4 opacity-20 text-slate-900" />
                                             <h3 className="text-xl font-bold text-slate-900">No sold cars found</h3>
@@ -5500,6 +5601,7 @@ export default function Dashboard() {
                                     availableProfiles={profileOptions}
                                     existingSales={sales}
                                     pdfTemplates={pdfTemplates}
+                                    onInvoiceCreated={(sale, sourceContext) => { void trackInvoiceCreated(sale, sourceContext); }}
                                 />
                             </div>
                         </motion.div>
@@ -5512,6 +5614,7 @@ export default function Dashboard() {
                 onClose={() => setEditShitblerjeSale(null)}
                 onSave={(overrides) => editShitblerjeSale ? handleSaveShitblerjeOverrides(editShitblerjeSale, overrides) : Promise.resolve()}
                 pdfTemplates={pdfTemplates}
+                onInvoiceCreated={(sale) => { void trackInvoiceCreated(sale, 'edit_shitblerje'); }}
             />
 
             {/* Contextual FAB for Inspections/Autosallon */}
@@ -5525,6 +5628,7 @@ export default function Dashboard() {
                     showBankOnly={documentPreview.showBankOnly}
                     onSaveToSale={(updates) => handlePreviewSaveToSale(documentPreview.sale.id, updates)}
                     templates={pdfTemplates}
+                    onInvoiceCreated={() => { void trackInvoiceCreated(documentPreview.sale, 'invoices_tab'); }}
                 />
             )}
 

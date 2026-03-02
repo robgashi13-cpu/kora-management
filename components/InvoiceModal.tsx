@@ -18,9 +18,10 @@ interface Props {
     priceSource?: InvoicePriceSource;
     priceValue?: number;
     template?: PdfTemplateEntry;
+    onInvoiceCreated?: () => void;
 }
 
-export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue, template }: Props) {
+export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue, template, onInvoiceCreated }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [withStamp, setWithStamp] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -29,6 +30,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const trackedRef = useRef(false);
 
     const buildPdfPreview = useCallback(async () => {
         const element = printRef.current;
@@ -50,6 +52,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 }
             });
             setPdfBlob(result.blob);
+            if (!trackedRef.current) { trackedRef.current = true; onInvoiceCreated?.(); }
             setPdfUrl((prev) => {
                 if (prev) URL.revokeObjectURL(prev);
                 return URL.createObjectURL(result.blob);
@@ -66,6 +69,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
     useEffect(() => {
         if (!isOpen) {
+            trackedRef.current = false;
             setPdfBlob(null);
             setPdfUrl((prev) => {
                 if (prev) URL.revokeObjectURL(prev);

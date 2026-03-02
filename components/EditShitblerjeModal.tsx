@@ -10,6 +10,7 @@ import InvoiceModal from './InvoiceModal';
 import InvoicePriceModal from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 import { PDF_TEMPLATE_DEFINITIONS, PdfTemplateMap } from './PdfTemplateBuilder';
+import { InvoiceSourceContext } from './invoiceHistory';
 
 interface Props {
     isOpen: boolean;
@@ -17,6 +18,7 @@ interface Props {
     onClose: () => void;
     onSave: (overrides: ShitblerjeOverrides) => Promise<void>;
     pdfTemplates?: PdfTemplateMap;
+    onInvoiceCreated?: (sale: CarSale, sourceContext: InvoiceSourceContext) => void;
 }
 
 const YEARS = Array.from({ length: 26 }, (_, i) => 2000 + i).reverse();
@@ -24,7 +26,7 @@ const COLORS = [
     'Black', 'White', 'Silver', 'Grey', 'Blue', 'Red', 'Green', 'Brown', 'Beige', 'Gold', 'Yellow', 'Orange', 'Purple', 'Other'
 ];
 
-export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdfTemplates }: Props) {
+export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdfTemplates, onInvoiceCreated }: Props) {
     const [formData, setFormData] = useState<ShitblerjeOverrides>({});
     const [isSaving, setIsSaving] = useState(false);
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
@@ -40,6 +42,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
+    const [viewSaleSection, setViewSaleSection] = useState<'overview' | 'documents'>('overview');
     const hasInitializedFormRef = useRef(false);
     const hasRestoredDraftRef = useRef(false);
     const autosaveTimerRef = useRef<number | null>(null);
@@ -201,7 +204,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => setShowViewSale(true)}
+                                onClick={() => { setViewSaleSection('overview'); setShowViewSale(true); }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
                             >
                                 <Eye className="w-4 h-4" />
@@ -259,14 +262,24 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                             <h3 className="text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">Documents</h3>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                 <p className="text-sm text-slate-500">{PDF_TEMPLATE_DEFINITIONS.map((item) => pdfTemplates?.[item.id]?.title || item.label).join(', ')}.</p>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDocumentMenu(true)}
-                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all"
-                                >
-                                    <FileText className="w-4 h-4" />
-                                    Documents
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setViewSaleSection('documents'); setShowViewSale(true); }}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold shadow-sm hover:bg-slate-100 transition-all"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        Documents
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDocumentMenu(true)}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all"
+                                    >
+                                        <FileText className="w-4 h-4" />
+                                        Generate
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -508,6 +521,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                     priceSource={invoicePriceSource || 'sold'}
                     priceValue={resolveInvoicePriceValue(previewSale, invoicePriceSource || 'sold')}
                     template={pdfTemplates?.invoice}
+                    onInvoiceCreated={() => onInvoiceCreated?.(previewSale, 'edit_shitblerje')}
                 />
             )}
 
@@ -516,8 +530,9 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                 <ViewSaleModal
                     isOpen={showViewSale}
                     sale={sale}
-                    onClose={() => setShowViewSale(false)}
+                    onClose={() => { setShowViewSale(false); setViewSaleSection('overview'); }}
                     isAdmin={false}
+                    initialSection={viewSaleSection}
                 />
             )}
         </>
