@@ -3995,7 +3995,7 @@ export default function Dashboard() {
                 <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
-                    <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-3">
+                    <div className="flex w-full flex-col gap-3">
                         <div className="flex items-center justify-between gap-3 md:gap-4">
                             <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
                             <button
@@ -5010,7 +5010,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </> ) : view === 'custom_dashboard' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     {!activeCustomDashboard ? (
                                         <div className="text-center py-16">
                                             <p className="text-slate-500 mb-4">No custom dashboard selected.</p>
@@ -5092,7 +5092,7 @@ export default function Dashboard() {
                                         <p className="text-slate-500 mt-2">Record tab is restricted to ROBERT.</p>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
+                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                         <h2 className="text-2xl font-black text-slate-900 mb-3">Record Timeline</h2>
                                         {isLoadingAudit ? (
                                             <p className="text-slate-500">Loading records...</p>
@@ -5122,7 +5122,7 @@ export default function Dashboard() {
                                     </div>
                                 )
                             ) : view === 'balance_due' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
                                     <p className="text-xs text-slate-500 mb-3">Aggregated for sold and shipped cars with no double-counting in grand total.</p>
 
@@ -5167,7 +5167,7 @@ export default function Dashboard() {
                                     )}
                                 </div>
                             ) : view === 'transport' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-3">Transporti</h2>
                                     <div className="space-y-3">
                                         {transportGroupOrder.map((groupName) => {
@@ -5220,7 +5220,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-3 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
                                         <div>
                                             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
@@ -5230,11 +5230,11 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Invoice History</button>
                                             </div>
                                         </div>
-                                        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                                        <div className="flex w-full flex-row flex-wrap items-center justify-start gap-2 md:w-auto md:justify-end">
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAll(validInvoiceSales)}
-                                                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all sm:w-auto"
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
                                             >
                                                 {selectedDownloadableInvoices.length > 0 && selectedDownloadableInvoices.length === validInvoiceSales.length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
@@ -5247,7 +5247,7 @@ export default function Dashboard() {
                                                 type="button"
                                                 onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
                                                 disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
-                                                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all sm:w-auto"
+                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
                                             >
                                                 {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                                 {isDownloadingInvoices ? 'Generating...' : `Download ${selectedDownloadableInvoices.length} Invoices`}
@@ -5378,11 +5378,11 @@ export default function Dashboard() {
 
                                                                             <div className="flex items-center justify-center">
                                                                                 {view === 'pdf_list' ? (
-                                                                                    <div className="flex flex-wrap items-center justify-end gap-1">
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-1.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                    <div className="flex items-center justify-end gap-1 overflow-x-auto whitespace-nowrap no-scrollbar">
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-1.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
                                                                                     </div>
                                                                                 ) : (
                                                                                     <button
