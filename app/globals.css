@@ -1004,6 +1004,11 @@ button:active,
   color: #0f172a;
 }
 
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 @media (max-width: 768px) {
   .app-topbar {
     padding-top: max(10px, calc(10px + var(--sat)));
@@ -1027,7 +1032,8 @@ button:active,
   gap: 0.5rem;
   padding: 0.75rem;
   padding-bottom: max(0.75rem, calc(0.75rem + var(--sab)));
-  background: rgba(248, 250, 252, 0.95);
+  background: rgba(248, 250, 252, 0.96);
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
   border-top: 1px solid hsl(var(--border));
   backdrop-filter: blur(8px);
 }
