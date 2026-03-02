@@ -51,6 +51,8 @@ const normalizeProfileName = (name?: string | null | unknown) => {
 const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
+const MOBILE_LONG_PRESS_DURATION_MS = 3000;
+const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
 const isLegacyAdminProfile = (name?: string | null) => {
     if (!name) return false;
@@ -674,6 +676,7 @@ export default function Dashboard() {
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [longPressActionSale, setLongPressActionSale] = useState<CarSale | null>(null);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
     const forceMobileLayout = false;
     const isFormOpen = view === 'sale_form';
@@ -682,6 +685,8 @@ export default function Dashboard() {
     const restoredScrollTopRef = useRef<number | null>(null);
     const didRestoreUiStateRef = useRef(false);
     const mobileRowTapStateRef = useRef<Record<string, { x: number; y: number; moved: boolean; active: boolean }>>({});
+    const mobileLongPressStateRef = useRef<Record<string, { x: number; y: number; active: boolean }>>({});
+    const mobileLongPressTimerRef = useRef<number | null>(null);
     const interactionGuardRef = useRef<Record<number, { x: number; y: number; moved: boolean }>>({});
     const lastSuccessfulSyncAtRef = useRef(0);
     const syncBackoffUntilRef = useRef(0);
@@ -1574,27 +1579,68 @@ export default function Dashboard() {
         });
     }, []);
 
-    const handleMobileRowPointerDown = (id: string, event: React.PointerEvent) => {
+    const clearLongPressTimer = useCallback(() => {
+        if (mobileLongPressTimerRef.current !== null) {
+            window.clearTimeout(mobileLongPressTimerRef.current);
+            mobileLongPressTimerRef.current = null;
+        }
+    }, []);
+
+    const handleMobileRowPointerDown = (sale: CarSale, event: React.PointerEvent) => {
+        const { id } = sale;
         mobileRowTapStateRef.current[id] = {
             x: event.clientX,
             y: event.clientY,
             moved: false,
             active: true
         };
+
+        const isSoldSale = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
+        if (!isSoldSale) return;
+
+        mobileLongPressStateRef.current[id] = {
+            x: event.clientX,
+            y: event.clientY,
+            active: true
+        };
+
+        clearLongPressTimer();
+        mobileLongPressTimerRef.current = window.setTimeout(() => {
+            const longPressState = mobileLongPressStateRef.current[id];
+            if (!longPressState?.active) return;
+            longPressState.active = false;
+            mobileRowTapStateRef.current[id].moved = true;
+            setLongPressActionSale(sale);
+        }, MOBILE_LONG_PRESS_DURATION_MS);
     };
 
     const handleMobileRowPointerMove = (id: string, event: React.PointerEvent) => {
         const state = mobileRowTapStateRef.current[id];
-        if (!state?.active || state.moved) return;
-        if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
-            state.moved = true;
+        if (state?.active && !state.moved) {
+            if (Math.abs(event.clientX - state.x) > ROW_TAP_MOVE_THRESHOLD || Math.abs(event.clientY - state.y) > ROW_TAP_MOVE_THRESHOLD) {
+                state.moved = true;
+            }
+        }
+
+        const longPressState = mobileLongPressStateRef.current[id];
+        if (!longPressState?.active) return;
+        if (Math.abs(event.clientX - longPressState.x) > MOBILE_LONG_PRESS_MOVE_THRESHOLD || Math.abs(event.clientY - longPressState.y) > MOBILE_LONG_PRESS_MOVE_THRESHOLD) {
+            longPressState.active = false;
+            clearLongPressTimer();
         }
     };
 
     const handleMobileRowPointerEnd = (id: string) => {
+        clearLongPressTimer();
         const state = mobileRowTapStateRef.current[id];
         if (state) state.active = false;
+        const longPressState = mobileLongPressStateRef.current[id];
+        if (longPressState) longPressState.active = false;
     };
+
+    useEffect(() => () => {
+        clearLongPressTimer();
+    }, [clearLongPressTimer]);
 
     const shouldIgnoreMobileRowTap = (id: string) => {
         const state = mobileRowTapStateRef.current[id];
@@ -3882,6 +3928,7 @@ export default function Dashboard() {
     return (
         <div
             data-page-shell="true"
+            data-mobile-shell="true"
             className={`flex h-[100dvh] w-full bg-white relative overflow-hidden font-sans text-slate-900 ${isTouchInputMode ? 'touch-input-mode' : ''}`}
             onPointerDownCapture={handleAppPointerDownCapture}
             onPointerMoveCapture={handleAppPointerMoveCapture}
@@ -3945,7 +3992,7 @@ export default function Dashboard() {
 
             <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
                 {!isFormOpen && (
-                <header className={`sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
+                <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-3">
@@ -4045,7 +4092,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
+                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
                     {view !== 'sale_form' && (
                         <>
 
@@ -4621,7 +4668,7 @@ export default function Dashboard() {
                                                                                     }
                                                                                 }}
                                                                                 className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
-                                                                                onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                                                onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                 onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
@@ -4774,7 +4821,7 @@ export default function Dashboard() {
                                                                                             }
                                                                                         }}
                                                                                         className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
-                                                                                        onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                                                        onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                                                         onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
@@ -4888,7 +4935,7 @@ export default function Dashboard() {
                                                                 }
                                                             }}
                                                             className={`mobile-car-row-compact flex items-center gap-2 sm:gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
-                                                            onPointerDown={(event) => handleMobileRowPointerDown(sale.id, event)}
+                                                            onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
                                                             onPointerCancel={() => handleMobileRowPointerEnd(sale.id)}
@@ -5683,6 +5730,64 @@ export default function Dashboard() {
                     </div>
                 )
             }
+            {view !== 'sale_form' && (
+                <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
+                    {[
+                        { id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
+                        { id: 'invoices', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
+                        { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const }
+                    ].map((item) => {
+                        const isActive = view === item.targetView;
+                        return (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => setView(item.targetView)}
+                                className={`mobile-nav-item ${isActive ? 'mobile-nav-item-active' : ''}`}
+                                aria-current={isActive ? 'page' : undefined}
+                            >
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.label}</span>
+                            </button>
+                        );
+                    })}
+                </nav>
+            )}
+
+            <AnimatePresence>
+                {longPressActionSale && (
+                    <>
+                        <motion.button
+                            type="button"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-[95] bg-slate-900/45 backdrop-blur-[2px] md:hidden"
+                            onClick={() => setLongPressActionSale(null)}
+                            aria-label="Close sold car actions"
+                        />
+                        <motion.div
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border border-slate-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl md:hidden"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Sold car actions"
+                        >
+                            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" />
+                            <p className="mb-3 text-sm font-semibold text-slate-900">{longPressActionSale.brand} {longPressActionSale.model}</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" onClick={() => { setLongPressActionSale(null); setViewSaleModalItem(longPressActionSale); }}>View</button>
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" onClick={() => { setLongPressActionSale(null); openSaleForm(longPressActionSale); }}>Edit</button>
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-3 text-sm font-medium text-slate-700" onClick={() => { setLongPressActionSale(null); openInvoice(longPressActionSale, { stopPropagation() { }, preventDefault() { } } as React.MouseEvent); }}>Invoice</button>
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-medium text-red-700" onClick={() => { const shouldDelete = confirm('Delete this item?'); if (shouldDelete) { handleDeleteSingle(longPressActionSale.id); } setLongPressActionSale(null); }}>Delete</button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
             {view !== 'sale_form' && (
                 <button
                     onClick={() => openSaleForm(null)}
