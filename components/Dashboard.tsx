@@ -5323,7 +5323,7 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_78px] md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative grid grid-cols-[28px_minmax(0,1fr)_auto_auto_minmax(140px,1fr)] md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] gap-2 md:gap-3 items-center px-2 py-2 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             <div className="md:flex md:items-center md:justify-center">
@@ -5376,18 +5376,18 @@ export default function Dashboard() {
                                                                                 <div className={`text-xs md:text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
                                                                             </div>
 
-                                                                            <div className="flex items-center justify-center">
+                                                                            <div className="flex items-center justify-end">
                                                                                 {view === 'pdf_list' ? (
-                                                                                    <div className="flex items-center justify-end gap-1 overflow-x-auto whitespace-nowrap no-scrollbar">
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-1.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                    <div className="flex items-center justify-end gap-1.5 overflow-x-auto whitespace-nowrap no-scrollbar">
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-2 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
+                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-2 py-1 rounded-md bg-slate-900 text-[10px] font-bold text-white">Fatura</button>
                                                                                     </div>
                                                                                 ) : (
                                                                                     <button
                                                                                         onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                        className="inline-flex items-center justify-center gap-1 px-2 py-1 md:px-2.5 md:py-1.5 rounded-lg bg-slate-900 text-white min-w-[74px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                        className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white min-w-[96px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
                                                                                     >
                                                                                         <FileText className="w-3.5 h-3.5" />
                                                                                         <span className="uppercase tracking-wider">View</span>
