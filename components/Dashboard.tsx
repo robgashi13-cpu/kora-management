@@ -5010,7 +5010,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </> ) : view === 'custom_dashboard' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
                                     {!activeCustomDashboard ? (
                                         <div className="text-center py-16">
                                             <p className="text-slate-500 mb-4">No custom dashboard selected.</p>
@@ -5092,7 +5092,7 @@ export default function Dashboard() {
                                         <p className="text-slate-500 mt-2">Record tab is restricted to ROBERT.</p>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
                                         <h2 className="text-2xl font-black text-slate-900 mb-3">Record Timeline</h2>
                                         {isLoadingAudit ? (
                                             <p className="text-slate-500">Loading records...</p>
@@ -5122,7 +5122,7 @@ export default function Dashboard() {
                                     </div>
                                 )
                             ) : view === 'balance_due' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
                                     <p className="text-xs text-slate-500 mb-3">Aggregated for sold and shipped cars with no double-counting in grand total.</p>
 
@@ -5167,7 +5167,7 @@ export default function Dashboard() {
                                     )}
                                 </div>
                             ) : view === 'transport' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-2xl border border-slate-100 shadow-sm mx-4 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-4 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-3">Transporti</h2>
                                     <div className="space-y-3">
                                         {transportGroupOrder.map((groupName) => {
@@ -5220,21 +5220,21 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-2xl border border-slate-100 shadow-sm mx-3 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-2 md:p-3 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 md:mx-3 my-2">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3 rounded-xl border border-slate-200/70 bg-slate-50/70 px-3 py-2 md:px-3 md:py-2">
                                         <div>
                                             <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className="mt-2 inline-flex rounded-lg border border-slate-200 overflow-hidden">
-                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-1.5 text-xs font-semibold ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create Invoice</button>
-                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-1.5 text-xs font-semibold ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Invoice History</button>
+                                            <div className="mt-2 grid w-full grid-cols-2 rounded-lg border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create Invoice</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Invoice History</button>
                                             </div>
                                         </div>
-                                        <div className="flex flex-wrap items-center gap-2">
+                                        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
                                             <button
                                                 type="button"
                                                 onClick={() => toggleAll(validInvoiceSales)}
-                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
+                                                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all sm:w-auto"
                                             >
                                                 {selectedDownloadableInvoices.length > 0 && selectedDownloadableInvoices.length === validInvoiceSales.length ? (
                                                     <CheckSquare className="w-4 h-4 text-slate-900" />
@@ -5247,7 +5247,7 @@ export default function Dashboard() {
                                                 type="button"
                                                 onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
                                                 disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
+                                                className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all sm:w-auto"
                                             >
                                                 {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                                 {isDownloadingInvoices ? 'Generating...' : `Download ${selectedDownloadableInvoices.length} Invoices`}
