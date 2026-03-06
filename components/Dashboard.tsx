@@ -646,8 +646,6 @@ export default function Dashboard() {
         showBankOnly?: boolean;
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
-    const [invoiceDownloadStatus, setInvoiceDownloadStatus] = useState('');
     const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
     const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history'>('create');
     const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
@@ -1715,48 +1713,6 @@ export default function Dashboard() {
         return files.filter(file => file?.data);
     };
 
-    const generateInvoicePdfBase64 = async (sale: CarSale, showBankOnly: boolean = false) => {
-        const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.left = '-9999px';
-        container.style.top = '0';
-        container.style.width = '1024px';
-        container.style.zIndex = '-1';
-        document.body.appendChild(container);
-
-        const root = createRoot(container);
-        root.render(<InvoiceDocument sale={sale} showBankOnly={showBankOnly} />);
-
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const invoiceElement = container.querySelector('#invoice-content') as HTMLElement | null;
-        const filename = `Invoice_${sale.vin || sale.id}.pdf`;
-        const { blob } = await generatePdf({
-            element: invoiceElement || container,
-            filename,
-            editableText: false,
-            onClone: (clonedDoc) => {
-                const invoiceNode = clonedDoc.querySelector('#invoice-content');
-                clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
-                    if (invoiceNode && node.closest('#invoice-content')) {
-                        return;
-                    }
-                    node.remove();
-                });
-            }
-        });
-
-        root.unmount();
-        container.remove();
-
-        const base64 = await blobToBase64(blob);
-
-        return {
-            fileName: filename,
-            base64
-        };
-    };
-
     const generateContractPdfBase64 = async (sale: CarSale, type: ContractType) => {
         const container = document.createElement('div');
         container.style.position = 'fixed';
@@ -1809,95 +1765,6 @@ export default function Dashboard() {
             };
             reader.readAsDataURL(blob);
         });
-    };
-
-    const handleDownloadSelectedInvoices = async (selectedSales: CarSale[]) => {
-        if (selectedSales.length === 0 || isDownloadingInvoices) return;
-
-        setIsDownloadingInvoices(true);
-        setInvoiceDownloadStatus(`Preparing ${selectedSales.length} invoices...`);
-
-        try {
-            const dateStamp = new Date().toISOString().split('T')[0];
-            const fileMap: Record<string, Uint8Array> = {};
-
-            let index = 0;
-            let successCount = 0;
-            for (const sale of selectedSales) {
-                index += 1;
-
-                // Skip sales with no bank payment if that's what user considers "blank" or non-invoiceable for bank purposes
-                // "real invoice and only bank paid price"
-                if (!sale.amountPaidBank || sale.amountPaidBank <= 0) {
-                    console.warn(`Skipping sale ${sale.id} - no bank payment for invoice.`);
-                    continue;
-                }
-
-                setInvoiceDownloadStatus(`Packaging ${index}/${selectedSales.length}...`);
-
-                try {
-                    // Generate ONLY invoice as requested (only bank paid price)
-                    const invoicePdf = await generateInvoicePdfBase64(sale, true); // true for showBankOnly
-                    const normalizedName = sanitizeFolderName(invoicePdf.fileName.replace(/\.pdf$/i, ''));
-                    const uniqueName = `${normalizedName}_${sanitizeFolderName(sale.id)}.pdf`;
-                    fileMap[`Invoices_${dateStamp}/${uniqueName}`] = base64ToUint8Array(invoicePdf.base64);
-                    successCount++;
-                } catch (e) {
-                    console.error(`Failed to generate invoice for ${sale.id}`, e);
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 0));
-            }
-
-            if (successCount === 0) {
-                alert("No valid invoices found to download (requires bank payment info).");
-                return;
-            }
-
-            const zipData = await new Promise<Uint8Array>((resolve, reject) => {
-                zip(fileMap, { level: 0 }, (err, data) => {
-                    if (err) reject(err);
-                    else resolve(data);
-                });
-            });
-
-            const downloadName = `Invoices_${dateStamp}.zip`;
-            if (Capacitor.isNativePlatform()) {
-                const zipBase64 = uint8ToBase64(zipData);
-                const savedFile = await Filesystem.writeFile({
-                    path: downloadName,
-                    data: zipBase64,
-                    directory: Directory.Documents,
-                });
-
-                await Share.share({
-                    title: 'Invoices',
-                    text: `Invoices bundle (${selectedSales.length})`,
-                    url: savedFile.uri,
-                    dialogTitle: 'Download invoices'
-                });
-            } else {
-                const zipBuffer = zipData.buffer.slice(zipData.byteOffset, zipData.byteOffset + zipData.byteLength) as ArrayBuffer;
-                const blob = new Blob([zipBuffer], { type: 'application/zip' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = downloadName;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                URL.revokeObjectURL(url);
-            }
-
-            setSelectedIds(new Set());
-            await logAuditEvent({ actionType: 'DOWNLOAD', entityType: 'invoice_download', entityId: `${selectedSales.length}_sales`, afterData: { sales: selectedSales.map(s => s.id), file: downloadName }, pageContext: 'invoices', metadata: { action: 'DOWNLOAD' } });
-        } catch (error: any) {
-            console.error('Invoice download failed:', error);
-            alert(`Download failed: ${error?.message || 'Unknown error'}`);
-        } finally {
-            setIsDownloadingInvoices(false);
-            setInvoiceDownloadStatus('');
-        }
     };
 
     const handleBulkDelete = async () => {
@@ -3299,25 +3166,6 @@ export default function Dashboard() {
         return groups;
     }, [soldInvoiceSales]);
 
-
-    const selectedInvoices = React.useMemo(
-        () => soldInvoiceSales.filter(sale => selectedIds.has(sale.id)),
-        [soldInvoiceSales, selectedIds]
-    );
-
-    const selectedDownloadableInvoices = React.useMemo(
-        () => selectedInvoices.filter(sale => (sale.amountPaidBank || 0) > 0),
-        [selectedInvoices]
-    );
-    const mobilePrimaryInvoiceSale = React.useMemo(
-        () => selectedInvoices[0] || soldInvoiceSales[0] || null,
-        [selectedInvoices, soldInvoiceSales]
-    );
-
-    const validInvoiceSales = React.useMemo(
-        () => soldInvoiceSales.filter(sale => (sale.amountPaidBank || 0) > 0),
-        [soldInvoiceSales]
-    );
 
     const transportSales = React.useMemo(
         () => filteredSales.filter((sale) => sale.status !== 'Completed' && sale.status !== 'Archived'),
@@ -5263,29 +5111,6 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                             </div>
                                         </div>
-                                        <div className="flex w-full flex-row flex-wrap items-center justify-start gap-2 md:w-auto md:justify-end">
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleAll(validInvoiceSales)}
-                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all"
-                                            >
-                                                {selectedDownloadableInvoices.length > 0 && selectedDownloadableInvoices.length === validInvoiceSales.length ? (
-                                                    <CheckSquare className="w-4 h-4 text-slate-900" />
-                                                ) : (
-                                                    <Square className="w-4 h-4" />
-                                                )}
-                                                Select all valid
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
-                                                disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
-                                                className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-md shadow-black/10 hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-200 transition-all"
-                                            >
-                                                {isDownloadingInvoices ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                                {isDownloadingInvoices ? 'Generating...' : `Download ${selectedDownloadableInvoices.length} Invoices`}
-                                            </button>
-                                        </div>
                                     </div>
 
                                     {invoicesSubTab === 'history' ? (
@@ -5450,39 +5275,6 @@ export default function Dashboard() {
                                         </div>
                                     )}
 
-                                    {invoicesSubTab === 'create' && (
-                                        <div className="mobile-sticky-actions md:hidden" aria-label="Invoice mobile action bar">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownloadSelectedInvoices(selectedDownloadableInvoices)}
-                                                disabled={selectedDownloadableInvoices.length === 0 || isDownloadingInvoices}
-                                                className="rounded-xl bg-slate-900 text-white text-xs font-semibold"
-                                            >
-                                                <Download className="mx-auto mb-1 h-4 w-4" />
-                                                {isDownloadingInvoices ? 'Generating...' : `Download (${selectedDownloadableInvoices.length})`}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleAll(validInvoiceSales)}
-                                                className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold"
-                                            >
-                                                <CheckSquare className="mx-auto mb-1 h-4 w-4" />
-                                                Select valid
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={(event) => {
-                                                    if (!mobilePrimaryInvoiceSale) return;
-                                                    openInvoice(mobilePrimaryInvoiceSale, event as unknown as React.MouseEvent, false, true);
-                                                }}
-                                                disabled={!mobilePrimaryInvoiceSale}
-                                                className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold disabled:opacity-50"
-                                            >
-                                                <FileText className="mx-auto mb-1 h-4 w-4" />
-                                                Preview
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             ) : null}
 
