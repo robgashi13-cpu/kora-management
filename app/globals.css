@@ -977,7 +977,7 @@ button:active,
   right: 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(6px, 1.6vw, 10px);
   border-top: 1px solid hsl(var(--border));
   background: rgba(255, 255, 255, 0.92);
@@ -1025,16 +1025,18 @@ button:active,
 
 .mobile-sticky-actions {
   position: sticky;
-  bottom: 0;
+  bottom: calc(4.75rem + env(safe-area-inset-bottom));
   z-index: 50;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   padding: 0.75rem;
-  padding-bottom: max(0.75rem, calc(0.75rem + var(--sab)));
-  background: rgba(248, 250, 252, 0.96);
+  padding-bottom: 0.75rem;
+  background: rgba(248, 250, 252, 0.98);
   box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
-  border-top: 1px solid hsl(var(--border));
+  border: 1px solid hsl(var(--border));
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
   backdrop-filter: blur(8px);
 }
 
