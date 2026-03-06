@@ -24,9 +24,15 @@ A high-tech, modern car sales management dashboard designed for iOS and iPad.
 # KORAUTOMANAGMENT
 
 ## Admin Authentication Configuration
-Set the following server-side environment variables before using admin login:
+Preferred (server-validated) setup:
 
 - `ADMIN_PASSWORD_SALT`
 - `ADMIN_PASSWORD_HASH` (base64 SHA-256 of `${ADMIN_PASSWORD_SALT}:<admin-password>`)
 
-Admin password validation is handled by `/api/admin-auth`; no plaintext admin secret should exist in client code.
+When running the Vite app without a backend `/api/admin-auth` route, you can configure client fallback vars so admin login still works:
+
+- `VITE_ADMIN_PASSWORD_SALT`
+- `VITE_ADMIN_PASSWORD_HASH` (same hash format as above)
+- Optional: `VITE_ADMIN_PASSWORD` (plaintext override for local/dev only)
+
+`/api/admin-auth` is used first when available; fallback verification is only used when that route is unavailable.
