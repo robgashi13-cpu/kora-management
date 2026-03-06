@@ -23,4 +23,6 @@ test('groups entries by month and keeps newest month first when sorted externall
   const grouped = groupInvoiceHistoryByMonth(entries);
   assert.deepEqual(Object.keys(grouped), ['2026-03', '2026-02']);
   assert.equal(grouped['2026-03'][0].relatedEntityId, 'sale-3');
+  assert.equal(grouped['2026-03'].length, 2);
+  assert.equal(grouped['2026-02'].length, 1);
 });

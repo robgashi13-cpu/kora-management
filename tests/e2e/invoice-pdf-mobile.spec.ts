@@ -21,8 +21,24 @@ test.describe('invoice + pdf mobile layout', () => {
 
       await page.getByRole('button', { name: 'Invoices' }).click();
       await expect(page.getByRole('heading', { name: 'Invoices' })).toBeVisible();
-      await expect(page.locator('[aria-label="Invoice mobile action bar"]')).toBeVisible();
-      await expect(page.getByRole('button', { name: /Download \(\d+\)/ })).toBeVisible();
+
+      const actionBar = page.locator('[aria-label="Invoice mobile action bar"]');
+      await expect(actionBar).toBeVisible();
+      const downloadButton = page.getByRole('button', { name: /Download \(\d+\)/ });
+      await expect(downloadButton).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Select valid' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Preview' })).toBeVisible();
+
+      const nav = page.locator('[aria-label="Mobile quick navigation"]');
+      await expect(nav).toBeVisible();
+      const [actionBarBox, navBox, downloadBox] = await Promise.all([actionBar.boundingBox(), nav.boundingBox(), downloadButton.boundingBox()]);
+      expect(actionBarBox, `Invoice action bar should render at width ${width}`).toBeTruthy();
+      expect(navBox, `Bottom nav should render at width ${width}`).toBeTruthy();
+      expect(downloadBox, `Download button should render at width ${width}`).toBeTruthy();
+      if (actionBarBox && navBox && downloadBox) {
+        expect(actionBarBox.y + actionBarBox.height).toBeLessThanOrEqual(navBox.y + 1);
+        expect(downloadBox.y + downloadBox.height).toBeLessThanOrEqual(navBox.y + 1);
+      }
 
       const previewButton = page.getByRole('button', { name: 'View' }).first();
       await previewButton.scrollIntoViewIfNeeded();

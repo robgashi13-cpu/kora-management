@@ -5126,11 +5126,11 @@ export default function Dashboard() {
                                     </div>
                                 )
                             ) : view === 'balance_due' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
                                     <p className="text-xs text-slate-500 mb-3">Aggregated for sold and shipped cars with no double-counting in grand total.</p>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
                                         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
                                         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
                                         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
@@ -5146,10 +5146,10 @@ export default function Dashboard() {
                                         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
                                     ) : (
                                         <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                            <div className="grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                            <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                 <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                             </div>
-                                            <div className="divide-y divide-slate-100">
+                                            <div className="divide-y divide-slate-100 hidden md:block">
                                                 {balanceDueRows.map(({ sale, scopeStatus }) => (
                                                     <button
                                                         key={`${scopeStatus}-${sale.id}`}
@@ -5164,6 +5164,35 @@ export default function Dashboard() {
                                                         <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
                                                         <div className="text-slate-600">{sale.shippingDate || '-'}</div>
                                                         <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="divide-y divide-slate-100 md:hidden">
+                                                {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                    <button
+                                                        key={`${scopeStatus}-${sale.id}`}
+                                                        type="button"
+                                                        onClick={() => handleSaleInteraction(sale)}
+                                                        className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                            </div>
+                                                            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
+                                                        </div>
+                                                        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                            <div className="min-w-0">
+                                                                <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
+                                                                <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="min-w-0 text-right">
+                                                                <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
+                                                                <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
+                                                                <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
+                                                            </div>
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
@@ -5224,7 +5253,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
-                                <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-28 pt-2 md:p-3 md:pb-3">
+                                <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-[calc(12.5rem+env(safe-area-inset-bottom))] pt-2 md:p-3 md:pb-3">
                                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2">
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
@@ -5276,7 +5305,10 @@ export default function Dashboard() {
                                             </div>
                                             {Object.keys(groupedInvoiceHistory).length === 0 ? <div className="text-sm text-slate-500">No invoice history yet.</div> : Object.entries(groupedInvoiceHistory).map(([month, entries]) => (
                                                 <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
-                                                    <div className="px-3 py-2 bg-slate-50 text-sm font-semibold">{formatInvoiceMonthLabel(month)}</div>
+                                                    <div className="px-3 py-2 bg-slate-50 text-sm font-semibold flex items-center justify-between gap-2">
+                                                        <span>{formatInvoiceMonthLabel(month)}</span>
+                                                        <span className="text-xs text-slate-600">{entries.length} cars</span>
+                                                    </div>
                                                     <div className="divide-y divide-slate-100">
                                                         {entries.map((entry) => (
                                                             <div key={entry.id} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
@@ -5782,7 +5814,8 @@ export default function Dashboard() {
                     {[
                         { id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
                         { id: 'invoices', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
-                        { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const }
+                        { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
+                        { id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
                     ].map((item) => {
                         const isActive = view === item.targetView;
                         return (
