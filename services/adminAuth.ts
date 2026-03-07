@@ -23,14 +23,14 @@ const sanitizeEnvSecret = (value?: string) => {
 const fallbackVerify = async (password: string) => {
   const normalizedInput = sanitizeEnvSecret(password);
   const directPassword = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD);
-  if (directPassword.length > 0 && normalizedInput === directPassword) {
-    return true;
-  }
+  const directMatch = directPassword.length > 0 && normalizedInput === directPassword;
 
   const salt = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD_SALT) || DEFAULT_ADMIN_PASSWORD_SALT;
   const hash = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD_HASH) || DEFAULT_ADMIN_PASSWORD_HASH;
   const computed = await hashWithSalt(normalizedInput, salt);
-  return computed === hash;
+  const hashMatch = computed === hash;
+
+  return directMatch || hashMatch;
 };
 
 export const verifyAdminPassword = async (password: string): Promise<boolean> => {

@@ -33,16 +33,13 @@ export async function POST(request: Request) {
 
   const normalizedInput = sanitizeEnvSecret(password);
   const directPassword = sanitizeEnvSecret(process.env.ADMIN_PASSWORD);
-  if (directPassword.length > 0) {
-    const ok = safeEqual(normalizedInput, directPassword);
-    return NextResponse.json({ ok }, { status: ok ? 200 : 401 });
-  }
-
   const salt = sanitizeEnvSecret(process.env.ADMIN_PASSWORD_SALT) || DEFAULT_ADMIN_PASSWORD_SALT;
   const hash = sanitizeEnvSecret(process.env.ADMIN_PASSWORD_HASH) || DEFAULT_ADMIN_PASSWORD_HASH;
 
   const computed = hashWithSalt(normalizedInput, salt);
-  const ok = safeEqual(computed, hash);
+  const directMatch = directPassword.length > 0 && safeEqual(normalizedInput, directPassword);
+  const hashMatch = safeEqual(computed, hash);
+  const ok = directMatch || hashMatch;
 
   return NextResponse.json({ ok }, { status: ok ? 200 : 401 });
 }
