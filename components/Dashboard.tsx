@@ -25,6 +25,7 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword } from '@/services/adminAuth';
+import { signOut } from '@/services/authService';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
 const getBankFee = (price: number) => {
@@ -1994,6 +1995,7 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
+        await signOut();
         setUserProfile('');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
@@ -3440,7 +3442,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                <button onClick={async () => { await signOut(); setUserProfile(''); localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </button>
             </div>
