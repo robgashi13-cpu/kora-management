@@ -15,15 +15,21 @@ const hashWithSalt = async (password: string, salt: string) => {
   return toBase64(new Uint8Array(digest));
 };
 
+const sanitizeEnvSecret = (value?: string) => {
+  if (typeof value !== 'string') return '';
+  return value.replace(/\r?\n/g, '').trim();
+};
+
 const fallbackVerify = async (password: string) => {
-  const directPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-  if (typeof directPassword === 'string' && directPassword.length > 0) {
-    return password === directPassword;
+  const normalizedInput = sanitizeEnvSecret(password);
+  const directPassword = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD);
+  if (directPassword.length > 0 && normalizedInput === directPassword) {
+    return true;
   }
 
-  const salt = import.meta.env.VITE_ADMIN_PASSWORD_SALT || DEFAULT_ADMIN_PASSWORD_SALT;
-  const hash = import.meta.env.VITE_ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH;
-  const computed = await hashWithSalt(password, salt);
+  const salt = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD_SALT) || DEFAULT_ADMIN_PASSWORD_SALT;
+  const hash = sanitizeEnvSecret(import.meta.env.VITE_ADMIN_PASSWORD_HASH) || DEFAULT_ADMIN_PASSWORD_HASH;
+  const computed = await hashWithSalt(normalizedInput, salt);
   return computed === hash;
 };
 
