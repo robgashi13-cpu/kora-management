@@ -429,7 +429,7 @@ const repairMercedesB200Visibility = (salesToRepair: CarSale[]) => {
 
         const updatedSale = {
             ...sale,
-            status: 'Shipped',
+            status: 'Shipped' as SaleStatus,
             soldBy: nextSoldBy,
             sellerName: nextSellerName
         };

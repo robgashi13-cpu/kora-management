@@ -505,7 +505,7 @@ export default function EditablePreviewModal({
         </div>
       </motion.div>
 
-      <style jsx global>{`
+      <style>{`
         .editable-preview-field:hover {
           background-color: rgba(0, 0, 0, 0.08);
           border-bottom: 1px dashed #000000 !important;

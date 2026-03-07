@@ -223,7 +223,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 </div>
             </motion.div>
 
-            <style jsx global>{`
+            <style>{`
         @media print {
             body * {
                 visibility: hidden;
