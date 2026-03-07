@@ -369,6 +369,8 @@ export const syncTransactionsWithSupabase = async (
             .select('*');
 
         if (fetchError) {
+            const quotaMessage = getQuotaExceededMessage(fetchError);
+            if (quotaMessage) return { success: false, error: quotaMessage };
             return { success: false, error: fetchError.message };
         }
 
@@ -393,14 +395,22 @@ export const syncTransactionsWithSupabase = async (
             .from('bank_transactions')
             .upsert(txsToPush, { onConflict: 'id' });
 
-        if (upsertError) return { success: false, error: upsertError.message };
+        if (upsertError) {
+            const quotaMessage = getQuotaExceededMessage(upsertError);
+            if (quotaMessage) return { success: false, error: quotaMessage };
+            return { success: false, error: upsertError.message };
+        }
 
         // 3. Fetch Final State
         const { data: finalTxs, error: finalFetchError } = await client
             .from('bank_transactions')
             .select('*');
 
-        if (finalFetchError) return { success: false, error: finalFetchError.message };
+        if (finalFetchError) {
+            const quotaMessage = getQuotaExceededMessage(finalFetchError);
+            if (quotaMessage) return { success: false, error: quotaMessage };
+            return { success: false, error: finalFetchError.message };
+        }
 
         return { success: true, data: finalTxs };
 
