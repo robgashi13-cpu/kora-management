@@ -25,6 +25,7 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword } from '@/services/adminAuth';
+import { signOut } from '@/services/authService';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
 const getBankFee = (price: number) => {
