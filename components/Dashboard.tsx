@@ -1995,6 +1995,7 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
+        await signOut();
         setUserProfile('');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
