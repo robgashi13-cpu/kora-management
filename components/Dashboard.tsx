@@ -959,7 +959,7 @@ export default function Dashboard() {
         return [...ordered, ...Array.from(unique)];
     }, []);
 
-    const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
+    const normalizeSaleProfiles = useCallback((sale: CarSale): CarSale => ({
         ...sale,
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy),
