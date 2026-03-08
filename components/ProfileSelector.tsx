@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw } from 'lucide-react';
+import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cloudClient } from '@/services/cloudAuth';
 
 type ProfileEntry = {
     name: string;
@@ -34,8 +35,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [adminAction, setAdminAction] = useState<'select' | 'add' | null>(null);
-
     const [pendingProfile, setPendingProfile] = useState<string | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     // Long press detection (4 seconds = 4000ms)
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -64,36 +66,69 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         handleSelect(p);
     };
 
-    const handleSelect = (p: string) => {
+    const signInProfile = async (profileName: string, pwd?: string) => {
+        setIsAuthLoading(true);
+        setAuthError(null);
+        try {
+            const { data, error } = await cloudClient.functions.invoke('profile-auth', {
+                body: { profileName, password: pwd },
+            });
+            if (error || !data?.session) {
+                const msg = data?.error || error?.message || 'Sign-in failed';
+                setAuthError(msg);
+                setIsAuthLoading(false);
+                return false;
+            }
+            // Set the session from the edge function response
+            await cloudClient.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+            });
+            setIsAuthLoading(false);
+            return true;
+        } catch (err: any) {
+            setAuthError(err?.message || 'Connection failed');
+            setIsAuthLoading(false);
+            return false;
+        }
+    };
+
+    const handleSelect = async (p: string) => {
         if (p === ADMIN_PROFILE) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
             setPassword('');
             setShowPassword(false);
+            setAuthError(null);
         } else {
-            onSelect(p, rememberMe);
+            const success = await signInProfile(p);
+            if (success) {
+                onSelect(p, rememberMe);
+            }
         }
     };
 
     const confirmPassword = async () => {
-        const isValid = await verifyAdminPassword(password);
-        if (!isValid) {
-            alert('Incorrect Password!');
-            return;
-        }
-
         if (adminAction === 'select' && pendingProfile) {
+            const success = await signInProfile(pendingProfile, password);
+            if (!success) return;
             onSelect(pendingProfile, rememberMe);
             setPendingProfile(null);
         }
         if (adminAction === 'add') {
+            const isValid = await verifyAdminPassword(password);
+            if (!isValid) {
+                setAuthError('Incorrect Password!');
+                return;
+            }
             setIsAdding(true);
         }
         setShowPasswordModal(false);
         setAdminAction(null);
         setPassword('');
         setShowPassword(false);
+        setAuthError(null);
     };
 
     const handleAdd = () => {
@@ -167,6 +202,17 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto scroll-container">
             <div className="min-h-full flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight text-slate-900">Who is working?</h1>
+
+                {authError && !showPasswordModal && (
+                    <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold max-w-sm text-center">{authError}</div>
+                )}
+
+                {isAuthLoading && !showPasswordModal && (
+                    <div className="mb-6 flex items-center gap-2 text-slate-500 text-sm font-semibold">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing in...
+                    </div>
+                )}
 
                 <div className="flex flex-wrap justify-center gap-6 md:gap-8 max-w-4xl">
                     {profiles.map(profile => (
@@ -276,17 +322,22 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 {showPasswordModal && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
                         <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
-                            <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
+                            <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); setAuthError(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {ADMIN_PROFILE} Password</h2>
+
+                            {authError && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">{authError}</div>
+                            )}
 
                             <div className="relative mb-6">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     autoFocus
                                     value={password}
-                                    onChange={e => setPassword(e.target.value)}
+                                    onChange={e => { setPassword(e.target.value); setAuthError(null); }}
                                     className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 pr-12"
-                                    onKeyDown={e => e.key === 'Enter' && confirmPassword()}
+                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && confirmPassword()}
+                                    disabled={isAuthLoading}
                                 />
                                 <button
                                     onClick={() => setShowPassword(!showPassword)}
@@ -306,8 +357,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 Remember me on this device
                             </label>
 
-                            <button onClick={confirmPassword} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">
-                                Login
+                            <button onClick={confirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
+                                {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isAuthLoading ? 'Signing in...' : 'Login'}
                             </button>
                         </div>
                     </div>
