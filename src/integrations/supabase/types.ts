@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_transactions: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string
+          date: string | null
+          description: string | null
+          id: string
+          last_edited_by: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          last_edited_by?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          date?: string | null
+          description?: string | null
+          id?: string
+          last_edited_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
