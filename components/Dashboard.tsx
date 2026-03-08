@@ -1997,13 +1997,15 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        await signOut();
-        setUserProfile('');
+        try { await signOut(); } catch (e) { console.warn('Sign out error:', e); }
+        setUserProfile(null);
+        setView('profile_select');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         setRememberProfile(false);
         setShowProfileMenu(false);
+        setIsMobileMenuOpen(false);
     };
 
     const handleAddProfile = async () => {

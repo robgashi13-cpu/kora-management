@@ -2,17 +2,20 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let authClient: SupabaseClient | null = null;
 
-const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || '';
-const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+// Fallback values matching Lovable Cloud project
+const FALLBACK_URL = 'https://tbjihsqkbmjiblpxzojo.supabase.co';
+const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE';
+
+const getSupabaseUrl = () => {
+    try { return import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL; } catch { return FALLBACK_URL; }
+};
+const getSupabaseKey = () => {
+    try { return import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || FALLBACK_KEY; } catch { return FALLBACK_KEY; }
+};
 
 export const getAuthClient = (): SupabaseClient => {
     if (!authClient) {
-        const url = getSupabaseUrl();
-        const key = getSupabaseKey();
-        if (!url || !key) {
-            throw new Error('Supabase URL or key is not configured. Check your environment variables.');
-        }
-        authClient = createClient(url, key, {
+        authClient = createClient(getSupabaseUrl(), getSupabaseKey(), {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
