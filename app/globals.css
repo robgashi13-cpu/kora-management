@@ -1061,13 +1061,18 @@ button:active,
   color: #475569;
   font-size: 11px;
   font-weight: 600;
-  min-height: 46px;
   min-height: 48px;
+  transition: all 220ms var(--luxury-ease);
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.92);
 }
 
 .mobile-nav-item-active {
-  background: #f1f5f9;
+  background: hsl(220 14% 96%);
   color: #0f172a;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
 }
 
 .overflow-wrap-anywhere {
