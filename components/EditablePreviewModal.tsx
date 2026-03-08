@@ -505,7 +505,7 @@ export default function EditablePreviewModal({
         </div>
       </motion.div>
 
-      <style jsx global>{`
+      <style>{`
         .editable-preview-field:hover {
           background-color: rgba(0, 0, 0, 0.08);
           border-bottom: 1px dashed #000000 !important;
@@ -525,19 +525,17 @@ export default function EditablePreviewModal({
                 box-shadow: none !important;
                 z-index: 9999 !important;
                 background: white !important;
-                overflow: visible !important; /* Ensure content flows */
+                overflow: visible !important;
                 height: auto !important;
                 min-height: 100vh !important;
             }
-            /* Hide the modal UI elements specifically */
-            [role="dialog"] > div:first-child, /* Backdrop */
-            button, /* All buttons */
-            .overflow-y-auto, /* Scroll containers */
-            header /* Headers */ {
+            [role="dialog"] > div:first-child,
+            button,
+            .overflow-y-auto,
+            header {
                 display: none !important;
             }
             
-            /* Ensure page breaks work */
             .page-break {
                 page-break-before: always !important;
                 break-before: page !important;
