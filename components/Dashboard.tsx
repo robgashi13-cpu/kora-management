@@ -4832,7 +4832,7 @@ export default function Dashboard() {
                                                         key={sale.id}
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
-                                                        className="relative border-b border-slate-200"
+                                                        className="relative border-b border-slate-100/80"
                                                     >
                                                         {!isSoldSale && (
                                                             <div className="absolute inset-0 flex items-center justify-end gap-2 px-3 bg-gradient-to-l from-red-700 via-red-600 to-amber-500 overflow-hidden">
