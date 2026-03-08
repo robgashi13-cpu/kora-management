@@ -1043,3 +1043,117 @@ button:active,
 .mobile-sticky-actions button {
   min-height: 44px;
 }
+
+/* ===== Smooth Page & Element Transitions ===== */
+
+/* Sidebar profile menu entrance */
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.profile-menu-enter {
+  animation: slideDownFade 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Smooth content fade for view switching */
+@keyframes contentFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view-content-enter {
+  animation: contentFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Button press micro-animation */
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+/* Card hover lift effect */
+.card-hover-lift {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.card-hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.12);
+}
+
+/* Smooth sidebar nav hover */
+.sidebar-nav-item {
+  transition: background-color 180ms ease, color 180ms ease, transform 140ms ease, box-shadow 200ms ease;
+}
+.sidebar-nav-item:hover {
+  transform: translateX(2px);
+}
+.sidebar-nav-item:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+/* Smooth checkbox toggle */
+@keyframes checkPop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.check-animate {
+  animation: checkPop 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Toast notification entrance */
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.toast-enter {
+  animation: toastSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Smooth modal backdrop */
+@keyframes backdropFade {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+.modal-backdrop-enter {
+  animation: backdropFade 0.3s ease forwards;
+}
+
+/* Staggered list item entrance */
+@keyframes listItemIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.list-item-stagger {
+  animation: listItemIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Smooth focus ring transition */
+*:focus-visible {
+  transition: outline-offset 0.15s ease, outline-color 0.15s ease;
+}
+
+/* Smooth scrollbar appearance */
+.scroll-container {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced button transitions globally */
+button, [role="button"] {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 140ms ease, box-shadow 200ms ease, opacity 180ms ease;
+}
+
+/* Smooth table row hover */
+[data-list-row='true'] {
+  transition: background-color 150ms ease;
+}
+
+[data-list-row='true']:hover {
+  background-color: hsl(220 14% 97%);
+}
