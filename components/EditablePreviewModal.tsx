@@ -421,6 +421,20 @@ export default function EditablePreviewModal({
                   <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
                 </button>
               )}
+              {documentType === 'invoice' && (
+                <button
+                  type="button"
+                  onClick={() => setIsPreInvoice(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${isPreInvoice
+                    ? 'bg-amber-600 text-white border-amber-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  aria-pressed={isPreInvoice}
+                >
+                  <Check className="w-3 h-3" />
+                  <span>Pre-Invoice</span>
+                </button>
+              )}
               <button
                 onClick={handleReset}
                 className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[11px]"
