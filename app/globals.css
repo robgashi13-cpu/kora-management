@@ -269,13 +269,28 @@ button.ui-control {
 
 .mobile-car-row-compact {
   min-height: 44px;
-  padding-top: 0.2rem;
-  padding-bottom: 0.2rem;
+  padding: 0.5rem 0.75rem;
+  transition: background-color 180ms ease, transform 120ms ease;
+}
+
+.mobile-car-row-compact:active {
+  background-color: hsl(220 14% 96%) !important;
+  transform: scale(0.985);
 }
 
 .mobile-car-row-compact button,
 .mobile-car-row-compact [role='button'] {
   min-height: 30px;
+}
+
+/* Long-press visual feedback */
+@keyframes longPressRipple {
+  0% { box-shadow: inset 0 0 0 0 hsl(220 14% 90%); }
+  100% { box-shadow: inset 0 0 0 100px hsl(220 14% 94%); }
+}
+
+.mobile-car-row-compact:active:not(.cars-sold-row) {
+  animation: longPressRipple 2s ease-out forwards;
 }
 
 .sidebar-group-panel {

@@ -5800,12 +5800,17 @@ export default function Dashboard() {
                             aria-modal="true"
                             aria-label="Sale actions"
                         >
-                            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" />
-                            <p className="mb-1 text-sm font-bold text-slate-900">{longPressActionSale.brand} {longPressActionSale.model} {longPressActionSale.year}</p>
-                            <p className="mb-4 text-xs text-slate-500">{longPressActionSale.buyerName || 'No buyer'} · {longPressActionSale.status}</p>
+                            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300" />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm">{(longPressActionSale.brand || '?')[0]}</div>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-900">{longPressActionSale.brand} {longPressActionSale.model} {longPressActionSale.year}</p>
+                                    <p className="text-xs text-slate-500">{longPressActionSale.buyerName || 'No buyer'} · {longPressActionSale.status}</p>
+                                </div>
+                            </div>
 
                             {/* Primary Actions */}
-                            <div className="grid grid-cols-3 gap-2 mb-3">
+                            <div className="grid grid-cols-4 gap-2 mb-3">
                                 <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={() => { setLongPressActionSale(null); setViewSaleModalItem(longPressActionSale); }}>
                                     <Eye className="w-4 h-4 text-slate-500" />
                                     View
@@ -5817,6 +5822,14 @@ export default function Dashboard() {
                                 <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={() => { setLongPressActionSale(null); openInvoice(longPressActionSale, { stopPropagation() { }, preventDefault() { } } as React.MouseEvent); }}>
                                     <FileText className="w-4 h-4 text-slate-500" />
                                     Invoice
+                                </button>
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={async () => {
+                                    const copy = { ...longPressActionSale, id: crypto.randomUUID(), createdAt: new Date().toISOString(), vin: `${longPressActionSale.vin} (Copy)`, plateNumber: `${longPressActionSale.plateNumber} (Copy)` };
+                                    await updateSalesAndSave([copy, ...sales]);
+                                    setLongPressActionSale(null);
+                                }}>
+                                    <Copy className="w-4 h-4 text-slate-500" />
+                                    Duplicate
                                 </button>
                             </div>
 
@@ -5849,23 +5862,30 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            {/* Secondary Actions */}
+                            {/* Danger Zone */}
                             <div className="grid grid-cols-2 gap-2">
                                 {longPressActionSale.group && (
                                     <button type="button" className="ui-control min-h-11 rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 flex items-center justify-center gap-1.5 active:scale-[0.96] transition-transform" onClick={() => { handleRemoveFromGroup(longPressActionSale.id); setLongPressActionSale(null); }}>
                                         <X className="w-3.5 h-3.5" />
-                                        Remove from Group
+                                        Remove Group
                                     </button>
                                 )}
-                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 active:scale-[0.96] transition-transform" onClick={async () => {
-                                    const copy = { ...longPressActionSale, id: crypto.randomUUID(), createdAt: new Date().toISOString(), vin: `${longPressActionSale.vin} (Copy)`, plateNumber: `${longPressActionSale.plateNumber} (Copy)` };
-                                    await updateSalesAndSave([copy, ...sales]);
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-300 bg-slate-50 px-3 text-xs font-semibold text-slate-600 flex items-center justify-center gap-1.5 active:scale-[0.96] transition-transform" onClick={async () => {
+                                    const id = longPressActionSale.id;
+                                    const currentSales = salesRef.current;
+                                    const index = currentSales.findIndex(s => s.id === id);
+                                    if (index === -1) return;
+                                    const updatedSale = { ...currentSales[index], status: 'Archived' as SaleStatus, archivedAt: new Date().toISOString(), archivedBy: userProfile, archivedFromStatus: currentSales[index].status };
+                                    const newSales = [...currentSales];
+                                    newSales[index] = updatedSale;
+                                    dirtyIds.current.add(id);
+                                    await updateSalesAndSave(newSales);
                                     setLongPressActionSale(null);
                                 }}>
-                                    <Copy className="w-3.5 h-3.5" />
-                                    Duplicate
+                                    <Archive className="w-3.5 h-3.5" />
+                                    Archive
                                 </button>
-                                <button type="button" className="ui-control min-h-11 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 flex items-center justify-center gap-1.5 active:scale-[0.96] transition-transform" onClick={() => { const shouldDelete = confirm('Delete this item?'); if (shouldDelete) { handleDeleteSingle(longPressActionSale.id); } setLongPressActionSale(null); }}>
+                                <button type="button" className="ui-control min-h-11 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 flex items-center justify-center gap-1.5 active:scale-[0.96] transition-transform" onClick={() => { handleDeleteSingle(longPressActionSale.id); setLongPressActionSale(null); }}>
                                     <Trash2 className="w-3.5 h-3.5" />
                                     Delete
                                 </button>
