@@ -2154,8 +2154,8 @@ export default function Dashboard() {
                 if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
                 if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-                setSupabaseUrl(url);
-                setSupabaseKey(keyName);
+                setSupabaseUrl(url || SUPABASE_URL);
+                setSupabaseKey(keyName || SUPABASE_KEY);
 
                 if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
                 if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
