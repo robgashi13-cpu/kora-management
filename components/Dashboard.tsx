@@ -1992,17 +1992,19 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        setUserProfile('');
-        await Preferences.remove({ key: 'user_profile' });
-        await Preferences.remove({ key: 'remember_profile' });
-        localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
-        setRememberProfile(false);
         setShowProfileMenu(false);
+        setIsMobileMenuOpen(false);
         // Sign out from Supabase auth
         try {
             const { cloudClient } = await import('@/services/cloudAuth');
             await cloudClient.auth.signOut();
         } catch { /* ignore */ }
+        setUserProfile('');
+        setView('landing');
+        await Preferences.remove({ key: 'user_profile' });
+        await Preferences.remove({ key: 'remember_profile' });
+        localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
+        setRememberProfile(false);
     };
 
     const handleAddProfile = async () => {
@@ -3371,82 +3373,127 @@ export default function Dashboard() {
     }
 
     if (!userProfile) {
-        return <ProfileSelector
-            profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
-            onSelect={(p, remember) => {
-                const normalizedProfile = normalizeProfileName(p);
-                if (!normalizedProfile) return;
-                setUserProfile(normalizedProfile);
-                setView('landing');
-                setRememberProfile(remember);
-                persistUserProfile(normalizedProfile, remember);
-            }}
-            onAdd={(name, _email, remember) => {
-                const normalizedName = normalizeProfileName(name);
-                if (!normalizedName) return;
-                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-                setAvailableProfiles(updated);
-                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-                setUserProfile(normalizedName);
-                setRememberProfile(remember);
-                persistUserProfile(normalizedName, remember);
-                syncProfilesToCloud(updated);
-            }}
-            onDelete={handleDeleteProfile}
-            onEdit={handleEditProfile}
-            onRestore={() => { }}
-            avatars={profileAvatars}
-            onEditAvatar={handleEditAvatar}
-            rememberDefault={rememberProfile}
-            verifyAdminPassword={verifyAdminPassword}
-        />;
+        return (
+            <motion.div
+                key="profile-selector"
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="contents"
+            >
+                <ProfileSelector
+                    profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
+                    onSelect={(p, remember) => {
+                        const normalizedProfile = normalizeProfileName(p);
+                        if (!normalizedProfile) return;
+                        setUserProfile(normalizedProfile);
+                        setView('landing');
+                        setRememberProfile(remember);
+                        persistUserProfile(normalizedProfile, remember);
+                    }}
+                    onAdd={(name, _email, remember) => {
+                        const normalizedName = normalizeProfileName(name);
+                        if (!normalizedName) return;
+                        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+                        setAvailableProfiles(updated);
+                        Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                        setUserProfile(normalizedName);
+                        setRememberProfile(remember);
+                        persistUserProfile(normalizedName, remember);
+                        syncProfilesToCloud(updated);
+                    }}
+                    onDelete={handleDeleteProfile}
+                    onEdit={handleEditProfile}
+                    onRestore={() => { }}
+                    avatars={profileAvatars}
+                    onEditAvatar={handleEditAvatar}
+                    rememberDefault={rememberProfile}
+                    verifyAdminPassword={verifyAdminPassword}
+                />
+            </motion.div>
+        );
     }
 
     if (view === 'landing') {
         return (
-            <div className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans">
+            <motion.div
+                key="landing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans"
+            >
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
-                <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200/40 to-transparent rounded-full blur-3xl" />
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 0.4 }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
+                    className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200 to-transparent rounded-full blur-3xl"
+                />
 
-                <div className="z-10 text-center mb-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    className="z-10 text-center mb-8"
+                >
                     <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
                     <p className="text-slate-500 text-lg">Select an operation to proceed</p>
-                </div>
+                </motion.div>
 
                 <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
-                    <button
+                    <motion.button
                         id="btn-add-sale"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => openSaleForm(null, 'landing')}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
                             <Plus className="w-12 h-12" />
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
                             <div className="text-slate-500">Record a new vehicle sale</div>
                         </div>
-                    </button>
+                    </motion.button>
 
-                    <button
+                    <motion.button
                         id="btn-view-sales"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-900/10 p-12 rounded-3xl transition-all group flex flex-col items-center gap-6 shadow-lg"
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
                     >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-150 shadow-inner">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
                             <Clipboard className="w-12 h-12" />
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
                             <div className="text-slate-500">Access dashboard & history</div>
                         </div>
-                    </button>
+                    </motion.button>
                 </div>
 
-                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.5 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleLogout}
+                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
+                >
                     <LogOut className="w-4 h-4" /> Switch Profile
-                </button>
-            </div>
+                </motion.button>
+            </motion.div>
         );
     }
 
@@ -3492,7 +3539,7 @@ export default function Dashboard() {
                     </button>
 
                     {showProfileMenu && (
-                        <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-top-2">
+                        <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl z-[70] profile-menu-enter">
                             <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
@@ -3809,7 +3856,7 @@ export default function Dashboard() {
 
             {/* Global Sync Error Toast */}
             {syncError && (
-                <div className={`fixed top-20 right-4 z-[90] p-4 rounded-xl shadow-lg max-w-md ${isQuotaSyncIssue(syncError) ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                <div className={`fixed top-20 right-4 z-[90] p-4 rounded-xl shadow-lg max-w-md toast-enter ${isQuotaSyncIssue(syncError) ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
                     <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full animate-pulse ${isQuotaSyncIssue(syncError) ? 'bg-amber-500' : 'bg-red-500'}`} />
