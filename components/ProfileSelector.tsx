@@ -345,8 +345,17 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
 
                 {/* Admin Password Modal */}
                 {showPasswordModal && (
-                    <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
-                        <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4 modal-backdrop-enter"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+                        >
                             <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); setAuthError(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {ADMIN_PROFILE} Password</h2>
 
