@@ -227,7 +227,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 )}
 
                 <div className="flex flex-wrap justify-center gap-6 md:gap-8 max-w-4xl">
-                    {profiles.map(profile => (
+                    {profiles.map((profile, index) => (
                         <motion.div
                             key={profile.name}
                             whileHover={{ scale: 1.05 }}
