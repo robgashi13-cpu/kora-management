@@ -3521,6 +3521,9 @@ export default function Dashboard() {
                                 <Plus className="w-4 h-4" /> Add Profile
                             </button>
                             <div className="h-px bg-zinc-800 my-2" />
+                            <button onClick={() => { setShowChangePasswordModal(true); setShowProfileMenu(false); }} className="w-full text-left px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors duration-150">
+                                <Lock className="w-4 h-4" /> Change Password
+                            </button>
                             <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors duration-150">
                                 <LogOut className="w-4 h-4" /> Log Out
                             </button>
