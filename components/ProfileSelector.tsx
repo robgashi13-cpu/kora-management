@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw } from 'lucide-react';
+import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/src/integrations/supabase/client';
 
 type ProfileEntry = {
     name: string;
