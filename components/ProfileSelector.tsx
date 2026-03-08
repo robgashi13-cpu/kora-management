@@ -230,7 +230,10 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     {profiles.map((profile, index) => (
                         <motion.div
                             key={profile.name}
-                            whileHover={{ scale: 1.05 }}
+                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            transition={{ duration: 0.4, delay: 0.15 + index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ scale: 1.05, y: -4 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleProfileClick(profile.name)}
                             onTouchStart={handleTouchStart}
