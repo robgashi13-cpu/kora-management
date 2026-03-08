@@ -1998,6 +1998,11 @@ export default function Dashboard() {
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         setRememberProfile(false);
         setShowProfileMenu(false);
+        // Sign out from Supabase auth
+        try {
+            const { supabase: cloudClient } = await import('@/src/integrations/supabase/client');
+            await cloudClient.auth.signOut();
+        } catch { /* ignore */ }
     };
 
     const handleAddProfile = async () => {
