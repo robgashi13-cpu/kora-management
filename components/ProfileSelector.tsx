@@ -171,30 +171,40 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
 
     if (isAdding) {
         return (
-            <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4">
-                <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25 }}
+                className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 modal-backdrop-enter"
+            >
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.92, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+                >
                     <h2 className="text-2xl font-bold mb-6 text-slate-900">Add Profile</h2>
                     <input
                         autoFocus
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                         placeholder="Profile Name"
-                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 transition-all duration-200"
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                     />
                     <input
                         value={newEmail}
                         onChange={e => setNewEmail(e.target.value)}
                         placeholder="Email (optional)"
-                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-base mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-base mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 transition-all duration-200"
                         onKeyDown={e => e.key === 'Enter' && handleAdd()}
                     />
                     <div className="flex gap-4">
-                        <button onClick={() => setIsAdding(false)} className="flex-1 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500">Cancel</button>
-                        <button onClick={handleAdd} className="flex-1 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">Save</button>
+                        <button onClick={() => setIsAdding(false)} className="flex-1 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500 transition-all duration-200 active:scale-[0.97]">Cancel</button>
+                        <button onClick={handleAdd} className="flex-1 py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-all duration-200 active:scale-[0.97]">Save</button>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         );
     }
 
