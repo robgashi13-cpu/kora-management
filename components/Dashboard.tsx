@@ -1997,13 +1997,15 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        await signOut();
-        setUserProfile('');
+        try { await signOut(); } catch (e) { console.warn('Sign out error:', e); }
+        setUserProfile(null);
+        setView('profile_select');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         setRememberProfile(false);
         setShowProfileMenu(false);
+        setIsMobileMenuOpen(false);
     };
 
     const handleAddProfile = async () => {
@@ -2144,9 +2146,9 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            // Use Lovable Cloud Supabase credentials
-            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+            // Use Lovable Cloud Supabase credentials with hardcoded fallback
+            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://tbjihsqkbmjiblpxzojo.supabase.co";
+            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE";
 
             try {
                 // Ensure Supabase URL/Key exist
@@ -3444,7 +3446,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <button onClick={async () => { await signOut(); setUserProfile(''); localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                <button onClick={handleLogout} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </button>
             </div>
