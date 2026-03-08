@@ -5535,22 +5535,22 @@ export default function Dashboard() {
 
                 </main>
             </div> {/* Close flex-1 */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {editChoiceSale && (
                     <motion.div
-                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 p-4"
+                        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+                        exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                         onClick={() => setEditChoiceSale(null)}
                     >
                         <motion.div
                             className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                            transition={{ type: 'spring', damping: 26, stiffness: 260, mass: 0.8 }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-start justify-between">
@@ -5567,7 +5567,10 @@ export default function Dashboard() {
                                 </button>
                             </div>
                             <div className="mt-4 flex flex-col gap-2">
-                                <button
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.08 }}
                                     onClick={() => {
                                         const sale = editChoiceSale;
                                         setEditChoiceSale(null);
@@ -5577,19 +5580,25 @@ export default function Dashboard() {
                                 >
                                     <Eye className="w-4 h-4" />
                                     View Sale
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.14 }}
                                     onClick={handleEditSaleChoice}
                                     className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     Edit Sale
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
                                     onClick={handleEditShitblerjeChoice}
                                     className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                                 >
                                     Edit Shitblerje
-                                </button>
+                                </motion.button>
                             </div>
                         </motion.div>
                     </motion.div>
