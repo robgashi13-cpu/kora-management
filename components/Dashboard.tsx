@@ -3888,7 +3888,7 @@ export default function Dashboard() {
                         initial={{ width: 0, opacity: 0 }}
                         animate={{ width: 256, opacity: 1 }}
                         exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                         className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-[width,opacity]`}
                     >
                         <SidebarContent />
@@ -3905,17 +3905,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
+                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
                             key="mobile-drawer"
-                            initial={{ x: '-100%', opacity: 0.5 }}
+                            initial={{ x: '-100%', opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: '-100%', opacity: 0 }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 280, mass: 0.8 }}
-                            className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl`}
+                            transition={{ type: 'spring', damping: 32, stiffness: 300, mass: 0.7 }}
+                            className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl will-change-transform`}
                         >
                             <SidebarContent />
                         </motion.div>
