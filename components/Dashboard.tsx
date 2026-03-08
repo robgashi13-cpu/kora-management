@@ -3446,7 +3446,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <button onClick={async () => { await signOut(); setUserProfile(''); localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                <button onClick={handleLogout} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </button>
             </div>
