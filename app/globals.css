@@ -1019,9 +1019,10 @@ button:active,
   top: 0;
   z-index: 30;
   border-bottom: 1px solid hsl(var(--border));
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.88);
   padding: max(12px, calc(12px + var(--sat))) clamp(12px, 4vw, 20px) 12px;
-  backdrop-filter: saturate(140%) blur(14px);
+  backdrop-filter: saturate(140%) blur(16px);
+  transition: background-color 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
 }
 
 .app-content {
@@ -1030,6 +1031,8 @@ button:active,
   min-height: 0;
   flex: 1;
   padding-bottom: clamp(10px, 2.5vw, 14px);
+  animation: viewFadeIn 350ms var(--luxury-ease) forwards;
+  will-change: opacity, transform;
 }
 
 .app-mobile-nav {
@@ -1041,10 +1044,11 @@ button:active,
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(6px, 1.6vw, 10px);
-  border-top: 1px solid hsl(var(--border));
-  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid hsl(var(--border) / 0.6);
+  background: rgba(255, 255, 255, 0.94);
   padding: 8px max(10px, calc(10px + var(--sal))) max(10px, calc(10px + var(--sab))) max(10px, calc(10px + var(--sar)));
-  backdrop-filter: saturate(120%) blur(10px);
+  backdrop-filter: saturate(130%) blur(14px);
+  transition: background-color 250ms ease;
 }
 
 .mobile-nav-item {
