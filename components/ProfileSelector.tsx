@@ -70,7 +70,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setIsAuthLoading(true);
         setAuthError(null);
         try {
-            const { data, error } = await supabase.functions.invoke('profile-auth', {
+            const { data, error } = await cloudClient.functions.invoke('profile-auth', {
                 body: { profileName, password: pwd },
             });
             if (error || !data?.session) {
