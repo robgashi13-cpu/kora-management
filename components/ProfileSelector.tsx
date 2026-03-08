@@ -80,7 +80,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 return false;
             }
             // Set the session from the edge function response
-            await supabase.auth.setSession({
+            await cloudClient.auth.setSession({
                 access_token: data.session.access_token,
                 refresh_token: data.session.refresh_token,
             });

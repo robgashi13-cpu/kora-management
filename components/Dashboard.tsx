@@ -2000,7 +2000,7 @@ export default function Dashboard() {
         setShowProfileMenu(false);
         // Sign out from Supabase auth
         try {
-            const { supabase: cloudClient } = await import('@/src/integrations/supabase/client');
+            const { cloudClient } = await import('@/services/cloudAuth');
             await cloudClient.auth.signOut();
         } catch { /* ignore */ }
     };
