@@ -63,9 +63,7 @@ const isLegacyAdminProfile = (name?: string | null) => {
 const isQuotaSyncIssue = (message?: string | null) => {
     if (!message) return false;
     const normalized = message.toLowerCase();
-    const quotaHints = ['quota', 'exceeded', 'billing', 'insufficient', 'limit reached', 'resource exhausted', 'over capacity'];
-    const matchedHints = quotaHints.filter((hint) => normalized.includes(hint));
-    return matchedHints.length >= 2 || normalized.includes('quota exceeded') || normalized.includes('insufficient_quota');
+    return normalized.includes('quota') && (normalized.includes('exceeded') || normalized.includes('limit'));
 };
 
 const normalizeAvatarMap = (avatars: Record<string, string>) => {
