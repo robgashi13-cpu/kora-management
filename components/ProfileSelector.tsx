@@ -395,8 +395,8 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {isAuthLoading ? 'Signing in...' : 'Login'}
                             </button>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 )}
 
                 {editingProfile && (
