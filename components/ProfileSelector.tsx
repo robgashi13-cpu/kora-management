@@ -35,8 +35,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [adminAction, setAdminAction] = useState<'select' | 'add' | null>(null);
-
     const [pendingProfile, setPendingProfile] = useState<string | null>(null);
+    const [isAuthLoading, setIsAuthLoading] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     // Long press detection (4 seconds = 4000ms)
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
