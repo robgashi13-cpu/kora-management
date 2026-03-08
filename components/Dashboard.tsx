@@ -3496,13 +3496,18 @@ export default function Dashboard() {
                             <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
-                                    <button key={p} onClick={() => {
+                                    <button key={p} onClick={async () => {
                                         if (p === ADMIN_PROFILE && userProfile !== p) {
                                             setPendingProfile(p);
                                             setPasswordInput('');
                                             setIsPasswordVisible(false);
                                             setShowPasswordModal(true);
                                             return;
+                                        }
+                                        // Non-admin: authenticate via edge function
+                                        const result = await authenticateProfile(p);
+                                        if (!result) {
+                                            console.warn('Profile auth failed for', p);
                                         }
                                         setShowProfileMenu(false);
                                         startTransition(() => { setUserProfile(p); });
