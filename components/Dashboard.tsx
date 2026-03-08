@@ -3869,28 +3869,40 @@ export default function Dashboard() {
             )}
 
             {/* Desktop Sidebar */}
-            {!isFormOpen && (
-                <aside className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden transition-[width,opacity,transform] duration-200 ease-out will-change-[width,opacity,transform] origin-left ${isSidebarCollapsed ? 'w-0 -translate-x-2 opacity-0 pointer-events-none' : 'w-64 translate-x-0 opacity-100'}`}>
-                    <SidebarContent />
-                </aside>
-            )}
+            <AnimatePresence mode="wait">
+                {!isFormOpen && !isSidebarCollapsed && (
+                    <motion.aside
+                        key="desktop-sidebar"
+                        initial={{ width: 0, opacity: 0 }}
+                        animate={{ width: 256, opacity: 1 }}
+                        exit={{ width: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-[width,opacity]`}
+                    >
+                        <SidebarContent />
+                    </motion.aside>
+                )}
+            </AnimatePresence>
 
             {/* Mobile Drawer */}
             <AnimatePresence>
                 {!isFormOpen && isMobileMenuOpen && (
                     <>
                         <motion.div
+                            key="mobile-backdrop"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
                             onClick={() => setIsMobileMenuOpen(false)}
                             className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
-                            initial={{ x: '-100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            key="mobile-drawer"
+                            initial={{ x: '-100%', opacity: 0.5 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: '-100%', opacity: 0 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 280, mass: 0.8 }}
                             className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl`}
                         >
                             <SidebarContent />
