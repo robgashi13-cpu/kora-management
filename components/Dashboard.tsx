@@ -5689,13 +5689,27 @@ export default function Dashboard() {
             )}
             {
                 showPasswordModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowPasswordModal(false)}>
-                        <div className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                        onClick={() => setShowPasswordModal(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                            className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl"
+                            onClick={e => e.stopPropagation()}
+                        >
                             <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-colors duration-150"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 pr-12 text-slate-700 outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-900/20 transition-all duration-200"
                                     placeholder="Password"
                                     value={passwordInput}
                                     onChange={e => setPasswordInput(e.target.value)}
@@ -5703,7 +5717,7 @@ export default function Dashboard() {
                                     onKeyDown={e => e.key === 'Enter' && handlePasswordSubmit()}
                                 />
                                 <button
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                     onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                                 >
                                     {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -5719,11 +5733,11 @@ export default function Dashboard() {
                                 Remember me on this device
                             </label>
                             <div className="flex justify-end gap-3">
-                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-150">Cancel</button>
-                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-colors shadow-sm">Submit</button>
+                                <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-200 active:scale-[0.97]">Cancel</button>
+                                <button onClick={handlePasswordSubmit} className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 font-bold transition-all duration-200 shadow-sm active:scale-[0.97]">Submit</button>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 )
             }
             {view !== 'sale_form' && (
