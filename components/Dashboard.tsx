@@ -2142,9 +2142,9 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            // Hardcoded Credentials (as fallback/default)
-            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
-            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
+            // Use Lovable Cloud Supabase credentials
+            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
             try {
                 // Ensure Supabase URL/Key exist
