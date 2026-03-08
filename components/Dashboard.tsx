@@ -4025,7 +4025,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
+                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`} key={view + activeCategory}>
                     {view !== 'sale_form' && (
                         <>
 
