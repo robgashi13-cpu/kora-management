@@ -106,7 +106,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             style={{ height: '52px', width: 'auto' }}
                         />
                         <div className="invoice-title">
-                            <div className="invoice-title-label">{template?.title || 'INVOICE'}</div>
+                            <div className="invoice-title-label">{isPreInvoice ? 'PRE-INVOICE' : (template?.title || 'INVOICE')}</div>
                             <div className="invoice-title-meta">Ref: {referenceId}</div>
                         </div>
                     </div>
