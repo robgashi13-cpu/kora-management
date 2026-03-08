@@ -5201,78 +5201,134 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative flex items-center gap-2 px-2 py-2 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative px-2 py-2 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:items-center md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
-                                                                            <div className="flex items-center justify-center md:flex md:items-center md:justify-center">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
-                                                                                    className={`w-5 h-5 md:w-6 md:h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent bg-white'}`}
-                                                                                >
-                                                                                    <Check className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                                                </button>
-                                                                            </div>
-
-                                                                            <div className="min-w-0 flex-1 md:flex-none">
+                                                                            {/* Mobile card layout */}
+                                                                            <div className="md:hidden space-y-2">
+                                                                                {/* Row 1: Checkbox + Vehicle + Buyer */}
                                                                                 <div className="flex items-start gap-2">
-                                                                                    <div className="mt-0.5 h-6 w-6 md:h-7 md:w-7 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
-                                                                                        <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                                                    </div>
-                                                                                    <div className="min-w-0">
-                                                                                        <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                                                                                            <span className="font-bold text-slate-900 text-xs md:text-sm leading-tight truncate">{s.brand} {s.model}</span>
-                                                                                            <span className="text-[9px] md:text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                                                        className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent bg-white'}`}
+                                                                                    >
+                                                                                        <Check className="w-3.5 h-3.5" />
+                                                                                    </button>
+                                                                                    <div className="min-w-0 flex-1">
+                                                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                            <span className="font-bold text-slate-900 text-xs leading-tight">{s.brand} {s.model}</span>
+                                                                                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                                            <span className={`text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
                                                                                         </div>
-                                                                                        <div className="flex items-center gap-1.5 md:gap-2 mt-1 flex-wrap min-w-0">
-                                                                                            <span className="text-[9px] md:text-[9px] font-mono text-slate-400 uppercase tracking-wider overflow-wrap-anywhere">VIN: {(s.vin || '').slice(-8)}</span>
-                                                                                            <span className={`text-[9px] md:text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
-                                                                                            <span className={`md:hidden text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tight ${transportStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>Transport {transportStatus === 'PAID' ? 'Paid' : 'Not paid'}</span>
+                                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                                            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                                            <span className="text-[10px] text-slate-500 truncate">{s.buyerName || 'No buyer'}</span>
                                                                                         </div>
-                                                                                        <div className="md:hidden mt-1 text-[10px] text-slate-500 truncate">{s.buyerName || 'No buyer name'}</div>
                                                                                     </div>
+                                                                                </div>
+
+                                                                                {/* Row 2: Bank + Balance + Transport — horizontal */}
+                                                                                <div className="flex items-center gap-3 pl-7">
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <span className="text-[9px] text-slate-400 font-bold uppercase">Bank</span>
+                                                                                        <span className="text-xs font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</span>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <span className="text-[9px] text-slate-400 font-bold uppercase">Due</span>
+                                                                                        <span className={`text-xs font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</span>
+                                                                                    </div>
+                                                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tight ${transportStatus === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{transportStatus === 'PAID' ? 'Paid' : 'Not paid'}</span>
+                                                                                </div>
+
+                                                                                {/* Row 3: Action buttons — horizontal */}
+                                                                                <div className="flex items-center gap-1 pl-7 flex-wrap">
+                                                                                    {view === 'pdf_list' ? (
+                                                                                        <>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                        </>
+                                                                                    ) : (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
+                                                                                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold shadow-sm active:scale-95"
+                                                                                        >
+                                                                                            <FileText className="w-3.5 h-3.5" />
+                                                                                            <span className="uppercase tracking-wider">View</span>
+                                                                                        </button>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div className="hidden md:block text-xs md:text-sm font-semibold text-slate-700 truncate md:pr-2 min-w-0">
-                                                                                <div className="truncate overflow-wrap-anywhere">{s.buyerName || '---'}</div>
-                                                                            </div>
-
-                                                                            <div className="hidden md:block text-center">
-                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Transport</div>
-                                                                                <select value={transportStatus} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold" disabled={s.includeTransport} title={s.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
-                                                                                    <option value="PAID">PAID</option>
-                                                                                    <option value="NOT PAID">NOT PAID</option>
-                                                                                </select>
-                                                                            </div>
-
-                                                                            <div className="text-right">
-                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Bank</div>
-                                                                                <div className="text-xs md:text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
-                                                                            </div>
-
-                                                                            <div className="text-right">
-                                                                                <div className="text-[9px] md:hidden text-slate-400 font-bold uppercase tracking-tight">Due</div>
-                                                                                <div className={`text-xs md:text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
-                                                                            </div>
-
-                                                                            <div className="flex items-center justify-end shrink-0">
-                                                                                {view === 'pdf_list' ? (
-                                                                                    <div className="flex items-center justify-end gap-1">
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[9px] md:text-[10px] font-bold text-slate-700 hover:bg-slate-100"><span className="sm:hidden">Marv.</span><span className="hidden sm:inline">Marveshje</span></button>
-                                                                                        <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-1.5 py-1 rounded-md bg-slate-900 text-[9px] md:text-[10px] font-bold text-white">Fatura</button>
-                                                                                    </div>
-                                                                                ) : (
+                                                                            {/* Desktop grid layout */}
+                                                                            <div className="hidden md:contents">
+                                                                                <div className="flex items-center justify-center">
                                                                                     <button
-                                                                                        onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                        className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white min-w-[82px] md:min-w-[110px] text-[10px] md:text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                        type="button"
+                                                                                        onClick={(e) => { e.stopPropagation(); toggleSelection(s.id); }}
+                                                                                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 text-transparent bg-white'}`}
                                                                                     >
-                                                                                        <FileText className="w-3.5 h-3.5" />
-                                                                                        <span className="uppercase tracking-wider">View</span>
+                                                                                        <Check className="w-4 h-4" />
                                                                                     </button>
-                                                                                )}
+                                                                                </div>
+
+                                                                                <div className="min-w-0">
+                                                                                    <div className="flex items-start gap-2">
+                                                                                        <div className="mt-0.5 h-7 w-7 shrink-0 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 flex items-center justify-center">
+                                                                                            <FileText className="w-4 h-4" />
+                                                                                        </div>
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                                                <span className="font-bold text-slate-900 text-sm leading-tight truncate">{s.brand} {s.model}</span>
+                                                                                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-tighter">{s.year}</span>
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-2 mt-1 flex-wrap min-w-0">
+                                                                                                <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider overflow-wrap-anywhere">VIN: {(s.vin || '').slice(-8)}</span>
+                                                                                                <span className={`text-[9px] font-bold ${s.status === 'Completed' ? 'text-emerald-600' : 'text-slate-600'}`}>{s.status}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div className="text-sm font-semibold text-slate-700 truncate pr-2 min-w-0">
+                                                                                    <div className="truncate overflow-wrap-anywhere">{s.buyerName || '---'}</div>
+                                                                                </div>
+
+                                                                                <div className="text-center">
+                                                                                    <select value={transportStatus} onChange={(e) => { e.stopPropagation(); updateTransportField(s.id, 'transportPaid', e.target.value as TransportPaymentStatus); }} className="rounded-md border border-slate-200 px-1.5 py-1 text-[10px] font-bold" disabled={s.includeTransport} title={s.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
+                                                                                        <option value="PAID">PAID</option>
+                                                                                        <option value="NOT PAID">NOT PAID</option>
+                                                                                    </select>
+                                                                                </div>
+
+                                                                                <div className="text-right">
+                                                                                    <div className="text-sm font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</div>
+                                                                                </div>
+
+                                                                                <div className="text-right">
+                                                                                    <div className={`text-sm font-black ${calculateBalance(s) > 0 ? 'text-red-500' : 'text-emerald-600'}`}>€{calculateBalance(s).toLocaleString()}</div>
+                                                                                </div>
+
+                                                                                <div className="flex items-center justify-end shrink-0">
+                                                                                    {view === 'pdf_list' ? (
+                                                                                        <div className="flex items-center justify-end gap-1">
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="shrink-0 px-1.5 py-1 rounded-md border border-slate-300 text-[10px] font-bold text-slate-700 hover:bg-slate-100">Marveshje</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="shrink-0 px-1.5 py-1 rounded-md bg-slate-900 text-[10px] font-bold text-white">Fatura</button>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <button
+                                                                                            onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
+                                                                                            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white min-w-[110px] text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                                                                                        >
+                                                                                            <FileText className="w-3.5 h-3.5" />
+                                                                                            <span className="uppercase tracking-wider">View</span>
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     );
