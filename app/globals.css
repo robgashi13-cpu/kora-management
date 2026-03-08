@@ -199,7 +199,41 @@ button.ui-control {
 .pdf-root .border-gray-200 { border-color: #e5e7eb !important; }
 .pdf-root .border-slate-200 { border-color: #e2e8f0 !important; }
 
-/* Dashboard Grid Layout - Compact with better visibility */
+/* PDF Preview Scaler - fits A4 documents to mobile viewport */
+.pdf-preview-scaler {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (max-width: 820px) {
+  .pdf-preview-scaler {
+    /* A4 = 210mm ≈ 793px. Scale to fit viewport minus padding */
+    --pdf-width: 793px;
+    --available-width: calc(100vw - 16px);
+    --pdf-scale: min(1, calc(var(--available-width) / var(--pdf-width)));
+    transform-origin: top center;
+    transform: scale(var(--pdf-scale));
+    width: var(--pdf-width);
+    /* Prevent the scaled element from reserving full original height */
+    height: calc(var(--pdf-scale) * 100%);
+    margin-bottom: calc((var(--pdf-scale) - 1) * 297mm);
+  }
+
+  .pdf-preview-scaler .pdf-root {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+  }
+}
+
+@media (min-width: 821px) {
+  .pdf-preview-scaler .pdf-root {
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+  }
+}
+
+
 :root {
   --cols-admin: 26px minmax(150px, 1.8fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 82px 90px 104px 56px 64px 82px 100px 92px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
   --cols-user: 26px minmax(160px, 1.9fr) 52px 72px minmax(110px, 1.3fr) minmax(120px, 1.4fr) minmax(100px, 1.1fr) minmax(100px, 1.1fr) 90px 104px 56px 64px 100px minmax(90px, 1fr) minmax(84px, 0.9fr) 44px;
