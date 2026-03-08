@@ -1031,8 +1031,6 @@ button:active,
   min-height: 0;
   flex: 1;
   padding-bottom: clamp(10px, 2.5vw, 14px);
-  animation: viewFadeIn 350ms var(--luxury-ease) forwards;
-  will-change: opacity, transform;
 }
 
 .app-mobile-nav {

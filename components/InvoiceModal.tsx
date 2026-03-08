@@ -133,8 +133,9 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md print:hidden" onClick={onClose} />
 
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 16, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 className="bg-white text-black w-full max-w-3xl rounded-xl shadow-2xl relative flex flex-col max-h-[90vh] print:max-w-none print:max-h-none print:shadow-none print:rounded-none"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
