@@ -3888,7 +3888,7 @@ export default function Dashboard() {
                         initial={{ width: 0, opacity: 0 }}
                         animate={{ width: 256, opacity: 1 }}
                         exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
                         className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-[width,opacity]`}
                     >
                         <SidebarContent />
@@ -3905,17 +3905,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
+                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
                             key="mobile-drawer"
-                            initial={{ x: '-100%', opacity: 0.5 }}
+                            initial={{ x: '-100%', opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: '-100%', opacity: 0 }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 280, mass: 0.8 }}
-                            className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl`}
+                            transition={{ type: 'spring', damping: 32, stiffness: 300, mass: 0.7 }}
+                            className={`fixed inset-y-0 left-0 w-[280px] bg-slate-900 z-[70] ${forceMobileLayout ? '' : 'md:hidden'} shadow-2xl will-change-transform`}
                         >
                             <SidebarContent />
                         </motion.div>
@@ -4025,7 +4025,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
+                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`} key={view + activeCategory}>
                     {view !== 'sale_form' && (
                         <>
 
@@ -5535,22 +5535,22 @@ export default function Dashboard() {
 
                 </main>
             </div> {/* Close flex-1 */}
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {editChoiceSale && (
                     <motion.div
-                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/40 p-4"
+                        initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+                        exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                         onClick={() => setEditChoiceSale(null)}
                     >
                         <motion.div
                             className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-2xl p-5"
-                            initial={{ opacity: 0, scale: 0.98 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.98 }}
-                            transition={{ duration: 0.2 }}
+                            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                            transition={{ type: 'spring', damping: 26, stiffness: 260, mass: 0.8 }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <div className="flex items-start justify-between">
@@ -5567,7 +5567,10 @@ export default function Dashboard() {
                                 </button>
                             </div>
                             <div className="mt-4 flex flex-col gap-2">
-                                <button
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.08 }}
                                     onClick={() => {
                                         const sale = editChoiceSale;
                                         setEditChoiceSale(null);
@@ -5577,39 +5580,45 @@ export default function Dashboard() {
                                 >
                                     <Eye className="w-4 h-4" />
                                     View Sale
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.14 }}
                                     onClick={handleEditSaleChoice}
                                     className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                                 >
                                     Edit Sale
-                                </button>
-                                <button
+                                </motion.button>
+                                <motion.button
+                                    initial={{ opacity: 0, y: 6 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
                                     onClick={handleEditShitblerjeChoice}
                                     className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
                                 >
                                     Edit Shitblerje
-                                </button>
+                                </motion.button>
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {view === 'sale_form' && (
                     <motion.div
                         className="fixed inset-0 z-[80] flex items-stretch justify-stretch bg-white"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     >
                         <motion.div
                             className="relative w-full h-full bg-white flex flex-col overflow-hidden"
-                            initial={{ opacity: 0, y: 24 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 24 }}
-                            transition={{ duration: 0.25 }}
+                            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.99 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 240, mass: 0.9 }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <button
@@ -5763,10 +5772,10 @@ export default function Dashboard() {
                                 key={item.id}
                                 type="button"
                                 onClick={() => setView(item.targetView)}
-                                className={`mobile-nav-item ${isActive ? 'mobile-nav-item-active' : ''}`}
+                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
-                                <item.icon className="h-4 w-4" />
+                                <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
                                 <span>{item.label}</span>
                             </button>
                         );
@@ -5782,17 +5791,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 z-[95] bg-slate-900/45 backdrop-blur-[2px] md:hidden"
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] md:hidden"
                             onClick={() => setLongPressActionSale(null)}
                             aria-label="Close sold car actions"
                         />
                         <motion.div
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.8 }}
-                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border border-slate-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl md:hidden"
+                            initial={{ y: '100%', opacity: 0.5 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: '100%', opacity: 0 }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 320, mass: 0.7 }}
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border-t border-slate-200/60 bg-white/95 backdrop-blur-xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_-12px_rgba(0,0,0,0.15)] md:hidden"
                             role="dialog"
                             aria-modal="true"
                             aria-label="Sale actions"
