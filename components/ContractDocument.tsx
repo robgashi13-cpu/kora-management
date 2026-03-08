@@ -577,23 +577,33 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-section { margin-top: 72px; position: relative; }
                 .signature-grid { display: flex; gap: 16.9mm; width: 175.7mm; margin: 0 auto; }
-                .signature-column { width: 79.4mm; display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
+                .signature-column { width: 79.4mm; display: flex; flex-direction: column; align-items: flex-start; text-align: left; position: relative; }
                 .signature-label { line-height: 20px; }
                 .signature-line-row { position: relative; margin-top: 24px; }
                 .signature-line { width: 63.5mm; border-bottom: 1px solid #000; height: 0; }
                 .signature-name { margin-top: 16px; line-height: 20px; }
                 .signature-stamp-row {
                     position: absolute;
-                    top: -17.5mm;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    top: 0;
+                    left: 0;
+                    width: 175.7mm;
+                    margin: 0 auto;
                     display: flex;
                     justify-content: flex-start;
-                    width: 175.7mm;
-                    margin: 0;
+                    pointer-events: none;
                 }
-                .signature-stamp { width: 58mm; height: 58mm; object-fit: contain; margin-left: 31.8mm; }
-                .signature-stamp-deposit { margin-left: -10.6mm; }
+                .signature-stamp {
+                    width: 50mm;
+                    height: 50mm;
+                    object-fit: contain;
+                    margin-left: 6.5mm;
+                    margin-top: -8mm;
+                    opacity: 0.85;
+                }
+                .signature-stamp-deposit {
+                    margin-left: -10.6mm;
+                    margin-top: -10mm;
+                }
                 .pdf-root,
                 .pdf-root * {
                     text-shadow: none;

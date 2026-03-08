@@ -451,8 +451,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     display: flex;
                     flex-direction: column;
                     align-items: flex-end;
-                    margin-top: 24px;
-                    gap: 12px;
+                    margin-top: 32px;
+                    gap: 8px;
+                    position: relative;
                 }
 
                 .invoice-signature-line {
@@ -461,10 +462,13 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-stamp {
-                    width: 58mm;
-                    height: 58mm;
+                    width: 50mm;
+                    height: 50mm;
                     object-fit: contain;
-                    margin-top: -32mm;
+                    margin-top: -28mm;
+                    margin-right: 4mm;
+                    opacity: 0.85;
+                    pointer-events: none;
                 }
 
                 .invoice-root--pdf .invoice-header {
