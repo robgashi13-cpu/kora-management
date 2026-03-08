@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Lock, Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { signIn, getCurrentSession, getAllProfiles, type AuthProfile } from '@/services/authService';
+import { signIn, getCurrentSession, type AuthProfile } from '@/services/authService';
 
 interface ProfileSelectorProps {
     profiles: { name: string; archived: boolean }[];
@@ -56,6 +56,15 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     }, []);
 
     const handleProfileClick = (profileName: string) => {
+        const isAdmin = profileName === ADMIN_PROFILE;
+        
+        if (!isAdmin) {
+            // Non-admin profiles are passwordless — select directly
+            onSelect(profileName, rememberMe);
+            return;
+        }
+        
+        // Admin profile needs password
         setSelectedProfile(profileName);
         setPassword('');
         setError('');
@@ -102,9 +111,8 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         );
     }
 
-    // Login form for selected profile
+    // Login form for admin profile
     if (selectedProfile) {
-        const isAdmin = selectedProfile === ADMIN_PROFILE;
         return (
             <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto scroll-container">
                 <div className="min-h-full flex flex-col items-center justify-center p-4">
@@ -123,13 +131,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
                             {/* Avatar */}
                             <div className="flex flex-col items-center mb-8">
-                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold border overflow-hidden shadow-sm mb-4 ${isAdmin ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-200'}`}>
+                                <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold border overflow-hidden shadow-sm mb-4 bg-red-50/80 border-red-200">
                                     {avatars[selectedProfile] ? (
                                         <img src={avatars[selectedProfile]} alt={selectedProfile} className="w-full h-full object-cover" />
-                                    ) : isAdmin ? (
-                                        <Lock className="w-8 h-8 text-red-500" />
                                     ) : (
-                                        <span className="text-slate-700">{selectedProfile[0]?.toUpperCase()}</span>
+                                        <Lock className="w-8 h-8 text-red-500" />
                                     )}
                                 </div>
                                 <h2 className="text-2xl font-bold text-slate-900">{selectedProfile}</h2>
@@ -219,6 +225,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 </div>
                                 <div className="flex flex-col items-center gap-1">
                                     <span className="text-xl text-slate-600 group-hover:text-slate-900 transition-colors">{profile.name}</span>
+                                    {isAdmin && <span className="text-xs text-red-400 font-medium">Password required</span>}
                                 </div>
                             </motion.div>
                         );
