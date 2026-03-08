@@ -64,6 +64,15 @@ export const signOut = async (): Promise<void> => {
     await client.auth.signOut();
 };
 
+export const changePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    const client = getAuthClient();
+    const { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) {
+        return { success: false, error: error.message };
+    }
+    return { success: true };
+};
+
 export const getCurrentSession = async (): Promise<AuthProfile | null> => {
     const client = getAuthClient();
     const { data: { session } } = await client.auth.getSession();
