@@ -5604,21 +5604,21 @@ export default function Dashboard() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {view === 'sale_form' && (
                     <motion.div
                         className="fixed inset-0 z-[80] flex items-stretch justify-stretch bg-white"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                     >
                         <motion.div
                             className="relative w-full h-full bg-white flex flex-col overflow-hidden"
-                            initial={{ opacity: 0, y: 24 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 24 }}
-                            transition={{ duration: 0.25 }}
+                            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.99 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 240, mass: 0.9 }}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <button
