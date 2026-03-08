@@ -4025,9 +4025,17 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`} key={view + activeCategory}>
+                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'p-2.5 md:p-6'} flex flex-col relative min-h-0`}>
+                    <AnimatePresence mode="wait" initial={false}>
                     {view !== 'sale_form' && (
-                        <>
+                        <motion.div
+                            key={view + activeCategory}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                            className="flex flex-col flex-1 min-h-0"
+                        >
 
                             {view === 'dashboard' ? (<>
                                 <div
