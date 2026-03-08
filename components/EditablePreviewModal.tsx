@@ -493,6 +493,7 @@ export default function EditablePreviewModal({
                 taxAmount={taxAmount}
                 priceSource={priceSource}
                 priceValue={priceValue}
+                isPreInvoice={isPreInvoice}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />
