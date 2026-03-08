@@ -51,7 +51,7 @@ const normalizeProfileName = (name?: string | null | unknown) => {
 const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
-const MOBILE_LONG_PRESS_DURATION_MS = 3000;
+const MOBILE_LONG_PRESS_DURATION_MS = 2000;
 const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
 const isLegacyAdminProfile = (name?: string | null) => {
