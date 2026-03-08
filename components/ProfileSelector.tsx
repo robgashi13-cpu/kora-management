@@ -464,8 +464,8 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     Save Changes
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </div>
         </motion.div>
