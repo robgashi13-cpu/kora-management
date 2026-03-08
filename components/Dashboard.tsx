@@ -3856,7 +3856,7 @@ export default function Dashboard() {
 
             {/* Global Sync Error Toast */}
             {syncError && (
-                <div className={`fixed top-20 right-4 z-[90] p-4 rounded-xl shadow-lg max-w-md ${isQuotaSyncIssue(syncError) ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                <div className={`fixed top-20 right-4 z-[90] p-4 rounded-xl shadow-lg max-w-md toast-enter ${isQuotaSyncIssue(syncError) ? 'bg-amber-50 border border-amber-200 text-amber-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
                     <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full animate-pulse ${isQuotaSyncIssue(syncError) ? 'bg-amber-500' : 'bg-red-500'}`} />
