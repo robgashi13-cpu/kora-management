@@ -678,6 +678,7 @@ export default function Dashboard() {
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
     const [longPressActionSale, setLongPressActionSale] = useState<CarSale | null>(null);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
     const forceMobileLayout = false;
