@@ -203,6 +203,17 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             <div className="min-h-full flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl md:text-5xl font-bold mb-12 tracking-tight text-slate-900">Who is working?</h1>
 
+                {authError && !showPasswordModal && (
+                    <div className="mb-6 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold max-w-sm text-center">{authError}</div>
+                )}
+
+                {isAuthLoading && !showPasswordModal && (
+                    <div className="mb-6 flex items-center gap-2 text-slate-500 text-sm font-semibold">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing in...
+                    </div>
+                )}
+
                 <div className="flex flex-wrap justify-center gap-6 md:gap-8 max-w-4xl">
                     {profiles.map(profile => (
                         <motion.div
