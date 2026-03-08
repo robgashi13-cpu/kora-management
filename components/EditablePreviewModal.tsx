@@ -370,11 +370,12 @@ export default function EditablePreviewModal({
         : 'Full Contract - Shitblerje';
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-4 bg-slate-900/55 backdrop-blur-md">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-4 bg-slate-900/50 backdrop-blur-md transition-opacity duration-300">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: 8 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 260, mass: 0.8 }}
         className="bg-white w-full max-w-5xl h-[100dvh] md:h-[95vh] rounded-none md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border border-slate-200"
         onClick={e => e.stopPropagation()}
       >
