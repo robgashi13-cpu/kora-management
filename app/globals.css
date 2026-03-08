@@ -886,6 +886,8 @@ body[data-theme='dark'] {
 /* Premium motion system */
 :root {
   --luxury-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --snappy-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --gentle-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 button,
@@ -903,22 +905,22 @@ button:active,
 }
 
 [data-page-shell='true'] {
-  animation: pageFadeIn 220ms var(--luxury-ease);
+  animation: pageFadeIn 320ms var(--luxury-ease);
 }
 
 @keyframes pageFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes rowEnter {
-  from { opacity: 0; transform: translateY(5px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .table-row-compact,
 [data-list-row='true'] {
-  animation: rowEnter 200ms var(--luxury-ease);
+  animation: rowEnter 280ms var(--luxury-ease);
 }
 
 .luxury-skeleton {
@@ -930,6 +932,47 @@ button:active,
 @keyframes skeletonShimmer {
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
+}
+
+/* View transition wrapper */
+@keyframes viewFadeIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.998); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.view-transition-enter {
+  animation: viewFadeIn 350ms var(--luxury-ease) forwards;
+  will-change: opacity, transform;
+}
+
+/* Smooth backdrop blur animation */
+@keyframes backdropBlurIn {
+  from { opacity: 0; backdrop-filter: blur(0px); }
+  to { opacity: 1; backdrop-filter: blur(8px); }
+}
+
+.backdrop-animate-in {
+  animation: backdropBlurIn 280ms var(--luxury-ease) forwards;
+}
+
+/* Sheet slide-up from bottom */
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); opacity: 0.4; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-slide-up {
+  animation: sheetSlideUp 380ms var(--snappy-ease) forwards;
+}
+
+/* Modal scale-in */
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.92) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-scale-in {
+  animation: modalScaleIn 320ms var(--luxury-ease) forwards;
 }
 
 /* Website shell */
