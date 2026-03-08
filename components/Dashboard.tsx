@@ -1992,17 +1992,19 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        setUserProfile('');
-        await Preferences.remove({ key: 'user_profile' });
-        await Preferences.remove({ key: 'remember_profile' });
-        localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
-        setRememberProfile(false);
         setShowProfileMenu(false);
+        setIsMobileMenuOpen(false);
         // Sign out from Supabase auth
         try {
             const { cloudClient } = await import('@/services/cloudAuth');
             await cloudClient.auth.signOut();
         } catch { /* ignore */ }
+        setUserProfile('');
+        setView('landing');
+        await Preferences.remove({ key: 'user_profile' });
+        await Preferences.remove({ key: 'remember_profile' });
+        localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
+        setRememberProfile(false);
     };
 
     const handleAddProfile = async () => {
