@@ -1593,8 +1593,7 @@ export default function Dashboard() {
             active: true
         };
 
-        const isSoldSale = sale.status === 'Completed' || (sale.soldPrice || 0) > 0;
-        if (!isSoldSale) return;
+        // Long-press enabled for ALL sales (not just sold)
 
         mobileLongPressStateRef.current[id] = {
             x: event.clientX,
