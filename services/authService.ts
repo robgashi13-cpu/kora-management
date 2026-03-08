@@ -1,13 +1,18 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
-
 let authClient: SupabaseClient | null = null;
+
+const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || '';
+const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
 export const getAuthClient = (): SupabaseClient => {
     if (!authClient) {
-        authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        const url = getSupabaseUrl();
+        const key = getSupabaseKey();
+        if (!url || !key) {
+            throw new Error('Supabase URL or key is not configured. Check your environment variables.');
+        }
+        authClient = createClient(url, key, {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
