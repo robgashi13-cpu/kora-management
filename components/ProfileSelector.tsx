@@ -66,36 +66,69 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         handleSelect(p);
     };
 
-    const handleSelect = (p: string) => {
+    const signInProfile = async (profileName: string, pwd?: string) => {
+        setIsAuthLoading(true);
+        setAuthError(null);
+        try {
+            const { data, error } = await supabase.functions.invoke('profile-auth', {
+                body: { profileName, password: pwd },
+            });
+            if (error || !data?.session) {
+                const msg = data?.error || error?.message || 'Sign-in failed';
+                setAuthError(msg);
+                setIsAuthLoading(false);
+                return false;
+            }
+            // Set the session from the edge function response
+            await supabase.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+            });
+            setIsAuthLoading(false);
+            return true;
+        } catch (err: any) {
+            setAuthError(err?.message || 'Connection failed');
+            setIsAuthLoading(false);
+            return false;
+        }
+    };
+
+    const handleSelect = async (p: string) => {
         if (p === ADMIN_PROFILE) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
             setPassword('');
             setShowPassword(false);
+            setAuthError(null);
         } else {
-            onSelect(p, rememberMe);
+            const success = await signInProfile(p);
+            if (success) {
+                onSelect(p, rememberMe);
+            }
         }
     };
 
     const confirmPassword = async () => {
-        const isValid = await verifyAdminPassword(password);
-        if (!isValid) {
-            alert('Incorrect Password!');
-            return;
-        }
-
         if (adminAction === 'select' && pendingProfile) {
+            const success = await signInProfile(pendingProfile, password);
+            if (!success) return;
             onSelect(pendingProfile, rememberMe);
             setPendingProfile(null);
         }
         if (adminAction === 'add') {
+            const isValid = await verifyAdminPassword(password);
+            if (!isValid) {
+                setAuthError('Incorrect Password!');
+                return;
+            }
             setIsAdding(true);
         }
         setShowPasswordModal(false);
         setAdminAction(null);
         setPassword('');
         setShowPassword(false);
+        setAuthError(null);
     };
 
     const handleAdd = () => {
