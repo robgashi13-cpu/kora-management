@@ -16,6 +16,7 @@ export interface InvoiceDocumentProps {
     priceSource?: InvoicePriceSource;
     priceValue?: number;
     template?: PdfTemplateEntry;
+    isPreInvoice?: boolean;
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
