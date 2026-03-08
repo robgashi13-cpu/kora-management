@@ -1319,8 +1319,8 @@ export default function Dashboard() {
 
 
     const handlePasswordSubmit = async () => {
-        const isValid = await verifyAdminPassword(passwordInput);
-        if (!isValid) {
+        const result = await authenticateProfile(pendingProfile, passwordInput);
+        if (!result) {
             alert('Incorrect Password!');
             return;
         }
