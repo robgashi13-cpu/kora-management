@@ -417,17 +417,17 @@ const isMercedesB200Sale = (sale: CarSale) => {
     return (brand.includes('mercedes') && model.includes('b200')) || vin === 'WDDMHOJBXGN149268';
 };
 
-const repairMercedesB200Visibility = (salesToRepair: CarSale[]) => {
+const repairMercedesB200Visibility = (salesToRepair: CarSale[]): { repaired: CarSale[]; hasChanges: boolean } => {
     let hasChanges = false;
-    const repaired = salesToRepair.map((sale) => {
+    const repaired: CarSale[] = salesToRepair.map((sale) => {
         if (!isMercedesB200Sale(sale)) return sale;
 
         const nextSoldBy = normalizeProfileName(sale.soldBy || sale.sellerName || ADMIN_PROFILE);
         const nextSellerName = normalizeProfileName(sale.sellerName || sale.soldBy || ADMIN_PROFILE);
 
-        const updatedSale = {
+        const updatedSale: CarSale = {
             ...sale,
-            status: 'Shipped',
+            status: 'Shipped' as const,
             soldBy: nextSoldBy,
             sellerName: nextSellerName
         };

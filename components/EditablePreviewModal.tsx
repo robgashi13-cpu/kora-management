@@ -51,6 +51,7 @@ export default function EditablePreviewModal({
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [withStamp, setWithStamp] = useState(false);
+  const [isPreInvoice, setIsPreInvoice] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const invoiceTrackedRef = useRef(false);
@@ -420,6 +421,20 @@ export default function EditablePreviewModal({
                   <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
                 </button>
               )}
+              {documentType === 'invoice' && (
+                <button
+                  type="button"
+                  onClick={() => setIsPreInvoice(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${isPreInvoice
+                    ? 'bg-amber-600 text-white border-amber-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  aria-pressed={isPreInvoice}
+                >
+                  <Check className="w-3 h-3" />
+                  <span>Pre-Invoice</span>
+                </button>
+              )}
               <button
                 onClick={handleReset}
                 className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[11px]"
@@ -478,6 +493,7 @@ export default function EditablePreviewModal({
                 taxAmount={taxAmount}
                 priceSource={priceSource}
                 priceValue={priceValue}
+                isPreInvoice={isPreInvoice}
                 ref={printRef}
                 renderField={renderInvoiceField}
               />
@@ -505,7 +521,7 @@ export default function EditablePreviewModal({
         </div>
       </motion.div>
 
-      <style jsx global>{`
+      <style>{`
         .editable-preview-field:hover {
           background-color: rgba(0, 0, 0, 0.08);
           border-bottom: 1px dashed #000000 !important;
@@ -525,19 +541,17 @@ export default function EditablePreviewModal({
                 box-shadow: none !important;
                 z-index: 9999 !important;
                 background: white !important;
-                overflow: visible !important; /* Ensure content flows */
+                overflow: visible !important;
                 height: auto !important;
                 min-height: 100vh !important;
             }
-            /* Hide the modal UI elements specifically */
-            [role="dialog"] > div:first-child, /* Backdrop */
-            button, /* All buttons */
-            .overflow-y-auto, /* Scroll containers */
-            header /* Headers */ {
+            [role="dialog"] > div:first-child,
+            button,
+            .overflow-y-auto,
+            header {
                 display: none !important;
             }
             
-            /* Ensure page breaks work */
             .page-break {
                 page-break-before: always !important;
                 break-before: page !important;

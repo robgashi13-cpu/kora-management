@@ -16,6 +16,7 @@ export interface InvoiceDocumentProps {
     priceSource?: InvoicePriceSource;
     priceValue?: number;
     template?: PdfTemplateEntry;
+    isPreInvoice?: boolean;
     renderField?: (
         fieldKey: keyof CarSale,
         value: CarSale[keyof CarSale],
@@ -29,7 +30,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, renderField, template }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, renderField, template, isPreInvoice = false }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,
@@ -105,7 +106,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             style={{ height: '52px', width: 'auto' }}
                         />
                         <div className="invoice-title">
-                            <div className="invoice-title-label">{template?.title || 'INVOICE'}</div>
+                            <div className="invoice-title-label">{isPreInvoice ? 'PRE-INVOICE' : (template?.title || 'INVOICE')}</div>
                             <div className="invoice-title-meta">Ref: {referenceId}</div>
                         </div>
                     </div>
