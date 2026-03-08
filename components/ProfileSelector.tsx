@@ -311,17 +311,22 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 {showPasswordModal && (
                     <div className="fixed inset-0 bg-slate-900/40 z-[60] flex items-center justify-center p-4">
                         <div className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
-                            <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
+                            <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); setAuthError(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {ADMIN_PROFILE} Password</h2>
+
+                            {authError && (
+                                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">{authError}</div>
+                            )}
 
                             <div className="relative mb-6">
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     autoFocus
                                     value={password}
-                                    onChange={e => setPassword(e.target.value)}
+                                    onChange={e => { setPassword(e.target.value); setAuthError(null); }}
                                     className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 pr-12"
-                                    onKeyDown={e => e.key === 'Enter' && confirmPassword()}
+                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && confirmPassword()}
+                                    disabled={isAuthLoading}
                                 />
                                 <button
                                     onClick={() => setShowPassword(!showPassword)}
@@ -341,8 +346,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 Remember me on this device
                             </label>
 
-                            <button onClick={confirmPassword} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800">
-                                Login
+                            <button onClick={confirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
+                                {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                                {isAuthLoading ? 'Signing in...' : 'Login'}
                             </button>
                         </div>
                     </div>
