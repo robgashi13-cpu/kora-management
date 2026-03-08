@@ -3845,14 +3845,27 @@ export default function Dashboard() {
             onPointerCancelCapture={handleAppPointerUpCapture}
             onClickCapture={handleAppClickCapture}
         >
-            {importStatus && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center">
-                    <div className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
-                        <div className="w-12 h-12 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
-                        <p className="text-slate-700 font-medium">{importStatus}</p>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {importStatus && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            className="bg-white border border-slate-200 p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl"
+                        >
+                            <div className="w-12 h-12 border-4 border-slate-700 border-t-transparent rounded-full animate-spin" />
+                            <p className="text-slate-700 font-medium">{importStatus}</p>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Global Sync Error Toast */}
             {syncError && (
