@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarSale, ContractType, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Lock as LockIcon } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -25,8 +25,6 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword } from '@/services/adminAuth';
-import { signOut } from '@/services/authService';
-import ChangePasswordModal from './ChangePasswordModal';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
 const getBankFee = (price: number) => {
@@ -431,7 +429,7 @@ const repairMercedesB200Visibility = (salesToRepair: CarSale[]) => {
 
         const updatedSale = {
             ...sale,
-            status: 'Shipped' as SaleStatus,
+            status: 'Shipped',
             soldBy: nextSoldBy,
             sellerName: nextSellerName
         };
@@ -678,7 +676,6 @@ export default function Dashboard() {
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
     const [longPressActionSale, setLongPressActionSale] = useState<CarSale | null>(null);
     const [inputMode, setInputMode] = useState<InputMode>('mouse');
     const forceMobileLayout = false;
@@ -962,7 +959,7 @@ export default function Dashboard() {
         return [...ordered, ...Array.from(unique)];
     }, []);
 
-    const normalizeSaleProfiles = useCallback((sale: CarSale): CarSale => ({
+    const normalizeSaleProfiles = useCallback((sale: CarSale) => ({
         ...sale,
         sellerName: normalizeProfileName(sale.sellerName),
         soldBy: normalizeProfileName(sale.soldBy),
@@ -1997,15 +1994,12 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        try { await signOut(); } catch (e) { console.warn('Sign out error:', e); }
-        setUserProfile(null);
-        setView('profile_select');
+        setUserProfile('');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         setRememberProfile(false);
         setShowProfileMenu(false);
-        setIsMobileMenuOpen(false);
     };
 
     const handleAddProfile = async () => {
@@ -2146,9 +2140,9 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            // Use Lovable Cloud Supabase credentials with hardcoded fallback
-            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://tbjihsqkbmjiblpxzojo.supabase.co";
-            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE";
+            // Hardcoded Credentials (as fallback/default)
+            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
 
             try {
                 // Ensure Supabase URL/Key exist
@@ -2158,8 +2152,8 @@ export default function Dashboard() {
                 if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
                 if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-                setSupabaseUrl(url || SUPABASE_URL);
-                setSupabaseKey(keyName || SUPABASE_KEY);
+                setSupabaseUrl(url);
+                setSupabaseKey(keyName);
 
                 if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
                 if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
@@ -3446,7 +3440,7 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                <button onClick={handleLogout} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
+                <button onClick={() => { setUserProfile(''); setView('profile_select'); }} className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md">
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </button>
             </div>
@@ -3523,9 +3517,6 @@ export default function Dashboard() {
                                 <Plus className="w-4 h-4" /> Add Profile
                             </button>
                             <div className="h-px bg-zinc-800 my-2" />
-                            <button onClick={() => { setShowChangePasswordModal(true); setShowProfileMenu(false); }} className="w-full text-left px-3 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors duration-150">
-                                <LockIcon className="w-4 h-4" /> Change Password
-                            </button>
                             <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors duration-150">
                                 <LogOut className="w-4 h-4" /> Log Out
                             </button>
@@ -5681,11 +5672,6 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5 mx-auto" />
                 </button>
             )}
-            <ChangePasswordModal
-                isOpen={showChangePasswordModal}
-                onClose={() => setShowChangePasswordModal(false)}
-                profileName={userProfile}
-            />
         </div>
     );
 }

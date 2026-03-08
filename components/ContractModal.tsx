@@ -225,7 +225,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 </div>
             </div >
 
-            <style>{`
+            <style jsx>{`
                 .contract-logo { height: 60px; display: block; margin: 0 auto 20px auto; }
                 .party-title { font-weight: bold; margin-bottom: 8pt; color: #0f172a; text-decoration: underline; font-size: 11pt; }
                 .blue-header { color: #0f172a; font-weight: bold; margin-bottom: 8pt; margin-top: 16pt; font-size: 11pt; border-bottom: 1px solid #0f172a; display: inline-block; padding-bottom: 2px; }

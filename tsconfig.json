@@ -1,42 +1,24 @@
 {
   "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "allowJs": false,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2020"
-    ],
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "noEmit": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "torph/react": [
-        "./torph/react"
-      ]
-    },
-    "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2020",
-    "types": [
-      "vite/client",
-      "node"
-    ]
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "types": ["vite/client", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "torph/react": ["./torph/react"]
+    }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "legacy_src",
-    "app",
-    "ios",
-    "supabase"
-  ],
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
@@ -46,5 +28,6 @@
     "torph/**/*.ts",
     "torph/**/*.tsx",
     "vite.config.ts"
-  ]
+  ],
+  "exclude": ["node_modules", "dist", "legacy_src", "app", "ios", "supabase"]
 }
