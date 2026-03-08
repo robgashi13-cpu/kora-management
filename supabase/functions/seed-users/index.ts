@@ -1,15 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PROFILES = [
-  { profile_name: "Robert", email: "robert@kora.app", is_admin: true },
-  { profile_name: "ETNIK", email: "etnik@kora.app", is_admin: false },
-  { profile_name: "GENC", email: "genc@kora.app", is_admin: false },
-  { profile_name: "LEONIT", email: "leonit@kora.app", is_admin: false },
-  { profile_name: "RAJMOND", email: "rajmond@kora.app", is_admin: false },
-  { profile_name: "RENAT", email: "renat@kora.app", is_admin: false },
+  { profile_name: "Robert", email: "robert@kora.app", is_admin: true, password: "password2" },
+  { profile_name: "ETNIK", email: "etnik@kora.app", is_admin: false, password: "etnik2025!" },
+  { profile_name: "GENC", email: "genc@kora.app", is_admin: false, password: "genc2025!" },
+  { profile_name: "LEONIT", email: "leonit@kora.app", is_admin: false, password: "leonit2025!" },
+  { profile_name: "RAJMOND", email: "rajmond@kora.app", is_admin: false, password: "rajmond2025!" },
+  { profile_name: "RENAT", email: "renat@kora.app", is_admin: false, password: "renat2025!" },
 ];
-
-const DEFAULT_PASSWORD = "password2";
 
 Deno.serve(async (req) => {
   try {
