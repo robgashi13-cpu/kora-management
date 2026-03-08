@@ -3373,35 +3373,46 @@ export default function Dashboard() {
     }
 
     if (!userProfile) {
-        return <ProfileSelector
-            profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
-            onSelect={(p, remember) => {
-                const normalizedProfile = normalizeProfileName(p);
-                if (!normalizedProfile) return;
-                setUserProfile(normalizedProfile);
-                setView('landing');
-                setRememberProfile(remember);
-                persistUserProfile(normalizedProfile, remember);
-            }}
-            onAdd={(name, _email, remember) => {
-                const normalizedName = normalizeProfileName(name);
-                if (!normalizedName) return;
-                const updated = normalizeProfiles([...availableProfiles, normalizedName]);
-                setAvailableProfiles(updated);
-                Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
-                setUserProfile(normalizedName);
-                setRememberProfile(remember);
-                persistUserProfile(normalizedName, remember);
-                syncProfilesToCloud(updated);
-            }}
-            onDelete={handleDeleteProfile}
-            onEdit={handleEditProfile}
-            onRestore={() => { }}
-            avatars={profileAvatars}
-            onEditAvatar={handleEditAvatar}
-            rememberDefault={rememberProfile}
-            verifyAdminPassword={verifyAdminPassword}
-        />;
+        return (
+            <motion.div
+                key="profile-selector"
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="contents"
+            >
+                <ProfileSelector
+                    profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
+                    onSelect={(p, remember) => {
+                        const normalizedProfile = normalizeProfileName(p);
+                        if (!normalizedProfile) return;
+                        setUserProfile(normalizedProfile);
+                        setView('landing');
+                        setRememberProfile(remember);
+                        persistUserProfile(normalizedProfile, remember);
+                    }}
+                    onAdd={(name, _email, remember) => {
+                        const normalizedName = normalizeProfileName(name);
+                        if (!normalizedName) return;
+                        const updated = normalizeProfiles([...availableProfiles, normalizedName]);
+                        setAvailableProfiles(updated);
+                        Preferences.set({ key: 'available_profiles', value: JSON.stringify(updated) });
+                        setUserProfile(normalizedName);
+                        setRememberProfile(remember);
+                        persistUserProfile(normalizedName, remember);
+                        syncProfilesToCloud(updated);
+                    }}
+                    onDelete={handleDeleteProfile}
+                    onEdit={handleEditProfile}
+                    onRestore={() => { }}
+                    avatars={profileAvatars}
+                    onEditAvatar={handleEditAvatar}
+                    rememberDefault={rememberProfile}
+                    verifyAdminPassword={verifyAdminPassword}
+                />
+            </motion.div>
+        );
     }
 
     if (view === 'landing') {
