@@ -3539,7 +3539,7 @@ export default function Dashboard() {
                     </button>
 
                     {showProfileMenu && (
-                        <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl z-[70] animate-in fade-in slide-in-from-top-2">
+                        <div className="absolute top-full mt-2 left-0 right-0 bg-zinc-950 border border-zinc-800 rounded-2xl p-2 shadow-2xl z-[70] profile-menu-enter">
                             <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
