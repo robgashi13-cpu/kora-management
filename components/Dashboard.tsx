@@ -5791,17 +5791,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 z-[95] bg-slate-900/45 backdrop-blur-[2px] md:hidden"
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] md:hidden"
                             onClick={() => setLongPressActionSale(null)}
                             aria-label="Close sold car actions"
                         />
                         <motion.div
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 300, mass: 0.8 }}
-                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border border-slate-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl md:hidden"
+                            initial={{ y: '100%', opacity: 0.5 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: '100%', opacity: 0 }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 320, mass: 0.7 }}
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border-t border-slate-200/60 bg-white/95 backdrop-blur-xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_-12px_rgba(0,0,0,0.15)] md:hidden"
                             role="dialog"
                             aria-modal="true"
                             aria-label="Sale actions"
