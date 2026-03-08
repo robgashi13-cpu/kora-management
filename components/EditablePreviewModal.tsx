@@ -51,6 +51,7 @@ export default function EditablePreviewModal({
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [withStamp, setWithStamp] = useState(false);
+  const [isPreInvoice, setIsPreInvoice] = useState(false);
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const invoiceTrackedRef = useRef(false);
