@@ -5530,9 +5530,9 @@ export default function Dashboard() {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </motion.div>
+                        </div>
                     )}
-                    </AnimatePresence>
+
 
                 </main>
             </div> {/* Close flex-1 */}
