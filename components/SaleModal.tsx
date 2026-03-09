@@ -352,8 +352,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         const requiredFields: Array<{ key: keyof CarSale; label: string }> = [
             { key: 'brand', label: 'Brand' },
             { key: 'model', label: 'Model' },
-            { key: 'buyerName', label: 'Buyer Name' },
-            { key: 'soldPrice', label: 'Sold Price' }
+            { key: 'buyerName', label: 'Buyer Name' }
         ];
 
         const missingFields = requiredFields
