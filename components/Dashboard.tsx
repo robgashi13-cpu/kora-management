@@ -4469,7 +4469,7 @@ export default function Dashboard() {
                                 {/* Mobile Compact List View - Swipeable */}
                                 <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-20 no-scrollbar">
-                                        <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5 mb-1">
+                                        <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
                                             <div className="flex items-center justify-between text-[11px] text-slate-600">
                                                 <span className="font-semibold text-slate-900">{activeCategory}</span>
                                                 <span>{filteredSales.length} cars</span>
