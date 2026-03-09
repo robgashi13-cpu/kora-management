@@ -303,7 +303,7 @@ button.ui-control {
 
 .mobile-car-row-compact {
   min-height: 44px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.5rem;
   transition: background-color 180ms ease, transform 120ms ease;
 }
 
