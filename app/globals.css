@@ -1077,10 +1077,11 @@ button:active,
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(6px, 1.6vw, 10px);
   border-top: 1px solid hsl(var(--border) / 0.6);
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   padding: 8px max(10px, calc(10px + var(--sal))) max(10px, calc(10px + var(--sab))) max(10px, calc(10px + var(--sar)));
   backdrop-filter: saturate(130%) blur(14px);
   transition: background-color 250ms ease;
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
 }
 
 .mobile-nav-item {
