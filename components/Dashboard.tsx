@@ -5180,7 +5180,7 @@ export default function Dashboard() {
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
                                 <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-[calc(12.5rem+env(safe-area-inset-bottom))] pt-2 md:p-3 md:pb-3">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2 relative z-20">
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
@@ -5189,6 +5189,54 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                             </div>
                                         </div>
+                                        {view === 'invoices' && invoicesSubTab === 'create' && (
+                                            <div className="flex flex-wrap items-center gap-1.5" aria-label="Invoice mobile action bar">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const validIds = soldInvoiceSales.filter(s => (s.amountPaidBank || 0) > 0).map(s => s.id);
+                                                        setSelectedIds(new Set(validIds));
+                                                    }}
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                                                >
+                                                    Select valid
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (selectedIds.size === soldInvoiceSales.length) {
+                                                            setSelectedIds(new Set());
+                                                        } else {
+                                                            setSelectedIds(new Set(soldInvoiceSales.map(s => s.id)));
+                                                        }
+                                                    }}
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                                                >
+                                                    {selectedIds.size === soldInvoiceSales.length && soldInvoiceSales.length > 0 ? 'Deselect all' : 'Select all'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={selectedIds.size === 0}
+                                                    onClick={() => {
+                                                        const selectedSales = soldInvoiceSales.filter(s => selectedIds.has(s.id));
+                                                        if (selectedSales.length === 0) return;
+                                                        if (selectedSales.length === 1) {
+                                                            openInvoice(selectedSales[0], { stopPropagation: () => {} } as any, false, true);
+                                                        } else {
+                                                            selectedSales.forEach(s => {
+                                                                openInvoice(s, { stopPropagation: () => {} } as any, false, true);
+                                                            });
+                                                        }
+                                                    }}
+                                                    className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all active:scale-95 ${selectedIds.size > 0 ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                                >
+                                                    <span className="flex items-center gap-1">
+                                                        <Download className="w-3 h-3" />
+                                                        Preview ({selectedIds.size})
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {invoicesSubTab === 'history' ? (
