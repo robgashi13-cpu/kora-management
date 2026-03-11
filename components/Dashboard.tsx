@@ -5904,7 +5904,7 @@ export default function Dashboard() {
             {view !== 'sale_form' && (
                 <button
                     onClick={() => openSaleForm(null)}
-                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-6 z-[60] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-6 z-[55] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                     aria-label="Add sale"
                     type="button"
                 >
