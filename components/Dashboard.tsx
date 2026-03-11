@@ -5419,7 +5419,7 @@ export default function Dashboard() {
                                         initial={{ y: 100, opacity: 0 }}
                                         animate={{ y: 0, opacity: 1 }}
                                         exit={{ y: 100, opacity: 0 }}
-                                        className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-50"
+                                        className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] md:bottom-8 left-1/2 -translate-x-1/2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 flex items-center gap-2 z-[65]"
                                     >
                                         <div className="px-4 border-r border-slate-200 mr-2 flex flex-col items-center justify-center min-w-[60px]">
                                             <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Selected</span>
