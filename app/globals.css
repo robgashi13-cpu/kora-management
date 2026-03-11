@@ -1130,7 +1130,7 @@ button:active,
 .mobile-sticky-actions {
   position: sticky;
   bottom: calc(4.75rem + env(safe-area-inset-bottom));
-  z-index: 50;
+  z-index: 55;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
