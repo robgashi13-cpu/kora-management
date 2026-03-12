@@ -482,7 +482,7 @@ export default function EditablePreviewModal({
         </div>
 
         {/* Document Preview */}
-        <div className="flex-1 overflow-auto scroll-container bg-slate-100/90 p-2 pb-24 md:p-8 md:pb-8">
+        <div className="flex-1 overflow-auto scroll-container bg-slate-100/90 p-2 pb-24 md:p-8 md:pb-8 flex justify-center">
           <div className="pdf-preview-scaler">
             {documentType === 'invoice' ? (
               <InvoiceDocument
