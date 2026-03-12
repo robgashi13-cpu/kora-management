@@ -331,6 +331,12 @@ export const generatePdf = async ({
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
+        // Ensure no overflow clipping on the source element or its ancestors
+        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-contract-document], [data-invoice-document]').forEach((el) => {
+          el.style.overflow = 'visible';
+          el.style.maxHeight = 'none';
+          el.style.height = 'auto';
+        });
         onClone?.(clonedDoc);
       }
     },
