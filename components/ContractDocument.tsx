@@ -231,7 +231,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             )}
 
             {type === 'full_marreveshje' && (
-                <div className="max-w-2xl mx-auto" style={{ fontSize: '8pt', lineHeight: 1.25 }}>
+                <div className="w-full" style={{ fontSize: '8pt', lineHeight: 1.25 }}>
                     {/* ===== PAGE 1 ===== */}
                     <div className="page-1 relative" style={{ minHeight: '27.7cm', padding: '1.4cm 1.6cm 1.5cm' }}>
                         <img src="/logo.jpg" className="contract-logo mx-auto h-12 mb-2" alt="Logo" />

@@ -203,6 +203,7 @@ button.ui-control {
 .pdf-preview-scaler {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   width: 100%;
 }
 
@@ -215,6 +216,9 @@ button.ui-control {
     transform-origin: top center;
     transform: scale(var(--pdf-scale));
     width: var(--pdf-width);
+    max-width: var(--pdf-width);
+    margin-left: auto;
+    margin-right: auto;
     /* Prevent the scaled element from reserving full original height */
     height: calc(var(--pdf-scale) * 100%);
     margin-bottom: calc((var(--pdf-scale) - 1) * 297mm);
@@ -224,6 +228,28 @@ button.ui-control {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
     border-radius: 4px;
   }
+}
+
+/* Contract document car-details styling */
+.car-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  margin: 4px 0;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  background: #fafafa;
+}
+
+.car-details .label {
+  font-weight: 600;
+  color: #333;
+}
+
+.car-details .value {
+  font-weight: 700;
+  color: #000;
 }
 
 @media (min-width: 821px) {
