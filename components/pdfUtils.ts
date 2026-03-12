@@ -304,10 +304,13 @@ export const generatePdf = async ({
     fallbackWidthPx,
     Math.round(rect.width || element.scrollWidth || element.offsetWidth || 0)
   );
-  const renderHeight = Math.max(
-    fallbackHeightPx,
-    Math.round(rect.height || element.scrollHeight || element.offsetHeight || 0)
+  // Use the full scrollable height so multi-page documents are not clipped
+  const fullHeight = Math.max(
+    element.scrollHeight || 0,
+    element.offsetHeight || 0,
+    Math.round(rect.height || 0)
   );
+  const renderHeight = Math.max(fallbackHeightPx, fullHeight);
 
   // @ts-ignore
   const html2pdf = (await import('html2pdf.js')).default;
