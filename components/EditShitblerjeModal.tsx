@@ -190,6 +190,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 flex-shrink-0">
                         <div className="flex items-center gap-3">
                             <button
+                                type="button"
                                 onClick={onClose}
                                 className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700"
                                 aria-label="Go back"
@@ -211,6 +212,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                                 <span className="hidden sm:inline">View Sale</span>
                             </button>
                             <button
+                                type="button"
                                 onClick={onClose}
                                 className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-700"
                                 aria-label="Close"

@@ -555,6 +555,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     <div className="flex items-center gap-3">
                         {!inline && (
                             <button
+                                type="button"
                                 onClick={handleRequestClose}
                                 className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
                                 aria-label="Go back"
@@ -576,7 +577,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </button>
                         )}
                         {!inline && (
-                            <button onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
+                            <button type="button" onClick={handleRequestClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600">
                                 <X className="w-5 h-5" />
                             </button>
                         )}
@@ -802,7 +803,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const previewOverlay = previewImage && (
         <div className="fixed inset-0 z-[60] bg-slate-900/70 flex items-center justify-center p-4" onClick={closePreview}>
             <img src={previewImage} alt="Preview" className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain" />
-            <button onClick={closePreview} className="absolute top-6 right-6 text-white hover:text-slate-100 bg-slate-900/60 p-2 rounded-full"><X className="w-8 h-8" /></button>
+            <button type="button" onClick={closePreview} className="absolute top-6 right-6 text-white hover:text-slate-100 bg-slate-900/60 p-2 rounded-full"><X className="w-8 h-8" /></button>
         </div>
     );
 
