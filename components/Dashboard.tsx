@@ -2259,7 +2259,10 @@ export default function Dashboard() {
                             expandedGroups?: string[];
                             scrollTop?: number;
                         };
-                        if (parsed.view) setView(parsed.view);
+                        if (parsed.view) {
+                            // Never auto-open the Add/Edit Sale form on app launch from persisted state.
+                            setView(parsed.view === 'sale_form' ? 'dashboard' : parsed.view);
+                        }
                         if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
                         if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
                         if (parsed.sortBy) setSortBy(parsed.sortBy);
