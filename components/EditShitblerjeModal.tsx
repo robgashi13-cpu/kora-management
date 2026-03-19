@@ -42,7 +42,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
-    const [viewSaleSection, setViewSaleSection] = useState<'overview' | 'documents'>('overview');
+    const viewSaleSection: 'overview' | 'documents' = 'overview';
     const hasInitializedFormRef = useRef(false);
     const hasRestoredDraftRef = useRef(false);
     const autosaveTimerRef = useRef<number | null>(null);
@@ -267,8 +267,8 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => { setViewSaleSection('documents'); setShowViewSale(true); }}
-                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold shadow-sm hover:bg-slate-100 transition-all"
+                                        onClick={() => setShowDocumentMenu(true)}
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold shadow-sm hover:bg-slate-100 transition-all relative z-10 pointer-events-auto"
                                     >
                                         <FileText className="w-4 h-4" />
                                         Documents
@@ -276,7 +276,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                                     <button
                                         type="button"
                                         onClick={() => setShowDocumentMenu(true)}
-                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all"
+                                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all relative z-10 pointer-events-auto"
                                     >
                                         <FileText className="w-4 h-4" />
                                         Generate
