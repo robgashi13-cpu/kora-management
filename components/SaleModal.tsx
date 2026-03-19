@@ -762,7 +762,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             <button
                                 type="button"
                                 onClick={() => setShowDocumentMenu(true)}
-                                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all w-full sm:w-auto justify-center"
+                                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow-sm hover:bg-slate-800 transition-all w-full sm:w-auto justify-center relative z-10 pointer-events-auto"
                             >
                                 <FileText className="w-4 h-4" />
                                 Documents
