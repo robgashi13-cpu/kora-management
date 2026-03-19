@@ -215,7 +215,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                         <div>
                             <div style={{ color: '#000000', fontWeight: 700, marginBottom: '6px' }}>Raiffeisen Bank</div>
                             <div className="invoice-bank-chip">Account: 1501080002435404</div>
-                            <div style={{ color: '#000000', fontWeight: 700, marginTop: '12px', marginBottom: '6px' }}>TEB Bank</div>
+                            <div style={{ color: '#000000', fontWeight: 700, marginTop: '12px', marginBottom: '6px' }}>Banka ekonomike</div>
                             <div className="invoice-bank-chip">Account: 1401000100922471</div>
                             <div style={{ color: '#000000', fontSize: '0.75rem', marginTop: '8px' }}>Account Holder: RG SH.P.K.</div>
                         </div>
