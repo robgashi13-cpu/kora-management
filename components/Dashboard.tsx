@@ -500,6 +500,10 @@ export default function Dashboard() {
     const [balanceDueSearch, setBalanceDueSearch] = useState('');
     const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
     const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
+    const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea'>('client_due');
+    const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
+    const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
+    const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
@@ -3236,6 +3240,72 @@ export default function Dashboard() {
             .sort((a, b) => balanceDueSort === 'desc' ? calculateBalance(b.sale) - calculateBalance(a.sale) : calculateBalance(a.sale) - calculateBalance(b.sale));
     }, [soldBalanceSales, shippedOnlyBalanceSales, balanceDueSearch, balanceDueStatusFilter, balanceDueSort]);
 
+    const onSaleKoreaRows = React.useMemo(() => {
+        const term = paidKoreaSearch.trim().toLowerCase();
+        return sales
+            .filter((sale) => {
+                if (!canAccessSale(sale)) return false;
+                const isOnSale = sale.status !== 'Completed' && sale.status !== 'Shipped' && sale.status !== 'Cancelled' && sale.status !== 'Archived';
+                if (!isOnSale) return false;
+                const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+                const isPaid = remaining <= 0;
+                if (paidKoreaPaymentFilter === 'paid' && !isPaid) return false;
+                if (paidKoreaPaymentFilter === 'not_paid' && isPaid) return false;
+                if (!term) return true;
+                const blob = [sale.brand, sale.model, sale.plateNumber, sale.vin, sale.id].filter(Boolean).join(' ').toLowerCase();
+                return blob.includes(term);
+            })
+            .sort((a, b) => {
+                const aRemaining = Math.max((a.costToBuy || 0) - (a.amountPaidToKorea || 0), 0);
+                const bRemaining = Math.max((b.costToBuy || 0) - (b.amountPaidToKorea || 0), 0);
+                return paidKoreaSort === 'desc' ? bRemaining - aRemaining : aRemaining - bRemaining;
+            });
+    }, [sales, canAccessSale, paidKoreaSearch, paidKoreaPaymentFilter, paidKoreaSort]);
+
+    const paidKoreaTotals = React.useMemo(() => {
+        const totals = onSaleKoreaRows.reduce((acc, sale) => {
+            const cost = sale.costToBuy || 0;
+            const paid = sale.amountPaidToKorea || 0;
+            const remaining = Math.max(cost - paid, 0);
+            acc.totalCost += cost;
+            acc.totalPaid += paid;
+            acc.totalRemaining += remaining;
+            if (remaining <= 0) {
+                acc.paidCount += 1;
+            } else {
+                acc.notPaidCount += 1;
+            }
+            return acc;
+        }, { totalCost: 0, totalPaid: 0, totalRemaining: 0, paidCount: 0, notPaidCount: 0 });
+        return totals;
+    }, [onSaleKoreaRows]);
+
+    const markSalePaidInKorea = async (sale: CarSale) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex((item) => item.id === sale.id);
+        if (index === -1) return;
+
+        const updatedSale = {
+            ...currentSales[index],
+            amountPaidToKorea: currentSales[index].costToBuy || 0,
+            paidDateToKorea: new Date().toISOString().split('T')[0]
+        };
+        const newSales = [...currentSales];
+        newSales[index] = updatedSale;
+        dirtyIds.current.add(sale.id);
+        const result = await updateSalesAndSave(newSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale',
+            entityId: sale.id,
+            beforeData: currentSales[index],
+            afterData: updatedSale,
+            pageContext: 'balance_due',
+            metadata: { action: 'MARK_PAID_IN_KOREA' }
+        });
+    };
+
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
@@ -5057,75 +5127,184 @@ export default function Dashboard() {
                             ) : view === 'balance_due' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-1">Balance Due</h2>
-                                    <p className="text-xs text-slate-500 mb-3">Aggregated for sold and shipped cars with no double-counting in grand total.</p>
+                                    <p className="text-xs text-slate-500 mb-3">
+                                        {balanceDueSubTab === 'client_due'
+                                            ? 'Aggregated for sold and shipped cars with no double-counting in grand total.'
+                                            : 'Shows only cars currently on sale and whether supplier (Korea) is paid.'}
+                                    </p>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
-                                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
-                                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
+                                    <div className="mb-3 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                        <button type="button" onClick={() => setBalanceDueSubTab('client_due')} className={`px-3 py-2 text-xs font-semibold text-center ${balanceDueSubTab === 'client_due' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Client Balance</button>
+                                        <button type="button" onClick={() => setBalanceDueSubTab('paid_korea')} className={`px-3 py-2 text-xs font-semibold text-center ${balanceDueSubTab === 'paid_korea' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>PAID KOREA</button>
                                     </div>
 
-                                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
-                                        <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-                                        <select value={balanceDueStatusFilter} onChange={(e) => setBalanceDueStatusFilter(e.target.value as 'all' | 'shipped' | 'sold')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All statuses</option><option value="shipped">Shipped only</option><option value="sold">Sold only</option></select>
-                                        <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
-                                    </div>
+                                    {balanceDueSubTab === 'client_due' ? (
+                                        <>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
+                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
+                                            </div>
 
-                                    {balanceDueRows.length === 0 ? (
-                                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
+                                            <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
+                                                <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                                                <select value={balanceDueStatusFilter} onChange={(e) => setBalanceDueStatusFilter(e.target.value as 'all' | 'shipped' | 'sold')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All statuses</option><option value="shipped">Shipped only</option><option value="sold">Sold only</option></select>
+                                                <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
+                                            </div>
+
+                                            {balanceDueRows.length === 0 ? (
+                                                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
+                                            ) : (
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                                    <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
+                                                    </div>
+                                                    <div className="divide-y divide-slate-100 hidden md:block">
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                            <button
+                                                                key={`${scopeStatus}-${sale.id}`}
+                                                                type="button"
+                                                                data-list-row="true"
+                                                                onClick={() => handleSaleInteraction(sale)}
+                                                                className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
+                                                                <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
+                                                                <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
+                                                                <div className="text-slate-600">{sale.shippingDate || '-'}</div>
+                                                                <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                            <button
+                                                                key={`${scopeStatus}-${sale.id}`}
+                                                                type="button"
+                                                                onClick={() => handleSaleInteraction(sale)}
+                                                                className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                        <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                    </div>
+                                                                    <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
+                                                                </div>
+                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
+                                                                        <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
+                                                                    </div>
+                                                                    <div className="min-w-0 text-right">
+                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
+                                                                        <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
+                                                                        <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
-                                        <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                            <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
+                                        <>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3">
+                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Total Cost</div><div className="text-xl font-black text-slate-900">€{paidKoreaTotals.totalCost.toLocaleString()}</div><div className="text-xs text-slate-500">{onSaleKoreaRows.length} on-sale cars</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Paid to Korea</div><div className="text-xl font-black text-emerald-700">€{paidKoreaTotals.totalPaid.toLocaleString()}</div><div className="text-xs text-slate-500">{paidKoreaTotals.paidCount} paid</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Left to Pay</div><div className="text-xl font-black text-red-600">€{paidKoreaTotals.totalRemaining.toLocaleString()}</div><div className="text-xs text-slate-500">{paidKoreaTotals.notPaidCount} not paid</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Completion</div><div className="text-xl font-black text-slate-900">{onSaleKoreaRows.length ? Math.round((paidKoreaTotals.paidCount / onSaleKoreaRows.length) * 100) : 0}%</div><div className="text-xs text-slate-500">Paid in Korea</div></div>
                                             </div>
-                                            <div className="divide-y divide-slate-100 hidden md:block">
-                                                {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                    <button
-                                                        key={`${scopeStatus}-${sale.id}`}
-                                                        type="button"
-                                                        data-list-row="true"
-                                                        onClick={() => handleSaleInteraction(sale)}
-                                                        className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
-                                                        <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
-                                                        <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
-                                                        <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
-                                                        <div className="text-slate-600">{sale.shippingDate || '-'}</div>
-                                                        <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
-                                                    </button>
-                                                ))}
+
+                                            <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
+                                                <input value={paidKoreaSearch} onChange={(e) => setPaidKoreaSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                                                <select value={paidKoreaPaymentFilter} onChange={(e) => setPaidKoreaPaymentFilter(e.target.value as 'all' | 'paid' | 'not_paid')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All payment states</option><option value="paid">Paid only</option><option value="not_paid">Not paid only</option></select>
+                                                <select value={paidKoreaSort} onChange={(e) => setPaidKoreaSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest left to pay</option><option value="asc">Lowest left to pay</option></select>
                                             </div>
-                                            <div className="divide-y divide-slate-100 md:hidden">
-                                                {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                    <button
-                                                        key={`${scopeStatus}-${sale.id}`}
-                                                        type="button"
-                                                        onClick={() => handleSaleInteraction(sale)}
-                                                        className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        <div className="flex items-start justify-between gap-2">
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
-                                                            </div>
-                                                            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
-                                                        </div>
-                                                        <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
-                                                            <div className="min-w-0">
-                                                                <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
-                                                                <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
-                                                            </div>
-                                                            <div className="min-w-0 text-right">
-                                                                <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
-                                                                <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
-                                                                <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
+
+                                            {onSaleKoreaRows.length === 0 ? (
+                                                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No cars match this filter.</div>
+                                            ) : (
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                                    <div className="hidden md:grid grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div><div>Action</div>
+                                                    </div>
+                                                    <div className="divide-y divide-slate-100 hidden md:block">
+                                                        {onSaleKoreaRows.map((sale) => {
+                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+                                                            const isPaid = remaining <= 0;
+                                                            return (
+                                                                <div
+                                                                    key={`korea-${sale.id}`}
+                                                                    data-list-row="true"
+                                                                    onClick={() => handleSaleInteraction(sale)}
+                                                                    className="grid w-full cursor-pointer grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                                                                >
+                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
+                                                                    <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                    <div className="text-right font-semibold text-slate-700">€{(sale.costToBuy || 0).toLocaleString()}</div>
+                                                                    <div className="text-right font-semibold text-emerald-700">€{(sale.amountPaidToKorea || 0).toLocaleString()}</div>
+                                                                    <div className="text-right font-bold text-red-600">€{remaining.toLocaleString()}</div>
+                                                                    <div>
+                                                                        <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
+                                                                    </div>
+                                                                    <div className="text-slate-600">{sale.paidDateToKorea || '-'}</div>
+                                                                    <div>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(event) => {
+                                                                                event.preventDefault();
+                                                                                event.stopPropagation();
+                                                                                void markSalePaidInKorea(sale);
+                                                                            }}
+                                                                            disabled={isPaid}
+                                                                            className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        >
+                                                                            {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                        {onSaleKoreaRows.map((sale) => {
+                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+                                                            const isPaid = remaining <= 0;
+                                                            return (
+                                                                <div key={`korea-mobile-${sale.id}`} className="w-full px-3 py-3 text-left">
+                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="w-full text-left">
+                                                                        <div className="flex items-start justify-between gap-2">
+                                                                            <div className="min-w-0">
+                                                                                <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                                <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                            </div>
+                                                                            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
+                                                                        </div>
+                                                                        <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Cost</p><p className="text-slate-700 font-semibold">€{(sale.costToBuy || 0).toLocaleString()}</p></div>
+                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Paid</p><p className="text-emerald-700 font-semibold">€{(sale.amountPaidToKorea || 0).toLocaleString()}</p></div>
+                                                                            <div className="text-right"><p className="font-semibold uppercase tracking-wide text-slate-400">Left</p><p className="text-red-600 font-black">€{remaining.toLocaleString()}</p></div>
+                                                                        </div>
+                                                                        <p className="mt-1 text-[11px] text-slate-500">Paid Date: {sale.paidDateToKorea || '-'}</p>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => void markSalePaidInKorea(sale)}
+                                                                        disabled={isPaid}
+                                                                        className="mt-2 w-full rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                    >
+                                                                        {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             ) : view === 'transport' ? (
