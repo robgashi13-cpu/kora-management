@@ -5362,13 +5362,24 @@ export default function Dashboard() {
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
                                 <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-[calc(12.5rem+env(safe-area-inset-bottom))] pt-2 md:p-3 md:pb-3">
-                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2 relative z-20">
-                                        <div className="min-w-0">
-                                            <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
-                                            <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className="mt-2 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
-                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
-                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
+                                    <div className="mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm relative z-20 overflow-hidden">
+                                        <div className="px-3 py-3 md:px-4 md:py-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
+                                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2.5">
+                                                <div className="min-w-0">
+                                                    <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">{view === 'pdf_list' ? 'PDF Workspace' : 'Invoice Workspace'}</h2>
+                                                    <p className="text-[11px] md:text-xs text-slate-200 mt-1 leading-relaxed">Professional, responsive layout for every screen size. Cars are grouped like the Sold tab.</p>
+                                                </div>
+                                                <div className="inline-flex items-center gap-2 text-[10px] md:text-xs font-semibold text-slate-100">
+                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Desktop ready</span>
+                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Tablet ready</span>
+                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Mobile ready</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="px-3 py-2.5 md:px-4 border-t border-slate-100 bg-slate-50/70 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5">
+                                            <div className="grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center transition-colors ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}>Create</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center transition-colors ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}>History</button>
                                             </div>
                                         </div>
                                         {view === 'invoices' && invoicesSubTab === 'create' && (
@@ -5379,7 +5390,7 @@ export default function Dashboard() {
                                                         const validIds = soldInvoiceSales.filter(s => (s.amountPaidBank || 0) > 0).map(s => s.id);
                                                         setSelectedIds(new Set(validIds));
                                                     }}
-                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all"
                                                 >
                                                     Select valid
                                                 </button>
@@ -5392,7 +5403,7 @@ export default function Dashboard() {
                                                             setSelectedIds(new Set(soldInvoiceSales.map(s => s.id)));
                                                         }
                                                     }}
-                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all"
                                                 >
                                                     {selectedIds.size === soldInvoiceSales.length && soldInvoiceSales.length > 0 ? 'Deselect all' : 'Select all'}
                                                 </button>
@@ -5423,14 +5434,14 @@ export default function Dashboard() {
 
                                     {invoicesSubTab === 'history' ? (
                                         <div className="space-y-3">
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                                                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                                                     Search
-                                                    <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="VIN / stock / invoice / user" className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900" />
+                                                    <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="VIN / stock / invoice / user" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200" />
                                                 </label>
                                                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                                                     Month
-                                                    <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900">
+                                                    <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
                                                     <option value="all">All months</option>
                                                     {invoiceHistoryMonths.map((month) => (<option key={month} value={month}>{formatInvoiceMonthLabel(month)}</option>))}
                                                     </select>
@@ -5444,7 +5455,7 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="divide-y divide-slate-100">
                                                         {entries.map((entry) => (
-                                                            <div key={entry.id} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
+                                                            <div key={entry.id} className="px-3 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
                                                                 <div className="min-w-0">
                                                                     <div className="font-semibold text-slate-900 overflow-wrap-anywhere">{entry.carDisplay} (VIN {entry.vin || '-'} / Stock {entry.stock || '-'})</div>
                                                                     <div className="text-slate-500">{new Date(entry.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • {entry.createdByDisplay} • {entry.sourceContext}</div>
@@ -5499,11 +5510,11 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative px-2 py-2 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:items-center md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative px-2.5 py-2.5 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:items-center md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             {/* Mobile card layout */}
-                                                                            <div className="md:hidden space-y-2">
+                                                                            <div className="md:hidden space-y-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
                                                                                 {/* Row 1: Checkbox + Vehicle + Buyer */}
                                                                                 <div className="flex items-start gap-2">
                                                                                     <button
@@ -5527,7 +5538,7 @@ export default function Dashboard() {
                                                                                 </div>
 
                                                                                 {/* Row 2: Bank + Balance + Transport — horizontal */}
-                                                                                <div className="flex items-center gap-3 pl-7">
+                                                                                <div className="grid grid-cols-3 gap-2 pl-7">
                                                                                     <div className="flex items-center gap-1">
                                                                                         <span className="text-[9px] text-slate-400 font-bold uppercase">Bank</span>
                                                                                         <span className="text-xs font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</span>
@@ -5540,18 +5551,18 @@ export default function Dashboard() {
                                                                                 </div>
 
                                                                                 {/* Row 3: Action buttons — horizontal */}
-                                                                                <div className="flex items-center gap-1 pl-7 flex-wrap">
+                                                                                <div className="flex items-center gap-1.5 pl-7 flex-wrap">
                                                                                     {view === 'pdf_list' ? (
                                                                                         <>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
                                                                                         </>
                                                                                     ) : (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold shadow-sm active:scale-95"
+                                                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold shadow-sm active:scale-95"
                                                                                         >
                                                                                             <FileText className="w-3.5 h-3.5" />
                                                                                             <span className="uppercase tracking-wider">View</span>
