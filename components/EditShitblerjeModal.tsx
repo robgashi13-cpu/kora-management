@@ -532,7 +532,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                 <ViewSaleModal
                     isOpen={showViewSale}
                     sale={sale}
-                    onClose={() => { setShowViewSale(false); setViewSaleSection('overview'); }}
+                    onClose={() => { setShowViewSale(false); }}
                     isAdmin={false}
                     initialSection={viewSaleSection}
                 />
