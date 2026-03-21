@@ -380,68 +380,65 @@ export default function EditablePreviewModal({
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+        <div className="flex flex-col border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
           <div className="flex justify-between items-center p-3 md:p-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700"
+                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors text-slate-500 hover:text-slate-700 flex-shrink-0"
                 aria-label="Go back"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <div className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
-              <h2 className="text-lg font-bold text-slate-800">
-                Preview & Edit {documentTitle}
+              <div className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse flex-shrink-0" />
+              <h2 className="text-sm md:text-lg font-bold text-slate-800 truncate">
+                {documentTitle}
               </h2>
-              <span className="hidden sm:inline text-xs bg-slate-50 text-slate-900 px-2 py-1 rounded-full font-medium">
-                Click any value to edit
-              </span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
               {onSaveToSale && (
                 <button
                   onClick={handleSaveToSale}
-                  className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-all font-semibold text-[11px] shadow-sm"
+                  className="flex items-center gap-1 px-2 py-1 md:px-2.5 bg-emerald-600 text-white rounded-md hover:bg-emerald-500 transition-all font-semibold text-[10px] md:text-[11px] shadow-sm"
                 >
                   {showSaveSuccess ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                  {showSaveSuccess ? 'Saved!' : 'Save to Sale'}
+                  <span className="hidden sm:inline">{showSaveSuccess ? 'Saved!' : 'Save'}</span>
                 </button>
               )}
               {canToggleStamp && (
                 <button
                   type="button"
                   onClick={() => setWithStamp(prev => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${withStamp
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all font-semibold text-[10px] md:text-[11px] ${withStamp
                     ? 'bg-slate-900 text-white border-slate-900'
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                     }`}
                   aria-pressed={withStamp}
                 >
                   <span>Stamp</span>
-                  <span className="text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
+                  <span className="text-[9px] md:text-[10px] font-medium">{withStamp ? 'On' : 'Off'}</span>
                 </button>
               )}
               {documentType === 'invoice' && (
                 <button
                   type="button"
                   onClick={() => setIsPreInvoice(prev => !prev)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-all font-semibold text-[11px] ${isPreInvoice
+                  className={`flex items-center gap-1 px-2 py-1 rounded-md border transition-all font-semibold text-[10px] md:text-[11px] ${isPreInvoice
                     ? 'bg-amber-600 text-white border-amber-600'
                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                     }`}
                   aria-pressed={isPreInvoice}
                 >
-                  <Check className="w-3 h-3" />
-                  <span>Pre-Invoice</span>
+                  <span>Pre-Inv</span>
                 </button>
               )}
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[11px]"
+                className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 rounded-md hover:bg-slate-200 transition-all font-semibold text-[10px] md:text-[11px]"
+                aria-label="Reset"
               >
                 <RotateCcw className="w-3 h-3" />
-                Reset
+                <span className="hidden sm:inline">Reset</span>
               </button>
               <button
                 onClick={handleDownload}
@@ -461,28 +458,28 @@ export default function EditablePreviewModal({
               </button>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
+                className="hidden md:flex p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="px-4 py-2 bg-red-50 text-red-700 text-sm flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              {error}
+            <div className="px-4 py-2 bg-red-50 text-red-700 text-xs flex items-center gap-2 flex-shrink-0">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{error}</span>
             </div>
           )}
           {statusMessage && (
-            <div className="px-4 py-2 bg-amber-50 text-amber-700 text-sm flex items-center gap-2">
-              {statusMessage}
+            <div className="px-4 py-2 bg-amber-50 text-amber-700 text-xs flex items-center gap-2 flex-shrink-0">
+              <span className="truncate">{statusMessage}</span>
             </div>
           )}
         </div>
 
         {/* Document Preview */}
-        <div className="flex-1 overflow-auto scroll-container bg-slate-100/90 p-2 pb-24 md:p-8 md:pb-8 flex justify-center">
+        <div className="flex-1 overflow-auto scroll-container bg-slate-100/90 p-2 md:p-8 flex justify-center items-start">
           <div className="pdf-preview-scaler">
             {documentType === 'invoice' ? (
               <InvoiceDocument
@@ -509,16 +506,37 @@ export default function EditablePreviewModal({
             )}
           </div>
         </div>
-        <div className="mobile-sticky-actions md:hidden" aria-label="PDF preview actions">
-          <button aria-label="Download" onClick={handleDownload} disabled={isDownloading} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
-            <Download className="w-4 h-4 mx-auto mb-1" />{isDownloading ? 'Generating...' : 'Download'}
-          </button>
-          <button aria-label="Print" onClick={handlePrint} disabled={isDownloading} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
-            <Printer className="w-4 h-4 mx-auto mb-1" />Print
-          </button>
-          <button aria-label="Close" onClick={onClose} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
-            <X className="w-4 h-4 mx-auto mb-1" />Close
-          </button>
+
+        {/* Mobile sticky bottom actions */}
+        <div className="md:hidden flex-shrink-0 border-t border-slate-200 bg-white/98 backdrop-blur-sm" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <div className="grid grid-cols-3 gap-2 p-3">
+            <button
+              aria-label="Download"
+              onClick={handleDownload}
+              disabled={isDownloading}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-slate-900 text-white text-[11px] font-semibold disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {isDownloading ? 'Wait...' : 'Download'}
+            </button>
+            <button
+              aria-label="Print"
+              onClick={handlePrint}
+              disabled={isDownloading}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-[11px] font-semibold disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              <Printer className="w-4 h-4" />
+              Print
+            </button>
+            <button
+              aria-label="Close"
+              onClick={onClose}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-[11px] font-semibold active:scale-95 transition-transform"
+            >
+              <X className="w-4 h-4" />
+              Close
+            </button>
+          </div>
         </div>
       </motion.div>
 

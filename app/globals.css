@@ -1153,6 +1153,7 @@ button:active,
   }
 }
 
+/* Legacy mobile-sticky-actions kept for non-modal contexts */
 .mobile-sticky-actions {
   position: sticky;
   bottom: calc(4.75rem + env(safe-area-inset-bottom));
@@ -1161,7 +1162,6 @@ button:active,
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   padding: 0.75rem;
-  padding-bottom: 0.75rem;
   background: rgba(248, 250, 252, 0.98);
   box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
   border: 1px solid hsl(var(--border));

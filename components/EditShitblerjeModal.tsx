@@ -205,7 +205,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => { setViewSaleSection('overview'); setShowViewSale(true); }}
+                                onClick={() => { setShowViewSale(true); }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition-colors"
                             >
                                 <Eye className="w-4 h-4" />
@@ -532,7 +532,7 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
                 <ViewSaleModal
                     isOpen={showViewSale}
                     sale={sale}
-                    onClose={() => { setShowViewSale(false); setViewSaleSection('overview'); }}
+                    onClose={() => { setShowViewSale(false); }}
                     isAdmin={false}
                     initialSection={viewSaleSection}
                 />
