@@ -7,7 +7,6 @@ import AppLayout from './AppLayout';
 import NotFoundPage from './NotFoundPage';
 import ErrorBoundary from './ErrorBoundary';
 
-console.log('[main] mounting root');
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
