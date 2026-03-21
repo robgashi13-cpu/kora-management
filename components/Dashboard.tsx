@@ -4098,7 +4098,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0`}>
+                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6`}>
                     {view !== 'sale_form' && (
                         <div className="flex flex-col flex-1 min-h-0">
 
@@ -4541,7 +4541,7 @@ export default function Dashboard() {
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
                                 <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
-                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-20 no-scrollbar">
+                                    <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 no-scrollbar">
                                         <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
                                             <div className="flex items-center justify-between text-[11px] text-slate-600">
                                                 <span className="font-semibold text-slate-900">{activeCategory}</span>
