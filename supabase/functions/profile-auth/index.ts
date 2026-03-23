@@ -23,7 +23,10 @@ const toEmailSlug = (profileName: string) =>
 const buildProfileEmail = (profileName: string) =>
   `${toEmailSlug(profileName)}@kora-profiles.local`;
 
-const ADMIN_PASSWORD = "password2";
+const sanitizeSecret = (value?: string | null) =>
+  typeof value === "string" ? value.replace(/\r?\n/g, "").trim() : "";
+
+const ADMIN_PASSWORD = sanitizeSecret(Deno.env.get("ADMIN_PASSWORD")) || "password2";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -32,8 +35,10 @@ Deno.serve(async (req) => {
 
   try {
     const { profileName, password } = await req.json();
+    const normalizedProfileName =
+      typeof profileName === "string" ? profileName.trim() : "";
 
-    if (!profileName || typeof profileName !== "string") {
+    if (!normalizedProfileName) {
       return new Response(
         JSON.stringify({ error: "profileName is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -48,7 +53,7 @@ Deno.serve(async (req) => {
     let { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id, email, is_admin, profile_name")
-      .eq("profile_name", profileName)
+      .eq("profile_name", normalizedProfileName)
       .maybeSingle();
 
     if (profileError) {
@@ -60,14 +65,14 @@ Deno.serve(async (req) => {
 
     // Auto-provision non-admin profiles when they do not exist yet.
     if (!profile) {
-      if (profileName === "Robert") {
+      if (normalizedProfileName === "Robert") {
         return new Response(
           JSON.stringify({ error: "Profile not found" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
-      const provisionalEmail = buildProfileEmail(profileName);
+      const provisionalEmail = buildProfileEmail(normalizedProfileName);
       const provisionalPassword = getInternalPassword(provisionalEmail);
 
       const { data: createdUser, error: createUserError } =
@@ -76,11 +81,11 @@ Deno.serve(async (req) => {
           password: provisionalPassword,
           email_confirm: true,
           user_metadata: {
-            profile: profileName,
-            profile_name: profileName,
+            profile: normalizedProfileName,
+            profile_name: normalizedProfileName,
           },
           app_metadata: {
-            profile: profileName,
+            profile: normalizedProfileName,
             role: "authenticated",
           },
         });
@@ -98,7 +103,7 @@ Deno.serve(async (req) => {
         .insert({
           id: createdUser.user.id,
           email: provisionalEmail,
-          profile_name: profileName,
+          profile_name: normalizedProfileName,
           is_admin: false,
         });
 
@@ -113,7 +118,7 @@ Deno.serve(async (req) => {
       const refetchResult = await adminClient
         .from("profiles")
         .select("id, email, is_admin, profile_name")
-        .eq("profile_name", profileName)
+        .eq("profile_name", normalizedProfileName)
         .maybeSingle();
 
       profile = refetchResult.data;
@@ -137,7 +142,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    const email = profile.email;
+    const email = profile.email || buildProfileEmail(profile.profile_name || normalizedProfileName);
+
+    if (!profile.email) {
+      const { error: patchProfileEmailError } = await adminClient
+        .from("profiles")
+        .update({ email })
+        .eq("id", profile.id);
+
+      if (patchProfileEmailError) {
+        console.error("Failed to patch missing profile email:", patchProfileEmailError);
+      }
+    }
+
     const signInPassword = profile.is_admin
       ? ADMIN_PASSWORD
       : getInternalPassword(email);
@@ -182,7 +199,7 @@ Deno.serve(async (req) => {
         profile: {
           id: profile.id,
           profileName: profile.profile_name,
-          email: profile.email,
+          email,
           isAdmin: profile.is_admin,
         },
       }),
