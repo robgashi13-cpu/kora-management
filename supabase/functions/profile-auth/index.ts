@@ -32,6 +32,13 @@ const SHYQA_PASSWORD = sanitizeSecret(Deno.env.get("SHYQA_PASSWORD")) || "12345"
 const toPasswordKey = (profileName: string) =>
   profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
+const canonicalizeProfileName = (profileName: string) => {
+  const key = toPasswordKey(profileName);
+  if (key === "robert" || key === "admin") return "Robert";
+  if (key === "shyqa" || key === "shqya") return "Shyqa";
+  return profileName.trim();
+};
+
 const getProfilePassword = (profileName: string) => {
   const key = toPasswordKey(profileName);
   if (key === "robert") return ADMIN_PASSWORD;
@@ -46,8 +53,11 @@ Deno.serve(async (req) => {
 
   try {
     const { profileName, password } = await req.json();
-    const normalizedProfileName =
+    const requestedProfileName =
       typeof profileName === "string" ? profileName.trim() : "";
+    const normalizedProfileName = requestedProfileName
+      ? canonicalizeProfileName(requestedProfileName)
+      : "";
 
     if (!normalizedProfileName) {
       return new Response(
@@ -64,7 +74,7 @@ Deno.serve(async (req) => {
     let { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id, email, is_admin, profile_name")
-      .eq("profile_name", normalizedProfileName)
+      .ilike("profile_name", normalizedProfileName)
       .maybeSingle();
 
     if (profileError) {
@@ -74,48 +84,59 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Auto-provision non-admin profiles when they do not exist yet.
+    const profilePassword = getProfilePassword(normalizedProfileName);
+    const provisionalEmail = buildProfileEmail(normalizedProfileName);
+    const provisionalPassword = profilePassword || getInternalPassword(provisionalEmail);
+
+    // Auto-provision profiles when they do not exist yet.
     if (!profile) {
-      if (normalizedProfileName === "Robert") {
-        return new Response(
-          JSON.stringify({ error: "Profile not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      const anonClient = createClient(SUPABASE_URL, ANON_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
 
-      const provisionalEmail = buildProfileEmail(normalizedProfileName);
-      const provisionalPassword = getInternalPassword(provisionalEmail);
+      const { data: provisionalSignIn } = await anonClient.auth.signInWithPassword({
+        email: provisionalEmail,
+        password: provisionalPassword,
+      });
 
-      const { data: createdUser, error: createUserError } =
-        await adminClient.auth.admin.createUser({
-          email: provisionalEmail,
-          password: provisionalPassword,
-          email_confirm: true,
-          user_metadata: {
-            profile: normalizedProfileName,
-            profile_name: normalizedProfileName,
-          },
-          app_metadata: {
-            profile: normalizedProfileName,
-            role: "authenticated",
-          },
-        });
+      let profileId = provisionalSignIn.session?.user?.id;
 
-      if (createUserError || !createdUser.user) {
-        console.error("Failed to create auth user for profile:", createUserError);
-        return new Response(
-          JSON.stringify({ error: "Profile provisioning failed" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (!profileId) {
+        const { data: createdUser, error: createUserError } =
+          await adminClient.auth.admin.createUser({
+            email: provisionalEmail,
+            password: provisionalPassword,
+            email_confirm: true,
+            user_metadata: {
+              profile: normalizedProfileName,
+              profile_name: normalizedProfileName,
+            },
+            app_metadata: {
+              profile: normalizedProfileName,
+              role: "authenticated",
+            },
+          });
+
+        if (createUserError || !createdUser.user) {
+          console.error("Failed to create auth user for profile:", createUserError);
+          return new Response(
+            JSON.stringify({ error: "Profile provisioning failed" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        profileId = createdUser.user.id;
       }
 
       const { error: insertProfileError } = await adminClient
         .from("profiles")
-        .insert({
-          id: createdUser.user.id,
+        .upsert({
+          id: profileId,
           email: provisionalEmail,
           profile_name: normalizedProfileName,
-          is_admin: false,
+          is_admin: !!profilePassword,
+        }, {
+          onConflict: "id",
         });
 
       if (insertProfileError) {
@@ -129,7 +150,7 @@ Deno.serve(async (req) => {
       const refetchResult = await adminClient
         .from("profiles")
         .select("id, email, is_admin, profile_name")
-        .eq("profile_name", normalizedProfileName)
+        .ilike("profile_name", normalizedProfileName)
         .maybeSingle();
 
       profile = refetchResult.data;
@@ -143,11 +164,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const profilePassword = getProfilePassword(profile.profile_name || normalizedProfileName);
+    const profilePasswordForAuth = getProfilePassword(profile.profile_name || normalizedProfileName);
 
     // Protected profiles require password
-    if (profilePassword) {
-      if (!password || password !== profilePassword) {
+    if (profilePasswordForAuth) {
+      if (!password || password !== profilePasswordForAuth) {
         return new Response(
           JSON.stringify({ error: "Incorrect password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -168,7 +189,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const signInPassword = profilePassword || getInternalPassword(email);
+    const signInPassword = profilePasswordForAuth || getInternalPassword(email);
 
     // Ensure the user has the correct password set
     // (first-time setup or password sync)
