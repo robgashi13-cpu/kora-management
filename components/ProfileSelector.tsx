@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cloudClient } from '@/services/cloudAuth';
+import { authenticateProfileWithStatus } from '@/services/adminAuth';
 
 type ProfileEntry = {
     name: string;
@@ -70,20 +70,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setIsAuthLoading(true);
         setAuthError(null);
         try {
-            const { data, error } = await cloudClient.functions.invoke('profile-auth', {
-                body: { profileName, password: pwd },
-            });
-            if (error || !data?.session) {
-                const msg = data?.error || error?.message || 'Sign-in failed';
-                setAuthError(msg);
+            const { data, errorMessage } = await authenticateProfileWithStatus(profileName, pwd);
+            if (!data) {
+                setAuthError(errorMessage || 'Sign-in failed');
                 setIsAuthLoading(false);
                 return false;
             }
-            // Set the session from the edge function response
-            await cloudClient.auth.setSession({
-                access_token: data.session.access_token,
-                refresh_token: data.session.refresh_token,
-            });
             setIsAuthLoading(false);
             return true;
         } catch (err: any) {

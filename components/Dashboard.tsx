@@ -3629,6 +3629,7 @@ export default function Dashboard() {
                                         const result = await authenticateProfile(p);
                                         if (!result) {
                                             console.warn('Profile auth failed for', p);
+                                            return;
                                         }
                                         setShowProfileMenu(false);
                                         startTransition(() => { setUserProfile(p); });
