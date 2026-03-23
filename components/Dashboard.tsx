@@ -48,9 +48,11 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
+const SHYQA_PROFILE = 'Shyqa';
+const ALLOWED_PROFILES = [ADMIN_PROFILE, SHYQA_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
+const PRIVILEGED_PROFILE_SET = new Set([ADMIN_PROFILE, SHYQA_PROFILE].map(profile => normalizeProfileName(profile)));
 const MOBILE_LONG_PRESS_DURATION_MS = 2000;
 const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
@@ -105,7 +107,7 @@ type CustomDashboard = {
 
 const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme }: any) {
     const controls = useDragControls();
-    const isAdmin = userProfile === ADMIN_PROFILE;
+    const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
     const canEdit = isAdmin || s.soldBy === userProfile;
     const isSoldRow = s.status === 'Completed';
     const rowClassName = isSoldRow ? 'contents table-row-compact cars-sold-row' : 'contents group table-row-hover table-row-compact';
@@ -506,8 +508,8 @@ export default function Dashboard() {
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
     const hasSyncedTransportPaidRef = useRef(false);
 
-    const isAdmin = userProfile === ADMIN_PROFILE;
-    const isRecordAdmin = userProfile === ADMIN_PROFILE;
+    const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
+    const isRecordAdmin = isAdmin;
     const canViewPrices = isAdmin;
 
 

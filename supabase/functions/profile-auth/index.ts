@@ -14,6 +14,14 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const INTERNAL_PASSWORD_PREFIX = "kora-internal-v1-";
 const getInternalPassword = (email: string) =>
   `${INTERNAL_PASSWORD_PREFIX}${email}-${SERVICE_ROLE_KEY.slice(-8)}`;
+const toEmailSlug = (profileName: string) =>
+  profileName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "profile";
+const buildProfileEmail = (profileName: string) =>
+  `${toEmailSlug(profileName)}@kora-profiles.local`;
 
 const ADMIN_PASSWORD = "password2";
 
@@ -37,17 +45,86 @@ Deno.serve(async (req) => {
     });
 
     // Look up profile
-    const { data: profile, error: profileError } = await adminClient
+    let { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id, email, is_admin, profile_name")
       .eq("profile_name", profileName)
       .maybeSingle();
 
-    if (profileError || !profile) {
+    if (profileError) {
       return new Response(
-        JSON.stringify({ error: "Profile not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Profile lookup failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Auto-provision non-admin profiles when they do not exist yet.
+    if (!profile) {
+      if (profileName === "Robert") {
+        return new Response(
+          JSON.stringify({ error: "Profile not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const provisionalEmail = buildProfileEmail(profileName);
+      const provisionalPassword = getInternalPassword(provisionalEmail);
+
+      const { data: createdUser, error: createUserError } =
+        await adminClient.auth.admin.createUser({
+          email: provisionalEmail,
+          password: provisionalPassword,
+          email_confirm: true,
+          user_metadata: {
+            profile: profileName,
+            profile_name: profileName,
+          },
+          app_metadata: {
+            profile: profileName,
+            role: "authenticated",
+          },
+        });
+
+      if (createUserError || !createdUser.user) {
+        console.error("Failed to create auth user for profile:", createUserError);
+        return new Response(
+          JSON.stringify({ error: "Profile provisioning failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error: insertProfileError } = await adminClient
+        .from("profiles")
+        .insert({
+          id: createdUser.user.id,
+          email: provisionalEmail,
+          profile_name: profileName,
+          is_admin: false,
+        });
+
+      if (insertProfileError) {
+        console.error("Failed to create profile row:", insertProfileError);
+        return new Response(
+          JSON.stringify({ error: "Profile provisioning failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const refetchResult = await adminClient
+        .from("profiles")
+        .select("id, email, is_admin, profile_name")
+        .eq("profile_name", profileName)
+        .maybeSingle();
+
+      profile = refetchResult.data;
+      profileError = refetchResult.error;
+
+      if (profileError || !profile) {
+        return new Response(
+          JSON.stringify({ error: "Profile provisioning failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Admin requires password
