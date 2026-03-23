@@ -26,7 +26,18 @@ const buildProfileEmail = (profileName: string) =>
 const sanitizeSecret = (value?: string | null) =>
   typeof value === "string" ? value.replace(/\r?\n/g, "").trim() : "";
 
-const ADMIN_PASSWORD = sanitizeSecret(Deno.env.get("ADMIN_PASSWORD")) || "password2";
+const ADMIN_PASSWORD = sanitizeSecret(Deno.env.get("ADMIN_PASSWORD")) || "Robertoo1396$";
+const SHYQA_PASSWORD = sanitizeSecret(Deno.env.get("SHYQA_PASSWORD")) || "12345";
+
+const toPasswordKey = (profileName: string) =>
+  profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const getProfilePassword = (profileName: string) => {
+  const key = toPasswordKey(profileName);
+  if (key === "robert") return ADMIN_PASSWORD;
+  if (key === "shyqa" || key === "shqya") return SHYQA_PASSWORD;
+  return null;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -132,9 +143,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Admin requires password
-    if (profile.is_admin) {
-      if (!password || password !== ADMIN_PASSWORD) {
+    const profilePassword = getProfilePassword(profile.profile_name || normalizedProfileName);
+
+    // Protected profiles require password
+    if (profilePassword) {
+      if (!password || password !== profilePassword) {
         return new Response(
           JSON.stringify({ error: "Incorrect password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -155,9 +168,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const signInPassword = profile.is_admin
-      ? ADMIN_PASSWORD
-      : getInternalPassword(email);
+    const signInPassword = profilePassword || getInternalPassword(email);
 
     // Ensure the user has the correct password set
     // (first-time setup or password sync)
