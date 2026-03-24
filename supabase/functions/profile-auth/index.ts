@@ -14,37 +14,8 @@ const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const INTERNAL_PASSWORD_PREFIX = "kora-internal-v1-";
 const getInternalPassword = (email: string) =>
   `${INTERNAL_PASSWORD_PREFIX}${email}-${SERVICE_ROLE_KEY.slice(-8)}`;
-const toEmailSlug = (profileName: string) =>
-  profileName
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "profile";
-const buildProfileEmail = (profileName: string) =>
-  `${toEmailSlug(profileName)}@kora-profiles.local`;
 
-const sanitizeSecret = (value?: string | null) =>
-  typeof value === "string" ? value.replace(/\r?\n/g, "").trim() : "";
-
-const ADMIN_PASSWORD = "Robertoo1396$";
-const SHYQA_PASSWORD = "12345";
-
-const toPasswordKey = (profileName: string) =>
-  profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
-
-const canonicalizeProfileName = (profileName: string) => {
-  const key = toPasswordKey(profileName);
-  if (key === "robert" || key === "admin") return "Robert";
-  if (key === "shyqa" || key === "shqya") return "Shyqa";
-  return profileName.trim();
-};
-
-const getProfilePassword = (profileName: string) => {
-  const key = toPasswordKey(profileName);
-  if (key === "robert") return ADMIN_PASSWORD;
-  if (key === "shyqa" || key === "shqya") return SHYQA_PASSWORD;
-  return null;
-};
+const ADMIN_PASSWORD = "password2";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -53,13 +24,8 @@ Deno.serve(async (req) => {
 
   try {
     const { profileName, password } = await req.json();
-    const requestedProfileName =
-      typeof profileName === "string" ? profileName.trim() : "";
-    const normalizedProfileName = requestedProfileName
-      ? canonicalizeProfileName(requestedProfileName)
-      : "";
 
-    if (!normalizedProfileName) {
+    if (!profileName || typeof profileName !== "string") {
       return new Response(
         JSON.stringify({ error: "profileName is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -70,120 +36,23 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Check app_config for a custom password stored via the profile editor
-    const profileKey = toPasswordKey(requestedProfileName);
-    let appConfigPassword: string | null = null;
-    if (profileKey) {
-      const { data: configRow } = await adminClient
-        .from("app_config")
-        .select("value")
-        .eq("key", `profile_password_${profileKey}`)
-        .maybeSingle();
-      const stored = (configRow?.value as Record<string, unknown> | null)?.password;
-      if (typeof stored === "string" && stored.length > 0) {
-        appConfigPassword = stored;
-      }
-    }
-
     // Look up profile
-    let { data: profile, error: profileError } = await adminClient
+    const { data: profile, error: profileError } = await adminClient
       .from("profiles")
       .select("id, email, is_admin, profile_name")
-      .ilike("profile_name", normalizedProfileName)
+      .eq("profile_name", profileName)
       .maybeSingle();
 
-    if (profileError) {
+    if (profileError || !profile) {
       return new Response(
-        JSON.stringify({ error: "Profile lookup failed" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Profile not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const profilePassword = getProfilePassword(normalizedProfileName);
-    const provisionalEmail = buildProfileEmail(normalizedProfileName);
-    const provisionalPassword = profilePassword || getInternalPassword(provisionalEmail);
-
-    // Auto-provision profiles when they do not exist yet.
-    if (!profile) {
-      const anonClient = createClient(SUPABASE_URL, ANON_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-
-      const { data: provisionalSignIn } = await anonClient.auth.signInWithPassword({
-        email: provisionalEmail,
-        password: provisionalPassword,
-      });
-
-      let profileId = provisionalSignIn.session?.user?.id;
-
-      if (!profileId) {
-        const { data: createdUser, error: createUserError } =
-          await adminClient.auth.admin.createUser({
-            email: provisionalEmail,
-            password: provisionalPassword,
-            email_confirm: true,
-            user_metadata: {
-              profile: normalizedProfileName,
-              profile_name: normalizedProfileName,
-            },
-            app_metadata: {
-              profile: normalizedProfileName,
-              role: "authenticated",
-            },
-          });
-
-        if (createUserError || !createdUser.user) {
-          console.error("Failed to create auth user for profile:", createUserError);
-          return new Response(
-            JSON.stringify({ error: "Profile provisioning failed" }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        profileId = createdUser.user.id;
-      }
-
-      const { error: insertProfileError } = await adminClient
-        .from("profiles")
-        .upsert({
-          id: profileId,
-          email: provisionalEmail,
-          profile_name: normalizedProfileName,
-          is_admin: !!profilePassword,
-        }, {
-          onConflict: "id",
-        });
-
-      if (insertProfileError) {
-        console.error("Failed to create profile row:", insertProfileError);
-        return new Response(
-          JSON.stringify({ error: "Profile provisioning failed" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const refetchResult = await adminClient
-        .from("profiles")
-        .select("id, email, is_admin, profile_name")
-        .ilike("profile_name", normalizedProfileName)
-        .maybeSingle();
-
-      profile = refetchResult.data;
-      profileError = refetchResult.error;
-
-      if (profileError || !profile) {
-        return new Response(
-          JSON.stringify({ error: "Profile provisioning failed" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    const profilePasswordForAuth = appConfigPassword ?? getProfilePassword(profile.profile_name || normalizedProfileName);
-
-    // Protected profiles require password
-    if (profilePasswordForAuth) {
-      if (!password || password !== profilePasswordForAuth) {
+    // Admin requires password
+    if (profile.is_admin) {
+      if (!password || password !== ADMIN_PASSWORD) {
         return new Response(
           JSON.stringify({ error: "Incorrect password" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -191,20 +60,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const email = profile.email || buildProfileEmail(profile.profile_name || normalizedProfileName);
-
-    if (!profile.email) {
-      const { error: patchProfileEmailError } = await adminClient
-        .from("profiles")
-        .update({ email })
-        .eq("id", profile.id);
-
-      if (patchProfileEmailError) {
-        console.error("Failed to patch missing profile email:", patchProfileEmailError);
-      }
-    }
-
-    const signInPassword = profilePasswordForAuth || getInternalPassword(email);
+    const email = profile.email;
+    const signInPassword = profile.is_admin
+      ? ADMIN_PASSWORD
+      : getInternalPassword(email);
 
     // Ensure the user has the correct password set
     // (first-time setup or password sync)
@@ -246,7 +105,7 @@ Deno.serve(async (req) => {
         profile: {
           id: profile.id,
           profileName: profile.profile_name,
-          email,
+          email: profile.email,
           isAdmin: profile.is_admin,
         },
       }),

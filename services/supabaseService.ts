@@ -2,17 +2,13 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { CarSale } from '@/src/types';
 
 const ADMIN_PROFILE = 'Robert';
-const SHYQA_PROFILE = 'Shyqa';
 
 const normalizeProfileName = (name?: string | null) => {
     if (!name) return '';
     return name.trim();
 };
 
-const isAdminProfile = (profile?: string | null) => {
-    const normalized = normalizeProfileName(profile);
-    return normalized === ADMIN_PROFILE || normalized === SHYQA_PROFILE;
-};
+const isAdminProfile = (profile?: string | null) => normalizeProfileName(profile) === ADMIN_PROFILE;
 
 const clientCache = new Map<string, SupabaseClient>();
 

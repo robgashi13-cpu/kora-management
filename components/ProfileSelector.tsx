@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2, KeyRound } from 'lucide-react';
+import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { authenticateProfileWithStatus, changeProfilePassword } from '@/services/adminAuth';
+import { cloudClient } from '@/services/cloudAuth';
 
 type ProfileEntry = {
     name: string;
@@ -23,7 +23,6 @@ interface ProfileSelectorProps {
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false, verifyAdminPassword }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
-    const PASSWORD_PROTECTED_PROFILES = new Set(['Robert', 'Shyqa']);
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -39,14 +38,6 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     const [pendingProfile, setPendingProfile] = useState<string | null>(null);
     const [isAuthLoading, setIsAuthLoading] = useState(false);
     const [authError, setAuthError] = useState<string | null>(null);
-
-    const [showChangePassword, setShowChangePassword] = useState(false);
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showNewPassword, setShowNewPassword] = useState(false);
-    const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
-    const [changePasswordSuccess, setChangePasswordSuccess] = useState(false);
-    const [isSavingPassword, setIsSavingPassword] = useState(false);
 
     // Long press detection (4 seconds = 4000ms)
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -79,12 +70,20 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setIsAuthLoading(true);
         setAuthError(null);
         try {
-            const { data, errorMessage } = await authenticateProfileWithStatus(profileName, pwd);
-            if (!data) {
-                setAuthError(errorMessage || 'Sign-in failed');
+            const { data, error } = await cloudClient.functions.invoke('profile-auth', {
+                body: { profileName, password: pwd },
+            });
+            if (error || !data?.session) {
+                const msg = data?.error || error?.message || 'Sign-in failed';
+                setAuthError(msg);
                 setIsAuthLoading(false);
                 return false;
             }
+            // Set the session from the edge function response
+            await cloudClient.auth.setSession({
+                access_token: data.session.access_token,
+                refresh_token: data.session.refresh_token,
+            });
             setIsAuthLoading(false);
             return true;
         } catch (err: any) {
@@ -95,7 +94,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const handleSelect = async (p: string) => {
-        if (PASSWORD_PROTECTED_PROFILES.has(p)) {
+        if (p === ADMIN_PROFILE) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
@@ -110,7 +109,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         }
     };
 
-    const handleConfirmPassword = async () => {
+    const confirmPassword = async () => {
         if (adminAction === 'select' && pendingProfile) {
             const success = await signInProfile(pendingProfile, password);
             if (!success) return;
@@ -146,48 +145,12 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setIsAdding(false);
     };
 
-    const closeEditModal = () => {
-        setEditingProfile(null);
-        setShowChangePassword(false);
-        setNewPassword('');
-        setConfirmPassword('');
-        setChangePasswordError(null);
-        setChangePasswordSuccess(false);
-    };
-
-    const handleChangePassword = async () => {
-        if (!editingProfile) return;
-        if (!newPassword) {
-            setChangePasswordError('Please enter a new password');
-            return;
-        }
-        if (newPassword !== confirmPassword) {
-            setChangePasswordError('Passwords do not match');
-            return;
-        }
-        setIsSavingPassword(true);
-        setChangePasswordError(null);
-        const result = await changeProfilePassword(editingProfile, newPassword);
-        setIsSavingPassword(false);
-        if (!result.success) {
-            setChangePasswordError(result.error || 'Failed to change password');
-            return;
-        }
-        setChangePasswordSuccess(true);
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => {
-            setChangePasswordSuccess(false);
-            setShowChangePassword(false);
-        }, 2000);
-    };
-
     const handleEditSave = () => {
         if (!editingProfile || !editName.trim()) return;
         if (editName.trim() !== editingProfile) {
             onEdit(editingProfile, editName.trim());
         }
-        closeEditModal();
+        setEditingProfile(null);
     };
 
     const editingEntry = editingProfile ? profiles.find(profile => profile.name === editingProfile) : undefined;
@@ -196,14 +159,14 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         if (!editingProfile) return;
         if (confirm(`Archive profile "${editingProfile}"?`)) {
             onDelete(editingProfile);
-            closeEditModal();
+            setEditingProfile(null);
         }
     };
 
     const handleRestore = () => {
         if (!editingProfile) return;
         onRestore(editingProfile);
-        closeEditModal();
+        setEditingProfile(null);
     };
 
     if (isAdding) {
@@ -289,11 +252,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onMouseUp={handleTouchEnd}
                             onMouseLeave={handleTouchEnd}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer">
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${PASSWORD_PROTECTED_PROFILES.has(profile.name) ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${(profile.name === ADMIN_PROFILE) ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
                                 : profile.archived ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200 group-hover:border-slate-300'
                                 }`}>
                                 {avatars[profile.name] ? <img src={avatars[profile.name]} alt={profile.name} className="w-full h-full object-cover" /> :
-                                    PASSWORD_PROTECTED_PROFILES.has(profile.name) ? <Lock className="w-12 h-12 text-red-500" /> :
+                                    (profile.name === ADMIN_PROFILE) ? <Lock className="w-12 h-12 text-red-500" /> :
                                         <span className="text-slate-700">{(profile.name && profile.name[0]) ? profile.name[0].toUpperCase() : '?'}</span>}
                             </div>
                             <div className="flex flex-col items-center gap-1">
@@ -325,7 +288,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     >
                                         <RotateCcw className="w-4 h-4" />
                                     </button>
-                                ) : !PASSWORD_PROTECTED_PROFILES.has(profile.name) && (
+                                ) : profile.name !== ADMIN_PROFILE && (
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -394,7 +357,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
                         >
                             <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); setAuthError(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
-                            <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {pendingProfile} Password</h2>
+                            <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {ADMIN_PROFILE} Password</h2>
 
                             {authError && (
                                 <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">{authError}</div>
@@ -407,7 +370,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     value={password}
                                     onChange={e => { setPassword(e.target.value); setAuthError(null); }}
                                     className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 pr-12"
-                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && handleConfirmPassword()}
+                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && confirmPassword()}
                                     disabled={isAuthLoading}
                                 />
                                 <button
@@ -428,7 +391,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 Remember me on this device
                             </label>
 
-                            <button onClick={handleConfirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
+                            <button onClick={confirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
                                 {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {isAuthLoading ? 'Signing in...' : 'Login'}
                             </button>
@@ -439,7 +402,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                 {editingProfile && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 bg-slate-900/40 z-[70] flex items-center justify-center p-4 modal-backdrop-enter">
                         <motion.div initial={{ opacity: 0, scale: 0.92, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-md text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
-                            <button onClick={closeEditModal} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
+                            <button onClick={() => setEditingProfile(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><X className="w-6 h-6" /></button>
                             <h2 className="text-2xl font-bold mb-6 text-slate-900">Edit Profile</h2>
                             {editingEntry?.archived && (
                                 <p className="mb-4 text-xs uppercase tracking-wide text-amber-600 font-semibold">Archived Profile</p>
@@ -481,73 +444,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 value={editName}
                                 onChange={e => setEditName(e.target.value)}
                                 placeholder="Profile Name"
-                                className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-4 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
+                                className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl mb-6 focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700"
                                 onKeyDown={e => e.key === 'Enter' && handleEditSave()}
                             />
-
-                            {/* Change Password Section */}
-                            <div className="mb-6 text-left">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowChangePassword(!showChangePassword);
-                                        setNewPassword('');
-                                        setConfirmPassword('');
-                                        setChangePasswordError(null);
-                                        setChangePasswordSuccess(false);
-                                    }}
-                                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm font-semibold transition-all"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <KeyRound className="w-4 h-4" />
-                                        Change Password
-                                    </div>
-                                    <span className="text-slate-400 text-xs">{showChangePassword ? '▲' : '▼'}</span>
-                                </button>
-
-                                {showChangePassword && (
-                                    <div className="mt-3 space-y-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                                        {changePasswordError && (
-                                            <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">{changePasswordError}</div>
-                                        )}
-                                        {changePasswordSuccess && (
-                                            <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">Password changed successfully!</div>
-                                        )}
-                                        <div className="relative">
-                                            <input
-                                                type={showNewPassword ? 'text' : 'password'}
-                                                value={newPassword}
-                                                onChange={e => { setNewPassword(e.target.value); setChangePasswordError(null); }}
-                                                placeholder="New Password"
-                                                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-slate-400 outline-none text-slate-700 pr-10"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowNewPassword(!showNewPassword)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                            >
-                                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                        </div>
-                                        <input
-                                            type={showNewPassword ? 'text' : 'password'}
-                                            value={confirmPassword}
-                                            onChange={e => { setConfirmPassword(e.target.value); setChangePasswordError(null); }}
-                                            placeholder="Confirm Password"
-                                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-slate-400 outline-none text-slate-700"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleChangePassword}
-                                            disabled={isSavingPassword}
-                                            className="w-full py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2"
-                                        >
-                                            {isSavingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
-                                            {isSavingPassword ? 'Saving...' : 'Save Password'}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
 
                             <div className="flex gap-4">
                                 {editingProfile !== ADMIN_PROFILE && (

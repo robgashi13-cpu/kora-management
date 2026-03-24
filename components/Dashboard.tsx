@@ -48,11 +48,9 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const SHYQA_PROFILE = 'Shyqa';
-const ALLOWED_PROFILES = [ADMIN_PROFILE, SHYQA_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
-const PRIVILEGED_PROFILE_SET = new Set([ADMIN_PROFILE, SHYQA_PROFILE].map(profile => normalizeProfileName(profile)));
 const MOBILE_LONG_PRESS_DURATION_MS = 2000;
 const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
@@ -107,7 +105,7 @@ type CustomDashboard = {
 
 const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme }: any) {
     const controls = useDragControls();
-    const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
+    const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
     const isSoldRow = s.status === 'Completed';
     const rowClassName = isSoldRow ? 'contents table-row-compact cars-sold-row' : 'contents group table-row-hover table-row-compact';
@@ -503,18 +501,13 @@ export default function Dashboard() {
     const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
     const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
     const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea'>('client_due');
-    const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
-    const [isMarkingBalancePaid, setIsMarkingBalancePaid] = useState(false);
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
-    const [paidKoreaSelectedIds, setPaidKoreaSelectedIds] = useState<Set<string>>(new Set());
-    const [isMarkingKoreaPaid, setIsMarkingKoreaPaid] = useState(false);
     const hasSyncedTransportPaidRef = useRef(false);
 
-    const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
-    const isShyqaProfile = normalizeProfileName(userProfile) === normalizeProfileName(SHYQA_PROFILE);
-    const isRecordAdmin = isAdmin;
+    const isAdmin = userProfile === ADMIN_PROFILE;
+    const isRecordAdmin = userProfile === ADMIN_PROFILE;
     const canViewPrices = isAdmin;
 
 
@@ -2010,7 +2003,7 @@ export default function Dashboard() {
             await cloudClient.auth.signOut();
         } catch { /* ignore */ }
         setUserProfile('');
-        setView('dashboard');
+        setView('landing');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
@@ -2155,9 +2148,9 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            // Use environment variables with fallback to Cloud project credentials
-            const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://tbjihsqkbmjiblpxzojo.supabase.co";
-            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE";
+            // Hardcoded Credentials (as fallback/default)
+            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
+            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
 
             try {
                 // Ensure Supabase URL/Key exist
@@ -2167,8 +2160,8 @@ export default function Dashboard() {
                 if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
                 if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
 
-                setSupabaseUrl(url ?? SUPABASE_URL);
-                setSupabaseKey(keyName ?? SUPABASE_KEY);
+                setSupabaseUrl(url);
+                setSupabaseKey(keyName);
 
                 if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
                 if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
@@ -2196,7 +2189,7 @@ export default function Dashboard() {
                 }
                 if (storedProfile) {
                     setUserProfile(storedProfile);
-                    setView('dashboard');
+                    setView('landing');
                     localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
                 if (storedProfile && !shouldRemember) {
@@ -2391,7 +2384,7 @@ export default function Dashboard() {
         if (normalizedFallback) {
             setUserProfile(normalizedFallback);
             if (view === 'profile_select') {
-                setView('dashboard');
+                setView('landing');
             }
         }
     }, [userProfile, view]);
@@ -2504,9 +2497,6 @@ export default function Dashboard() {
     useEffect(() => {
         if (!userProfile || !supabaseUrl || !supabaseKey) return;
         const syncOnLogin = async () => {
-            // Reset idle-pull timer so a profile switch always triggers a fresh remote fetch
-            // regardless of how recently the previous profile synced.
-            lastSuccessfulSyncAtRef.current = 0;
             const scopedSalesKey = getSalesStorageKey(userProfile);
             const { value } = await Preferences.get({ key: scopedSalesKey });
             const localSales = value ? JSON.parse(value) : salesRef.current;
@@ -3316,88 +3306,6 @@ export default function Dashboard() {
         });
     };
 
-    const markSelectedKoreaPaid = async () => {
-        if (paidKoreaSelectedIds.size === 0) return;
-        setIsMarkingKoreaPaid(true);
-        const currentSales = salesRef.current;
-        const newSales = [...currentSales];
-        const updatedItems: Array<{ before: CarSale; after: CarSale }> = [];
-
-        paidKoreaSelectedIds.forEach((id) => {
-            const index = newSales.findIndex((item) => item.id === id);
-            if (index === -1) return;
-            const sale = newSales[index];
-            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-            if (remaining <= 0) return;
-            const updatedSale: CarSale = {
-                ...sale,
-                amountPaidToKorea: sale.costToBuy || 0,
-                paidDateToKorea: new Date().toISOString().split('T')[0]
-            };
-            newSales[index] = updatedSale;
-            dirtyIds.current.add(id);
-            updatedItems.push({ before: sale, after: updatedSale });
-        });
-
-        if (updatedItems.length === 0) { setIsMarkingKoreaPaid(false); return; }
-
-        const result = await updateSalesAndSave(newSales);
-        if (result.success) {
-            setPaidKoreaSelectedIds(new Set());
-            for (const { before, after } of updatedItems) {
-                await logAuditEvent({
-                    actionType: 'UPDATE',
-                    entityType: 'sale',
-                    entityId: after.id,
-                    beforeData: before,
-                    afterData: after,
-                    pageContext: 'balance_due',
-                    metadata: { action: 'MARK_PAID_IN_KOREA_BULK' }
-                });
-            }
-        }
-        setIsMarkingKoreaPaid(false);
-    };
-
-    const markSelectedBalancePaid = async () => {
-        if (balanceDueSelectedIds.size === 0) return;
-        setIsMarkingBalancePaid(true);
-        const currentSales = salesRef.current;
-        const newSales = [...currentSales];
-        const updatedItems: Array<{ before: CarSale; after: CarSale }> = [];
-
-        balanceDueSelectedIds.forEach((id) => {
-            const index = newSales.findIndex((item) => item.id === id);
-            if (index === -1) return;
-            const sale = newSales[index];
-            const balance = calculateBalance(sale);
-            if (balance <= 0) return;
-            const updatedSale: CarSale = { ...sale, deposit: (sale.deposit || 0) + balance };
-            newSales[index] = updatedSale;
-            dirtyIds.current.add(id);
-            updatedItems.push({ before: sale, after: updatedSale });
-        });
-
-        if (updatedItems.length === 0) { setIsMarkingBalancePaid(false); return; }
-
-        const result = await updateSalesAndSave(newSales);
-        if (result.success) {
-            setBalanceDueSelectedIds(new Set());
-            for (const { before, after } of updatedItems) {
-                await logAuditEvent({
-                    actionType: 'UPDATE',
-                    entityType: 'sale',
-                    entityId: after.id,
-                    beforeData: before,
-                    afterData: after,
-                    pageContext: 'balance_due',
-                    metadata: { action: 'MARK_CLIENT_BALANCE_PAID' }
-                });
-            }
-        }
-        setIsMarkingBalancePaid(false);
-    };
-
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
@@ -3552,7 +3460,7 @@ export default function Dashboard() {
                         const normalizedProfile = normalizeProfileName(p);
                         if (!normalizedProfile) return;
                         setUserProfile(normalizedProfile);
-                        setView('dashboard');
+                        setView('landing');
                         setRememberProfile(remember);
                         persistUserProfile(normalizedProfile, remember);
                     }}
@@ -3579,15 +3487,98 @@ export default function Dashboard() {
         );
     }
 
+    if (view === 'landing') {
+        return (
+            <motion.div
+                key="landing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans"
+            >
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 0.4 }}
+                    transition={{ duration: 1.2, ease: 'easeOut' }}
+                    className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200 to-transparent rounded-full blur-3xl"
+                />
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    className="z-10 text-center mb-8"
+                >
+                    <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
+                    <p className="text-slate-500 text-lg">Select an operation to proceed</p>
+                </motion.div>
+
+                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
+                    <motion.button
+                        id="btn-add-sale"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => openSaleForm(null, 'landing')}
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                            <Plus className="w-12 h-12" />
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
+                            <div className="text-slate-500">Record a new vehicle sale</div>
+                        </div>
+                    </motion.button>
+
+                    <motion.button
+                        id="btn-view-sales"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
+                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                            <Clipboard className="w-12 h-12" />
+                        </div>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
+                            <div className="text-slate-500">Access dashboard & history</div>
+                        </div>
+                    </motion.button>
+                </div>
+
+                <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.5 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleLogout}
+                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
+                >
+                    <LogOut className="w-4 h-4" /> Switch Profile
+                </motion.button>
+            </motion.div>
+        );
+    }
+
+
+
     const SidebarContent = () => (
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
-            const SHYQA_ALLOWED_NAV_IDS = new Set(['INVOICES', 'PDF']);
-            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS' && (!isShyqaProfile || SHYQA_ALLOWED_NAV_IDS.has(item.id)));
-            const salesGroupItems = isShyqaProfile ? [] : mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
+            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS');
+            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES'].includes(item.id));
-            const financeControlGroupItems = isShyqaProfile ? [] : mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
+            const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
             const secondaryNavItems = navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
@@ -3625,7 +3616,7 @@ export default function Dashboard() {
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
                                     <button key={p} onClick={async () => {
-                                        if ((p === ADMIN_PROFILE || p === SHYQA_PROFILE) && userProfile !== p) {
+                                        if (p === ADMIN_PROFILE && userProfile !== p) {
                                             setPendingProfile(p);
                                             setPasswordInput('');
                                             setIsPasswordVisible(false);
@@ -3636,7 +3627,6 @@ export default function Dashboard() {
                                         const result = await authenticateProfile(p);
                                         if (!result) {
                                             console.warn('Profile auth failed for', p);
-                                            return;
                                         }
                                         setShowProfileMenu(false);
                                         startTransition(() => { setUserProfile(p); });
@@ -3664,7 +3654,7 @@ export default function Dashboard() {
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 mt-4 pb-4">
                 <div className="space-y-2">
-                    {!isShyqaProfile && <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsSalesGroupOpen((prev) => !prev)}
@@ -3698,7 +3688,7 @@ export default function Dashboard() {
                                 })}
                             </div>
                         </div>
-                    </div>}
+                    </div>
 
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
@@ -3706,7 +3696,7 @@ export default function Dashboard() {
                             onClick={() => setIsOperationsGroupOpen((prev) => !prev)}
                             className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors duration-150"
                         >
-                            <span>{isShyqaProfile ? 'Documents' : 'Operations'}</span>
+                            <span>Operations</span>
                             {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
                         <div className={`grid overflow-hidden sidebar-group-panel ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
@@ -3753,7 +3743,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {!isShyqaProfile && <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
+                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsFinanceGroupOpen((prev) => !prev)}
@@ -3797,9 +3787,9 @@ export default function Dashboard() {
                                 })}
                             </div>
                         </div>
-                    </div>}
+                    </div>
 
-                    {!isShyqaProfile && <div className="space-y-1 pt-1">
+                    <div className="space-y-1 pt-1">
                         {combinedNavItems.map((item) => {
                             if (item.adminOnly && !isAdmin) return null;
                             const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
@@ -3845,9 +3835,9 @@ export default function Dashboard() {
                                 </div>
                             );
                         })}
-                    </div>}
+                    </div>
 
-                    {!isShyqaProfile && archivedCustomDashboardItems.length > 0 && (
+                    {archivedCustomDashboardItems.length > 0 && (
                         <div className="pt-2">
                             <button
                                 type="button"
@@ -3874,8 +3864,8 @@ export default function Dashboard() {
             </nav>
 
             <div className="px-4 pb-4 pt-3 border-t border-slate-800 bg-slate-900/95 backdrop-blur sticky bottom-0 z-20">
-                <div className={`grid gap-2 ${isShyqaProfile ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                    {!isShyqaProfile && <button
+                <div className="grid grid-cols-3 gap-2">
+                    <button
                         type="button"
                         title="Create"
                         aria-label="Create"
@@ -3886,7 +3876,7 @@ export default function Dashboard() {
                         className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <FolderPlus className="w-5 h-5" />
-                    </button>}
+                    </button>
                     <button
                         type="button"
                         onClick={() => { const nextTheme = theme === 'dark' ? 'light' : 'dark'; applyTheme(nextTheme); void logAuditEvent({ actionType: 'UPDATE', entityType: 'theme', entityId: 'theme_mode', beforeData: { theme }, afterData: { theme: nextTheme }, pageContext: 'sidebar' }); }}
@@ -3896,7 +3886,7 @@ export default function Dashboard() {
                         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         <span className="text-[11px] font-semibold">{theme === 'dark' ? 'Dark' : 'Light'}</span>
                     </button>
-                    {!isShyqaProfile && <button
+                    <button
                         type="button"
                         title="Settings"
                         aria-label="Settings"
@@ -3907,7 +3897,7 @@ export default function Dashboard() {
                         className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <Settings className="w-5 h-5" />
-                    </button>}
+                    </button>
                 </div>
             </div>
 
@@ -4552,10 +4542,10 @@ export default function Dashboard() {
                                 {/* Mobile Compact List View - Swipeable */}
                                 <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 no-scrollbar">
-                                        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl border-b border-slate-100 px-4 py-2.5 shadow-sm">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[13px] font-bold text-slate-900">{activeCategory}</span>
-                                                <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}</span>
+                                        <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
+                                            <div className="flex items-center justify-between text-[11px] text-slate-600">
+                                                <span className="font-semibold text-slate-900">{activeCategory}</span>
+                                                <span>{filteredSales.length} cars</span>
                                             </div>
                                         </div>
                                         {groupingEnabled ? (
@@ -4683,7 +4673,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
+                                                                                className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4701,44 +4691,54 @@ export default function Dashboard() {
                                                                                     WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                                     WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                                     WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                                    backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
+                                                                                    backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                 }}
                                                                             >
                                                                                 {selectedIds.size > 0 && !isSoldSale && (
-                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                         {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                     </div>
                                                                                 )}
-                                                                                <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
-                                                                                    {(sale.brand || '?')[0].toUpperCase()}
-                                                                                </div>
+
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
-                                                                                        <div className="min-w-0 flex-1">
-                                                                                            <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="font-semibold text-slate-900 text-[11px] sm:text-[12px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
                                                                                         </div>
-                                                                                        <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
+                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
+                                                                                                sale.status === 'Inspection' ? 'text-amber-700' :
+                                                                                                    'text-slate-500'
+                                                                                            }`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-1.5 flex items-center justify-between">
-                                                                                        <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
-                                                                                        {(isAdmin || sale.soldBy === userProfile) && (
-                                                                                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
-                                                                                                <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                                                    {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
-                                                                                                </span>
-                                                                                            </div>
+                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
+                                                                                        <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
+                                                                                        <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span><span className="text-slate-400">Sold:</span> <span className="font-semibold text-slate-900"> €{(sale.soldPrice || 0).toLocaleString()}</span></span>
+                                                                                        ) : (
+                                                                                            <span className="text-slate-400">Price hidden</span>
+                                                                                        )}
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`text-right font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                {sale.isPaid ? 'Paid' : `Due: €${calculateBalance(sale).toLocaleString()}`}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-right text-slate-400">-</span>
                                                                                         )}
                                                                                     </div>
-                                                                                    <div className="mt-1 flex items-center justify-between">
-                                                                                        <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
+                                                                                    <div className="mt-0.5 flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500">
+                                                                                        <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
-                                                                                            <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
+                                                                                            <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'Not Paid' : 'Paid'}
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
+                                                                                    {groupingEnabled && sale.group && sale.status === 'Completed' && (
+                                                                                        <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
+                                                                                    )}
                                                                                 </div>
                                                                             </motion.div>
                                                                         </motion.div>
@@ -4826,7 +4826,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
+                                                                                        className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4844,44 +4844,44 @@ export default function Dashboard() {
                                                                                             WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                                             WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                                             WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                                            backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
+                                                                                            backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                                                         }}
                                                                                     >
                                                                                         {selectedIds.size > 0 && !isSoldSale && (
-                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                                 {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                             </div>
                                                                                         )}
-                                                                                        <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
-                                                                                            {(sale.brand || '?')[0].toUpperCase()}
-                                                                                        </div>
                                                                                         <div className="flex-1 min-w-0">
-                                                                                            <div className="flex justify-between items-start gap-2">
-                                                                                                <div className="min-w-0 flex-1">
-                                                                                                    <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                                    <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
-                                                                                                </div>
-                                                                                                <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
+                                                                                            <div className="flex justify-between items-start">
+                                                                                                <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
+                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
+                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
+                                                                                                        sale.status === 'Inspection' ? 'text-amber-700' :
+                                                                                                            'text-slate-500'
+                                                                                                    }`}>{sale.status}</span>
                                                                                             </div>
-                                                                                            <div className="mt-1.5 flex items-center justify-between">
-                                                                                                <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
-                                                                                                {(isAdmin || sale.soldBy === userProfile) && (
-                                                                                                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                                                        <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
-                                                                                                        <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                                                            {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
-                                                                                                        </span>
-                                                                                                    </div>
-                                                                                                )}
-                                                                                            </div>
-                                                                                            <div className="mt-1 flex items-center justify-between">
-                                                                                                <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
-                                                                                                {isAdmin && (
-                                                                                                    <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                                                                        Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
+                                                                                            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
+                                                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
+                                                                                                {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                                                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
                                                                                                     </span>
+                                                                                                ) : (
+                                                                                                    <span className="font-mono text-slate-400">-</span>
                                                                                                 )}
                                                                                             </div>
+                                                                                            {isAdmin && (
+                                                                                                <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
+                                                                                                    <span className="text-slate-400">Korea:</span>
+                                                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {groupingEnabled && sale.group && sale.status === 'Completed' && (
+                                                                                                <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
+                                                                                            )}
                                                                                         </div>
                                                                                     </motion.div>
                                                                                 </motion.div>
@@ -4940,7 +4940,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-all ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
+                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-all ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4958,45 +4958,52 @@ export default function Dashboard() {
                                                                 WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                 WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                 WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
+                                                                backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
                                                             }}
                                                         >
                                                             {selectedIds.size > 0 && !isSoldSale && (
-                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                     {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                 </div>
                                                             )}
-                                                            <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
-                                                                {(sale.brand || '?')[0].toUpperCase()}
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex justify-between items-start gap-2">
-                                                                    <div className="min-w-0 flex-1">
-                                                                        <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                        <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
-                                                                    </div>
-                                                                    <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
-                                                                </div>
-                                                                <div className="mt-1.5 flex items-center justify-between">
-                                                                    <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
-                                                                    {(isAdmin || sale.soldBy === userProfile) && (
-                                                                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                                                                            <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
-                                                                            <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                                {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="mt-1 flex items-center justify-between">
-                                                                    <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
-                                                                    {isAdmin && (
-                                                                        <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                                            Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
+
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <div className="flex justify-between items-start gap-2">
+                                                                                        <div className="min-w-0">
+                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-tight">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
+                                                                                        </div>
+                                                                                        <span className={`status-badge text-[8px] whitespace-nowrap ${
+                                                                                            sale.status === 'Completed' ? 'status-completed' :
+                                                                                            sale.status === 'Shipped' ? 'status-shipped' :
+                                                                                            sale.status === 'Inspection' ? 'status-inspection' :
+                                                                                            sale.status === 'Autosallon' ? 'status-autosallon' :
+                                                                                            sale.status === 'Archived' ? 'status-archived' :
+                                                                                            'status-new'
+                                                                                        }`}>{sale.status}</span>
+                                                                                    </div>
+                                                                                    <div className="mt-1.5 flex items-center justify-between text-[10px] sm:text-[11px]">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <span className="text-slate-500">{sale.buyerName || 'No buyer'}</span>
+                                                                                            {(isAdmin || sale.soldBy === userProfile) && (
+                                                                                                <span className="font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
+                                                                                            <span className={`text-[10px] font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                                                {sale.isPaid ? '✓ Paid' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : '-'}
+                                                                                            </span>
+                                                                                        ) : null}
+                                                                                    </div>
+                                                                                    <div className="mt-1 flex items-center justify-between text-[9px] text-slate-400">
+                                                                                        <span>by <span className="font-semibold text-slate-500">{sale.soldBy}</span></span>
+                                                                                        {isAdmin && (
+                                                                                            <span className={`font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
                                                         </motion.div>
                                                     </motion.div>
                                                 );
@@ -5133,176 +5140,71 @@ export default function Dashboard() {
 
                                     {balanceDueSubTab === 'client_due' ? (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3 grid-stagger">
-                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900 number-transition">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
-                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900 number-transition">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
-                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900 number-transition">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
+                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
                                             </div>
 
                                             <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
-                                                <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm search-modern" />
+                                                <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                                                 <select value={balanceDueStatusFilter} onChange={(e) => setBalanceDueStatusFilter(e.target.value as 'all' | 'shipped' | 'sold')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All statuses</option><option value="shipped">Shipped only</option><option value="sold">Sold only</option></select>
                                                 <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
                                             </div>
 
-                                            {/* Multiselect action bar */}
-                                            <AnimatePresence>
-                                                {balanceDueSelectedIds.size > 0 && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, y: -8 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: -8 }}
-                                                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                                                        className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
-                                                    >
-                                                        <div className="flex-1 min-w-0">
-                                                            <span className="text-sm font-bold text-slate-800">{balanceDueSelectedIds.size} selected</span>
-                                                            <span className="ml-2 text-xs text-slate-500">
-                                                                Total: <span className="font-bold text-red-600">€{balanceDueRows.filter(r => balanceDueSelectedIds.has(r.sale.id)).reduce((s, r) => s + calculateBalance(r.sale), 0).toLocaleString()}</span>
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setBalanceDueSelectedIds(new Set())}
-                                                            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                                                        >
-                                                            Clear
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={isMarkingBalancePaid}
-                                                            onClick={() => void markSelectedBalancePaid()}
-                                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-95"
-                                                        >
-                                                            {isMarkingBalancePaid ? (
-                                                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
-                                                            ) : (
-                                                                <><Check className="w-3.5 h-3.5" /> Mark Paid (add to Deposit)</>
-                                                            )}
-                                                        </button>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
                                             {balanceDueRows.length === 0 ? (
                                                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
                                             ) : (
-                                                <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                                                    {/* Desktop header */}
-                                                    <div className="hidden md:grid grid-cols-[36px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                        <div className="flex items-center justify-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (balanceDueSelectedIds.size === balanceDueRows.length) {
-                                                                        setBalanceDueSelectedIds(new Set());
-                                                                    } else {
-                                                                        setBalanceDueSelectedIds(new Set(balanceDueRows.map(r => r.sale.id)));
-                                                                    }
-                                                                }}
-                                                                className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-400 bg-white hover:border-slate-600'}`}
-                                                            >
-                                                                {balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 && <CheckSquare className="w-3 h-3" />}
-                                                            </button>
-                                                        </div>
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                                    <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                         <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                                     </div>
                                                     <div className="divide-y divide-slate-100 hidden md:block">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
-                                                            const isRowSelected = balanceDueSelectedIds.has(sale.id);
-                                                            return (
-                                                                <div
-                                                                    key={`${scopeStatus}-${sale.id}`}
-                                                                    data-list-row="true"
-                                                                    className={`grid w-full grid-cols-[36px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
-                                                                >
-                                                                    <div className="flex items-center justify-center">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => { e.stopPropagation(); setBalanceDueSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
-                                                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white check-animate' : 'border-slate-300 bg-white hover:border-slate-500'}`}
-                                                                        >
-                                                                            {isRowSelected && <CheckSquare className="w-3 h-3" />}
-                                                                        </button>
-                                                                    </div>
-                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline text-left">{sale.brand} {sale.model}</button>
-                                                                    <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
-                                                                    <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
-                                                                    <div className={`text-right font-bold ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{calculateBalance(sale).toLocaleString()}</div>
-                                                                    <div className="text-slate-600">{sale.shippingDate || '-'}</div>
-                                                                    <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    {/* Mobile list */}
-                                                    <div className="divide-y divide-slate-100 md:hidden">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
-                                                            const isRowSelected = balanceDueSelectedIds.has(sale.id);
-                                                            return (
-                                                                <div
-                                                                    key={`${scopeStatus}-mobile-${sale.id}`}
-                                                                    className={`px-3 py-3 transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
-                                                                >
-                                                                    <div className="flex items-start gap-3">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => { e.stopPropagation(); setBalanceDueSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
-                                                                            className={`mt-0.5 w-5 h-5 min-w-[1.25rem] border-2 rounded-full flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}
-                                                                        >
-                                                                            {isRowSelected && <Check className="w-3 h-3" />}
-                                                                        </button>
-                                                                        <button type="button" onClick={() => handleSaleInteraction(sale)} className="flex-1 text-left min-w-0">
-                                                                            <div className="flex items-start justify-between gap-2">
-                                                                                <div className="min-w-0">
-                                                                                    <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                                    <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
-                                                                                </div>
-                                                                                <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
-                                                                            </div>
-                                                                            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
-                                                                                <div className="min-w-0">
-                                                                                    <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
-                                                                                    <p className={`text-base font-black ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{calculateBalance(sale).toLocaleString()}</p>
-                                                                                </div>
-                                                                                <div className="min-w-0 text-right">
-                                                                                    <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
-                                                                                    <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
-                                                                                    <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    {/* Mobile select all */}
-                                                    <div className="md:hidden flex items-center justify-between px-3 py-2.5 bg-slate-50 border-t border-slate-200">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (balanceDueSelectedIds.size === balanceDueRows.length) {
-                                                                    setBalanceDueSelectedIds(new Set());
-                                                                } else {
-                                                                    setBalanceDueSelectedIds(new Set(balanceDueRows.map(r => r.sale.id)));
-                                                                }
-                                                            }}
-                                                            className="text-xs font-semibold text-slate-600"
-                                                        >
-                                                            {balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 ? 'Deselect all' : 'Select all'}
-                                                        </button>
-                                                        {balanceDueSelectedIds.size > 0 && (
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
                                                             <button
+                                                                key={`${scopeStatus}-${sale.id}`}
                                                                 type="button"
-                                                                disabled={isMarkingBalancePaid}
-                                                                onClick={() => void markSelectedBalancePaid()}
-                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
+                                                                data-list-row="true"
+                                                                onClick={() => handleSaleInteraction(sale)}
+                                                                className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                                                             >
-                                                                {isMarkingBalancePaid ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                                                Mark Paid
+                                                                <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
+                                                                <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
+                                                                <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
+                                                                <div className="text-slate-600">{sale.shippingDate || '-'}</div>
+                                                                <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
                                                             </button>
-                                                        )}
+                                                        ))}
+                                                    </div>
+                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                            <button
+                                                                key={`${scopeStatus}-${sale.id}`}
+                                                                type="button"
+                                                                onClick={() => handleSaleInteraction(sale)}
+                                                                className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                        <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                    </div>
+                                                                    <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
+                                                                </div>
+                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                                    <div className="min-w-0">
+                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
+                                                                        <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
+                                                                    </div>
+                                                                    <div className="min-w-0 text-right">
+                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
+                                                                        <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
+                                                                        <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
@@ -5322,163 +5224,83 @@ export default function Dashboard() {
                                                 <select value={paidKoreaSort} onChange={(e) => setPaidKoreaSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest left to pay</option><option value="asc">Lowest left to pay</option></select>
                                             </div>
 
-                                            {/* Korea multiselect action bar */}
-                                            <AnimatePresence>
-                                                {paidKoreaSelectedIds.size > 0 && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, y: -8 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: -8 }}
-                                                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                                                        className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
-                                                    >
-                                                        <div className="flex-1 min-w-0">
-                                                            <span className="text-sm font-bold text-slate-800">{paidKoreaSelectedIds.size} selected</span>
-                                                            <span className="ml-2 text-xs text-slate-500">
-                                                                Left to pay: <span className="font-bold text-red-600">€{onSaleKoreaRows.filter(s => paidKoreaSelectedIds.has(s.id)).reduce((sum, s) => sum + Math.max((s.costToBuy || 0) - (s.amountPaidToKorea || 0), 0), 0).toLocaleString()}</span>
-                                                            </span>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setPaidKoreaSelectedIds(new Set())}
-                                                            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
-                                                        >
-                                                            Clear
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            disabled={isMarkingKoreaPaid}
-                                                            onClick={() => void markSelectedKoreaPaid()}
-                                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-95"
-                                                        >
-                                                            {isMarkingKoreaPaid ? (
-                                                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
-                                                            ) : (
-                                                                <><Check className="w-3.5 h-3.5" /> Mark Paid in Korea</>
-                                                            )}
-                                                        </button>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
                                             {onSaleKoreaRows.length === 0 ? (
                                                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No cars match this filter.</div>
                                             ) : (
-                                                <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-                                                    {/* Desktop header */}
-                                                    <div className="hidden md:grid grid-cols-[36px_1.1fr_1fr_90px_90px_120px_130px_130px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                        <div className="flex items-center justify-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (paidKoreaSelectedIds.size === onSaleKoreaRows.length) {
-                                                                        setPaidKoreaSelectedIds(new Set());
-                                                                    } else {
-                                                                        setPaidKoreaSelectedIds(new Set(onSaleKoreaRows.map(s => s.id)));
-                                                                    }
-                                                                }}
-                                                                className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-400 bg-white hover:border-slate-600'}`}
-                                                            >
-                                                                {paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 && <CheckSquare className="w-3 h-3" />}
-                                                            </button>
-                                                        </div>
-                                                        <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div>
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                                                    <div className="hidden md:grid grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div><div>Action</div>
                                                     </div>
                                                     <div className="divide-y divide-slate-100 hidden md:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
-                                                            const isRowSelected = paidKoreaSelectedIds.has(sale.id);
                                                             return (
                                                                 <div
                                                                     key={`korea-${sale.id}`}
                                                                     data-list-row="true"
-                                                                    className={`grid w-full grid-cols-[36px_1.1fr_1fr_90px_90px_120px_130px_130px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
+                                                                    onClick={() => handleSaleInteraction(sale)}
+                                                                    className="grid w-full cursor-pointer grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                                                                 >
-                                                                    <div className="flex items-center justify-center">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(e) => { e.stopPropagation(); setPaidKoreaSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
-                                                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white check-animate' : 'border-slate-300 bg-white hover:border-slate-500'}`}
-                                                                        >
-                                                                            {isRowSelected && <CheckSquare className="w-3 h-3" />}
-                                                                        </button>
-                                                                    </div>
-                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline text-left">{sale.brand} {sale.model}</button>
+                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
                                                                     <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                     <div className="text-right font-semibold text-slate-700">€{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                     <div className="text-right font-semibold text-emerald-700">€{(sale.amountPaidToKorea || 0).toLocaleString()}</div>
-                                                                    <div className={`text-right font-bold ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{remaining.toLocaleString()}</div>
+                                                                    <div className="text-right font-bold text-red-600">€{remaining.toLocaleString()}</div>
                                                                     <div>
                                                                         <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
                                                                     </div>
                                                                     <div className="text-slate-600">{sale.paidDateToKorea || '-'}</div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    {/* Mobile list */}
-                                                    <div className="divide-y divide-slate-100 md:hidden">
-                                                        {onSaleKoreaRows.map((sale) => {
-                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
-                                                            const isRowSelected = paidKoreaSelectedIds.has(sale.id);
-                                                            return (
-                                                                <div key={`korea-mobile-${sale.id}`} className={`px-3 py-3 transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}>
-                                                                    <div className="flex items-start gap-3">
+                                                                    <div>
                                                                         <button
                                                                             type="button"
-                                                                            onClick={(e) => { e.stopPropagation(); setPaidKoreaSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
-                                                                            className={`mt-0.5 w-5 h-5 min-w-[1.25rem] border-2 rounded-full flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}
+                                                                            onClick={(event) => {
+                                                                                event.preventDefault();
+                                                                                event.stopPropagation();
+                                                                                void markSalePaidInKorea(sale);
+                                                                            }}
+                                                                            disabled={isPaid}
+                                                                            className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                                                                         >
-                                                                            {isRowSelected && <Check className="w-3 h-3" />}
-                                                                        </button>
-                                                                        <button type="button" onClick={() => handleSaleInteraction(sale)} className="flex-1 text-left min-w-0">
-                                                                            <div className="flex items-start justify-between gap-2">
-                                                                                <div className="min-w-0">
-                                                                                    <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                                    <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
-                                                                                </div>
-                                                                                <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
-                                                                            </div>
-                                                                            <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                                                                                <div><p className="font-semibold uppercase tracking-wide text-slate-400">Cost</p><p className="text-slate-700 font-semibold">€{(sale.costToBuy || 0).toLocaleString()}</p></div>
-                                                                                <div><p className="font-semibold uppercase tracking-wide text-slate-400">Paid</p><p className="text-emerald-700 font-semibold">€{(sale.amountPaidToKorea || 0).toLocaleString()}</p></div>
-                                                                                <div className="text-right"><p className="font-semibold uppercase tracking-wide text-slate-400">Left</p><p className={`font-black ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{remaining.toLocaleString()}</p></div>
-                                                                            </div>
-                                                                            <p className="mt-1 text-[11px] text-slate-500">Paid Date: {sale.paidDateToKorea || '-'}</p>
+                                                                            {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
                                                                         </button>
                                                                     </div>
                                                                 </div>
                                                             );
                                                         })}
                                                     </div>
-                                                    {/* Mobile select all */}
-                                                    <div className="md:hidden flex items-center justify-between px-3 py-2.5 bg-slate-50 border-t border-slate-200">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                if (paidKoreaSelectedIds.size === onSaleKoreaRows.length) {
-                                                                    setPaidKoreaSelectedIds(new Set());
-                                                                } else {
-                                                                    setPaidKoreaSelectedIds(new Set(onSaleKoreaRows.map(s => s.id)));
-                                                                }
-                                                            }}
-                                                            className="text-xs font-semibold text-slate-600"
-                                                        >
-                                                            {paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 ? 'Deselect all' : 'Select all'}
-                                                        </button>
-                                                        {paidKoreaSelectedIds.size > 0 && (
-                                                            <button
-                                                                type="button"
-                                                                disabled={isMarkingKoreaPaid}
-                                                                onClick={() => void markSelectedKoreaPaid()}
-                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
-                                                            >
-                                                                {isMarkingKoreaPaid ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                                                Mark Paid
-                                                            </button>
-                                                        )}
+                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                        {onSaleKoreaRows.map((sale) => {
+                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+                                                            const isPaid = remaining <= 0;
+                                                            return (
+                                                                <div key={`korea-mobile-${sale.id}`} className="w-full px-3 py-3 text-left">
+                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="w-full text-left">
+                                                                        <div className="flex items-start justify-between gap-2">
+                                                                            <div className="min-w-0">
+                                                                                <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                                <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                            </div>
+                                                                            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
+                                                                        </div>
+                                                                        <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Cost</p><p className="text-slate-700 font-semibold">€{(sale.costToBuy || 0).toLocaleString()}</p></div>
+                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Paid</p><p className="text-emerald-700 font-semibold">€{(sale.amountPaidToKorea || 0).toLocaleString()}</p></div>
+                                                                            <div className="text-right"><p className="font-semibold uppercase tracking-wide text-slate-400">Left</p><p className="text-red-600 font-black">€{remaining.toLocaleString()}</p></div>
+                                                                        </div>
+                                                                        <p className="mt-1 text-[11px] text-slate-500">Paid Date: {sale.paidDateToKorea || '-'}</p>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => void markSalePaidInKorea(sale)}
+                                                                        disabled={isPaid}
+                                                                        className="mt-2 w-full rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                    >
+                                                                        {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}
@@ -5540,24 +5362,13 @@ export default function Dashboard() {
                                 </div>
                             ) : view === 'invoices' || view === 'pdf_list' ? (
                                 <div className="flex-1 overflow-auto scroll-container bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2 px-2 pb-[calc(12.5rem+env(safe-area-inset-bottom))] pt-2 md:p-3 md:pb-3">
-                                    <div className="mb-3 rounded-2xl border border-slate-200 bg-white shadow-sm relative z-20 overflow-hidden">
-                                        <div className="px-3 py-3 md:px-4 md:py-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
-                                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2.5">
-                                                <div className="min-w-0">
-                                                    <h2 className="text-xl md:text-2xl font-black text-white tracking-tight">{view === 'pdf_list' ? 'PDF Workspace' : 'Invoice Workspace'}</h2>
-                                                    <p className="text-[11px] md:text-xs text-slate-200 mt-1 leading-relaxed">Professional, responsive layout for every screen size. Cars are grouped like the Sold tab.</p>
-                                                </div>
-                                                <div className="inline-flex items-center gap-2 text-[10px] md:text-xs font-semibold text-slate-100">
-                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Desktop ready</span>
-                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Tablet ready</span>
-                                                    <span className="rounded-full bg-white/10 px-2.5 py-1 border border-white/20">Mobile ready</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="px-3 py-2.5 md:px-4 border-t border-slate-100 bg-slate-50/70 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5">
-                                            <div className="grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
-                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center transition-colors ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}>Create</button>
-                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center transition-colors ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 hover:bg-slate-100'}`}>History</button>
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-slate-50 to-white px-3 py-2.5 md:px-3 md:py-2 relative z-20">
+                                        <div className="min-w-0">
+                                            <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
+                                            <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
+                                            <div className="mt-2 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                                <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                             </div>
                                         </div>
                                         {view === 'invoices' && invoicesSubTab === 'create' && (
@@ -5568,7 +5379,7 @@ export default function Dashboard() {
                                                         const validIds = soldInvoiceSales.filter(s => (s.amountPaidBank || 0) > 0).map(s => s.id);
                                                         setSelectedIds(new Set(validIds));
                                                     }}
-                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all"
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
                                                 >
                                                     Select valid
                                                 </button>
@@ -5581,7 +5392,7 @@ export default function Dashboard() {
                                                             setSelectedIds(new Set(soldInvoiceSales.map(s => s.id)));
                                                         }
                                                     }}
-                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all"
+                                                    className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
                                                 >
                                                     {selectedIds.size === soldInvoiceSales.length && soldInvoiceSales.length > 0 ? 'Deselect all' : 'Select all'}
                                                 </button>
@@ -5612,14 +5423,14 @@ export default function Dashboard() {
 
                                     {invoicesSubTab === 'history' ? (
                                         <div className="space-y-3">
-                                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                                                     Search
-                                                    <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="VIN / stock / invoice / user" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200" />
+                                                    <input value={invoiceHistorySearch} onChange={(e) => setInvoiceHistorySearch(e.target.value)} placeholder="VIN / stock / invoice / user" className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900" />
                                                 </label>
                                                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                                                     Month
-                                                    <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                                                    <select value={invoiceHistoryMonthFilter} onChange={(e) => setInvoiceHistoryMonthFilter(e.target.value)} className="rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-900">
                                                     <option value="all">All months</option>
                                                     {invoiceHistoryMonths.map((month) => (<option key={month} value={month}>{formatInvoiceMonthLabel(month)}</option>))}
                                                     </select>
@@ -5633,7 +5444,7 @@ export default function Dashboard() {
                                                     </div>
                                                     <div className="divide-y divide-slate-100">
                                                         {entries.map((entry) => (
-                                                            <div key={entry.id} className="px-3 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                                                            <div key={entry.id} className="px-3 py-2 text-xs flex items-center justify-between gap-3">
                                                                 <div className="min-w-0">
                                                                     <div className="font-semibold text-slate-900 overflow-wrap-anywhere">{entry.carDisplay} (VIN {entry.vin || '-'} / Stock {entry.stock || '-'})</div>
                                                                     <div className="text-slate-500">{new Date(entry.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} • {entry.createdByDisplay} • {entry.sourceContext}</div>
@@ -5688,11 +5499,11 @@ export default function Dashboard() {
                                                                     return (
                                                                         <div
                                                                             key={s.id}
-                                                                            className={`group relative px-2.5 py-2.5 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:items-center md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
+                                                                            className={`group relative px-2 py-2 md:grid md:grid-cols-[56px_1.35fr_minmax(120px,1fr)_110px_130px_130px_132px] md:items-center md:gap-3 md:px-4 md:py-3 transition-colors ${isSelected ? 'bg-slate-50' : 'bg-white'}`}
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             {/* Mobile card layout */}
-                                                                            <div className="md:hidden space-y-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+                                                                            <div className="md:hidden space-y-2">
                                                                                 {/* Row 1: Checkbox + Vehicle + Buyer */}
                                                                                 <div className="flex items-start gap-2">
                                                                                     <button
@@ -5716,7 +5527,7 @@ export default function Dashboard() {
                                                                                 </div>
 
                                                                                 {/* Row 2: Bank + Balance + Transport — horizontal */}
-                                                                                <div className="grid grid-cols-3 gap-2 pl-7">
+                                                                                <div className="flex items-center gap-3 pl-7">
                                                                                     <div className="flex items-center gap-1">
                                                                                         <span className="text-[9px] text-slate-400 font-bold uppercase">Bank</span>
                                                                                         <span className="text-xs font-black text-emerald-600">€{(s.amountPaidBank || 0).toLocaleString()}</span>
@@ -5729,18 +5540,18 @@ export default function Dashboard() {
                                                                                 </div>
 
                                                                                 {/* Row 3: Action buttons — horizontal */}
-                                                                                <div className="flex items-center gap-1.5 pl-7 flex-wrap">
+                                                                                <div className="flex items-center gap-1 pl-7 flex-wrap">
                                                                                     {view === 'pdf_list' ? (
                                                                                         <>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2.5 py-1 rounded-md border border-slate-300 bg-white text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2.5 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
+                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
                                                                                         </>
                                                                                     ) : (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
-                                                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold shadow-sm active:scale-95"
+                                                                                            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold shadow-sm active:scale-95"
                                                                                         >
                                                                                             <FileText className="w-3.5 h-3.5" />
                                                                                             <span className="uppercase tracking-wider">View</span>
@@ -6052,7 +5863,7 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-slate-200 bg-slate-50/90">
                                 <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
                                     <ArrowRight className="w-4 h-4 rotate-180" />
-                                    {formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
+                                    {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
                                 </button>
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
                                 <div className="flex items-center gap-2">
@@ -6143,7 +5954,7 @@ export default function Dashboard() {
                             className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl"
                             onClick={e => e.stopPropagation()}
                         >
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {pendingProfile || ADMIN_PROFILE} Password</h3>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
@@ -6181,10 +5992,10 @@ export default function Dashboard() {
             {view !== 'sale_form' && (
                 <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
                     {[
-                        ...(!isShyqaProfile ? [{ id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const }] : []),
+                        { id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
                         { id: 'invoices', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
                         { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
-                        ...(!isShyqaProfile ? [{ id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }] : [])
+                        { id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
                     ].map((item) => {
                         const isActive = view === item.targetView;
                         return (
@@ -6192,12 +6003,10 @@ export default function Dashboard() {
                                 key={item.id}
                                 type="button"
                                 onClick={() => setView(item.targetView)}
-                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active' : 'opacity-60'}`}
+                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
-                                <span className="mobile-nav-icon">
-                                    <item.icon className="h-[18px] w-[18px]" />
-                                </span>
+                                <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
                                 <span>{item.label}</span>
                             </button>
                         );
@@ -6322,7 +6131,7 @@ export default function Dashboard() {
                     </>
                 )}
             </AnimatePresence>
-            {view !== 'sale_form' && !isShyqaProfile && (
+            {view !== 'sale_form' && (
                 <button
                     onClick={() => openSaleForm(null)}
                     className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-24 z-[110] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
