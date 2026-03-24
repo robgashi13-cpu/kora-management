@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cloudClient } from '@/services/cloudAuth';
-import { lovable } from '@/src/integrations/lovable/index';
 
 type ProfileEntry = {
     name: string;
