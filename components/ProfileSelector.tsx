@@ -42,7 +42,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
 
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [changePasswordError, setChangePasswordError] = useState<string | null>(null);
     const [changePasswordSuccess, setChangePasswordSuccess] = useState(false);
@@ -150,7 +150,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         setEditingProfile(null);
         setShowChangePassword(false);
         setNewPassword('');
-        setConfirmPassword('');
+        setConfirmNewPassword('');
         setChangePasswordError(null);
         setChangePasswordSuccess(false);
     };
@@ -161,7 +161,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             setChangePasswordError('Please enter a new password');
             return;
         }
-        if (newPassword !== confirmPassword) {
+        if (newPassword !== confirmNewPassword) {
             setChangePasswordError('Passwords do not match');
             return;
         }
@@ -175,7 +175,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         }
         setChangePasswordSuccess(true);
         setNewPassword('');
-        setConfirmPassword('');
+        setConfirmNewPassword('');
         setTimeout(() => {
             setChangePasswordSuccess(false);
             setShowChangePassword(false);
@@ -492,7 +492,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     onClick={() => {
                                         setShowChangePassword(!showChangePassword);
                                         setNewPassword('');
-                                        setConfirmPassword('');
+                                        setConfirmNewPassword('');
                                         setChangePasswordError(null);
                                         setChangePasswordSuccess(false);
                                     }}
@@ -531,8 +531,8 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                         </div>
                                         <input
                                             type={showNewPassword ? 'text' : 'password'}
-                                            value={confirmPassword}
-                                            onChange={e => { setConfirmPassword(e.target.value); setChangePasswordError(null); }}
+                                            value={confirmNewPassword}
+                                            onChange={e => { setConfirmNewPassword(e.target.value); setChangePasswordError(null); }}
                                             placeholder="Confirm Password"
                                             className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm focus:border-slate-400 outline-none text-slate-700"
                                         />
