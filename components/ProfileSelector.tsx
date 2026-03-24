@@ -23,6 +23,7 @@ interface ProfileSelectorProps {
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false, verifyAdminPassword }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
+    const PASSWORD_PROTECTED_PROFILES = new Set(['Robert', 'Shyqa']);
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -86,7 +87,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const handleSelect = async (p: string) => {
-        if (p === ADMIN_PROFILE) {
+        if (PASSWORD_PROTECTED_PROFILES.has(p)) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
@@ -244,11 +245,11 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             onMouseUp={handleTouchEnd}
                             onMouseLeave={handleTouchEnd}
                             className="group flex flex-col items-center gap-4 relative cursor-pointer">
-                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${(profile.name === ADMIN_PROFILE) ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
+                            <div className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center text-5xl font-bold border transition-colors overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] ${PASSWORD_PROTECTED_PROFILES.has(profile.name) ? 'bg-red-50/80 border-red-200 group-hover:border-red-300'
                                 : profile.archived ? 'bg-slate-50 border-slate-200' : 'bg-white border-slate-200 group-hover:border-slate-300'
                                 }`}>
                                 {avatars[profile.name] ? <img src={avatars[profile.name]} alt={profile.name} className="w-full h-full object-cover" /> :
-                                    (profile.name === ADMIN_PROFILE) ? <Lock className="w-12 h-12 text-red-500" /> :
+                                    PASSWORD_PROTECTED_PROFILES.has(profile.name) ? <Lock className="w-12 h-12 text-red-500" /> :
                                         <span className="text-slate-700">{(profile.name && profile.name[0]) ? profile.name[0].toUpperCase() : '?'}</span>}
                             </div>
                             <div className="flex flex-col items-center gap-1">
@@ -280,7 +281,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     >
                                         <RotateCcw className="w-4 h-4" />
                                     </button>
-                                ) : profile.name !== ADMIN_PROFILE && (
+                                ) : !PASSWORD_PROTECTED_PROFILES.has(profile.name) && (
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -349,7 +350,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                             className="bg-white p-8 rounded-2xl border border-slate-100 w-full max-w-sm text-center relative shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
                         >
                             <button onClick={() => { setShowPasswordModal(false); setAdminAction(null); setPendingProfile(null); setAuthError(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
-                            <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {ADMIN_PROFILE} Password</h2>
+                            <h2 className="text-2xl font-bold mb-6 text-slate-900">Enter {pendingProfile} Password</h2>
 
                             {authError && (
                                 <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">{authError}</div>
