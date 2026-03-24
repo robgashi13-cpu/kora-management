@@ -5308,21 +5308,27 @@ export default function Dashboard() {
                                                         })}
                                                     </div>
                                                     <div className="divide-y divide-slate-100 md:hidden">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                            <button
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
+                                                            const isSelected = balanceDueSelectedIds.has(sale.id);
+                                                            return (
+                                                            <div
                                                                 key={`${scopeStatus}-${sale.id}`}
-                                                                type="button"
-                                                                onClick={() => handleSaleInteraction(sale)}
-                                                                className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                                onClick={() => toggleBalanceDueSelection(sale.id)}
+                                                                className={`w-full px-3 py-3 text-left cursor-pointer transition-colors ${isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                                                             >
                                                                 <div className="flex items-start justify-between gap-2">
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                        <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                    <div className="flex items-start gap-2.5 min-w-0">
+                                                                        <div className={`mt-0.5 shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'}`}>
+                                                                            {isSelected && <Check className="w-3 h-3" />}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                            <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                        </div>
                                                                     </div>
                                                                     <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
                                                                 </div>
-                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500 ml-6.5">
                                                                     <div className="min-w-0">
                                                                         <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
                                                                         <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
@@ -5333,8 +5339,9 @@ export default function Dashboard() {
                                                                         <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
                                                                     </div>
                                                                 </div>
-                                                            </button>
-                                                        ))}
+                                                            </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}
