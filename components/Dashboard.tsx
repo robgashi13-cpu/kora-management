@@ -3136,6 +3136,7 @@ export default function Dashboard() {
 
     const canAccessSale = useCallback((sale: CarSale) => {
         if (isAdmin) return true;
+        if (isFullSalesViewer(userProfile)) return true;
         const normalizedUser = normalizeProfileName(userProfile);
         const normalizedSoldBy = normalizeProfileName(sale.soldBy);
         const normalizedSellerName = normalizeProfileName(sale.sellerName);
