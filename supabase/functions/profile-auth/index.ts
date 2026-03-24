@@ -15,7 +15,7 @@ const INTERNAL_PASSWORD_PREFIX = "kora-internal-v1-";
 const getInternalPassword = (email: string) =>
   `${INTERNAL_PASSWORD_PREFIX}${email}-${SERVICE_ROLE_KEY.slice(-8)}`;
 
-const ADMIN_PASSWORD = "password2";
+const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "password2";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
