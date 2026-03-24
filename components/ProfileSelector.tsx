@@ -353,8 +353,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         onClick={async () => {
                             setIsAuthLoading(true);
                             setAuthError(null);
-                            const { error } = await lovable.auth.signInWithOAuth('apple', {
-                                redirect_uri: window.location.origin,
+                            const { error } = await cloudClient.auth.signInWithOAuth({
+                                provider: 'apple',
+                                options: { redirectTo: window.location.origin },
                             });
                             if (error) {
                                 setAuthError(error.message || 'Apple Sign-In failed');
