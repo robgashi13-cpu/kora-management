@@ -503,12 +503,15 @@ export default function Dashboard() {
     const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
     const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
     const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea'>('client_due');
+    const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
+    const [isMarkingBalancePaid, setIsMarkingBalancePaid] = useState(false);
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
+    const isShyqaProfile = normalizeProfileName(userProfile) === normalizeProfileName(SHYQA_PROFILE);
     const isRecordAdmin = isAdmin;
     const canViewPrices = isAdmin;
 
@@ -3311,6 +3314,45 @@ export default function Dashboard() {
         });
     };
 
+    const markSelectedBalancePaid = async () => {
+        if (balanceDueSelectedIds.size === 0) return;
+        setIsMarkingBalancePaid(true);
+        const currentSales = salesRef.current;
+        const newSales = [...currentSales];
+        const updatedItems: Array<{ before: CarSale; after: CarSale }> = [];
+
+        balanceDueSelectedIds.forEach((id) => {
+            const index = newSales.findIndex((item) => item.id === id);
+            if (index === -1) return;
+            const sale = newSales[index];
+            const balance = calculateBalance(sale);
+            if (balance <= 0) return;
+            const updatedSale: CarSale = { ...sale, deposit: (sale.deposit || 0) + balance };
+            newSales[index] = updatedSale;
+            dirtyIds.current.add(id);
+            updatedItems.push({ before: sale, after: updatedSale });
+        });
+
+        if (updatedItems.length === 0) { setIsMarkingBalancePaid(false); return; }
+
+        const result = await updateSalesAndSave(newSales);
+        if (result.success) {
+            setBalanceDueSelectedIds(new Set());
+            for (const { before, after } of updatedItems) {
+                await logAuditEvent({
+                    actionType: 'UPDATE',
+                    entityType: 'sale',
+                    entityId: after.id,
+                    beforeData: before,
+                    afterData: after,
+                    pageContext: 'balance_due',
+                    metadata: { action: 'MARK_CLIENT_BALANCE_PAID' }
+                });
+            }
+        }
+        setIsMarkingBalancePaid(false);
+    };
+
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
@@ -3520,6 +3562,7 @@ export default function Dashboard() {
                 </motion.div>
 
                 <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
+                    {!isShyqaProfile && (
                     <motion.button
                         id="btn-add-sale"
                         initial={{ opacity: 0, y: 30 }}
@@ -3538,25 +3581,48 @@ export default function Dashboard() {
                             <div className="text-slate-500">Record a new vehicle sale</div>
                         </div>
                     </motion.button>
+                    )}
 
-                    <motion.button
-                        id="btn-view-sales"
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
-                            <Clipboard className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
-                            <div className="text-slate-500">Access dashboard & history</div>
-                        </div>
-                    </motion.button>
+                    {!isShyqaProfile && (
+                        <motion.button
+                            id="btn-view-sales"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
+                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
+                        >
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                                <Clipboard className="w-12 h-12" />
+                            </div>
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
+                                <div className="text-slate-500">Access dashboard & history</div>
+                            </div>
+                        </motion.button>
+                    )}
+                    {isShyqaProfile && (
+                        <motion.button
+                            id="btn-view-invoices"
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setView('invoices')}
+                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
+                        >
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
+                                <FileText className="w-12 h-12" />
+                            </div>
+                            <div className="text-center">
+                                <div className="text-2xl font-bold text-slate-800 mb-2">View Invoices</div>
+                                <div className="text-slate-500">Access invoices & PDF workspace</div>
+                            </div>
+                        </motion.button>
+                    )}
                 </div>
 
                 <motion.button
@@ -3580,10 +3646,11 @@ export default function Dashboard() {
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
-            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS');
-            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
+            const SHYQA_ALLOWED_NAV_IDS = new Set(['INVOICES', 'PDF']);
+            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS' && (!isShyqaProfile || SHYQA_ALLOWED_NAV_IDS.has(item.id)));
+            const salesGroupItems = isShyqaProfile ? [] : mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES'].includes(item.id));
-            const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
+            const financeControlGroupItems = isShyqaProfile ? [] : mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
             const secondaryNavItems = navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
@@ -3660,7 +3727,7 @@ export default function Dashboard() {
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 mt-4 pb-4">
                 <div className="space-y-2">
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
+                    {!isShyqaProfile && <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsSalesGroupOpen((prev) => !prev)}
@@ -3694,7 +3761,7 @@ export default function Dashboard() {
                                 })}
                             </div>
                         </div>
-                    </div>
+                    </div>}
 
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
@@ -3702,7 +3769,7 @@ export default function Dashboard() {
                             onClick={() => setIsOperationsGroupOpen((prev) => !prev)}
                             className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-400 hover:bg-zinc-900 hover:text-white transition-colors duration-150"
                         >
-                            <span>Operations</span>
+                            <span>{isShyqaProfile ? 'Documents' : 'Operations'}</span>
                             {isOperationsGroupOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
                         <div className={`grid overflow-hidden sidebar-group-panel ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
@@ -3749,7 +3816,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
+                    {!isShyqaProfile && <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
                             onClick={() => setIsFinanceGroupOpen((prev) => !prev)}
@@ -3793,9 +3860,9 @@ export default function Dashboard() {
                                 })}
                             </div>
                         </div>
-                    </div>
+                    </div>}
 
-                    <div className="space-y-1 pt-1">
+                    {!isShyqaProfile && <div className="space-y-1 pt-1">
                         {combinedNavItems.map((item) => {
                             if (item.adminOnly && !isAdmin) return null;
                             const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
@@ -3841,9 +3908,9 @@ export default function Dashboard() {
                                 </div>
                             );
                         })}
-                    </div>
+                    </div>}
 
-                    {archivedCustomDashboardItems.length > 0 && (
+                    {!isShyqaProfile && archivedCustomDashboardItems.length > 0 && (
                         <div className="pt-2">
                             <button
                                 type="button"
@@ -3870,8 +3937,8 @@ export default function Dashboard() {
             </nav>
 
             <div className="px-4 pb-4 pt-3 border-t border-slate-800 bg-slate-900/95 backdrop-blur sticky bottom-0 z-20">
-                <div className="grid grid-cols-3 gap-2">
-                    <button
+                <div className={`grid gap-2 ${isShyqaProfile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                    {!isShyqaProfile && <button
                         type="button"
                         title="Create"
                         aria-label="Create"
@@ -3882,7 +3949,7 @@ export default function Dashboard() {
                         className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <FolderPlus className="w-5 h-5" />
-                    </button>
+                    </button>}
                     <button
                         type="button"
                         onClick={() => { const nextTheme = theme === 'dark' ? 'light' : 'dark'; applyTheme(nextTheme); void logAuditEvent({ actionType: 'UPDATE', entityType: 'theme', entityId: 'theme_mode', beforeData: { theme }, afterData: { theme: nextTheme }, pageContext: 'sidebar' }); }}
@@ -3892,7 +3959,7 @@ export default function Dashboard() {
                         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                         <span className="text-[11px] font-semibold">{theme === 'dark' ? 'Dark' : 'Light'}</span>
                     </button>
-                    <button
+                    {!isShyqaProfile && <button
                         type="button"
                         title="Settings"
                         aria-label="Settings"
@@ -3903,7 +3970,7 @@ export default function Dashboard() {
                         className="ui-control h-11 rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 hover:border-slate-500 transition-colors inline-flex items-center justify-center"
                     >
                         <Settings className="w-5 h-5" />
-                    </button>
+                    </button>}
                 </div>
             </div>
 
@@ -5146,71 +5213,176 @@ export default function Dashboard() {
 
                                     {balanceDueSubTab === 'client_due' ? (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
-                                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
-                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
-                                                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3 grid-stagger">
+                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900 number-transition">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
+                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Shipped</div><div className="text-xl font-black text-slate-900 number-transition">€{shippedBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{shippedOnlyBalanceSales.length} cars</div></div>
+                                                <div className="stat-card px-4 py-3 animate-slide-up"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Sold</div><div className="text-xl font-black text-slate-900 number-transition">€{soldBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{soldBalanceSales.length} cars</div></div>
                                             </div>
 
                                             <div className="mb-3 grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-2">
-                                                <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                                                <input value={balanceDueSearch} onChange={(e) => setBalanceDueSearch(e.target.value)} placeholder="Search by car, plate, VIN, id" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm search-modern" />
                                                 <select value={balanceDueStatusFilter} onChange={(e) => setBalanceDueStatusFilter(e.target.value as 'all' | 'shipped' | 'sold')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="all">All statuses</option><option value="shipped">Shipped only</option><option value="sold">Sold only</option></select>
                                                 <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
                                             </div>
 
+                                            {/* Multiselect action bar */}
+                                            <AnimatePresence>
+                                                {balanceDueSelectedIds.size > 0 && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -8 }}
+                                                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                                                        className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-sm font-bold text-slate-800">{balanceDueSelectedIds.size} selected</span>
+                                                            <span className="ml-2 text-xs text-slate-500">
+                                                                Total: <span className="font-bold text-red-600">€{balanceDueRows.filter(r => balanceDueSelectedIds.has(r.sale.id)).reduce((s, r) => s + calculateBalance(r.sale), 0).toLocaleString()}</span>
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setBalanceDueSelectedIds(new Set())}
+                                                            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                                                        >
+                                                            Clear
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={isMarkingBalancePaid}
+                                                            onClick={() => void markSelectedBalancePaid()}
+                                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-95"
+                                                        >
+                                                            {isMarkingBalancePaid ? (
+                                                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
+                                                            ) : (
+                                                                <><Check className="w-3.5 h-3.5" /> Mark Paid (add to Deposit)</>
+                                                            )}
+                                                        </button>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
                                             {balanceDueRows.length === 0 ? (
                                                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
                                             ) : (
-                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                                    <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                                    {/* Desktop header */}
+                                                    <div className="hidden md:grid grid-cols-[36px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div className="flex items-center justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (balanceDueSelectedIds.size === balanceDueRows.length) {
+                                                                        setBalanceDueSelectedIds(new Set());
+                                                                    } else {
+                                                                        setBalanceDueSelectedIds(new Set(balanceDueRows.map(r => r.sale.id)));
+                                                                    }
+                                                                }}
+                                                                className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-400 bg-white hover:border-slate-600'}`}
+                                                            >
+                                                                {balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 && <CheckSquare className="w-3 h-3" />}
+                                                            </button>
+                                                        </div>
                                                         <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                                     </div>
                                                     <div className="divide-y divide-slate-100 hidden md:block">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                            <button
-                                                                key={`${scopeStatus}-${sale.id}`}
-                                                                type="button"
-                                                                data-list-row="true"
-                                                                onClick={() => handleSaleInteraction(sale)}
-                                                                className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
-                                                            >
-                                                                <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
-                                                                <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
-                                                                <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
-                                                                <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
-                                                                <div className="text-slate-600">{sale.shippingDate || '-'}</div>
-                                                                <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
-                                                            </button>
-                                                        ))}
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
+                                                            const isRowSelected = balanceDueSelectedIds.has(sale.id);
+                                                            return (
+                                                                <div
+                                                                    key={`${scopeStatus}-${sale.id}`}
+                                                                    data-list-row="true"
+                                                                    className={`grid w-full grid-cols-[36px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
+                                                                >
+                                                                    <div className="flex items-center justify-center">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => { e.stopPropagation(); setBalanceDueSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
+                                                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white check-animate' : 'border-slate-300 bg-white hover:border-slate-500'}`}
+                                                                        >
+                                                                            {isRowSelected && <CheckSquare className="w-3 h-3" />}
+                                                                        </button>
+                                                                    </div>
+                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline text-left">{sale.brand} {sale.model}</button>
+                                                                    <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
+                                                                    <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                    <div className={`text-right font-bold ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{calculateBalance(sale).toLocaleString()}</div>
+                                                                    <div className="text-slate-600">{sale.shippingDate || '-'}</div>
+                                                                    <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
+                                                    {/* Mobile list */}
                                                     <div className="divide-y divide-slate-100 md:hidden">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
+                                                            const isRowSelected = balanceDueSelectedIds.has(sale.id);
+                                                            return (
+                                                                <div
+                                                                    key={`${scopeStatus}-mobile-${sale.id}`}
+                                                                    className={`px-3 py-3 transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
+                                                                >
+                                                                    <div className="flex items-start gap-3">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => { e.stopPropagation(); setBalanceDueSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
+                                                                            className={`mt-0.5 w-5 h-5 min-w-[1.25rem] border-2 rounded-full flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}
+                                                                        >
+                                                                            {isRowSelected && <Check className="w-3 h-3" />}
+                                                                        </button>
+                                                                        <button type="button" onClick={() => handleSaleInteraction(sale)} className="flex-1 text-left min-w-0">
+                                                                            <div className="flex items-start justify-between gap-2">
+                                                                                <div className="min-w-0">
+                                                                                    <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                                    <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                                </div>
+                                                                                <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
+                                                                            </div>
+                                                                            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                                                <div className="min-w-0">
+                                                                                    <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
+                                                                                    <p className={`text-base font-black ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{calculateBalance(sale).toLocaleString()}</p>
+                                                                                </div>
+                                                                                <div className="min-w-0 text-right">
+                                                                                    <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
+                                                                                    <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
+                                                                                    <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {/* Mobile select all */}
+                                                    <div className="md:hidden flex items-center justify-between px-3 py-2.5 bg-slate-50 border-t border-slate-200">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (balanceDueSelectedIds.size === balanceDueRows.length) {
+                                                                    setBalanceDueSelectedIds(new Set());
+                                                                } else {
+                                                                    setBalanceDueSelectedIds(new Set(balanceDueRows.map(r => r.sale.id)));
+                                                                }
+                                                            }}
+                                                            className="text-xs font-semibold text-slate-600"
+                                                        >
+                                                            {balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 ? 'Deselect all' : 'Select all'}
+                                                        </button>
+                                                        {balanceDueSelectedIds.size > 0 && (
                                                             <button
-                                                                key={`${scopeStatus}-${sale.id}`}
                                                                 type="button"
-                                                                onClick={() => handleSaleInteraction(sale)}
-                                                                className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                                disabled={isMarkingBalancePaid}
+                                                                onClick={() => void markSelectedBalancePaid()}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
                                                             >
-                                                                <div className="flex items-start justify-between gap-2">
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                        <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
-                                                                    </div>
-                                                                    <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
-                                                                </div>
-                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
-                                                                    <div className="min-w-0">
-                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
-                                                                        <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
-                                                                    </div>
-                                                                    <div className="min-w-0 text-right">
-                                                                        <p className="font-semibold uppercase tracking-wide text-slate-400">Dates</p>
-                                                                        <p className="overflow-wrap-anywhere">Ship: {sale.shippingDate || '-'}</p>
-                                                                        <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
-                                                                    </div>
-                                                                </div>
+                                                                {isMarkingBalancePaid ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                                Mark Paid
                                                             </button>
-                                                        ))}
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}
@@ -6009,10 +6181,10 @@ export default function Dashboard() {
             {view !== 'sale_form' && (
                 <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
                     {[
-                        { id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
+                        ...(!isShyqaProfile ? [{ id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const }] : []),
                         { id: 'invoices', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
                         { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
-                        { id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
+                        ...(!isShyqaProfile ? [{ id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }] : [])
                     ].map((item) => {
                         const isActive = view === item.targetView;
                         return (
@@ -6148,7 +6320,7 @@ export default function Dashboard() {
                     </>
                 )}
             </AnimatePresence>
-            {view !== 'sale_form' && (
+            {view !== 'sale_form' && !isShyqaProfile && (
                 <button
                     onClick={() => openSaleForm(null)}
                     className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-24 z-[110] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"

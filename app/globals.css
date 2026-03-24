@@ -1288,3 +1288,231 @@ button, [role="button"] {
 [data-list-row='true']:hover {
   background-color: hsl(220 14% 97%);
 }
+
+/* =============================================
+   MODERN DESIGN SYSTEM ENHANCEMENTS
+   ============================================= */
+
+/* Glass morphism card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+/* Modern gradient button */
+.btn-modern {
+  background: linear-gradient(135deg, hsl(222 47% 11%), hsl(222 30% 20%));
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.btn-modern:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.btn-modern:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+}
+
+/* Floating action button */
+.btn-float {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.16), 0 1px 4px rgba(15, 23, 42, 0.08);
+  transition: all 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn-float:hover {
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.2), 0 2px 8px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Smooth entrance animations */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDownFade {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-slide-down {
+  animation: slideDownFade 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Skeleton loading shimmer */
+.skeleton {
+  background: linear-gradient(90deg, hsl(220 14% 93%) 25%, hsl(220 14% 97%) 50%, hsl(220 14% 93%) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* Modern stat card */
+.stat-card {
+  border-radius: 1.25rem;
+  border: 1px solid hsl(220 14% 91%);
+  background: white;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 240ms ease, border-color 200ms ease, transform 240ms cubic-bezier(0.22,1,0.36,1);
+  overflow: hidden;
+}
+.stat-card:hover {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.08);
+  border-color: hsl(220 14% 84%);
+  transform: translateY(-1px);
+}
+
+/* Modern search input */
+.search-modern {
+  background: hsl(220 14% 97%);
+  border: 1.5px solid hsl(220 14% 90%);
+  border-radius: 0.875rem;
+  transition: all 200ms ease;
+}
+.search-modern:focus {
+  background: white;
+  border-color: hsl(222 47% 40%);
+  box-shadow: 0 0 0 3px hsl(222 47% 40% / 0.1);
+  outline: none;
+}
+
+/* Modal modern shadow */
+.modal-modern {
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.18), 0 8px 24px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.06);
+  border-radius: 1.25rem;
+}
+
+/* Sidebar improved */
+.sidebar-modern {
+  background: linear-gradient(180deg, #0a0a0a 0%, #0d0d0d 100%);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Row selection highlight */
+.row-selected {
+  background-color: hsl(220 40% 96%) !important;
+  border-left: 3px solid hsl(222 47% 40%) !important;
+}
+.row-selected > div {
+  background-color: hsl(220 40% 96%) !important;
+}
+
+/* Mark Paid success pulse */
+@keyframes paidPulse {
+  0% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(21, 128, 61, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0); }
+}
+
+.paid-pulse {
+  animation: paidPulse 0.6s ease-out;
+}
+
+/* Balance due multiselect toolbar */
+.balance-action-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: white;
+  border-bottom: 1px solid hsl(220 14% 90%);
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: slideDownFade 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* Profile menu animation */
+.profile-menu-enter {
+  animation: slideDownFade 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Improved mobile card */
+.mobile-card-modern {
+  border-radius: 1rem;
+  background: white;
+  border: 1px solid hsl(220 14% 91%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms cubic-bezier(0.22,1,0.36,1);
+  overflow: hidden;
+}
+.mobile-card-modern:active {
+  transform: scale(0.99);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+/* Header gradient */
+.header-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+/* Smooth number transition */
+.number-transition {
+  transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Enhanced focus states */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(222 47% 40% / 0.5);
+  outline-offset: 1px;
+  border-color: hsl(222 47% 40%);
+}
+
+/* Stagger animation for grid items */
+.grid-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.grid-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.grid-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.grid-stagger > *:nth-child(4) { animation-delay: 180ms; }
+
+/* Smooth dividers */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(220 14% 88%), transparent);
+  margin: 0.5rem 0;
+}
+
+/* Badge pill */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-success { background: hsl(142 50% 94%); color: hsl(142 50% 24%); border: 1px solid hsl(142 35% 80%); }
+.badge-warning { background: hsl(36 90% 94%); color: hsl(28 70% 28%); border: 1px solid hsl(36 55% 78%); }
+.badge-danger { background: hsl(0 84% 95%); color: hsl(0 72% 40%); border: 1px solid hsl(0 60% 82%); }
+.badge-info { background: hsl(205 60% 94%); color: hsl(205 60% 28%); border: 1px solid hsl(205 45% 80%); }
+.badge-neutral { background: hsl(220 14% 94%); color: hsl(220 14% 30%); border: 1px solid hsl(220 14% 82%); }
