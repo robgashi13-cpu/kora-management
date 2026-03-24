@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cloudClient } from '@/services/cloudAuth';
-import { lovable } from '@/src/integrations/lovable/index';
 
 type ProfileEntry = {
     name: string;
@@ -354,8 +353,9 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                         onClick={async () => {
                             setIsAuthLoading(true);
                             setAuthError(null);
-                            const { error } = await lovable.auth.signInWithOAuth('apple', {
-                                redirect_uri: window.location.origin,
+                            const { error } = await cloudClient.auth.signInWithOAuth({
+                                provider: 'apple',
+                                options: { redirectTo: window.location.origin },
                             });
                             if (error) {
                                 setAuthError(error.message || 'Apple Sign-In failed');
