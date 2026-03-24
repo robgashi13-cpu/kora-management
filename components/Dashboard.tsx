@@ -508,6 +508,8 @@ export default function Dashboard() {
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
+    const [paidKoreaSelectedIds, setPaidKoreaSelectedIds] = useState<Set<string>>(new Set());
+    const [isMarkingKoreaPaid, setIsMarkingKoreaPaid] = useState(false);
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = PRIVILEGED_PROFILE_SET.has(normalizeProfileName(userProfile));
@@ -2008,7 +2010,7 @@ export default function Dashboard() {
             await cloudClient.auth.signOut();
         } catch { /* ignore */ }
         setUserProfile('');
-        setView('landing');
+        setView('dashboard');
         await Preferences.remove({ key: 'user_profile' });
         await Preferences.remove({ key: 'remember_profile' });
         localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
@@ -2194,7 +2196,7 @@ export default function Dashboard() {
                 }
                 if (storedProfile) {
                     setUserProfile(storedProfile);
-                    setView('landing');
+                    setView('dashboard');
                     localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
                 if (storedProfile && !shouldRemember) {
@@ -2389,7 +2391,7 @@ export default function Dashboard() {
         if (normalizedFallback) {
             setUserProfile(normalizedFallback);
             if (view === 'profile_select') {
-                setView('landing');
+                setView('dashboard');
             }
         }
     }, [userProfile, view]);
@@ -3314,6 +3316,49 @@ export default function Dashboard() {
         });
     };
 
+    const markSelectedKoreaPaid = async () => {
+        if (paidKoreaSelectedIds.size === 0) return;
+        setIsMarkingKoreaPaid(true);
+        const currentSales = salesRef.current;
+        const newSales = [...currentSales];
+        const updatedItems: Array<{ before: CarSale; after: CarSale }> = [];
+
+        paidKoreaSelectedIds.forEach((id) => {
+            const index = newSales.findIndex((item) => item.id === id);
+            if (index === -1) return;
+            const sale = newSales[index];
+            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+            if (remaining <= 0) return;
+            const updatedSale: CarSale = {
+                ...sale,
+                amountPaidToKorea: sale.costToBuy || 0,
+                paidDateToKorea: new Date().toISOString().split('T')[0]
+            };
+            newSales[index] = updatedSale;
+            dirtyIds.current.add(id);
+            updatedItems.push({ before: sale, after: updatedSale });
+        });
+
+        if (updatedItems.length === 0) { setIsMarkingKoreaPaid(false); return; }
+
+        const result = await updateSalesAndSave(newSales);
+        if (result.success) {
+            setPaidKoreaSelectedIds(new Set());
+            for (const { before, after } of updatedItems) {
+                await logAuditEvent({
+                    actionType: 'UPDATE',
+                    entityType: 'sale',
+                    entityId: after.id,
+                    beforeData: before,
+                    afterData: after,
+                    pageContext: 'balance_due',
+                    metadata: { action: 'MARK_PAID_IN_KOREA_BULK' }
+                });
+            }
+        }
+        setIsMarkingKoreaPaid(false);
+    };
+
     const markSelectedBalancePaid = async () => {
         if (balanceDueSelectedIds.size === 0) return;
         setIsMarkingBalancePaid(true);
@@ -3507,7 +3552,7 @@ export default function Dashboard() {
                         const normalizedProfile = normalizeProfileName(p);
                         if (!normalizedProfile) return;
                         setUserProfile(normalizedProfile);
-                        setView('landing');
+                        setView('dashboard');
                         setRememberProfile(remember);
                         persistUserProfile(normalizedProfile, remember);
                     }}
@@ -3533,114 +3578,6 @@ export default function Dashboard() {
             </motion.div>
         );
     }
-
-    if (view === 'landing') {
-        return (
-            <motion.div
-                key="landing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="h-screen bg-gradient-to-br from-white via-white to-slate-100 flex flex-col items-center justify-center gap-8 relative overflow-hidden font-sans"
-            >
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_rgba(15,23,42,0.08),_transparent_50%)]" />
-                <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 0.4 }}
-                    transition={{ duration: 1.2, ease: 'easeOut' }}
-                    className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-slate-200 to-transparent rounded-full blur-3xl"
-                />
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                    className="z-10 text-center mb-8"
-                >
-                    <h1 className="text-3xl font-bold mb-4 mt-8 tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">Welcome, {userProfile}</h1>
-                    <p className="text-slate-500 text-lg">Select an operation to proceed</p>
-                </motion.div>
-
-                <div className="z-10 flex flex-col md:flex-row gap-6 w-full max-w-4xl px-8">
-                    {!isShyqaProfile && (
-                    <motion.button
-                        id="btn-add-sale"
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                        whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => openSaleForm(null, 'landing')}
-                        className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
-                    >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-900 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
-                            <Plus className="w-12 h-12" />
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-slate-800 mb-2">Add New Sale</div>
-                            <div className="text-slate-500">Record a new vehicle sale</div>
-                        </div>
-                    </motion.button>
-                    )}
-
-                    {!isShyqaProfile && (
-                        <motion.button
-                            id="btn-view-sales"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                            whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => { setActiveCategory('SALES'); setView('dashboard'); }}
-                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
-                        >
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
-                                <Clipboard className="w-12 h-12" />
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-slate-800 mb-2">View Sales</div>
-                                <div className="text-slate-500">Access dashboard & history</div>
-                            </div>
-                        </motion.button>
-                    )}
-                    {isShyqaProfile && (
-                        <motion.button
-                            id="btn-view-invoices"
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                            whileHover={{ y: -4, boxShadow: '0 20px 40px -12px rgba(15,23,42,0.15)' }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setView('invoices')}
-                            className="flex-1 bg-white border border-slate-200 hover:border-slate-300 p-12 rounded-3xl transition-colors group flex flex-col items-center gap-6 shadow-lg"
-                        >
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-white to-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:scale-110 group-hover:from-slate-900 group-hover:to-black group-hover:text-white group-hover:border-slate-900 transition-all duration-300 shadow-inner">
-                                <FileText className="w-12 h-12" />
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-slate-800 mb-2">View Invoices</div>
-                                <div className="text-slate-500">Access invoices & PDF workspace</div>
-                            </div>
-                        </motion.button>
-                    )}
-                </div>
-
-                <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.4, delay: 0.5 }}
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={handleLogout}
-                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
-                >
-                    <LogOut className="w-4 h-4" /> Switch Profile
-                </motion.button>
-            </motion.div>
-        );
-    }
-
-
 
     const SidebarContent = () => (
         (() => {
@@ -5402,83 +5339,163 @@ export default function Dashboard() {
                                                 <select value={paidKoreaSort} onChange={(e) => setPaidKoreaSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest left to pay</option><option value="asc">Lowest left to pay</option></select>
                                             </div>
 
+                                            {/* Korea multiselect action bar */}
+                                            <AnimatePresence>
+                                                {paidKoreaSelectedIds.size > 0 && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -8 }}
+                                                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                                                        className="mb-3 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 shadow-sm"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-sm font-bold text-slate-800">{paidKoreaSelectedIds.size} selected</span>
+                                                            <span className="ml-2 text-xs text-slate-500">
+                                                                Left to pay: <span className="font-bold text-red-600">€{onSaleKoreaRows.filter(s => paidKoreaSelectedIds.has(s.id)).reduce((sum, s) => sum + Math.max((s.costToBuy || 0) - (s.amountPaidToKorea || 0), 0), 0).toLocaleString()}</span>
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPaidKoreaSelectedIds(new Set())}
+                                                            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                                                        >
+                                                            Clear
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={isMarkingKoreaPaid}
+                                                            onClick={() => void markSelectedKoreaPaid()}
+                                                            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-md active:scale-95"
+                                                        >
+                                                            {isMarkingKoreaPaid ? (
+                                                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing…</>
+                                                            ) : (
+                                                                <><Check className="w-3.5 h-3.5" /> Mark Paid in Korea</>
+                                                            )}
+                                                        </button>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
                                             {onSaleKoreaRows.length === 0 ? (
                                                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No cars match this filter.</div>
                                             ) : (
-                                                <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                                    <div className="hidden md:grid grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                        <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div><div>Action</div>
+                                                <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                                                    {/* Desktop header */}
+                                                    <div className="hidden md:grid grid-cols-[36px_1.1fr_1fr_90px_90px_120px_130px_130px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div className="flex items-center justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    if (paidKoreaSelectedIds.size === onSaleKoreaRows.length) {
+                                                                        setPaidKoreaSelectedIds(new Set());
+                                                                    } else {
+                                                                        setPaidKoreaSelectedIds(new Set(onSaleKoreaRows.map(s => s.id)));
+                                                                    }
+                                                                }}
+                                                                className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-400 bg-white hover:border-slate-600'}`}
+                                                            >
+                                                                {paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 && <CheckSquare className="w-3 h-3" />}
+                                                            </button>
+                                                        </div>
+                                                        <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div>
                                                     </div>
                                                     <div className="divide-y divide-slate-100 hidden md:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
+                                                            const isRowSelected = paidKoreaSelectedIds.has(sale.id);
                                                             return (
                                                                 <div
                                                                     key={`korea-${sale.id}`}
                                                                     data-list-row="true"
-                                                                    onClick={() => handleSaleInteraction(sale)}
-                                                                    className="grid w-full cursor-pointer grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                                                                    className={`grid w-full grid-cols-[36px_1.1fr_1fr_90px_90px_120px_130px_130px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}
                                                                 >
-                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
+                                                                    <div className="flex items-center justify-center">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => { e.stopPropagation(); setPaidKoreaSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
+                                                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white check-animate' : 'border-slate-300 bg-white hover:border-slate-500'}`}
+                                                                        >
+                                                                            {isRowSelected && <CheckSquare className="w-3 h-3" />}
+                                                                        </button>
+                                                                    </div>
+                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline text-left">{sale.brand} {sale.model}</button>
                                                                     <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                     <div className="text-right font-semibold text-slate-700">€{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                     <div className="text-right font-semibold text-emerald-700">€{(sale.amountPaidToKorea || 0).toLocaleString()}</div>
-                                                                    <div className="text-right font-bold text-red-600">€{remaining.toLocaleString()}</div>
+                                                                    <div className={`text-right font-bold ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{remaining.toLocaleString()}</div>
                                                                     <div>
                                                                         <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
                                                                     </div>
                                                                     <div className="text-slate-600">{sale.paidDateToKorea || '-'}</div>
-                                                                    <div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {/* Mobile list */}
+                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                        {onSaleKoreaRows.map((sale) => {
+                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
+                                                            const isPaid = remaining <= 0;
+                                                            const isRowSelected = paidKoreaSelectedIds.has(sale.id);
+                                                            return (
+                                                                <div key={`korea-mobile-${sale.id}`} className={`px-3 py-3 transition-colors ${isRowSelected ? 'bg-emerald-50 border-l-2 border-emerald-500' : 'hover:bg-slate-50'}`}>
+                                                                    <div className="flex items-start gap-3">
                                                                         <button
                                                                             type="button"
-                                                                            onClick={(event) => {
-                                                                                event.preventDefault();
-                                                                                event.stopPropagation();
-                                                                                void markSalePaidInKorea(sale);
-                                                                            }}
-                                                                            disabled={isPaid}
-                                                                            className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                            onClick={(e) => { e.stopPropagation(); setPaidKoreaSelectedIds(prev => { const next = new Set(prev); if (next.has(sale.id)) next.delete(sale.id); else next.add(sale.id); return next; }); }}
+                                                                            className={`mt-0.5 w-5 h-5 min-w-[1.25rem] border-2 rounded-full flex items-center justify-center transition-all ${isRowSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}
                                                                         >
-                                                                            {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                            {isRowSelected && <Check className="w-3 h-3" />}
+                                                                        </button>
+                                                                        <button type="button" onClick={() => handleSaleInteraction(sale)} className="flex-1 text-left min-w-0">
+                                                                            <div className="flex items-start justify-between gap-2">
+                                                                                <div className="min-w-0">
+                                                                                    <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                                    <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                                </div>
+                                                                                <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
+                                                                            </div>
+                                                                            <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                                                                                <div><p className="font-semibold uppercase tracking-wide text-slate-400">Cost</p><p className="text-slate-700 font-semibold">€{(sale.costToBuy || 0).toLocaleString()}</p></div>
+                                                                                <div><p className="font-semibold uppercase tracking-wide text-slate-400">Paid</p><p className="text-emerald-700 font-semibold">€{(sale.amountPaidToKorea || 0).toLocaleString()}</p></div>
+                                                                                <div className="text-right"><p className="font-semibold uppercase tracking-wide text-slate-400">Left</p><p className={`font-black ${isRowSelected ? 'text-emerald-700' : 'text-red-600'}`}>€{remaining.toLocaleString()}</p></div>
+                                                                            </div>
+                                                                            <p className="mt-1 text-[11px] text-slate-500">Paid Date: {sale.paidDateToKorea || '-'}</p>
                                                                         </button>
                                                                     </div>
                                                                 </div>
                                                             );
                                                         })}
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 md:hidden">
-                                                        {onSaleKoreaRows.map((sale) => {
-                                                            const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
-                                                            return (
-                                                                <div key={`korea-mobile-${sale.id}`} className="w-full px-3 py-3 text-left">
-                                                                    <button type="button" onClick={() => handleSaleInteraction(sale)} className="w-full text-left">
-                                                                        <div className="flex items-start justify-between gap-2">
-                                                                            <div className="min-w-0">
-                                                                                <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                                <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
-                                                                            </div>
-                                                                            <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${isPaid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700'}`}>{isPaid ? 'PAID' : 'NOT PAID'}</span>
-                                                                        </div>
-                                                                        <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Cost</p><p className="text-slate-700 font-semibold">€{(sale.costToBuy || 0).toLocaleString()}</p></div>
-                                                                            <div><p className="font-semibold uppercase tracking-wide text-slate-400">Paid</p><p className="text-emerald-700 font-semibold">€{(sale.amountPaidToKorea || 0).toLocaleString()}</p></div>
-                                                                            <div className="text-right"><p className="font-semibold uppercase tracking-wide text-slate-400">Left</p><p className="text-red-600 font-black">€{remaining.toLocaleString()}</p></div>
-                                                                        </div>
-                                                                        <p className="mt-1 text-[11px] text-slate-500">Paid Date: {sale.paidDateToKorea || '-'}</p>
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => void markSalePaidInKorea(sale)}
-                                                                        disabled={isPaid}
-                                                                        className="mt-2 w-full rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-                                                                    >
-                                                                        {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
-                                                                    </button>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                    {/* Mobile select all */}
+                                                    <div className="md:hidden flex items-center justify-between px-3 py-2.5 bg-slate-50 border-t border-slate-200">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (paidKoreaSelectedIds.size === onSaleKoreaRows.length) {
+                                                                    setPaidKoreaSelectedIds(new Set());
+                                                                } else {
+                                                                    setPaidKoreaSelectedIds(new Set(onSaleKoreaRows.map(s => s.id)));
+                                                                }
+                                                            }}
+                                                            className="text-xs font-semibold text-slate-600"
+                                                        >
+                                                            {paidKoreaSelectedIds.size === onSaleKoreaRows.length && onSaleKoreaRows.length > 0 ? 'Deselect all' : 'Select all'}
+                                                        </button>
+                                                        {paidKoreaSelectedIds.size > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={isMarkingKoreaPaid}
+                                                                onClick={() => void markSelectedKoreaPaid()}
+                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-60"
+                                                            >
+                                                                {isMarkingKoreaPaid ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                                Mark Paid
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}
@@ -6052,7 +6069,7 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between px-3 md:px-6 py-3 border-b border-slate-200 bg-slate-50/90">
                                 <button onClick={() => closeSaleForm()} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm">
                                     <ArrowRight className="w-4 h-4 rotate-180" />
-                                    {formReturnView === 'landing' ? 'Back to Menu' : formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
+                                    {formReturnView === 'invoices' ? 'Back to Invoices' : 'Back to Dashboard'}
                                 </button>
                                 <h2 className="text-lg font-semibold text-slate-900">{editingSale ? 'Edit Sale' : 'New Sale Entry'}</h2>
                                 <div className="flex items-center gap-2">
