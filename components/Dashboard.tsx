@@ -48,9 +48,21 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
+
+// Profiles with restricted tab access (profile name → allowed nav item IDs)
+// If a profile is NOT in this map, they get full access (subject to adminOnly checks)
+const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
+    'shyqa': new Set(['INVOICES', 'PDF']),
+};
+
+const getProfileAllowedTabs = (profile: string | null): Set<string> | null => {
+    if (!profile) return null;
+    const key = profile.toLowerCase();
+    return RESTRICTED_PROFILE_TABS[key] || null;
+};
 const MOBILE_LONG_PRESS_DURATION_MS = 2000;
 const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
