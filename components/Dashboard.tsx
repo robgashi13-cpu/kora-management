@@ -3330,6 +3330,53 @@ export default function Dashboard() {
         });
     };
 
+    const markBalanceDuePaid = async (saleIds: string[]) => {
+        if (saleIds.length === 0) return;
+        const currentSales = salesRef.current;
+        const newSales = [...currentSales];
+        const befores: CarSale[] = [];
+        const afters: CarSale[] = [];
+        for (const saleId of saleIds) {
+            const index = newSales.findIndex((s) => s.id === saleId);
+            if (index === -1) continue;
+            const before = newSales[index];
+            const balance = calculateBalance(before);
+            if (balance <= 0) continue;
+            befores.push(before);
+            // Fill remaining balance by adding to amountPaidByClient
+            const updated = {
+                ...before,
+                amountPaidByClient: (before.soldPrice || 0),
+                paidDateFromClient: new Date().toISOString().split('T')[0],
+            };
+            afters.push(updated);
+            newSales[index] = updated;
+            dirtyIds.current.add(saleId);
+        }
+        if (afters.length === 0) return;
+        const result = await updateSalesAndSave(newSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale_bulk',
+            entityId: saleIds.join(','),
+            beforeData: befores,
+            afterData: afters,
+            pageContext: 'balance_due',
+            metadata: { action: 'MARK_BALANCE_PAID' }
+        });
+        setBalanceDueSelectedIds(new Set());
+    };
+
+    const toggleBalanceDueSelection = useCallback((id: string) => {
+        setBalanceDueSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
