@@ -70,6 +70,21 @@ Deno.serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // Check app_config for a custom password stored via the profile editor
+    const profileKey = toPasswordKey(requestedProfileName);
+    let appConfigPassword: string | null = null;
+    if (profileKey) {
+      const { data: configRow } = await adminClient
+        .from("app_config")
+        .select("value")
+        .eq("key", `profile_password_${profileKey}`)
+        .maybeSingle();
+      const stored = (configRow?.value as Record<string, unknown> | null)?.password;
+      if (typeof stored === "string" && stored.length > 0) {
+        appConfigPassword = stored;
+      }
+    }
+
     // Look up profile
     let { data: profile, error: profileError } = await adminClient
       .from("profiles")
@@ -164,7 +179,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const profilePasswordForAuth = getProfilePassword(profile.profile_name || normalizedProfileName);
+    const profilePasswordForAuth = appConfigPassword ?? getProfilePassword(profile.profile_name || normalizedProfileName);
 
     // Protected profiles require password
     if (profilePasswordForAuth) {
