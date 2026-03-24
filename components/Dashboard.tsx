@@ -4552,10 +4552,10 @@ export default function Dashboard() {
                                 {/* Mobile Compact List View - Swipeable */}
                                 <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 no-scrollbar">
-                                        <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
-                                            <div className="flex items-center justify-between text-[11px] text-slate-600">
-                                                <span className="font-semibold text-slate-900">{activeCategory}</span>
-                                                <span>{filteredSales.length} cars</span>
+                                        <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl border-b border-slate-100 px-4 py-2.5 shadow-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[13px] font-bold text-slate-900">{activeCategory}</span>
+                                                <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}</span>
                                             </div>
                                         </div>
                                         {groupingEnabled ? (
@@ -4683,7 +4683,7 @@ export default function Dashboard() {
                                                                                         handleRemoveFromGroup(sale.id);
                                                                                     }
                                                                                 }}
-                                                                                className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
                                                                                 onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                 onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                 onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4701,54 +4701,44 @@ export default function Dashboard() {
                                                                                     WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                                     WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                                     WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                                    backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
+                                                                                    backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
                                                                                 }}
                                                                             >
                                                                                 {selectedIds.size > 0 && !isSoldSale && (
-                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                    <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                         {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                     </div>
                                                                                 )}
-
+                                                                                <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
+                                                                                    {(sale.brand || '?')[0].toUpperCase()}
+                                                                                </div>
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
-                                                                                        <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[11px] sm:text-[12px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                        <div className="min-w-0 flex-1">
+                                                                                            <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
                                                                                         </div>
-                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
-                                                                                                sale.status === 'Inspection' ? 'text-amber-700' :
-                                                                                                    'text-slate-500'
-                                                                                            }`}>{sale.status}</span>
+                                                                                        <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
                                                                                     </div>
-                                                                                    <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
-                                                                                        <span><span className="text-slate-400">Year/Km:</span> <span className="font-medium text-slate-700">{sale.year} • {(sale.km || 0).toLocaleString()} km</span></span>
-                                                                                        <span className="text-right"><span className="text-slate-400">Buyer:</span> <span className="font-medium text-slate-700">{sale.buyerName || 'N/A'}</span></span>
-                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span><span className="text-slate-400">Sold:</span> <span className="font-semibold text-slate-900"> €{(sale.soldPrice || 0).toLocaleString()}</span></span>
-                                                                                        ) : (
-                                                                                            <span className="text-slate-400">Price hidden</span>
-                                                                                        )}
-                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className={`text-right font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                {sale.isPaid ? 'Paid' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                            </span>
-                                                                                        ) : (
-                                                                                            <span className="text-right text-slate-400">-</span>
+                                                                                    <div className="mt-1.5 flex items-center justify-between">
+                                                                                        <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
+                                                                                        {(isAdmin || sale.soldBy === userProfile) && (
+                                                                                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                                                <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                                <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                                                    {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
+                                                                                                </span>
+                                                                                            </div>
                                                                                         )}
                                                                                     </div>
-                                                                                    <div className="mt-0.5 flex items-center justify-between text-[9px] sm:text-[10px] text-slate-500">
-                                                                                        <span>Sold by <span className="font-medium text-slate-700">{sale.soldBy}</span></span>
+                                                                                    <div className="mt-1 flex items-center justify-between">
+                                                                                        <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
                                                                                         {isAdmin && (
-                                                                                            <span className={`font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'Not Paid' : 'Paid'}
+                                                                                            <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
                                                                                             </span>
                                                                                         )}
                                                                                     </div>
-                                                                                    {groupingEnabled && sale.group && sale.status === 'Completed' && (
-                                                                                        <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
-                                                                                    )}
                                                                                 </div>
                                                                             </motion.div>
                                                                         </motion.div>
@@ -4836,7 +4826,7 @@ export default function Dashboard() {
                                                                                                 handleRemoveFromGroup(sale.id);
                                                                                             }
                                                                                         }}
-                                                                                        className={`mobile-car-row-compact flex items-center gap-1.5 sm:gap-2 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                        className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-colors ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
                                                                                         onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                                                         onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                                                         onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4854,44 +4844,44 @@ export default function Dashboard() {
                                                                                             WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                                             WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                                             WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                                            backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
+                                                                                            backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
                                                                                         }}
                                                                                     >
                                                                                         {selectedIds.size > 0 && !isSoldSale && (
-                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                                            <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                                                 {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                                             </div>
                                                                                         )}
+                                                                                        <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
+                                                                                            {(sale.brand || '?')[0].toUpperCase()}
+                                                                                        </div>
                                                                                         <div className="flex-1 min-w-0">
-                                                                                            <div className="flex justify-between items-start">
-                                                                                                <div className="font-bold text-slate-800 text-[13px] truncate pr-2">{sale.brand} {sale.model}</div>
-                                                                                                <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                                    (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
-                                                                                                        sale.status === 'Inspection' ? 'text-amber-700' :
-                                                                                                            'text-slate-500'
-                                                                                                    }`}>{sale.status}</span>
+                                                                                            <div className="flex justify-between items-start gap-2">
+                                                                                                <div className="min-w-0 flex-1">
+                                                                                                    <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                                                    <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
+                                                                                                </div>
+                                                                                                <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
                                                                                             </div>
-                                                                                            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-0.5">
-                                                                                                <span>{sale.year} • {(sale.km || 0).toLocaleString()} km</span>
-                                                                                                {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                                    <span className={`font-mono font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                                                                                                        {sale.isPaid ? 'Paid by Client' : `Due: €${calculateBalance(sale).toLocaleString()}`}
-                                                                                                    </span>
-                                                                                                ) : (
-                                                                                                    <span className="font-mono text-slate-400">-</span>
+                                                                                            <div className="mt-1.5 flex items-center justify-between">
+                                                                                                <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
+                                                                                                {(isAdmin || sale.soldBy === userProfile) && (
+                                                                                                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                                                        <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                                                        <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                                                            {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
+                                                                                                        </span>
+                                                                                                    </div>
                                                                                                 )}
                                                                                             </div>
-                                                                                            {isAdmin && (
-                                                                                                <div className="flex justify-end items-center text-[9px] mt-0.5 gap-1">
-                                                                                                    <span className="text-slate-400">Korea:</span>
-                                                                                                    <span className={`font-mono font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                                                                                        {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? `Due €${((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0)).toLocaleString()}` : 'Paid'}
+                                                                                            <div className="mt-1 flex items-center justify-between">
+                                                                                                <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
+                                                                                                {isAdmin && (
+                                                                                                    <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                                                                        Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
                                                                                                     </span>
-                                                                                                </div>
-                                                                                            )}
-                                                                                            {groupingEnabled && sale.group && sale.status === 'Completed' && (
-                                                                                                <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
-                                                                                            )}
+                                                                                                )}
+                                                                                            </div>
                                                                                         </div>
                                                                                     </motion.div>
                                                                                 </motion.div>
@@ -4950,7 +4940,7 @@ export default function Dashboard() {
                                                                     handleRemoveFromGroup(sale.id);
                                                                 }
                                                             }}
-                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-all ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''}`}
+                                                                                className={`mobile-car-row-compact flex items-center gap-2.5 relative z-10 transition-all ${isSoldSale ? 'cars-sold-row' : ''} ${!isSoldSale ? 'touch-swipe-only-row' : ''} ${sale.status === 'New' ? 'status-new' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Completed' ? 'status-completed' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}
                                                             onPointerDown={(event) => handleMobileRowPointerDown(sale, event)}
                                                             onPointerMove={(event) => handleMobileRowPointerMove(sale.id, event)}
                                                             onPointerUp={() => handleMobileRowPointerEnd(sale.id)}
@@ -4968,52 +4958,45 @@ export default function Dashboard() {
                                                                 WebkitUserSelect: isTouchInputMode ? 'none' : 'auto',
                                                                 WebkitTouchCallout: isTouchInputMode ? 'none' : 'default',
                                                                 WebkitTapHighlightColor: isTouchInputMode ? 'transparent' : undefined,
-                                                                backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f5f5f5' : '#ffffff'
+                                                                backgroundColor: selectedIds.has(sale.id) && !isSoldSale ? '#f8fafc' : '#ffffff'
                                                             }}
                                                         >
                                                             {selectedIds.size > 0 && !isSoldSale && (
-                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border flex items-center justify-center transition-all ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
+                                                                <div className={`w-5 h-5 min-w-[1.25rem] rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${selectedIds.has(sale.id) ? 'bg-slate-900 border-slate-900' : 'border-slate-300'}`}>
                                                                     {selectedIds.has(sale.id) && <CheckSquare className="w-3 h-3 text-white" />}
                                                                 </div>
                                                             )}
-
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex justify-between items-start gap-2">
-                                                                                        <div className="min-w-0">
-                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-tight">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
-                                                                                        </div>
-                                                                                        <span className={`status-badge text-[8px] whitespace-nowrap ${
-                                                                                            sale.status === 'Completed' ? 'status-completed' :
-                                                                                            sale.status === 'Shipped' ? 'status-shipped' :
-                                                                                            sale.status === 'Inspection' ? 'status-inspection' :
-                                                                                            sale.status === 'Autosallon' ? 'status-autosallon' :
-                                                                                            sale.status === 'Archived' ? 'status-archived' :
-                                                                                            'status-new'
-                                                                                        }`}>{sale.status}</span>
-                                                                                    </div>
-                                                                                    <div className="mt-1.5 flex items-center justify-between text-[10px] sm:text-[11px]">
-                                                                                        <div className="flex items-center gap-3">
-                                                                                            <span className="text-slate-500">{sale.buyerName || 'No buyer'}</span>
-                                                                                            {(isAdmin || sale.soldBy === userProfile) && (
-                                                                                                <span className="font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        {(isAdmin || sale.soldBy === userProfile) ? (
-                                                                                            <span className={`text-[10px] font-bold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-                                                                                                {sale.isPaid ? '✓ Paid' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : '-'}
-                                                                                            </span>
-                                                                                        ) : null}
-                                                                                    </div>
-                                                                                    <div className="mt-1 flex items-center justify-between text-[9px] text-slate-400">
-                                                                                        <span>by <span className="font-semibold text-slate-500">{sale.soldBy}</span></span>
-                                                                                        {isAdmin && (
-                                                                                            <span className={`font-bold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                                                                                                Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </div>
+                                                            <div className="w-9 h-9 min-w-[2.25rem] rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-base shrink-0">
+                                                                {(sale.brand || '?')[0].toUpperCase()}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start gap-2">
+                                                                    <div className="min-w-0 flex-1">
+                                                                        <div className="font-bold text-slate-900 text-[13px] leading-tight truncate">{sale.brand} {sale.model}</div>
+                                                                        <div className="text-[11px] text-slate-400 truncate mt-0.5">{sale.year} · {(sale.km || 0).toLocaleString()} km · {sale.plateNumber || 'No plate'}</div>
+                                                                    </div>
+                                                                    <span className={`status-badge shrink-0 ${sale.status === 'Completed' ? 'status-completed' : sale.status === 'In Progress' ? 'status-in-progress' : sale.status === 'Shipped' ? 'status-shipped' : sale.status === 'Inspection' ? 'status-inspection' : sale.status === 'Autosallon' ? 'status-autosallon' : sale.status === 'Archived' ? 'status-archived' : 'status-new'}`}>{sale.status}</span>
+                                                                </div>
+                                                                <div className="mt-1.5 flex items-center justify-between">
+                                                                    <span className="text-[11px] text-slate-500 truncate">{sale.buyerName || 'No buyer'}</span>
+                                                                    {(isAdmin || sale.soldBy === userProfile) && (
+                                                                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                                                                            <span className="text-[12px] font-bold text-slate-900">€{(sale.soldPrice || 0).toLocaleString()}</span>
+                                                                            <span className={`text-[10px] font-semibold ${sale.isPaid ? 'text-emerald-600' : calculateBalance(sale) > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+                                                                                {sale.isPaid ? '✓' : calculateBalance(sale) > 0 ? `Due €${calculateBalance(sale).toLocaleString()}` : ''}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="mt-1 flex items-center justify-between">
+                                                                    <span className="text-[10px] text-slate-400">by <span className="font-medium text-slate-500">{sale.soldBy}</span></span>
+                                                                    {isAdmin && (
+                                                                        <span className={`text-[10px] font-semibold ${(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                                                            Korea {(sale.costToBuy || 0) - (sale.amountPaidToKorea || 0) > 0 ? '⚠' : '✓'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </motion.div>
                                                     </motion.div>
                                                 );
@@ -6209,10 +6192,12 @@ export default function Dashboard() {
                                 key={item.id}
                                 type="button"
                                 onClick={() => setView(item.targetView)}
-                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
+                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active' : 'opacity-60'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
-                                <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+                                <span className="mobile-nav-icon">
+                                    <item.icon className="h-[18px] w-[18px]" />
+                                </span>
                                 <span>{item.label}</span>
                             </button>
                         );
