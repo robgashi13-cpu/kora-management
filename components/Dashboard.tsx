@@ -3587,12 +3587,17 @@ export default function Dashboard() {
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
-            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS');
+            const restrictedTabs = getProfileAllowedTabs(userProfile);
+            const mainNavItems = navItems.filter((item) => {
+                if (item.id === 'SETTINGS') return false;
+                if (restrictedTabs && !restrictedTabs.has(item.id)) return false;
+                return true;
+            });
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES'].includes(item.id));
             const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
-            const secondaryNavItems = navItems.filter((item) => item.id === 'SETTINGS');
+            const secondaryNavItems = restrictedTabs ? [] : navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
                 ...secondaryNavItems
