@@ -27,7 +27,7 @@ const sanitizeSecret = (value?: string | null) =>
   typeof value === "string" ? value.replace(/\r?\n/g, "").trim() : "";
 
 const ADMIN_PASSWORD = "Robertoo1396$";
-const SHYQA_PASSWORD = sanitizeSecret(Deno.env.get("SHYQA_PASSWORD")) || "12345";
+const SHYQA_PASSWORD = "12345";
 
 const toPasswordKey = (profileName: string) =>
   profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
