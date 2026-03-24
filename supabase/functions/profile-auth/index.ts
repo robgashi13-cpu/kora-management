@@ -23,11 +23,10 @@ const toEmailSlug = (profileName: string) =>
 const buildProfileEmail = (profileName: string) =>
   `${toEmailSlug(profileName)}@kora-profiles.local`;
 
-const sanitizeSecret = (value?: string | null) =>
-  typeof value === "string" ? value.replace(/\r?\n/g, "").trim() : "";
-
+// Robert's password is authoritative here — never read from env vars so
+// a stale secret in Supabase cannot override the correct value.
 const ADMIN_PASSWORD = "Robertoo1396$";
-const SHYQA_PASSWORD = sanitizeSecret(Deno.env.get("SHYQA_PASSWORD")) || "12345";
+const SHYQA_PASSWORD = "12345";
 
 const toPasswordKey = (profileName: string) =>
   profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -45,6 +44,62 @@ const getProfilePassword = (profileName: string) => {
   if (key === "shyqa" || key === "shqya") return SHYQA_PASSWORD;
   return null;
 };
+
+/**
+ * Resolve an auth user ID for a given email.
+ * 1. Try signing in (fast path — user exists with correct password).
+ * 2. Try creating the user (first-time path).
+ * 3. If creation fails because the email is already taken, find the
+ *    existing user via the admin list API and reset their password so
+ *    subsequent sign-ins use the correct credential.
+ */
+async function resolveAuthUserId(
+  adminClient: ReturnType<typeof createClient>,
+  anonClient: ReturnType<typeof createClient>,
+  email: string,
+  password: string,
+  profileName: string,
+): Promise<string | null> {
+  // 1. Fast path: try signing in with the expected password.
+  const { data: signInData } = await anonClient.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (signInData.session?.user?.id) {
+    return signInData.session.user.id;
+  }
+
+  // 2. Try creating a fresh auth user.
+  const { data: createdUser } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { profile: profileName, profile_name: profileName },
+    app_metadata: { profile: profileName, role: "authenticated" },
+  });
+  if (createdUser?.user?.id) {
+    return createdUser.user.id;
+  }
+
+  // 3. User exists but has a stale/different password (e.g. from an old
+  //    deployment).  Find them by email and reset their password so the
+  //    rest of the flow can proceed.
+  const { data: listData } = await adminClient.auth.admin.listUsers({
+    perPage: 1000,
+  });
+  const existingUser = (listData?.users ?? []).find(
+    (u: { email?: string }) => u.email === email,
+  );
+  if (existingUser?.id) {
+    await adminClient.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+    });
+    return existingUser.id;
+  }
+
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -94,38 +149,20 @@ Deno.serve(async (req) => {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      const { data: provisionalSignIn } = await anonClient.auth.signInWithPassword({
-        email: provisionalEmail,
-        password: provisionalPassword,
-      });
-
-      let profileId = provisionalSignIn.session?.user?.id;
+      const profileId = await resolveAuthUserId(
+        adminClient,
+        anonClient,
+        provisionalEmail,
+        provisionalPassword,
+        normalizedProfileName,
+      );
 
       if (!profileId) {
-        const { data: createdUser, error: createUserError } =
-          await adminClient.auth.admin.createUser({
-            email: provisionalEmail,
-            password: provisionalPassword,
-            email_confirm: true,
-            user_metadata: {
-              profile: normalizedProfileName,
-              profile_name: normalizedProfileName,
-            },
-            app_metadata: {
-              profile: normalizedProfileName,
-              role: "authenticated",
-            },
-          });
-
-        if (createUserError || !createdUser.user) {
-          console.error("Failed to create auth user for profile:", createUserError);
-          return new Response(
-            JSON.stringify({ error: "Profile provisioning failed" }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        profileId = createdUser.user.id;
+        console.error("Failed to create or find auth user for profile:", normalizedProfileName);
+        return new Response(
+          JSON.stringify({ error: "Profile provisioning failed" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       const { error: insertProfileError } = await adminClient
@@ -191,8 +228,7 @@ Deno.serve(async (req) => {
 
     const signInPassword = profilePasswordForAuth || getInternalPassword(email);
 
-    // Ensure the user has the correct password set
-    // (first-time setup or password sync)
+    // Ensure the auth user has the correct password (syncs after any password change).
     const { error: updateError } = await adminClient.auth.admin.updateUserById(
       profile.id,
       { password: signInPassword, email_confirm: true }
