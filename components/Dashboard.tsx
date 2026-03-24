@@ -58,6 +58,14 @@ const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
     'shyqa': new Set(['INVOICES', 'PDF']),
 };
 
+// Profiles that can VIEW all sales (from all sellers) on their allowed tabs
+const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa']);
+
+const isFullSalesViewer = (profile: string | null): boolean => {
+    if (!profile) return false;
+    return FULL_SALES_VIEWER_PROFILES.has(profile.toLowerCase());
+};
+
 const getProfileAllowedTabs = (profile: string | null): Set<string> | null => {
     if (!profile) return null;
     const key = profile.toLowerCase();
@@ -3128,6 +3136,7 @@ export default function Dashboard() {
 
     const canAccessSale = useCallback((sale: CarSale) => {
         if (isAdmin) return true;
+        if (isFullSalesViewer(userProfile)) return true;
         const normalizedUser = normalizeProfileName(userProfile);
         const normalizedSoldBy = normalizeProfileName(sale.soldBy);
         const normalizedSellerName = normalizeProfileName(sale.sellerName);

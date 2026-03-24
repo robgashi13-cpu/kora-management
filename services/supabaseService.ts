@@ -19,9 +19,12 @@ const encodeStorageKey = (value: string) => {
     return Buffer.from(value, 'utf-8').toString('base64');
 };
 
+const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa']);
+
 const canAccessSale = (sale: CarSale, profile: string) => {
     if (isAdminProfile(profile)) return true;
     const normalizedProfile = normalizeProfileName(profile);
+    if (FULL_SALES_VIEWER_PROFILES.has(normalizedProfile.toLowerCase())) return true;
     return normalizeProfileName(sale.soldBy) === normalizedProfile || normalizeProfileName(sale.sellerName) === normalizedProfile;
 };
 
