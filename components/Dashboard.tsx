@@ -3618,7 +3618,7 @@ export default function Dashboard() {
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
                                     <button key={p} onClick={async () => {
-                                        if (p === ADMIN_PROFILE && userProfile !== p) {
+                                        if ((p === ADMIN_PROFILE || p === SHYQA_PROFILE) && userProfile !== p) {
                                             setPendingProfile(p);
                                             setPasswordInput('');
                                             setIsPasswordVisible(false);
@@ -5968,7 +5968,7 @@ export default function Dashboard() {
                             className="bg-white border border-slate-200 p-6 rounded-2xl w-full max-w-sm shadow-xl"
                             onClick={e => e.stopPropagation()}
                         >
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {ADMIN_PROFILE} Password</h3>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Enter {pendingProfile || ADMIN_PROFILE} Password</h3>
                             <div className="relative mb-6">
                                 <input
                                     type={isPasswordVisible ? 'text' : 'password'}
