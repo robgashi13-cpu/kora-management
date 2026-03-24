@@ -65,7 +65,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         } finally {
             setIsGeneratingPreview(false);
         }
-    }, [sale]);
+    }, [sale, onInvoiceCreated]);
 
     useEffect(() => {
         if (!isOpen) {

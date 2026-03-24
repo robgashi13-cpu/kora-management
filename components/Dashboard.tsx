@@ -462,7 +462,7 @@ type NavItem = {
 const navItems: NavItem[] = [
     { id: 'SALES', label: 'Sales', icon: Clipboard, view: 'dashboard', category: 'SALES' },
     { id: 'INVOICES', label: 'Invoice', icon: FileText, view: 'invoices', category: 'SALES' },
-    { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED' },
+    { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
@@ -619,7 +619,7 @@ export default function Dashboard() {
         if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due' || view === 'pdf_templates') {
             setView('dashboard');
         }
-        if (activeCategory === 'AUTOSALLON') {
+        if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
             setActiveCategory('SALES');
         }
     }, [isAdmin, view, activeCategory]);
@@ -3123,6 +3123,7 @@ export default function Dashboard() {
             if (['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
         } else {
             if (activeCategory === 'SHIPPED') {
+                if (!isAdmin) return false;
                 if (s.status !== 'Shipped') return false;
             }
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
