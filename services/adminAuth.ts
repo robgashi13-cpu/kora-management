@@ -1,5 +1,19 @@
 import { cloudClient } from './cloudAuth';
 
+export const changeProfilePassword = async (profileName: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+  const key = profileName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const { error } = await cloudClient
+    .from('app_config')
+    .upsert({
+      key: `profile_password_${key}`,
+      value: { password: newPassword },
+      updated_at: new Date().toISOString(),
+      updated_by: profileName,
+    }, { onConflict: 'key' });
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+};
+
 type AuthSuccessPayload = { session: any; profile: any };
 type AuthAttemptResult = {
   data: AuthSuccessPayload | null;
