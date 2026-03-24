@@ -2201,7 +2201,18 @@ export default function Dashboard() {
                 }
                 if (storedProfile) {
                     setUserProfile(storedProfile);
-                    setView('landing');
+                    const restricted = getProfileAllowedTabs(storedProfile);
+                    if (restricted) {
+                        const firstTab = navItems.find(n => restricted.has(n.id));
+                        if (firstTab) {
+                            setView(firstTab.view);
+                            if (firstTab.category) setActiveCategory(firstTab.category as any);
+                        } else {
+                            setView('invoices');
+                        }
+                    } else {
+                        setView('landing');
+                    }
                     localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
                 if (storedProfile && !shouldRemember) {
