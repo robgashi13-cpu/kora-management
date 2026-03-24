@@ -3467,12 +3467,24 @@ export default function Dashboard() {
                 className="contents"
             >
                 <ProfileSelector
-                    profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
+                    profiles={ALLOWED_PROFILES.map(p => ({ name: p, archived: false }))}
                     onSelect={(p, remember) => {
                         const normalizedProfile = normalizeProfileName(p);
                         if (!normalizedProfile) return;
                         setUserProfile(normalizedProfile);
-                        setView('landing');
+                        // Restricted profiles skip landing and go to first allowed tab
+                        const restricted = getProfileAllowedTabs(normalizedProfile);
+                        if (restricted) {
+                            const firstTab = navItems.find(n => restricted.has(n.id));
+                            if (firstTab) {
+                                setView(firstTab.view);
+                                if (firstTab.category) setActiveCategory(firstTab.category as any);
+                            } else {
+                                setView('invoices');
+                            }
+                        } else {
+                            setView('landing');
+                        }
                         setRememberProfile(remember);
                         persistUserProfile(normalizedProfile, remember);
                     }}
