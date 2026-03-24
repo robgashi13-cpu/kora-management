@@ -6030,7 +6030,8 @@ export default function Dashboard() {
                                 <span>{item.label}</span>
                             </button>
                         );
-                    })}
+                    });
+                    })()}
                 </nav>
             )}
 
