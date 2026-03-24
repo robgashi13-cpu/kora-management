@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Plus, Lock, Eye, EyeOff, Pencil, Trash2, X, Camera, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cloudClient } from '@/services/cloudAuth';
+import { lovable } from '@/src/integrations/lovable/index';
 
 type ProfileEntry = {
     name: string;
@@ -330,17 +331,44 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     </div>
                 </div>
 
-                <div className="mt-10 flex items-center gap-3 rounded-full border border-slate-100 bg-white/80 px-5 py-2.5 text-sm text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                    <input
-                        id="remember-profile"
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 accent-slate-900"
-                    />
-                    <label htmlFor="remember-profile" className="font-semibold cursor-pointer">
-                        Remember me on this device
-                    </label>
+                <div className="mt-10 flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-3 rounded-full border border-slate-100 bg-white/80 px-5 py-2.5 text-sm text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                        <input
+                            id="remember-profile"
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            className="h-4 w-4 accent-slate-900"
+                        />
+                        <label htmlFor="remember-profile" className="font-semibold cursor-pointer">
+                            Remember me on this device
+                        </label>
+                    </div>
+
+                    <div className="h-px w-48 bg-slate-200" />
+                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">or sign in with</p>
+
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={async () => {
+                            setIsAuthLoading(true);
+                            setAuthError(null);
+                            const { error } = await lovable.auth.signInWithOAuth('apple', {
+                                redirect_uri: window.location.origin,
+                            });
+                            if (error) {
+                                setAuthError(error.message || 'Apple Sign-In failed');
+                            }
+                            setIsAuthLoading(false);
+                        }}
+                        className="flex items-center gap-3 bg-black text-white rounded-xl px-6 py-3 text-sm font-semibold shadow-lg hover:bg-slate-900 transition-all"
+                    >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.53-3.23 0-1.44.62-2.2.44-3.06-.4C3.79 16.17 4.36 9.02 9.09 8.72c1.31.07 2.23.76 2.99.79 1.14-.23 2.23-.89 3.45-.81 1.46.13 2.56.73 3.27 1.81-2.99 1.79-2.28 5.72.47 6.81-.56 1.46-1.28 2.89-2.22 3.96zM12.05 8.62c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        Sign in with Apple
+                    </motion.button>
                 </div>
 
                 {/* Admin Password Modal */}

@@ -516,6 +516,7 @@ export default function Dashboard() {
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
+    const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
     const hasSyncedTransportPaidRef = useRef(false);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
@@ -3329,6 +3330,53 @@ export default function Dashboard() {
         });
     };
 
+    const markBalanceDuePaid = async (saleIds: string[]) => {
+        if (saleIds.length === 0) return;
+        const currentSales = salesRef.current;
+        const newSales = [...currentSales];
+        const befores: CarSale[] = [];
+        const afters: CarSale[] = [];
+        for (const saleId of saleIds) {
+            const index = newSales.findIndex((s) => s.id === saleId);
+            if (index === -1) continue;
+            const before = newSales[index];
+            const balance = calculateBalance(before);
+            if (balance <= 0) continue;
+            befores.push(before);
+            // Fill remaining balance by adding to amountPaidByClient
+            const updated = {
+                ...before,
+                amountPaidByClient: (before.soldPrice || 0),
+                paidDateFromClient: new Date().toISOString().split('T')[0],
+            };
+            afters.push(updated);
+            newSales[index] = updated;
+            dirtyIds.current.add(saleId);
+        }
+        if (afters.length === 0) return;
+        const result = await updateSalesAndSave(newSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale_bulk',
+            entityId: saleIds.join(','),
+            beforeData: befores,
+            afterData: afters,
+            pageContext: 'balance_due',
+            metadata: { action: 'MARK_BALANCE_PAID' }
+        });
+        setBalanceDueSelectedIds(new Set());
+    };
+
+    const toggleBalanceDueSelection = useCallback((id: string) => {
+        setBalanceDueSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
     const updateTransportField = async (saleId: string, field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
         const currentSales = salesRef.current;
         const index = currentSales.findIndex((sale) => sale.id === saleId);
@@ -5192,47 +5240,95 @@ export default function Dashboard() {
                                                 <select value={balanceDueSort} onChange={(e) => setBalanceDueSort(e.target.value as 'desc' | 'asc')} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="desc">Highest balance first</option><option value="asc">Lowest balance first</option></select>
                                             </div>
 
+                                            {/* Multi-select action bar */}
+                                            <div className="mb-3 flex flex-wrap items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0) {
+                                                            setBalanceDueSelectedIds(new Set());
+                                                        } else {
+                                                            setBalanceDueSelectedIds(new Set(balanceDueRows.map(r => r.sale.id)));
+                                                        }
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition-all"
+                                                >
+                                                    {balanceDueSelectedIds.size === balanceDueRows.length && balanceDueRows.length > 0 ? 'Deselect all' : 'Select all'}
+                                                </button>
+                                                {balanceDueSelectedIds.size > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (!confirm(`Mark ${balanceDueSelectedIds.size} sale(s) as fully paid?`)) return;
+                                                            void markBalanceDuePaid(Array.from(balanceDueSelectedIds));
+                                                        }}
+                                                        className="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1.5 shadow-sm"
+                                                    >
+                                                        <Check className="w-3.5 h-3.5" />
+                                                        PAID ({balanceDueSelectedIds.size})
+                                                    </button>
+                                                )}
+                                                {balanceDueSelectedIds.size > 0 && (
+                                                    <span className="text-xs text-slate-500 font-semibold">
+                                                        €{balanceDueRows.filter(r => balanceDueSelectedIds.has(r.sale.id)).reduce((sum, r) => sum + calculateBalance(r.sale), 0).toLocaleString()} selected
+                                                    </span>
+                                                )}
+                                            </div>
+
                                             {balanceDueRows.length === 0 ? (
                                                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">No outstanding balances.</div>
                                             ) : (
                                                 <div className="rounded-2xl border border-slate-200 overflow-hidden">
-                                                    <div className="hidden md:grid grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
-                                                        <div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
+                                                    <div className="hidden md:grid grid-cols-[32px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
+                                                        <div></div><div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                                     </div>
                                                     <div className="divide-y divide-slate-100 hidden md:block">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                            <button
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
+                                                            const isSelected = balanceDueSelectedIds.has(sale.id);
+                                                            return (
+                                                            <div
                                                                 key={`${scopeStatus}-${sale.id}`}
-                                                                type="button"
                                                                 data-list-row="true"
-                                                                onClick={() => handleSaleInteraction(sale)}
-                                                                className="grid w-full grid-cols-[1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
+                                                                onClick={() => toggleBalanceDueSelection(sale.id)}
+                                                                className={`grid w-full cursor-pointer grid-cols-[32px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm transition-colors ${isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                                                             >
-                                                                <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{sale.brand} {sale.model}</div>
+                                                                <div className="flex items-center justify-center">
+                                                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'}`}>
+                                                                        {isSelected && <Check className="w-3 h-3" />}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
                                                                 <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
                                                                 <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                 <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
                                                                 <div className="text-slate-600">{sale.shippingDate || '-'}</div>
                                                                 <div className="text-slate-600">{sale.paidDateFromClient || '-'}</div>
-                                                            </button>
-                                                        ))}
+                                                            </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                     <div className="divide-y divide-slate-100 md:hidden">
-                                                        {balanceDueRows.map(({ sale, scopeStatus }) => (
-                                                            <button
+                                                        {balanceDueRows.map(({ sale, scopeStatus }) => {
+                                                            const isSelected = balanceDueSelectedIds.has(sale.id);
+                                                            return (
+                                                            <div
                                                                 key={`${scopeStatus}-${sale.id}`}
-                                                                type="button"
-                                                                onClick={() => handleSaleInteraction(sale)}
-                                                                className="w-full px-3 py-3 text-left hover:bg-slate-50 transition-colors"
+                                                                onClick={() => toggleBalanceDueSelection(sale.id)}
+                                                                className={`w-full px-3 py-3 text-left cursor-pointer transition-colors ${isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}
                                                             >
                                                                 <div className="flex items-start justify-between gap-2">
-                                                                    <div className="min-w-0">
-                                                                        <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
-                                                                        <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                    <div className="flex items-start gap-2.5 min-w-0">
+                                                                        <div className={`mt-0.5 shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300'}`}>
+                                                                            {isSelected && <Check className="w-3 h-3" />}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                            <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
+                                                                        </div>
                                                                     </div>
                                                                     <span className={`shrink-0 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${scopeStatus === 'sold' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>{scopeStatus}</span>
                                                                 </div>
-                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500">
+                                                                <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-slate-500 ml-6.5">
                                                                     <div className="min-w-0">
                                                                         <p className="font-semibold uppercase tracking-wide text-slate-400">Balance Due</p>
                                                                         <p className="text-base font-black text-red-600">€{calculateBalance(sale).toLocaleString()}</p>
@@ -5243,8 +5339,9 @@ export default function Dashboard() {
                                                                         <p className="overflow-wrap-anywhere">Sale: {sale.paidDateFromClient || '-'}</p>
                                                                     </div>
                                                                 </div>
-                                                            </button>
-                                                        ))}
+                                                            </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             )}

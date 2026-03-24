@@ -20,6 +20,7 @@
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/share": "^8.0.0",
     "@google/generative-ai": "^0.24.1",
+    "@lovable.dev/cloud-auth-js": "^0.0.4",
     "@supabase/supabase-js": "^2.87.1",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "clsx": "^2.1.1",
@@ -39,14 +40,14 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
+    "@playwright/test": "^1.54.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "@playwright/test": "^1.54.2"
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=20.9.0"
