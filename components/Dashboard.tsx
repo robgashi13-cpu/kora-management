@@ -48,9 +48,21 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT'];
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
+
+// Profiles with restricted tab access (profile name → allowed nav item IDs)
+// If a profile is NOT in this map, they get full access (subject to adminOnly checks)
+const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
+    'shyqa': new Set(['INVOICES', 'PDF']),
+};
+
+const getProfileAllowedTabs = (profile: string | null): Set<string> | null => {
+    if (!profile) return null;
+    const key = profile.toLowerCase();
+    return RESTRICTED_PROFILE_TABS[key] || null;
+};
 const MOBILE_LONG_PRESS_DURATION_MS = 2000;
 const MOBILE_LONG_PRESS_MOVE_THRESHOLD = 10;
 
@@ -2189,7 +2201,18 @@ export default function Dashboard() {
                 }
                 if (storedProfile) {
                     setUserProfile(storedProfile);
-                    setView('landing');
+                    const restricted = getProfileAllowedTabs(storedProfile);
+                    if (restricted) {
+                        const firstTab = navItems.find(n => restricted.has(n.id));
+                        if (firstTab) {
+                            setView(firstTab.view);
+                            if (firstTab.category) setActiveCategory(firstTab.category as any);
+                        } else {
+                            setView('invoices');
+                        }
+                    } else {
+                        setView('landing');
+                    }
                     localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
                 if (storedProfile && !shouldRemember) {
@@ -3455,12 +3478,24 @@ export default function Dashboard() {
                 className="contents"
             >
                 <ProfileSelector
-                    profiles={profileOptions.map(p => ({ name: p.label, archived: false }))}
+                    profiles={ALLOWED_PROFILES.map(p => ({ name: p, archived: false }))}
                     onSelect={(p, remember) => {
                         const normalizedProfile = normalizeProfileName(p);
                         if (!normalizedProfile) return;
                         setUserProfile(normalizedProfile);
-                        setView('landing');
+                        // Restricted profiles skip landing and go to first allowed tab
+                        const restricted = getProfileAllowedTabs(normalizedProfile);
+                        if (restricted) {
+                            const firstTab = navItems.find(n => restricted.has(n.id));
+                            if (firstTab) {
+                                setView(firstTab.view);
+                                if (firstTab.category) setActiveCategory(firstTab.category as any);
+                            } else {
+                                setView('invoices');
+                            }
+                        } else {
+                            setView('landing');
+                        }
                         setRememberProfile(remember);
                         persistUserProfile(normalizedProfile, remember);
                     }}
@@ -3575,12 +3610,17 @@ export default function Dashboard() {
         (() => {
             const activeCustomDashboardItems = customDashboards.filter((dashboard) => !dashboard.archived);
             const archivedCustomDashboardItems = customDashboards.filter((dashboard) => dashboard.archived);
-            const mainNavItems = navItems.filter((item) => item.id !== 'SETTINGS');
+            const restrictedTabs = getProfileAllowedTabs(userProfile);
+            const mainNavItems = navItems.filter((item) => {
+                if (item.id === 'SETTINGS') return false;
+                if (restrictedTabs && !restrictedTabs.has(item.id)) return false;
+                return true;
+            });
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES'].includes(item.id));
             const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
-            const secondaryNavItems = navItems.filter((item) => item.id === 'SETTINGS');
+            const secondaryNavItems = restrictedTabs ? [] : navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
                 ...activeCustomDashboardItems.map<NavItem>((d) => ({ id: d.id, label: d.name, icon: FolderPlus, view: 'custom_dashboard' })),
                 ...secondaryNavItems
@@ -5991,12 +6031,15 @@ export default function Dashboard() {
             }
             {view !== 'sale_form' && (
                 <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
-                    {[
-                        { id: 'dashboard', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
-                        { id: 'invoices', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
-                        { id: 'pdf', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
-                        { id: 'balance_due', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
-                    ].map((item) => {
+                    {(() => {
+                        const restrictedTabs = getProfileAllowedTabs(userProfile);
+                        const mobileNavItems = [
+                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
+                            { id: 'invoices', navId: 'INVOICES', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
+                            { id: 'pdf', navId: 'PDF', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
+                            { id: 'balance_due', navId: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
+                        ].filter(item => !restrictedTabs || restrictedTabs.has(item.navId));
+                        return mobileNavItems.map((item) => {
                         const isActive = view === item.targetView;
                         return (
                             <button
@@ -6010,7 +6053,8 @@ export default function Dashboard() {
                                 <span>{item.label}</span>
                             </button>
                         );
-                    })}
+                    });
+                    })()}
                 </nav>
             )}
 
