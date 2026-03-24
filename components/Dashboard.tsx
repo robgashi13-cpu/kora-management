@@ -5306,7 +5306,6 @@ export default function Dashboard() {
                                                             </div>
                                                             );
                                                         })}
-                                                        ))}
                                                     </div>
                                                     <div className="divide-y divide-slate-100 md:hidden">
                                                         {balanceDueRows.map(({ sale, scopeStatus }) => (
