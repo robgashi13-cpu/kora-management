@@ -110,7 +110,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
         }
     };
 
-    const confirmPassword = async () => {
+    const handleConfirmPassword = async () => {
         if (adminAction === 'select' && pendingProfile) {
             const success = await signInProfile(pendingProfile, password);
             if (!success) return;
@@ -407,7 +407,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                     value={password}
                                     onChange={e => { setPassword(e.target.value); setAuthError(null); }}
                                     className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-center text-xl focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 outline-none text-slate-700 pr-12"
-                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && confirmPassword()}
+                                    onKeyDown={e => e.key === 'Enter' && !isAuthLoading && handleConfirmPassword()}
                                     disabled={isAuthLoading}
                                 />
                                 <button
@@ -428,7 +428,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                                 Remember me on this device
                             </label>
 
-                            <button onClick={confirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
+                            <button onClick={handleConfirmPassword} disabled={isAuthLoading} className="w-full py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2">
                                 {isAuthLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {isAuthLoading ? 'Signing in...' : 'Login'}
                             </button>
