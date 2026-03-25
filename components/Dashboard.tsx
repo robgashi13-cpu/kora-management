@@ -5745,9 +5745,21 @@ export default function Dashboard() {
                                                                 <Check className="w-3 h-3" /> Mark All Done
                                                             </button>
                                                         )}
-                                                        <button type="button" onClick={handleAccountantPdfDownload} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold active:scale-95 transition-all">
-                                                            <Download className="w-3 h-3" /> Download PDF
-                                                        </button>
+                                                        <div ref={pdfOptionsRef} className="relative">
+                                                            <button type="button" onClick={() => setShowPdfOptions(!showPdfOptions)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold active:scale-95 transition-all">
+                                                                <Download className="w-3 h-3" /> Download PDF <ChevronDown className={`w-3 h-3 transition-transform ${showPdfOptions ? 'rotate-180' : ''}`} />
+                                                            </button>
+                                                            {showPdfOptions && (
+                                                                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[180px]">
+                                                                    <button type="button" onClick={() => generateAccountantPdf('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
+                                                                        <Download className="w-3 h-3 text-slate-500" /> All Cars (Complete)
+                                                                    </button>
+                                                                    <button type="button" onClick={() => generateAccountantPdf('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100">
+                                                                        <Download className="w-3 h-3 text-blue-500" /> Only Ship & New
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 {/* Sales (New) on top — not grouped by month */}
