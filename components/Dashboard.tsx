@@ -5613,13 +5613,26 @@ export default function Dashboard() {
                                             const w = window.open(url, '_blank');
                                             if (w) { setTimeout(() => { w.print(); }, 600); }
                                         };
+                                        const handleMarkAllDone = () => {
+                                            const shippedCars = allSalesForAccountant.filter(s => s.status === 'Shipped' || s.status === 'In Progress');
+                                            if (shippedCars.length === 0) return;
+                                            if (!confirm(`Mark ${shippedCars.length} car(s) as Completed?`)) return;
+                                            shippedCars.forEach(s => handleInlineUpdate(s.id, 'status', 'Completed'));
+                                        };
                                         return (
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex items-center justify-between gap-2 flex-wrap">
                                                     <p className="text-[10px] text-slate-500">All sales by month — Shipping & Completed</p>
-                                                    <button type="button" onClick={handleAccountantPdfDownload} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold active:scale-95 transition-all">
-                                                        <Download className="w-3 h-3" /> Download PDF
-                                                    </button>
+                                                    <div className="flex items-center gap-1.5">
+                                                        {allSalesForAccountant.some(s => s.status === 'Shipped' || s.status === 'In Progress') && (
+                                                            <button type="button" onClick={handleMarkAllDone} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold active:scale-95 transition-all">
+                                                                <Check className="w-3 h-3" /> Mark All Done
+                                                            </button>
+                                                        )}
+                                                        <button type="button" onClick={handleAccountantPdfDownload} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold active:scale-95 transition-all">
+                                                            <Download className="w-3 h-3" /> Download PDF
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 {sortedMonths.length === 0 ? (
                                                     <div className="text-center text-slate-400 py-16 text-sm">No sales data</div>
