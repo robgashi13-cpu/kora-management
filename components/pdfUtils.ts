@@ -223,8 +223,8 @@ export const generateImageBlobFromElement = async ({
   const html2canvas = (await import('html2canvas')).default;
 
   const rect = element.getBoundingClientRect();
-  const width = Math.max(Math.ceil(rect.width), element.scrollWidth, element.offsetWidth, 1);
-  const height = Math.max(Math.ceil(rect.height), element.scrollHeight, element.offsetHeight, 1);
+  const width = Math.max(Math.ceil(rect.width), 1);
+  const height = Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
   const canvas = await html2canvas(element, {
     scale: 2,
@@ -234,8 +234,6 @@ export const generateImageBlobFromElement = async ({
     imageTimeout: 10000,
     width,
     height,
-    windowWidth: width,
-    windowHeight: height,
     onclone: (clonedDoc: Document) => {
       sanitizePdfCloneStyles(clonedDoc);
       normalizePdfLayout(clonedDoc);
@@ -421,8 +419,8 @@ export const generatePdf = async ({
     const { jsPDF } = await import('jspdf');
 
     const rect = element.getBoundingClientRect();
-    const width = Math.max(Math.ceil(rect.width), element.scrollWidth, element.offsetWidth, 1);
-    const height = Math.max(Math.ceil(rect.height), element.scrollHeight, element.offsetHeight, 1);
+    const width = Math.max(Math.ceil(rect.width), 1);
+    const height = Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -432,8 +430,6 @@ export const generatePdf = async ({
       imageTimeout: 10000,
       width,
       height,
-      windowWidth: width,
-      windowHeight: height,
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
