@@ -280,6 +280,8 @@ type PdfGenerationOptions = {
   onClone?: (clonedDoc: Document) => void;
   pagebreakMode?: Array<'css' | 'legacy' | 'avoid-all' | 'avoid'>;
   editableText?: boolean;
+  /** When true, captures only the actual content height — no forced A4 min-height, avoids blank trailing pages */
+  compact?: boolean;
 };
 
 export const generatePdf = async ({
@@ -287,7 +289,8 @@ export const generatePdf = async ({
   filename,
   onClone,
   pagebreakMode,
-  editableText = true
+  editableText = true,
+  compact = false
 }: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
   await waitForImages(element);
   const editableFieldData = editableText === false ? null : collectPdfTextFields(element);
@@ -310,7 +313,8 @@ export const generatePdf = async ({
     element.offsetHeight || 0,
     Math.round(rect.height || 0)
   );
-  const renderHeight = Math.max(fallbackHeightPx, fullHeight);
+  // In compact mode, use actual content height (don't force A4 minimum)
+  const renderHeight = compact ? (fullHeight || fallbackHeightPx) : Math.max(fallbackHeightPx, fullHeight);
 
   // @ts-ignore
   const html2pdf = (await import('html2pdf.js')).default;
@@ -337,6 +341,13 @@ export const generatePdf = async ({
           el.style.maxHeight = 'none';
           el.style.height = 'auto';
         });
+        // In compact mode, strip minHeight so content doesn't create blank trailing pages
+        if (compact) {
+          clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, .invoice-root, #invoice-content').forEach((el) => {
+            el.style.minHeight = '0';
+            el.style.height = 'auto';
+          });
+        }
         onClone?.(clonedDoc);
       }
     },
