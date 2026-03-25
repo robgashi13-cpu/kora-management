@@ -4919,6 +4919,24 @@ export default function Dashboard() {
                                                                                 )}
 
                                                                                 <div className="flex-1 min-w-0">
+                                                                                    {sale.status === 'Inspection' ? (
+                                                                                        <>
+                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
+                                                                                            {sale.notes && sale.notes.startsWith('Link: ') && (
+                                                                                                <a
+                                                                                                    href={sale.notes.replace('Link: ', '')}
+                                                                                                    target="_blank"
+                                                                                                    rel="noopener noreferrer"
+                                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                                    className="text-[10px] text-blue-600 hover:text-blue-800 underline truncate block mt-0.5"
+                                                                                                >
+                                                                                                    {sale.notes.replace('Link: ', '')}
+                                                                                                </a>
+                                                                                            )}
+                                                                                        </>
+                                                                                    ) : (
+                                                                                    <>
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
                                                                                             <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
@@ -4926,7 +4944,6 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-600 bg-slate-100' :
-                                                                                                sale.status === 'Inspection' ? 'text-amber-700 bg-amber-50' :
                                                                                                     'text-slate-400 bg-slate-50'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
@@ -4956,6 +4973,8 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                     {groupingEnabled && sale.group && sale.status === 'Completed' && (
                                                                                         <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
+                                                                                    )}
+                                                                                    </>
                                                                                     )}
                                                                                 </div>
                                                                             </motion.div>
