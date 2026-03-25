@@ -4799,6 +4799,7 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                 </div>
+                                )}
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
                                 <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
