@@ -4291,22 +4291,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                     </div>
-
-                    {/* Mobile Search - Visible only on mobile */}
-                    <div className={`mt-3 ${forceMobileLayout ? '' : 'md:hidden'}`}>
-                        <div className="relative group">
-                            <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                            <input
-                                placeholder="Search sales..."
-                                aria-label="Search sales"
-                                className={`ui-control w-full rounded-xl pl-11 pr-4 py-2.5 text-sm border transition-all outline-none ${theme === 'dark'
-                                    ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
-                                    : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
                 </header>
                 )}
 
