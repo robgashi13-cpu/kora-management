@@ -165,9 +165,9 @@ button.ui-control {
 }
 
 .premium-card {
-  border-radius: 1rem;
-  border: 1px solid hsl(220 14% 90%);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
+  border-radius: 1.125rem;
+  border: 1px solid hsl(220 16% 92%);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04), 0 16px 40px -8px rgba(15, 23, 42, 0.06);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -329,19 +329,24 @@ button.ui-control {
 }
 
 .mobile-car-row-compact {
-  min-height: 44px;
-  padding: 0.5rem 0.5rem;
-  transition: background-color 180ms ease, transform 120ms ease;
+  min-height: 52px;
+  padding: 0.625rem 0.75rem;
+  transition: background-color 200ms var(--luxury-ease), transform 160ms var(--luxury-ease);
+  border-bottom: 1px solid hsl(220 14% 94%);
+}
+
+.mobile-car-row-compact:last-child {
+  border-bottom: none;
 }
 
 .mobile-car-row-compact:active {
-  background-color: hsl(220 14% 96%) !important;
-  transform: scale(0.985);
+  background-color: hsl(220 20% 97%) !important;
+  transform: scale(0.988);
 }
 
 .mobile-car-row-compact button,
 .mobile-car-row-compact [role='button'] {
-  min-height: 30px;
+  min-height: 32px;
 }
 
 /* Long-press visual feedback */
@@ -1079,19 +1084,21 @@ button:active,
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid hsl(var(--border));
-  background: rgba(255, 255, 255, 0.92);
-  padding: max(12px, calc(12px + var(--sat))) clamp(12px, 4vw, 20px) 12px;
-  backdrop-filter: saturate(140%) blur(16px);
-  transition: background-color 250ms ease, box-shadow 250ms ease, border-color 250ms ease;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  background: rgba(255, 255, 255, 0.82);
+  padding: max(14px, calc(14px + var(--sat))) clamp(14px, 4vw, 22px) 14px;
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  transition: background-color 280ms var(--luxury-ease), box-shadow 280ms var(--luxury-ease), border-color 280ms var(--luxury-ease);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.15), 0 4px 20px -4px rgba(15, 23, 42, 0.06);
 }
 
 .app-content {
-  padding: clamp(10px, 2.5vw, 14px);
+  padding: clamp(12px, 2.5vw, 16px);
   overflow: auto;
   min-height: 0;
   flex: 1;
-  padding-bottom: clamp(10px, 2.5vw, 14px);
+  padding-bottom: clamp(12px, 2.5vw, 16px);
 }
 
 .app-mobile-nav {
@@ -1102,13 +1109,14 @@ button:active,
   z-index: 60;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(6px, 1.6vw, 10px);
-  border-top: 1px solid hsl(var(--border) / 0.6);
-  background: rgba(255, 255, 255, 0.96);
-  padding: 8px max(10px, calc(10px + var(--sal))) max(10px, calc(10px + var(--sab))) max(10px, calc(10px + var(--sar)));
-  backdrop-filter: saturate(130%) blur(14px);
-  transition: background-color 250ms ease;
-  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+  gap: clamp(4px, 1.2vw, 8px);
+  border-top: 1px solid hsl(var(--border) / 0.3);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 10px max(12px, calc(12px + var(--sal))) max(12px, calc(12px + var(--sab))) max(12px, calc(12px + var(--sar)));
+  backdrop-filter: saturate(180%) blur(28px);
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  transition: background-color 280ms var(--luxury-ease);
+  box-shadow: 0 -1px 0 hsl(var(--border) / 0.1), 0 -8px 32px -4px rgba(15, 23, 42, 0.08);
 }
 
 .mobile-nav-item {
@@ -1116,23 +1124,25 @@ button:active,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border-radius: 12px;
-  color: #475569;
-  font-size: 11px;
+  gap: 3px;
+  border-radius: 14px;
+  color: #94a3b8;
+  font-size: 10px;
   font-weight: 600;
-  min-height: 48px;
-  transition: all 220ms var(--luxury-ease);
+  letter-spacing: 0.01em;
+  min-height: 50px;
+  transition: all 240ms var(--luxury-ease);
 }
 
 .mobile-nav-item:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
 .mobile-nav-item-active {
-  background: hsl(220 14% 96%);
+  background: hsl(220 20% 96%);
   color: #0f172a;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.1);
+  font-weight: 700;
 }
 
 .overflow-wrap-anywhere {
@@ -1143,6 +1153,7 @@ button:active,
 @media (max-width: 768px) {
   .app-topbar {
     padding-top: max(10px, calc(10px + var(--sat)));
+    padding-inline: 12px;
   }
 
   .app-title {
@@ -1151,6 +1162,8 @@ button:active,
 
   .app-content {
     padding-inline: 0;
+    padding-top: 6px;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
   }
 }
 
