@@ -142,7 +142,7 @@ export default function EditablePreviewModal({
     }
   }, [editedFields, sale, onSaveToSale]);
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'image' = 'pdf') => {
     const element = printRef.current;
     if (!element) return;
 
@@ -181,7 +181,7 @@ export default function EditablePreviewModal({
       const filename = `${documentType}_${getValue('vin') || 'doc'}.pdf`;
       const isInvoiceType = documentType === 'invoice';
 
-      if (isInvoiceType && !Capacitor.isNativePlatform() && isIosSafari()) {
+      if (isInvoiceType && format === 'image') {
         const imageBlob = await generateImageBlobFromElement({ element });
         const imageResult = await shareImageBlob({
           blob: imageBlob,
@@ -460,14 +460,35 @@ export default function EditablePreviewModal({
                 <RotateCcw className="w-3 h-3" />
                 <span className="hidden sm:inline">Reset</span>
               </button>
-              <button
-                onClick={handleDownload}
-                disabled={isDownloading}
-                className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
-              >
-                {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                {isDownloading ? 'Generating...' : 'Download'}
-              </button>
+              {documentType === 'invoice' ? (
+                <>
+                  <button
+                    onClick={() => handleDownload('pdf')}
+                    disabled={isDownloading}
+                    className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
+                  >
+                    {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                    {isDownloading ? 'Generating...' : 'PDF'}
+                  </button>
+                  <button
+                    onClick={() => handleDownload('image')}
+                    disabled={isDownloading}
+                    className="hidden md:flex items-center gap-1 px-2.5 py-1 border border-slate-200 bg-white text-slate-800 rounded-md hover:bg-slate-100 transition-all font-semibold text-[11px] shadow-sm disabled:opacity-50"
+                  >
+                    <Download className="w-3 h-3" />
+                    Image
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handleDownload('pdf')}
+                  disabled={isDownloading}
+                  className="hidden md:flex items-center gap-1 px-2.5 py-1 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-all font-semibold text-[11px] shadow-sm shadow-black/10 disabled:opacity-50"
+                >
+                  {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                  {isDownloading ? 'Generating...' : 'Download'}
+                </button>
+              )}
               <button
                 onClick={handlePrint}
                 disabled={isDownloading}
@@ -529,16 +550,27 @@ export default function EditablePreviewModal({
 
         {/* Mobile sticky bottom actions */}
         <div className="md:hidden flex-shrink-0 border-t border-slate-200 bg-white/98 backdrop-blur-sm" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-          <div className="grid grid-cols-3 gap-2 p-3">
+          <div className={`grid ${documentType === 'invoice' ? 'grid-cols-4' : 'grid-cols-3'} gap-2 p-3`}>
             <button
-              aria-label="Download"
-              onClick={handleDownload}
+              aria-label="Download PDF"
+              onClick={() => handleDownload('pdf')}
               disabled={isDownloading}
               className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl bg-slate-900 text-white text-[11px] font-semibold disabled:opacity-50 active:scale-95 transition-transform"
             >
               {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              {isDownloading ? 'Wait...' : 'Download'}
+              {isDownloading ? 'Wait...' : (documentType === 'invoice' ? 'PDF' : 'Download')}
             </button>
+            {documentType === 'invoice' && (
+              <button
+                aria-label="Download Image"
+                onClick={() => handleDownload('image')}
+                disabled={isDownloading}
+                className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-800 text-[11px] font-semibold disabled:opacity-50 active:scale-95 transition-transform"
+              >
+                <Download className="w-4 h-4" />
+                Image
+              </button>
+            )}
             <button
               aria-label="Print"
               onClick={handlePrint}
