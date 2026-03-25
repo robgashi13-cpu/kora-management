@@ -42,57 +42,6 @@ export const waitForImages = async (container: HTMLElement, timeoutMs = 8000): P
   ]);
 };
 
-const trimCanvasHorizontalWhitespace = (sourceCanvas: HTMLCanvasElement, paddingPx = 2): HTMLCanvasElement => {
-  const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
-  if (!sourceCtx) return sourceCanvas;
-
-  const width = sourceCanvas.width;
-  const height = sourceCanvas.height;
-  if (width <= 2 || height <= 2) return sourceCanvas;
-
-  const { data } = sourceCtx.getImageData(0, 0, width, height);
-  let left = width;
-  let right = -1;
-  const whiteThreshold = 248;
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const index = (y * width + x) * 4;
-      const alpha = data[index + 3];
-      if (alpha === 0) continue;
-
-      const red = data[index];
-      const green = data[index + 1];
-      const blue = data[index + 2];
-      const isNearWhite = red >= whiteThreshold && green >= whiteThreshold && blue >= whiteThreshold;
-      if (isNearWhite) continue;
-
-      if (x < left) left = x;
-      if (x > right) right = x;
-    }
-  }
-
-  if (right < left) return sourceCanvas;
-
-  left = Math.max(0, left - paddingPx);
-  right = Math.min(width - 1, right + paddingPx);
-
-  if (left === 0 && right === width - 1) return sourceCanvas;
-
-  const croppedWidth = right - left + 1;
-  const trimmedCanvas = document.createElement('canvas');
-  trimmedCanvas.width = croppedWidth;
-  trimmedCanvas.height = height;
-
-  const trimmedCtx = trimmedCanvas.getContext('2d');
-  if (!trimmedCtx) return sourceCanvas;
-
-  trimmedCtx.fillStyle = '#ffffff';
-  trimmedCtx.fillRect(0, 0, croppedWidth, height);
-  trimmedCtx.drawImage(sourceCanvas, left, 0, croppedWidth, height, 0, 0, croppedWidth, height);
-  return trimmedCanvas;
-};
-
 export const isIosSafari = (): boolean => {
   if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent;
@@ -499,8 +448,8 @@ export const generatePdf = async ({
       }
     });
 
-    const normalizedCanvas = trimCanvasHorizontalWhitespace(canvas);
-    const imgData = normalizedCanvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    const imgAspect = canvas.height / canvas.width;
 
     // A4 dimensions in mm
     const A4_W = 210;
@@ -513,8 +462,11 @@ export const generatePdf = async ({
       compress: true,
     });
 
-    // Always fill full A4 page (edge-to-edge) to eliminate side empty space
-    pdf.addImage(imgData, 'JPEG', 0, 0, A4_W, A4_H, undefined, 'FAST');
+    // Keep exact preview proportions, lock to full A4 width, and center vertically.
+    const renderWidth = A4_W;
+    const renderHeight = renderWidth * imgAspect;
+    const offsetY = (A4_H - renderHeight) / 2;
+    pdf.addImage(imgData, 'PNG', 0, offsetY, renderWidth, renderHeight, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
