@@ -1081,25 +1081,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-5 md:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-7">
-        <div className="space-y-2 border-b border-slate-100 pb-5">
-            <h3 className="text-lg md:text-xl font-bold text-slate-900 tracking-wide">{title}</h3>
-            {description && <p className="text-sm md:text-[15px] text-slate-500 leading-relaxed">{description}</p>}
+    <div className="w-full rounded-xl border border-slate-100 bg-white/90 p-3 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-3">
+        <div className="space-y-0.5 border-b border-slate-100 pb-2">
+            <h3 className="text-sm md:text-base font-bold text-slate-900">{title}</h3>
+            {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
         </div>
-        <div className="space-y-5">
+        <div className="space-y-3">
             {children}
         </div>
     </div>
 );
 
 const Input = ({ label, className = "", required, ...props }: any) => (
-    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10"
             required={required}
             {...props}
         />
@@ -1107,35 +1107,35 @@ const Input = ({ label, className = "", required, ...props }: any) => (
 );
 
 const Select = ({ label, children, required, ...props }: any) => (
-    <div className="flex flex-col gap-1.5 text-left w-full">
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className="flex flex-col gap-1 text-left w-full">
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-[52px] cursor-pointer"
+                className="appearance-none bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer"
                 required={required}
                 {...props}
             >
                 {children}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                <ChevronDown className="h-5 w-5" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                <ChevronDown className="h-4 w-4" />
             </div>
         </div>
     </div>
 );
 
 const DateInput = ({ label, required, ...props }: any) => (
-    <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className="flex flex-col gap-1 w-full">
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 cursor-pointer"
             required={required}
             {...props}
         />
