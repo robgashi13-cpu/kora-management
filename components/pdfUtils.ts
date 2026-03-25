@@ -313,8 +313,12 @@ export const generatePdf = async ({
     element.offsetHeight || 0,
     Math.round(rect.height || 0)
   );
-  // In compact mode, use actual content height (don't force A4 minimum)
-  const renderHeight = compact ? (fullHeight || fallbackHeightPx) : Math.max(fallbackHeightPx, fullHeight);
+  // In compact mode, keep invoice layout but clamp tiny overflow to avoid blank trailing pages
+  const compactHeight = fullHeight || fallbackHeightPx;
+  const compactOverflowPx = Math.max(0, compactHeight - fallbackHeightPx);
+  const renderHeight = compact
+    ? (compactOverflowPx > 0 && compactOverflowPx <= 24 ? fallbackHeightPx : compactHeight)
+    : Math.max(fallbackHeightPx, fullHeight);
 
   // @ts-ignore
   const html2pdf = (await import('html2pdf.js')).default;
@@ -341,13 +345,6 @@ export const generatePdf = async ({
           el.style.maxHeight = 'none';
           el.style.height = 'auto';
         });
-        // In compact mode, strip minHeight so content doesn't create blank trailing pages
-        if (compact) {
-          clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, .invoice-root, #invoice-content').forEach((el) => {
-            el.style.minHeight = '0';
-            el.style.height = 'auto';
-          });
-        }
         onClone?.(clonedDoc);
       }
     },
