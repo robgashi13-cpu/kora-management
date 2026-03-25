@@ -241,7 +241,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-root--pdf {
-                    padding: 30px;
+                    padding: 12px 14px;
                 }
 
                 .invoice-header {
