@@ -4919,7 +4919,7 @@ export default function Dashboard() {
                                                                                 )}
 
                                                                                 <div className="flex-1 min-w-0">
-                                                                                    {activeCategory === 'INSPECTIONS' ? (
+                                                                                    {sale.status === 'Inspection' ? (
                                                                                         <>
                                                                                             <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
