@@ -5516,7 +5516,7 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                                 {(isAdmin || isFullSalesViewer(userProfile)) && (
-                                                    <button type="button" onClick={() => setInvoicesSubTab('accountant')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'accountant' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Accountant</button>
+                                                    <button type="button" onClick={() => setInvoicesSubTab('accountant')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'accountant' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Libri i Shitblerjes</button>
                                                 )}
                                             </div>
                                         </div>
@@ -5572,23 +5572,26 @@ export default function Dashboard() {
 
                                     {invoicesSubTab === 'accountant' ? (() => {
                                         // Group ALL sales by month (shipping date), then by status category
-                                        const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled');
-                                        const byMonth: Record<string, { shipped: CarSale[]; done: CarSale[] }> = {};
+                                        const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled' && s.status !== 'Archived');
+                                        const byMonth: Record<string, { newSales: CarSale[]; shipped: CarSale[]; done: CarSale[] }> = {};
                                         allSalesForAccountant.forEach(s => {
                                             const dateStr = s.shippingDate || s.createdAt;
                                             const dt = new Date(dateStr);
                                             const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
-                                            if (!byMonth[key]) byMonth[key] = { shipped: [], done: [] };
-                                            if (s.status === 'Shipped' || s.status === 'In Progress' || s.status === 'New') {
-                                                byMonth[key].shipped.push(s);
+                                            if (!byMonth[key]) byMonth[key] = { newSales: [], shipped: [], done: [] };
+                                            if (s.status === 'New') {
+                                                byMonth[key].newSales.push(s);
                                             } else if (s.status === 'Completed') {
                                                 byMonth[key].done.push(s);
+                                            } else {
+                                                // Shipped, In Progress, Inspection, Autosallon, etc.
+                                                byMonth[key].shipped.push(s);
                                             }
                                         });
                                         const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
                                         const handleAccountantPdfDownload = async () => {
                                             let html = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#1e293b}h1{font-size:16px;margin-bottom:12px}h2{font-size:13px;margin:16px 0 6px;padding:4px 8px;background:#f1f5f9;border-radius:4px}h3{font-size:11px;margin:10px 0 4px;color:#475569}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:2px solid #e2e8f0;padding:4px 6px}td{padding:3px 6px;border-bottom:1px solid #f1f5f9;font-size:10px}.right{text-align:right}@media print{body{margin:10mm}}</style></head><body>';
-                                            html += '<h1>Monthly Sales Report — Accountant</h1>';
+                                            html += '<h1>Libri i Shitblerjes</h1>';
                                             html += `<p style="color:#94a3b8;font-size:9px">Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`;
                                             const renderTable = (items: CarSale[]) => {
                                                 if (items.length === 0) return '<p style="color:#94a3b8;font-size:9px">No cars</p>';
@@ -5603,7 +5606,9 @@ export default function Dashboard() {
                                                 const data = byMonth[month];
                                                 const [y, m] = month.split('-').map(Number);
                                                 const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                                                html += `<h2>${label} (${data.shipped.length + data.done.length} cars)</h2>`;
+                                                const total = data.newSales.length + data.shipped.length + data.done.length;
+                                                html += `<h2>${label} (${total} cars)</h2>`;
+                                                if (data.newSales.length > 0) { html += `<h3>🆕 Sales (${data.newSales.length})</h3>`; html += renderTable(data.newSales); }
                                                 if (data.shipped.length > 0) { html += `<h3>🚚 Shipping (${data.shipped.length})</h3>`; html += renderTable(data.shipped); }
                                                 if (data.done.length > 0) { html += `<h3>✅ Completed (${data.done.length})</h3>`; html += renderTable(data.done); }
                                             });
@@ -5614,17 +5619,18 @@ export default function Dashboard() {
                                             if (w) { setTimeout(() => { w.print(); }, 600); }
                                         };
                                         const handleMarkAllDone = () => {
-                                            const shippedCars = allSalesForAccountant.filter(s => s.status === 'Shipped' || s.status === 'In Progress' || s.status === 'New');
-                                            if (shippedCars.length === 0) return;
-                                            if (!confirm(`Mark ${shippedCars.length} car(s) as Completed?`)) return;
-                                            shippedCars.forEach(s => handleInlineUpdate(s.id, 'status', 'Completed'));
+                                            // Mark all non-New, non-Completed cars as Completed (everything except Sales tab)
+                                            const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
+                                            if (toComplete.length === 0) return;
+                                            if (!confirm(`Mark ${toComplete.length} car(s) as Completed?`)) return;
+                                            toComplete.forEach(s => handleInlineUpdate(s.id, 'status', 'Completed'));
                                         };
                                         return (
                                             <div className="space-y-2">
                                                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                                                    <p className="text-[10px] text-slate-500">All sales by month — Shipping & Completed</p>
+                                                    <p className="text-[10px] text-slate-500">Libri i Shitblerjes — All sales by month</p>
                                                     <div className="flex items-center gap-1.5">
-                                                        {allSalesForAccountant.some(s => s.status === 'Shipped' || s.status === 'In Progress' || s.status === 'New') && (
+                                                        {allSalesForAccountant.some(s => s.status !== 'New' && s.status !== 'Completed') && (
                                                             <button type="button" onClick={handleMarkAllDone} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold active:scale-95 transition-all">
                                                                 <Check className="w-3 h-3" /> Mark All Done
                                                             </button>
@@ -5640,7 +5646,7 @@ export default function Dashboard() {
                                                     const data = byMonth[month];
                                                     const [y, m] = month.split('-').map(Number);
                                                     const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                                                    const total = data.shipped.length + data.done.length;
+                                                    const total = data.newSales.length + data.shipped.length + data.done.length;
                                                     const renderRows = (items: CarSale[], tag: string, tagColor: string) => items.map(s => (
                                                         <div key={s.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                                                             <span className={`shrink-0 text-[8px] font-black uppercase tracking-tight px-1.5 py-0.5 rounded ${tagColor}`}>{tag}</span>
@@ -5660,6 +5666,12 @@ export default function Dashboard() {
                                                                 <span className="text-xs font-black text-slate-800">{label}</span>
                                                                 <span className="text-[10px] text-slate-500">{total} cars</span>
                                                             </div>
+                                                            {data.newSales.length > 0 && (
+                                                                <>
+                                                                    <div className="px-2.5 py-1 text-[9px] font-bold text-blue-700 bg-blue-50/50 border-b border-blue-100">🆕 Sales ({data.newSales.length})</div>
+                                                                    {renderRows(data.newSales, 'NEW', 'bg-blue-100 text-blue-700')}
+                                                                </>
+                                                            )}
                                                             {data.shipped.length > 0 && (
                                                                 <>
                                                                     <div className="px-2.5 py-1 text-[9px] font-bold text-amber-700 bg-amber-50/50 border-b border-amber-100">🚚 Shipping ({data.shipped.length})</div>
