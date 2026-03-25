@@ -11,7 +11,7 @@ import InvoiceDocument from './InvoiceDocument';
 import ContractDocument from './ContractDocument';
 import StampImage from './StampImage';
 import { applyShitblerjeOverrides } from './shitblerjeOverrides';
-import { generatePdf, downloadPdfBlob } from './pdfUtils';
+import { downloadPdfBlob, generateImageBlobFromElement, generatePdf, isIosSafari, shareImageBlob } from './pdfUtils';
 import { InvoicePriceSource } from './invoicePricing';
 import { PdfTemplateMap } from './PdfTemplateBuilder';
 
@@ -180,6 +180,22 @@ export default function EditablePreviewModal({
 
       const filename = `${documentType}_${getValue('vin') || 'doc'}.pdf`;
       const isInvoiceType = documentType === 'invoice';
+
+      if (isInvoiceType && !Capacitor.isNativePlatform() && isIosSafari()) {
+        const imageBlob = await generateImageBlobFromElement({ element });
+        const imageResult = await shareImageBlob({
+          blob: imageBlob,
+          filename: `${documentType}_${getValue('vin') || 'doc'}.png`,
+          title: `${documentType} - ${getValue('brand')} ${getValue('model')}`,
+          text: `Document for ${getValue('vin')}`,
+          dialogTitle: 'Download or Share Document Image'
+        });
+        if (!imageResult.opened) {
+          setStatusMessage('Popup blocked. The invoice image opened in this tab so you can save or share it.');
+        }
+        return;
+      }
+
       const { blob } = await generatePdf({
         element,
         filename,
