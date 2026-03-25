@@ -103,13 +103,13 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         }
     };
 
-    const handleDownload = async () => {
+    const handleDownload = async (format: 'pdf' | 'image' = 'pdf') => {
         try {
             setIsDownloading(true);
             setStatusMessage(null);
             const element = printRef.current;
 
-            if (isIosSafari() && element) {
+            if (format === 'image' && element) {
                 const imageBlob = await generateImageBlobFromElement({
                     element,
                     onClone: (clonedDoc) => {
@@ -144,7 +144,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 filename: `Invoice_${sale.vin || 'unnamed'}.pdf`,
                 title: `Invoice - ${sale.brand} ${sale.model}`,
                 text: `Invoice for ${sale.vin}`,
-                dialogTitle: 'Download or Share Invoice'
+                dialogTitle: isIosSafari() ? 'Download or Share Invoice PDF' : 'Download or Share Invoice'
             });
             if (!shareResult.opened) {
                 setStatusMessage('Popup blocked. We opened the PDF in this tab so you can save or share it.');

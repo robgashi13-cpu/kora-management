@@ -142,7 +142,7 @@ export default function EditablePreviewModal({
     }
   }, [editedFields, sale, onSaveToSale]);
 
-  const handleDownload = async () => {
+  const handleDownload = async (format: 'pdf' | 'image' = 'pdf') => {
     const element = printRef.current;
     if (!element) return;
 
@@ -181,7 +181,7 @@ export default function EditablePreviewModal({
       const filename = `${documentType}_${getValue('vin') || 'doc'}.pdf`;
       const isInvoiceType = documentType === 'invoice';
 
-      if (isInvoiceType && !Capacitor.isNativePlatform() && isIosSafari()) {
+      if (isInvoiceType && format === 'image') {
         const imageBlob = await generateImageBlobFromElement({ element });
         const imageResult = await shareImageBlob({
           blob: imageBlob,
