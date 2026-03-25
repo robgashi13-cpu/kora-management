@@ -282,6 +282,8 @@ type PdfGenerationOptions = {
   editableText?: boolean;
   /** When true, captures only the actual content height — no forced A4 min-height, avoids blank trailing pages */
   compact?: boolean;
+  /** When true, uses single-canvas capture sized to exact content — guarantees 1 page, pixel-perfect match to preview */
+  singlePage?: boolean;
 };
 
 export const generatePdf = async ({
@@ -290,9 +292,60 @@ export const generatePdf = async ({
   onClone,
   pagebreakMode,
   editableText = true,
-  compact = false
+  compact = false,
+  singlePage = false
 }: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
   await waitForImages(element);
+
+  // --- Invoice single-page path: html2canvas + jsPDF, no multi-page logic ---
+  if (singlePage) {
+    const html2canvas = (await import('html2canvas')).default;
+    const { jsPDF } = await import('jspdf');
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      imageTimeout: 10000,
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+      onclone: (clonedDoc: Document) => {
+        sanitizePdfCloneStyles(clonedDoc);
+        normalizePdfLayout(clonedDoc);
+        // Remove height constraints that could cause layout shifts
+        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
+          el.style.overflow = 'visible';
+          el.style.maxHeight = 'none';
+          el.style.minHeight = 'none';
+          el.style.height = 'auto';
+        });
+        onClone?.(clonedDoc);
+      }
+    });
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const canvasW = canvas.width;
+    const canvasH = canvas.height;
+    // Use A4 width (210mm) and derive height from aspect ratio
+    const pdfWidthMM = 210;
+    const pdfHeightMM = (canvasH * pdfWidthMM) / canvasW;
+
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [pdfWidthMM, pdfHeightMM],
+      compress: true
+    });
+
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMM, pdfHeightMM);
+    const blob = pdf.output('blob');
+    return { pdf, blob, filename };
+  }
+
+  // --- Standard multi-page path (contracts, etc.) ---
   const editableFieldData = editableText === false ? null : collectPdfTextFields(element);
 
   const A4_WIDTH_MM = 210;
@@ -307,13 +360,11 @@ export const generatePdf = async ({
     fallbackWidthPx,
     Math.round(rect.width || element.scrollWidth || element.offsetWidth || 0)
   );
-  // Use the full scrollable height so multi-page documents are not clipped
   const fullHeight = Math.max(
     element.scrollHeight || 0,
     element.offsetHeight || 0,
     Math.round(rect.height || 0)
   );
-  // In compact mode, keep invoice layout but clamp tiny overflow to avoid blank trailing pages
   const compactHeight = fullHeight || fallbackHeightPx;
   const compactOverflowPx = Math.max(0, compactHeight - fallbackHeightPx);
   const renderHeight = compact
@@ -339,7 +390,6 @@ export const generatePdf = async ({
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
-        // Ensure no overflow clipping on the source element or its ancestors
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-contract-document], [data-invoice-document]').forEach((el) => {
           el.style.overflow = 'visible';
           el.style.maxHeight = 'none';

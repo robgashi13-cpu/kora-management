@@ -73,6 +73,8 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
             const { blob: pdfBlob } = await generatePdf({
                 element: invoiceElement || container,
                 filename: `Invoice_${sale.vin || sale.id}.pdf`,
+                singlePage: true,
+                editableText: false,
                 onClone: (clonedDoc) => {
                     const invoiceNode = clonedDoc.querySelector('#invoice-content');
                     clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
