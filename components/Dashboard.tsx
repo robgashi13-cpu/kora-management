@@ -4321,6 +4321,49 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'dashboard' ? (<>
+                                {/* Inspection tab: simplified list */}
+                                {activeCategory === 'INSPECTIONS' ? (
+                                    <div
+                                        ref={scrollContainerRef}
+                                        className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
+                                    >
+                                        <div className="divide-y divide-slate-100">
+                                            <div className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                <div>Car Name</div>
+                                                <div>Plate Number</div>
+                                                <div>Link</div>
+                                            </div>
+                                            {filteredSales.length === 0 && (
+                                                <div className="px-5 py-12 text-center text-sm text-slate-400">No inspection entries yet</div>
+                                            )}
+                                            {filteredSales.map(sale => (
+                                                <div
+                                                    key={sale.id}
+                                                    className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer items-center"
+                                                    onClick={() => handleSaleInteraction(sale)}
+                                                >
+                                                    <div className="font-semibold text-slate-900 text-sm truncate">{sale.brand} {sale.model}</div>
+                                                    <div className="text-sm text-slate-600 font-mono">{sale.plateNumber || '-'}</div>
+                                                    <div className="truncate">
+                                                        {sale.notes && sale.notes.startsWith('Link: ') ? (
+                                                            <a
+                                                                href={sale.notes.replace('Link: ', '')}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="text-sm text-blue-600 hover:text-blue-800 underline truncate"
+                                                            >
+                                                                {sale.notes.replace('Link: ', '')}
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-sm text-slate-400">-</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
                                 <div
                                     ref={scrollContainerRef}
                                     className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
