@@ -539,9 +539,9 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
             )}
         </>
     );
-});
+}
 
-export default EditShitblerjeModal;
+export default EditShitblerjeModalInner;
 
 const Input = ({ label, className = '', required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
