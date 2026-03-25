@@ -449,7 +449,6 @@ export const generatePdf = async ({
     });
 
     const imgData = canvas.toDataURL('image/png', 1.0);
-    const imgAspect = canvas.height / canvas.width;
 
     // A4 dimensions in mm
     const A4_W = 210;
@@ -462,11 +461,8 @@ export const generatePdf = async ({
       compress: true,
     });
 
-    // Keep exact preview proportions, lock to full A4 width, and center vertically.
-    const renderWidth = A4_W;
-    const renderHeight = renderWidth * imgAspect;
-    const offsetY = (A4_H - renderHeight) / 2;
-    pdf.addImage(imgData, 'PNG', 0, offsetY, renderWidth, renderHeight, undefined, 'FAST');
+    // Force edge-to-edge A4 placement for consistent full-fit output and no side gaps.
+    pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
