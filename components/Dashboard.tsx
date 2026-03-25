@@ -604,6 +604,8 @@ export default function Dashboard() {
     const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
     const hasSyncedTransportPaidRef = useRef(false);
     const [showAccountantPdfOptions, setShowAccountantPdfOptions] = useState(false);
+    const [showInspectionForm, setShowInspectionForm] = useState(false);
+    const [inspectionFormData, setInspectionFormData] = useState({ carName: '', plateNumber: '', link: '' });
     const accountantPdfOptionsRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handler = (e: MouseEvent) => { if (accountantPdfOptionsRef.current && !accountantPdfOptionsRef.current.contains(e.target as Node)) setShowAccountantPdfOptions(false); };
@@ -4218,6 +4220,16 @@ export default function Dashboard() {
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
+                            {activeCategory === 'INSPECTIONS' && (
+                                <button
+                                    onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
+                                    className={`ui-control p-2 rounded-xl transition-all flex-shrink-0 ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                                    title="Add Inspection"
+                                    aria-label="Add inspection entry"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            )}
                         </div>
 
                         {/* Desktop: original layout */}
@@ -6516,6 +6528,116 @@ export default function Dashboard() {
                 </button>
             )}
             {isAdmin && <AiAssistant />}
+            {/* Inspection Quick-Add Form */}
+            <AnimatePresence>
+                {showInspectionForm && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[120]"
+                            onClick={() => setShowInspectionForm(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                            className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[121] max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+                        >
+                            <div className="px-5 pt-5 pb-3 border-b border-slate-100 flex items-center justify-between">
+                                <h3 className="text-base font-bold text-slate-900">Add Inspection</h3>
+                                <button onClick={() => setShowInspectionForm(false)} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                                    <X className="w-4 h-4 text-slate-500" />
+                                </button>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Name of Car</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. BMW X5"
+                                        value={inspectionFormData.carName}
+                                        onChange={(e) => setInspectionFormData(prev => ({ ...prev, carName: e.target.value }))}
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Plate Number</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. 01-234-AB"
+                                        value={inspectionFormData.plateNumber}
+                                        onChange={(e) => setInspectionFormData(prev => ({ ...prev, plateNumber: e.target.value }))}
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">Link of Car</label>
+                                    <input
+                                        type="url"
+                                        placeholder="https://..."
+                                        value={inspectionFormData.link}
+                                        onChange={(e) => setInspectionFormData(prev => ({ ...prev, link: e.target.value }))}
+                                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400 focus:bg-white transition-all"
+                                    />
+                                </div>
+                            </div>
+                            <div className="px-5 pb-5 flex gap-3">
+                                <button
+                                    onClick={() => setShowInspectionForm(false)}
+                                    className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const { carName, plateNumber, link } = inspectionFormData;
+                                        if (!carName.trim()) return;
+                                        const nameParts = carName.trim().split(/\s+/);
+                                        const brand = nameParts[0] || '';
+                                        const model = nameParts.slice(1).join(' ') || '';
+                                        const newSale: CarSale = {
+                                            id: crypto.randomUUID(),
+                                            brand,
+                                            model,
+                                            year: 0,
+                                            km: 0,
+                                            color: '',
+                                            plateNumber: plateNumber.trim(),
+                                            vin: '',
+                                            sellerName: '',
+                                            buyerName: '',
+                                            shippingName: '',
+                                            shippingDate: '',
+                                            costToBuy: 0,
+                                            soldPrice: 0,
+                                            amountPaidCash: 0,
+                                            amountPaidBank: 0,
+                                            deposit: 0,
+                                            servicesCost: 0,
+                                            tax: 0,
+                                            paidDateToKorea: null,
+                                            paymentMethod: 'Cash',
+                                            status: 'Inspection',
+                                            notes: link.trim() ? `Link: ${link.trim()}` : '',
+                                            createdAt: new Date().toISOString(),
+                                            soldBy: userProfile || '',
+                                        };
+                                        await handleAddSale(newSale);
+                                        setShowInspectionForm(false);
+                                    }}
+                                    disabled={!inspectionFormData.carName.trim()}
+                                    className="flex-1 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
