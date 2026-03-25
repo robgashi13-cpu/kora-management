@@ -180,10 +180,10 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
         <>
             <div className="fixed inset-0 z-[130] flex items-stretch justify-stretch bg-white/95 backdrop-blur-sm">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.96, y: 12 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.98, y: 6 }}
-                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="w-full h-full bg-white flex flex-col overflow-hidden"
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -311,7 +311,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
 
             {/* Document Selection Menu */}
             {showDocumentMenu && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDocumentMenu(false)}>
+                <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDocumentMenu(false)}>
                     <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -392,7 +392,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
 
             {/* Dogane Selection Modal */}
             {showDoganeSelection && (
-                <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm p-4" onClick={() => setShowDoganeSelection(false)}>
                     <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <div>
@@ -436,7 +436,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
             )}
 
             {showTaxPrompt && (
-                <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowTaxPrompt(false)}>
+                <div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" onClick={() => setShowTaxPrompt(false)}>
                     <div className="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-2xl p-5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-4">
                             <div>
