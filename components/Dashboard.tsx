@@ -5674,15 +5674,8 @@ export default function Dashboard() {
                                             byMonth[key].push(s);
                                         });
                                         const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
-                                        const [showPdfOptions, setShowPdfOptions] = React.useState(false);
-                                        const pdfOptionsRef = React.useRef<HTMLDivElement>(null);
-                                        React.useEffect(() => {
-                                            const handler = (e: MouseEvent) => { if (pdfOptionsRef.current && !pdfOptionsRef.current.contains(e.target as Node)) setShowPdfOptions(false); };
-                                            if (showPdfOptions) document.addEventListener('mousedown', handler);
-                                            return () => document.removeEventListener('mousedown', handler);
-                                        }, [showPdfOptions]);
                                         const generateAccountantPdf = (mode: 'all' | 'active') => {
-                                            setShowPdfOptions(false);
+                                            setShowAccountantPdfOptions(false);
                                             const pdfStyle = 'body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#1e293b}h1{font-size:16px;margin-bottom:12px}h2{font-size:13px;margin:16px 0 6px;padding:4px 8px;background:#f1f5f9;border-radius:4px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:2px solid #e2e8f0;padding:4px 6px}td{padding:3px 6px;border-bottom:1px solid #f1f5f9;font-size:10px}.right{text-align:right}@media print{body{margin:10mm}}';
                                             let html = `<html><head><meta charset="utf-8"><style>${pdfStyle}</style></head><body>`;
                                             html += '<h1>Libri i Shitblerjes</h1>';
