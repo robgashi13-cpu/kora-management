@@ -184,7 +184,8 @@ export default function EditablePreviewModal({
         element,
         filename,
         editableText: false,
-        compact: isInvoiceType
+        compact: isInvoiceType,
+        pagebreakMode: isInvoiceType ? ['css', 'legacy'] : undefined
       });
 
       if (!Capacitor.isNativePlatform()) {
@@ -283,14 +284,14 @@ export default function EditablePreviewModal({
         className={`editable-preview-field ${className}`}
         style={{
           cursor: isDownloading ? 'text' : 'pointer',
-          borderBottom: isDownloading ? 'none' : '1px dashed transparent',
+          borderBottom: '1px dashed transparent',
           transition: 'all 0.15s ease',
           display: 'inline-block',
           maxWidth: '100%',
           overflowWrap: 'anywhere',
           wordBreak: 'break-word',
           whiteSpace: 'normal',
-          minWidth: isDownloading ? 'auto' : '20px',
+          minWidth: '20px',
           verticalAlign: 'baseline',
           color: 'inherit'
         }}
