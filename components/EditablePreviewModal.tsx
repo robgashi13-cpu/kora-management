@@ -179,10 +179,12 @@ export default function EditablePreviewModal({
       }
 
       const filename = `${documentType}_${getValue('vin') || 'doc'}.pdf`;
+      const isInvoiceType = documentType === 'invoice';
       const { blob } = await generatePdf({
         element,
         filename,
-        editableText: false
+        editableText: false,
+        compact: isInvoiceType
       });
 
       if (!Capacitor.isNativePlatform()) {
