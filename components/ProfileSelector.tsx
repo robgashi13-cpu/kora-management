@@ -305,28 +305,6 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
                     ))}
 
                     <div className="flex flex-col items-center gap-4">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                                setAdminAction('add');
-                                setPassword('');
-                                setShowPassword(false);
-                                setShowPasswordModal(true);
-                            }}
-                            className="group flex flex-col items-center gap-4"
-                        >
-                            <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl flex items-center justify-center border border-slate-200 hover:border-slate-300 transition-colors bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-                                <Plus className="w-12 h-12 text-slate-400 group-hover:text-slate-700" />
-                            </div>
-                            <span className="text-xl text-slate-500 group-hover:text-slate-900 transition-colors">Add Profile</span>
-                        </motion.button>
-                        <button
-                            onClick={() => setIsManaging(!isManaging)}
-                            className={`text-sm font-bold px-6 py-2 rounded-full border transition-all ${isManaging ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
-                        >
-                            {isManaging ? 'Done Managing' : 'Manage Profiles'}
-                        </button>
                     </div>
                 </div>
 
