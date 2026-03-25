@@ -27,6 +27,24 @@ import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, 
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
+const safeSetItem = (key: string, value: string) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e: any) {
+        if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+            console.warn('[Storage] Quota exceeded, clearing old caches...');
+            const keysToKeep = new Set(['theme_mode', 'session_profile', 'user_profile']);
+            const toRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && !keysToKeep.has(k)) toRemove.push(k);
+            }
+            toRemove.forEach(k => localStorage.removeItem(k));
+            try { localStorage.setItem(key, value); } catch { /* still full, skip */ }
+        }
+    }
+};
+
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
     if (price <= 20000) return 50;
