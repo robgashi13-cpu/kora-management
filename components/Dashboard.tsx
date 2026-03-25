@@ -5646,7 +5646,7 @@ export default function Dashboard() {
                                                     const data = byMonth[month];
                                                     const [y, m] = month.split('-').map(Number);
                                                     const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                                                    const total = data.shipped.length + data.done.length;
+                                                    const total = data.newSales.length + data.shipped.length + data.done.length;
                                                     const renderRows = (items: CarSale[], tag: string, tagColor: string) => items.map(s => (
                                                         <div key={s.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
                                                             <span className={`shrink-0 text-[8px] font-black uppercase tracking-tight px-1.5 py-0.5 rounded ${tagColor}`}>{tag}</span>
@@ -5666,6 +5666,12 @@ export default function Dashboard() {
                                                                 <span className="text-xs font-black text-slate-800">{label}</span>
                                                                 <span className="text-[10px] text-slate-500">{total} cars</span>
                                                             </div>
+                                                            {data.newSales.length > 0 && (
+                                                                <>
+                                                                    <div className="px-2.5 py-1 text-[9px] font-bold text-blue-700 bg-blue-50/50 border-b border-blue-100">🆕 Sales ({data.newSales.length})</div>
+                                                                    {renderRows(data.newSales, 'NEW', 'bg-blue-100 text-blue-700')}
+                                                                </>
+                                                            )}
                                                             {data.shipped.length > 0 && (
                                                                 <>
                                                                     <div className="px-2.5 py-1 text-[9px] font-bold text-amber-700 bg-amber-50/50 border-b border-amber-100">🚚 Shipping ({data.shipped.length})</div>
