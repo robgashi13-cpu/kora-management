@@ -551,7 +551,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'relative w-full h-full bg-white flex flex-col overflow-hidden min-h-0'}`}
         >
             {!hideHeader && (
-                <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
+                <div className="flex items-center justify-between p-3 md:p-4 border-b border-slate-200">
                     <div className="flex items-center gap-3">
                         {!inline && (
                             <button
@@ -563,7 +563,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <ArrowLeft className="w-5 h-5" />
                             </button>
                         )}
-                        <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+                        <h2 className="text-base font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                     </div>
                     <div className="flex items-center gap-2">
                         {existingSale && (
@@ -591,7 +591,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-5 md:gap-6' : 'px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 gap-8 md:gap-10'} flex flex-col`}
+                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 pb-4 lg:pb-6 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-4 md:gap-5'} flex flex-col`}
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
@@ -1081,25 +1081,25 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 }
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
-    <div className="w-full rounded-2xl border border-slate-100 bg-white/90 p-5 md:p-7 shadow-[0_1px_3px_rgba(15,23,42,0.06)] space-y-7">
-        <div className="space-y-2 border-b border-slate-100 pb-5">
-            <h3 className="text-lg md:text-xl font-bold text-slate-900 tracking-wide">{title}</h3>
-            {description && <p className="text-sm md:text-[15px] text-slate-500 leading-relaxed">{description}</p>}
+    <div className="w-full rounded-xl border border-slate-100 bg-white/90 p-3 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] space-y-3">
+        <div className="space-y-0.5 border-b border-slate-100 pb-2">
+            <h3 className="text-sm md:text-base font-bold text-slate-900">{title}</h3>
+            {description && <p className="text-xs text-slate-500 leading-relaxed">{description}</p>}
         </div>
-        <div className="space-y-5">
+        <div className="space-y-3">
             {children}
         </div>
     </div>
 );
 
 const Input = ({ label, className = "", required, ...props }: any) => (
-    <div className={`flex flex-col gap-1.5 w-full ${className}`}>
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <input
-            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px]"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10"
             required={required}
             {...props}
         />
@@ -1107,35 +1107,35 @@ const Input = ({ label, className = "", required, ...props }: any) => (
 );
 
 const Select = ({ label, children, required, ...props }: any) => (
-    <div className="flex flex-col gap-1.5 text-left w-full">
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className="flex flex-col gap-1 text-left w-full">
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <div className="relative w-full">
             <select
-                className="appearance-none bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-[52px] cursor-pointer"
+                className="appearance-none bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all w-full h-10 cursor-pointer"
                 required={required}
                 {...props}
             >
                 {children}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                <ChevronDown className="h-5 w-5" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                <ChevronDown className="h-4 w-4" />
             </div>
         </div>
     </div>
 );
 
 const DateInput = ({ label, required, ...props }: any) => (
-    <div className="flex flex-col gap-1.5 w-full">
-        <label className="text-[15px] font-semibold text-slate-700 ml-0.5 flex items-center gap-1 leading-5">
+    <div className="flex flex-col gap-1 w-full">
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
             {label}
-            {!required && <span className="text-xs font-medium text-slate-400">(Optional)</span>}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
         </label>
         <input
             type="date"
-            className="bg-white border border-slate-200 hover:border-slate-200 focus:border-slate-400 rounded-xl px-4 text-base text-slate-900 leading-6 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-[52px] cursor-pointer"
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 cursor-pointer"
             required={required}
             {...props}
         />

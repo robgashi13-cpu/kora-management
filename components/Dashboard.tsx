@@ -3712,12 +3712,14 @@ export default function Dashboard() {
                             <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wide px-3 py-2">Switch Profile</div>
                             <div className="max-h-60 overflow-y-auto scroll-container space-y-1">
                                 {availableProfiles.map(p => (
-                                    <button key={p} onClick={async () => {
-                                        if (p === ADMIN_PROFILE && userProfile !== p) {
+                                    <button key={p} onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if ((p === ADMIN_PROFILE || p.toUpperCase() === 'SHYQA') && userProfile !== p) {
                                             setPendingProfile(p);
                                             setPasswordInput('');
                                             setIsPasswordVisible(false);
                                             setShowPasswordModal(true);
+                                            setShowProfileMenu(false);
                                             return;
                                         }
                                         // Non-admin: authenticate via edge function
@@ -3769,6 +3771,7 @@ export default function Dashboard() {
                                         <button
                                             key={item.id}
                                             onClick={() => {
+                                                setShowProfileMenu(false);
                                                 setView(item.view);
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
@@ -3805,6 +3808,7 @@ export default function Dashboard() {
                                         <React.Fragment key={item.id}>
                                             <button
                                                 onClick={() => {
+                                                    setShowProfileMenu(false);
                                                     setView(item.view);
                                                     if (item.category) setActiveCategory(item.category as any);
                                                     setIsMobileMenuOpen(false);
@@ -3820,6 +3824,7 @@ export default function Dashboard() {
                                             {item.id === 'INVOICES' && pdfNavItem && (!pdfNavItem.adminOnly || isAdmin) && (
                                                 <button
                                                     onClick={() => {
+                                                        setShowProfileMenu(false);
                                                         setView(pdfNavItem.view);
                                                         if (pdfNavItem.category) setActiveCategory(pdfNavItem.category as any);
                                                         setIsMobileMenuOpen(false);
@@ -3863,6 +3868,7 @@ export default function Dashboard() {
                                         <button
                                             key={item.id}
                                             onClick={() => {
+                                                setShowProfileMenu(false);
                                                 setView(item.view);
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
@@ -5618,7 +5624,12 @@ export default function Dashboard() {
                                             toComplete.forEach(s => handleInlineUpdate(s.id, 'status', 'Completed'));
                                         };
                                         const renderRows = (items: CarSale[], tag: string, tagColor: string) => items.map(s => (
-                                            <div key={s.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+                                            <button
+                                                key={s.id}
+                                                type="button"
+                                                onClick={() => setViewSaleModalItem(s)}
+                                                className="w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] border-b border-slate-50 last:border-0 hover:bg-blue-50/60 transition-colors cursor-pointer text-left"
+                                            >
                                                 <span className={`shrink-0 text-[8px] font-black uppercase tracking-tight px-1.5 py-0.5 rounded ${tagColor}`}>{tag}</span>
                                                 <span className="font-bold text-slate-900 truncate min-w-0">{s.brand} {s.model}</span>
                                                 <span className="text-[9px] text-slate-400">{s.year}</span>
@@ -5627,8 +5638,9 @@ export default function Dashboard() {
                                                 <div className="ml-auto flex items-center gap-2 shrink-0">
                                                     <span className="text-[10px] text-slate-500">€{(s.costToBuy || 0).toLocaleString()}</span>
                                                     <span className="text-[10px] font-bold text-emerald-600">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                    <Eye className="w-3 h-3 text-slate-400" />
                                                 </div>
-                                            </div>
+                                            </button>
                                         ));
                                         return (
                                             <div className="space-y-2">

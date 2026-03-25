@@ -17,6 +17,16 @@ const getInternalPassword = (email: string) =>
 
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "password2";
 
+// Per-profile passwords (profile_name lowercase → password)
+const PROFILE_PASSWORDS: Record<string, string> = {
+  shyqa: "12345",
+};
+
+const requiresPassword = (profile: { profile_name: string; is_admin: boolean }): boolean => {
+  if (profile.is_admin) return true;
+  return profile.profile_name.toLowerCase() in PROFILE_PASSWORDS;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,11 +60,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Admin requires password
-    if (profile.is_admin) {
-      if (!password || password !== ADMIN_PASSWORD) {
+    // Check if this profile requires a password
+    if (requiresPassword(profile)) {
+      const expectedPassword = profile.is_admin
+        ? ADMIN_PASSWORD
+        : PROFILE_PASSWORDS[profile.profile_name.toLowerCase()];
+      if (!password || password !== expectedPassword) {
         return new Response(
-          JSON.stringify({ error: "Incorrect password" }),
+          JSON.stringify({ error: "Incorrect password", requiresPassword: true }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -63,7 +76,9 @@ Deno.serve(async (req) => {
     const email = profile.email;
     const signInPassword = profile.is_admin
       ? ADMIN_PASSWORD
-      : getInternalPassword(email);
+      : requiresPassword(profile)
+        ? (PROFILE_PASSWORDS[profile.profile_name.toLowerCase()] || getInternalPassword(email))
+        : getInternalPassword(email);
 
     // Ensure the user has the correct password set
     // (first-time setup or password sync)
