@@ -541,7 +541,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
     );
 }
 
-export default EditShitblerjeModalInner;
+export default EditShitblerjeModalInner as React.FC<Props>;
 
 const Input = ({ label, className = '', required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
