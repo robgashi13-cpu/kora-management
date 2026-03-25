@@ -122,16 +122,16 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
     };
 
     const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-        <div className="space-y-3">
-            <h3 className="text-[11px] font-bold text-slate-600 uppercase tracking-[0.2em] border-b border-slate-100 pb-2">{title}</h3>
+        <div className="space-y-2">
+            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] border-b border-slate-100 pb-1.5">{title}</h3>
             {children}
         </div>
     );
 
     const Field = ({ label, value, className = '' }: { label: string; value: React.ReactNode; className?: string }) => (
-        <div className={`flex flex-col gap-0.5 ${className}`}>
-            <span className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">{label}</span>
-            <span className="text-sm text-slate-800 font-medium">{value || '-'}</span>
+        <div className={`flex flex-col gap-0 ${className}`}>
+            <span className="text-[9px] text-slate-400 uppercase font-semibold tracking-wide">{label}</span>
+            <span className="text-xs text-slate-800 font-medium leading-tight">{value || '-'}</span>
         </div>
     );
 

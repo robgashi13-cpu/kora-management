@@ -551,7 +551,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'relative w-full h-full bg-white flex flex-col overflow-hidden min-h-0'}`}
         >
             {!hideHeader && (
-                <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200">
+                <div className="flex items-center justify-between p-3 md:p-4 border-b border-slate-200">
                     <div className="flex items-center gap-3">
                         {!inline && (
                             <button
@@ -563,7 +563,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <ArrowLeft className="w-5 h-5" />
                             </button>
                         )}
-                        <h2 className="text-xl font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
+                        <h2 className="text-base font-bold text-slate-900">{existingSale ? 'Edit Sale' : 'New Car Sale'}</h2>
                     </div>
                     <div className="flex items-center gap-2">
                         {existingSale && (
@@ -591,7 +591,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-5 md:gap-6' : 'px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-10 lg:pb-12 gap-8 md:gap-10'} flex flex-col`}
+                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 pb-4 lg:pb-6 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-4 md:gap-5'} flex flex-col`}
                 >
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
