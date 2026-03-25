@@ -27,6 +27,24 @@ import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, 
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 
+const safeSetItem = (key: string, value: string) => {
+    try {
+        safeSetItem(key, value);
+    } catch (e: any) {
+        if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+            console.warn('[Storage] Quota exceeded, clearing old caches...');
+            const keysToKeep = new Set(['theme_mode', 'session_profile', 'user_profile']);
+            const toRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && !keysToKeep.has(k)) toRemove.push(k);
+            }
+            toRemove.forEach(k => localStorage.removeItem(k));
+            try { safeSetItem(key, value); } catch { /* still full, skip */ }
+        }
+    }
+};
+
 const getBankFee = (price: number) => {
     if (price <= 10000) return 20;
     if (price <= 20000) return 50;
@@ -584,7 +602,7 @@ export default function Dashboard() {
                 const merged = { ...defaultWidths, ...parsed };
                 setColumnWidths(merged);
                 if (typeof window !== 'undefined') {
-                    localStorage.setItem(columnWidthStorageKey, JSON.stringify(merged));
+                    safeSetItem(columnWidthStorageKey, JSON.stringify(merged));
                 }
             } catch (error) {
                 console.error('Failed to restore column widths', error);
@@ -769,7 +787,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        window.localStorage.setItem(INVOICE_HISTORY_STORAGE_KEY, JSON.stringify(invoiceHistory));
+        safeSetItem(INVOICE_HISTORY_STORAGE_KEY, JSON.stringify(invoiceHistory));
     }, [invoiceHistory]);
 
     const trackInvoiceCreated = useCallback(async (sale: CarSale, sourceContext: InvoiceSourceContext) => {
@@ -886,7 +904,7 @@ export default function Dashboard() {
     const CUSTOM_DASHBOARDS_STORAGE_KEY = 'custom_dashboards_v1';
 
     const persistCustomDashboards = useCallback(async (next: CustomDashboard[]) => {
-        localStorage.setItem(CUSTOM_DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
+        safeSetItem(CUSTOM_DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
         await Preferences.set({ key: CUSTOM_DASHBOARDS_STORAGE_KEY, value: JSON.stringify(next) });
     }, []);
 
@@ -962,7 +980,7 @@ export default function Dashboard() {
             document.body.setAttribute('data-theme', nextTheme);
         }
         Preferences.set({ key: 'theme_mode', value: nextTheme });
-        localStorage.setItem('theme_mode', nextTheme);
+        safeSetItem('theme_mode', nextTheme);
     }, []);
 
 
@@ -1027,7 +1045,7 @@ export default function Dashboard() {
     const persistUserProfile = async (profile: string | null, remember = rememberProfile) => {
         const normalizedProfile = profile ? normalizeProfileName(profile) : null;
         if (normalizedProfile) {
-            localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, normalizedProfile);
+            safeSetItem(SESSION_PROFILE_STORAGE_KEY, normalizedProfile);
         } else {
             localStorage.removeItem(SESSION_PROFILE_STORAGE_KEY);
         }
@@ -1376,7 +1394,7 @@ export default function Dashboard() {
     const persistSalesLocally = async (normalizedSales: CarSale[]) => {
         const salesStorageKey = getSalesStorageKey();
         await Preferences.set({ key: salesStorageKey, value: JSON.stringify(normalizedSales) });
-        localStorage.setItem(salesStorageKey, JSON.stringify(normalizedSales));
+        safeSetItem(salesStorageKey, JSON.stringify(normalizedSales));
 
         if (Capacitor.isNativePlatform()) {
             await Filesystem.writeFile({
@@ -1404,7 +1422,7 @@ export default function Dashboard() {
         const payload = JSON.stringify(Array.from(ids));
         const dirtyStorageKey = getDirtyIdsStorageKey();
         await Preferences.set({ key: dirtyStorageKey, value: payload });
-        localStorage.setItem(dirtyStorageKey, payload);
+        safeSetItem(dirtyStorageKey, payload);
     };
 
     const updateSalesAndSave = async (newSales: CarSale[]): Promise<{ success: boolean; error?: string }> => {
@@ -1858,7 +1876,7 @@ export default function Dashboard() {
     const persistGroupMeta = async (next: GroupMeta[]) => {
         setGroupMeta(next);
         await Preferences.set({ key: 'sale_group_meta', value: JSON.stringify(next) });
-        localStorage.setItem('sale_group_meta', JSON.stringify(next));
+        safeSetItem('sale_group_meta', JSON.stringify(next));
     };
 
     const toggleGroup = (groupName: string) => {
@@ -1996,7 +2014,7 @@ export default function Dashboard() {
 
     const handleBulkCopy = () => {
         const itemsToCopy = sales.filter(s => selectedIds.has(s.id));
-        localStorage.setItem('clipboard_sales', JSON.stringify(itemsToCopy));
+        safeSetItem('clipboard_sales', JSON.stringify(itemsToCopy));
         alert(`${itemsToCopy.length} items copied to clipboard`);
         setSelectedIds(new Set());
     };
@@ -2203,7 +2221,7 @@ export default function Dashboard() {
                 const normalizedStoredProfile = normalizeProfileName(storedProfile);
                 if (normalizedStoredProfile && normalizedStoredProfile !== storedProfile) {
                     storedProfile = normalizedStoredProfile;
-                    localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, normalizedStoredProfile);
+                    safeSetItem(SESSION_PROFILE_STORAGE_KEY, normalizedStoredProfile);
                     if (shouldRemember) {
                         await Preferences.set({ key: 'user_profile', value: normalizedStoredProfile });
                     }
@@ -2222,7 +2240,7 @@ export default function Dashboard() {
                     } else {
                         setView('landing');
                     }
-                    localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
+                    safeSetItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
                 if (storedProfile && !shouldRemember) {
                     await Preferences.remove({ key: 'user_profile' });
@@ -2337,7 +2355,7 @@ export default function Dashboard() {
             scrollTop: scrollContainerRef.current?.scrollTop ?? restoredScrollTopRef.current ?? 0
         };
 
-        localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(uiState));
+        safeSetItem(UI_STATE_STORAGE_KEY, JSON.stringify(uiState));
     }, [isLoading, view, activeCategory, searchTerm, sortBy, sortDir, expandedGroups]);
 
     useEffect(() => {
@@ -2379,7 +2397,7 @@ export default function Dashboard() {
                 expandedGroups,
                 scrollTop: container.scrollTop
             };
-            localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(nextState));
+            safeSetItem(UI_STATE_STORAGE_KEY, JSON.stringify(nextState));
         };
 
         container.addEventListener('scroll', onScroll, { passive: true });
@@ -2397,7 +2415,7 @@ export default function Dashboard() {
                 expandedGroups,
                 scrollTop: scrollContainerRef.current?.scrollTop ?? restoredScrollTopRef.current ?? 0
             };
-            localStorage.setItem(UI_STATE_STORAGE_KEY, JSON.stringify(currentState));
+            safeSetItem(UI_STATE_STORAGE_KEY, JSON.stringify(currentState));
         };
 
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -2406,7 +2424,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (!userProfile) return;
-        localStorage.setItem(SESSION_PROFILE_STORAGE_KEY, userProfile);
+        safeSetItem(SESSION_PROFILE_STORAGE_KEY, userProfile);
     }, [userProfile]);
 
     useEffect(() => {
@@ -2466,7 +2484,7 @@ export default function Dashboard() {
                     }
                     await persistDirtyIds(dirtyIds.current);
                     await Preferences.set({ key: scopedSalesKey, value: JSON.stringify(visibilityRepairedSales) });
-                    localStorage.setItem(scopedSalesKey, JSON.stringify(visibilityRepairedSales));
+                    safeSetItem(scopedSalesKey, JSON.stringify(visibilityRepairedSales));
                 }
                 setSales(visibilityRepairedSales.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0)));
 
@@ -2628,7 +2646,7 @@ export default function Dashboard() {
                     setSales(normalizedSales);
                     const scopedSalesKey = getSalesStorageKey(profile);
                     await Preferences.set({ key: scopedSalesKey, value: JSON.stringify(normalizedSales) });
-                    localStorage.setItem(scopedSalesKey, JSON.stringify(normalizedSales));
+                    safeSetItem(scopedSalesKey, JSON.stringify(normalizedSales));
 
                     if (syncedDirtyIds.size > 0) {
                         syncedDirtyIds.forEach((id) => dirtyIds.current.delete(id));
@@ -2852,7 +2870,7 @@ export default function Dashboard() {
     useEffect(() => {
         const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
         Preferences.set({ key: SIDEBAR_COLLAPSED_KEY, value: String(isSidebarCollapsed) });
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
+        safeSetItem(SIDEBAR_COLLAPSED_KEY, String(isSidebarCollapsed));
     }, [isSidebarCollapsed]);
 
     const saveSettings = async () => {
