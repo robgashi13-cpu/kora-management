@@ -4887,13 +4887,13 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-semibold text-slate-900 text-[11px] sm:text-[12px] leading-tight truncate">{sale.brand} {sale.model}</div>
-                                                                                            <div className="text-[8px] sm:text-[9px] text-slate-500 truncate">{sale.plateNumber || 'No plate'} • {sale.vin || 'No VIN'}</div>
+                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[9px] sm:text-[10px] text-slate-400 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'} · {sale.vin || 'No VIN'}</div>
                                                                                         </div>
-                                                                                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
-                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
-                                                                                                sale.status === 'Inspection' ? 'text-amber-700' :
-                                                                                                    'text-slate-500'
+                                                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
+                                                                                            (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-600 bg-slate-100' :
+                                                                                                sale.status === 'Inspection' ? 'text-amber-700 bg-amber-50' :
+                                                                                                    'text-slate-400 bg-slate-50'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
                                                                                     <div className="mt-0.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] text-slate-600">
@@ -6394,28 +6394,28 @@ export default function Dashboard() {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: '100%', opacity: 0 }}
                             transition={{ type: 'spring', damping: 30, stiffness: 320, mass: 0.7 }}
-                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-3xl border-t border-slate-200/60 bg-white/95 backdrop-blur-xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_60px_-12px_rgba(0,0,0,0.15)] md:hidden"
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-[28px] border-t border-slate-100 bg-white/98 backdrop-blur-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-16px_rgba(0,0,0,0.18)] md:hidden"
                             role="dialog"
                             aria-modal="true"
                             aria-label="Sale actions"
                         >
-                            <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-300" />
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm">{(longPressActionSale.brand || '?')[0]}</div>
+                            <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-slate-200" />
+                            <div className="flex items-center gap-3.5 mb-5">
+                                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/60 flex items-center justify-center text-slate-700 font-black text-sm shadow-sm">{(longPressActionSale.brand || '?')[0]}</div>
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900">{longPressActionSale.brand} {longPressActionSale.model} {longPressActionSale.year}</p>
-                                    <p className="text-xs text-slate-500">{longPressActionSale.buyerName || 'No buyer'} · {longPressActionSale.status}</p>
+                                    <p className="text-[15px] font-bold text-slate-900 tracking-[-0.01em]">{longPressActionSale.brand} {longPressActionSale.model} {longPressActionSale.year}</p>
+                                    <p className="text-xs text-slate-400 font-medium mt-0.5">{longPressActionSale.buyerName || 'No buyer'} · {longPressActionSale.status}</p>
                                 </div>
                             </div>
 
                             {/* Primary Actions */}
-                            <div className="grid grid-cols-4 gap-2 mb-3">
-                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={() => { setLongPressActionSale(null); setViewSaleModalItem(longPressActionSale); }}>
-                                    <Eye className="w-4 h-4 text-slate-500" />
+                            <div className="grid grid-cols-4 gap-2.5 mb-4">
+                                <button type="button" className="ui-control min-h-12 rounded-2xl border border-slate-200/80 bg-slate-50/50 px-2 text-[11px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1.5 active:scale-[0.95] transition-all shadow-sm" onClick={() => { setLongPressActionSale(null); setViewSaleModalItem(longPressActionSale); }}>
+                                    <Eye className="w-4.5 h-4.5 text-slate-400" />
                                     View
                                 </button>
-                                <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={() => { setLongPressActionSale(null); openSaleForm(longPressActionSale); }}>
-                                    <Edit className="w-4 h-4 text-slate-500" />
+                                <button type="button" className="ui-control min-h-12 rounded-2xl border border-slate-200/80 bg-slate-50/50 px-2 text-[11px] font-semibold text-slate-700 flex flex-col items-center justify-center gap-1.5 active:scale-[0.95] transition-all shadow-sm" onClick={() => { setLongPressActionSale(null); openSaleForm(longPressActionSale); }}>
+                                    <Edit className="w-4.5 h-4.5 text-slate-400" />
                                     Edit
                                 </button>
                                 <button type="button" className="ui-control min-h-11 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform" onClick={() => { setLongPressActionSale(null); openInvoice(longPressActionSale, { stopPropagation() { }, preventDefault() { } } as React.MouseEvent); }}>
