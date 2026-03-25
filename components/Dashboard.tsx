@@ -4919,6 +4919,24 @@ export default function Dashboard() {
                                                                                 )}
 
                                                                                 <div className="flex-1 min-w-0">
+                                                                                    {activeCategory === 'INSPECTIONS' ? (
+                                                                                        <>
+                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
+                                                                                            <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
+                                                                                            {sale.notes && sale.notes.startsWith('Link: ') && (
+                                                                                                <a
+                                                                                                    href={sale.notes.replace('Link: ', '')}
+                                                                                                    target="_blank"
+                                                                                                    rel="noopener noreferrer"
+                                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                                    className="text-[10px] text-blue-600 hover:text-blue-800 underline truncate block mt-0.5"
+                                                                                                >
+                                                                                                    {sale.notes.replace('Link: ', '')}
+                                                                                                </a>
+                                                                                            )}
+                                                                                        </>
+                                                                                    ) : (
+                                                                                    <>
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
                                                                                             <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em]">{sale.brand} {sale.model}</div>
@@ -4956,6 +4974,8 @@ export default function Dashboard() {
                                                                                     </div>
                                                                                     {groupingEnabled && sale.group && sale.status === 'Completed' && (
                                                                                         <div className="mt-1 text-[9px] sm:text-[10px] text-slate-400">Sold cars stay locked in group.</div>
+                                                                                    )}
+                                                                                    </>
                                                                                     )}
                                                                                 </div>
                                                                             </motion.div>
