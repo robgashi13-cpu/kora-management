@@ -543,10 +543,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     const Content = (
         <motion.div
-            initial={inline ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: 6 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 24, mass: 0.7 }}
+            initial={inline ? { opacity: 1 } : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
             className={`${inline ? 'w-full h-full flex flex-col bg-white min-h-0' : 'relative w-full h-full bg-white flex flex-col overflow-hidden min-h-0'}`}
         >
