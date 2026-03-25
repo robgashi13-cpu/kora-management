@@ -26,7 +26,7 @@ const COLORS = [
     'Black', 'White', 'Silver', 'Grey', 'Blue', 'Red', 'Green', 'Brown', 'Beige', 'Gold', 'Yellow', 'Orange', 'Purple', 'Other'
 ];
 
-export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdfTemplates, onInvoiceCreated }: Props) {
+const EditShitblerjeModal = React.forwardRef<HTMLDivElement, Props>(function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdfTemplates, onInvoiceCreated }, _ref) {
     const [formData, setFormData] = useState<ShitblerjeOverrides>({});
     const [isSaving, setIsSaving] = useState(false);
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
@@ -539,7 +539,9 @@ export default function EditShitblerjeModal({ isOpen, sale, onClose, onSave, pdf
             )}
         </>
     );
-}
+});
+
+export default EditShitblerjeModal;
 
 const Input = ({ label, className = '', required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
