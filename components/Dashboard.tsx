@@ -5679,7 +5679,7 @@ export default function Dashboard() {
                                             const pdfStyle = 'body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#1e293b}h1{font-size:16px;margin-bottom:12px}h2{font-size:13px;margin:16px 0 6px;padding:4px 8px;background:#f1f5f9;border-radius:4px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:2px solid #e2e8f0;padding:4px 6px}td{padding:3px 6px;border-bottom:1px solid #f1f5f9;font-size:10px}.right{text-align:right}@media print{body{margin:10mm}}';
                                             let html = `<html><head><meta charset="utf-8"><style>${pdfStyle}</style></head><body>`;
                                             html += '<h1>Libri i Shitblerjes</h1>';
-                                            const subtitle = mode === 'active' ? 'Sales & Shipped only (excludes Completed)' : 'All sales';
+                                            const subtitle = mode === 'active' ? 'Only New (Sale)' : 'All Cars';
                                             html += `<p style="color:#94a3b8;font-size:9px">Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} — ${subtitle}</p>`;
                                             const renderTable = (items: CarSale[]) => {
                                                 if (items.length === 0) return '';
@@ -5690,12 +5690,12 @@ export default function Dashboard() {
                                                 t += '</table>';
                                                 return t;
                                             };
-                                            if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                             if (mode === 'active') {
-                                                // Only shipped (non-New, non-Completed)
-                                                const shipped = otherSales.filter(s => s.status !== 'Completed');
-                                                if (shipped.length > 0) { html += `<h2>Shipped (${shipped.length} cars)</h2>`; html += renderTable(shipped); }
+                                                // Only New sales
+                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                             } else {
+                                                // All cars
+                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                                 sortedMonths.forEach(month => {
                                                     const items = byMonth[month];
                                                     const [y, m] = month.split('-').map(Number);
