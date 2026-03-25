@@ -539,7 +539,9 @@ const EditShitblerjeModal = React.forwardRef<HTMLDivElement, Props>(function Edi
             )}
         </>
     );
-}
+});
+
+export default EditShitblerjeModal;
 
 const Input = ({ label, className = '', required, ...props }: any) => (
     <div className={`flex flex-col gap-1.5 w-full ${className}`}>
