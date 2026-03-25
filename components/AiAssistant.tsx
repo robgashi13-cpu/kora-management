@@ -64,8 +64,14 @@ export default function AiAssistant({ onAction }: AiAssistantProps) {
       });
 
       if (!resp.ok || !resp.body) {
-        const errorData = await resp.json().catch(() => ({ error: 'AI request failed' }));
-        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errorData.error || 'Something went wrong'}` }]);
+        let errorMsg = `AI request failed (${resp.status})`;
+        try {
+          const text = await resp.text();
+          const parsed = JSON.parse(text);
+          errorMsg = parsed.error || errorMsg;
+        } catch { /* use default */ }
+        console.error('AI Assistant error:', errorMsg, resp.status);
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
         setIsLoading(false);
         return;
       }
