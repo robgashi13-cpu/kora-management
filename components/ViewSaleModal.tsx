@@ -54,8 +54,10 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
 
         const container = document.createElement('div');
         container.style.position = 'fixed';
-        container.style.left = '-9999px';
+        container.style.left = '0';
         container.style.top = '0';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
         container.style.width = '1024px';
         container.style.zIndex = '-1';
         document.body.appendChild(container);

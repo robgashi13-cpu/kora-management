@@ -249,7 +249,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             )}
                         </div>
                     </div>
-                    <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none" aria-hidden="true">
+                    <div className="fixed left-0 top-0 -z-10 opacity-0 pointer-events-none" aria-hidden="true">
                         <InvoiceDocument
                         template={template}
                             sale={sale}
