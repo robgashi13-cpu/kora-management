@@ -5571,22 +5571,17 @@ export default function Dashboard() {
                                     </div>
 
                                     {invoicesSubTab === 'accountant' ? (() => {
-                                        // Group ALL sales by month (shipping date), then by status category
+                                        // Sales (New) on top, rest grouped by month
                                         const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled' && s.status !== 'Archived');
-                                        const byMonth: Record<string, { newSales: CarSale[]; shipped: CarSale[]; done: CarSale[] }> = {};
-                                        allSalesForAccountant.forEach(s => {
+                                        const newSales = allSalesForAccountant.filter(s => s.status === 'New');
+                                        const otherSales = allSalesForAccountant.filter(s => s.status !== 'New');
+                                        const byMonth: Record<string, CarSale[]> = {};
+                                        otherSales.forEach(s => {
                                             const dateStr = s.shippingDate || s.createdAt;
                                             const dt = new Date(dateStr);
                                             const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
-                                            if (!byMonth[key]) byMonth[key] = { newSales: [], shipped: [], done: [] };
-                                            if (s.status === 'New') {
-                                                byMonth[key].newSales.push(s);
-                                            } else if (s.status === 'Completed') {
-                                                byMonth[key].done.push(s);
-                                            } else {
-                                                // Shipped, In Progress, Inspection, Autosallon, etc.
-                                                byMonth[key].shipped.push(s);
-                                            }
+                                            if (!byMonth[key]) byMonth[key] = [];
+                                            byMonth[key].push(s);
                                         });
                                         const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
                                         const handleAccountantPdfDownload = async () => {
