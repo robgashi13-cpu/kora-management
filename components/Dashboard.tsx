@@ -4300,6 +4300,16 @@ export default function Dashboard() {
                                 </div>
 
                             </div>
+                            {activeCategory === 'INSPECTIONS' && (
+                                <button
+                                    onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
+                                    className={`ui-control p-2.5 rounded-xl transition-all ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                                    title="Add Inspection"
+                                    aria-label="Add inspection entry"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            )}
                         </div>
                     </div>
                     </div>
