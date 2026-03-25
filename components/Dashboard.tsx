@@ -5579,7 +5579,7 @@ export default function Dashboard() {
                                             const dt = new Date(dateStr);
                                             const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
                                             if (!byMonth[key]) byMonth[key] = { shipped: [], done: [] };
-                                            if (s.status === 'Shipped' || s.status === 'In Progress') {
+                                            if (s.status === 'Shipped' || s.status === 'In Progress' || s.status === 'New') {
                                                 byMonth[key].shipped.push(s);
                                             } else if (s.status === 'Completed') {
                                                 byMonth[key].done.push(s);
