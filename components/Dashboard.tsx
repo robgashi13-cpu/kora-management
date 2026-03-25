@@ -4944,7 +4944,6 @@ export default function Dashboard() {
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
                                                                                             (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-600 bg-slate-100' :
-                                                                                                sale.status === 'Inspection' ? 'text-amber-700 bg-amber-50' :
                                                                                                     'text-slate-400 bg-slate-50'
                                                                                             }`}>{sale.status}</span>
                                                                                     </div>
