@@ -452,15 +452,31 @@ export const generatePdf = async ({
     const canvasW = canvas.width;
     const canvasH = canvas.height;
 
+    // A4 dimensions in mm
+    const A4_W = 210;
+    const A4_H = 297;
+
     const pdf = new jsPDF({
-      orientation: canvasW >= canvasH ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: [canvasW, canvasH],
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
       compress: true,
-      hotfixes: ['px_scaling']
     });
 
-    pdf.addImage(imgData, 'JPEG', 0, 0, canvasW, canvasH, undefined, 'FAST');
+    // Scale the captured image to fill the full A4 page width, derive height from aspect ratio
+    const imgAspect = canvasH / canvasW;
+    const fitHeight = A4_W * imgAspect;
+
+    if (fitHeight <= A4_H) {
+      // Content fits within A4 height — place at top, full width
+      pdf.addImage(imgData, 'JPEG', 0, 0, A4_W, fitHeight, undefined, 'FAST');
+    } else {
+      // Content taller than A4 — scale to fit height, center horizontally
+      const fitWidth = A4_H / imgAspect;
+      const offsetX = (A4_W - fitWidth) / 2;
+      pdf.addImage(imgData, 'JPEG', offsetX, 0, fitWidth, A4_H, undefined, 'FAST');
+    }
+
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
   }
