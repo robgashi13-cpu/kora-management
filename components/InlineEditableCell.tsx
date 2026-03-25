@@ -15,7 +15,7 @@ interface InlineEditableCellProps {
   formatDisplay?: (value: string | number | undefined) => string;
 }
 
-const InlineEditableCell = memo(React.forwardRef<HTMLSpanElement, InlineEditableCellProps>(function InlineEditableCell({
+const InlineEditableCell = memo(function InlineEditableCell({
   value,
   onSave,
   type = 'text',
@@ -191,6 +191,6 @@ const InlineEditableCell = memo(React.forwardRef<HTMLSpanElement, InlineEditable
       )}
     </span>
   );
-}));
+});
 
 export default InlineEditableCell;
