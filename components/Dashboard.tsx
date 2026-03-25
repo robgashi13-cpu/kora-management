@@ -5752,10 +5752,10 @@ export default function Dashboard() {
                                                             {showAccountantPdfOptions && (
                                                                 <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[180px]">
                                                                     <button type="button" onClick={() => generateAccountantPdf('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
-                                                                        <Download className="w-3 h-3 text-slate-500" /> All Cars (Complete)
+                                                                        <Download className="w-3 h-3 text-slate-500" /> All Cars
                                                                     </button>
                                                                     <button type="button" onClick={() => generateAccountantPdf('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100">
-                                                                        <Download className="w-3 h-3 text-blue-500" /> Only Ship & New
+                                                                        <Download className="w-3 h-3 text-blue-500" /> Only New (Sale)
                                                                     </button>
                                                                 </div>
                                                             )}
