@@ -280,6 +280,8 @@ type PdfGenerationOptions = {
   onClone?: (clonedDoc: Document) => void;
   pagebreakMode?: Array<'css' | 'legacy' | 'avoid-all' | 'avoid'>;
   editableText?: boolean;
+  /** When true, captures only the actual content height — no forced A4 min-height, avoids blank trailing pages */
+  compact?: boolean;
 };
 
 export const generatePdf = async ({
