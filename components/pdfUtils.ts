@@ -315,12 +315,14 @@ export const generatePdf = async ({
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
-        // Remove height constraints that could cause layout shifts
+        // Remove height constraints and padding that cause layout shifts or empty space
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
           el.style.overflow = 'visible';
           el.style.maxHeight = 'none';
           el.style.minHeight = 'none';
           el.style.height = 'auto';
+          el.style.padding = '20px';
+          el.style.margin = '0';
         });
         onClone?.(clonedDoc);
       }
