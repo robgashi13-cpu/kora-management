@@ -41,6 +41,8 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             const result = await generatePdf({
                 element,
                 filename,
+                singlePage: true,
+                editableText: false,
                 onClone: (clonedDoc) => {
                     const invoiceNode = clonedDoc.querySelector('#invoice-content');
                     clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
