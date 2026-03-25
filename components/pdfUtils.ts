@@ -45,9 +45,10 @@ export const waitForImages = async (container: HTMLElement, timeoutMs = 8000): P
 export const isIosSafari = (): boolean => {
   if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent;
-  const isIos = /iP(ad|od|hone)/.test(ua);
+  const isIpadOsDesktop = /Macintosh/.test(ua) && window.navigator.maxTouchPoints > 1;
+  const isIosDevice = /iP(ad|od|hone)/.test(ua) || isIpadOsDesktop;
   const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
-  return isIos && isSafari;
+  return isIosDevice && isSafari;
 };
 
 export const sanitizePdfCloneStyles = (clonedDoc: Document) => {
@@ -209,6 +210,123 @@ export const sharePdfBlob = async ({
   return { shared: false, opened: downloadResult.opened };
 };
 
+export const generateImageBlobFromElement = async ({
+  element,
+  onClone,
+  quality = 0.95
+}: {
+  element: HTMLElement;
+  onClone?: (clonedDoc: Document) => void;
+  quality?: number;
+}): Promise<Blob> => {
+  await waitForImages(element);
+  const html2canvas = (await import('html2canvas')).default;
+
+  const rect = element.getBoundingClientRect();
+  const width = Math.max(Math.ceil(rect.width), element.scrollWidth, element.offsetWidth, 1);
+  const height = Math.max(Math.ceil(rect.height), element.scrollHeight, element.offsetHeight, 1);
+
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    backgroundColor: '#ffffff',
+    imageTimeout: 10000,
+    width,
+    height,
+    windowWidth: width,
+    windowHeight: height,
+    onclone: (clonedDoc: Document) => {
+      sanitizePdfCloneStyles(clonedDoc);
+      normalizePdfLayout(clonedDoc);
+      clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
+        el.style.overflow = 'visible';
+        el.style.maxHeight = 'none';
+        el.style.minHeight = 'none';
+        el.style.height = 'auto';
+      });
+      onClone?.(clonedDoc);
+    }
+  });
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png', quality));
+  if (!blob) {
+    throw new Error('Failed to generate image blob.');
+  }
+  return blob;
+};
+
+export const shareImageBlob = async ({
+  blob,
+  filename,
+  title,
+  text,
+  dialogTitle
+}: {
+  blob: Blob;
+  filename: string;
+  title?: string;
+  text?: string;
+  dialogTitle?: string;
+}): Promise<{ shared: boolean; opened: boolean }> => {
+  const file = new File([blob], filename, { type: 'image/png' });
+  const { Capacitor } = await import('@capacitor/core');
+
+  if (Capacitor.isNativePlatform()) {
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    const { Share } = await import('@capacitor/share');
+    const base64Data = await blobToBase64(blob);
+    const filePath = filename || `invoice_${Date.now()}.png`;
+    const savedFile = await Filesystem.writeFile({
+      path: filePath,
+      data: base64Data,
+      directory: Directory.Documents
+    });
+
+    await Share.share({
+      title,
+      text,
+      files: [savedFile.uri],
+      dialogTitle
+    });
+    return { shared: true, opened: true };
+  }
+
+  if (typeof window !== 'undefined' && 'navigator' in window) {
+    const nav = window.navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+      canShare?: (data: ShareData) => boolean;
+    };
+    if (nav.share && nav.canShare?.({ files: [file] })) {
+      await nav.share({
+        title,
+        text,
+        files: [file]
+      });
+      return { shared: true, opened: true };
+    }
+  }
+
+  const blobUrl = URL.createObjectURL(blob);
+  let opened = true;
+  if (isIosSafari()) {
+    const popup = window.open(blobUrl, '_blank');
+    if (!popup) {
+      opened = false;
+      window.location.href = blobUrl;
+    }
+  } else {
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+  return { shared: false, opened };
+};
+
 const blobToBase64 = async (blob: Blob): Promise<string> => {
   const reader = new FileReader();
   return new Promise((resolve, reject) => {
@@ -302,47 +420,47 @@ export const generatePdf = async ({
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
 
+    const rect = element.getBoundingClientRect();
+    const width = Math.max(Math.ceil(rect.width), element.scrollWidth, element.offsetWidth, 1);
+    const height = Math.max(Math.ceil(rect.height), element.scrollHeight, element.offsetHeight, 1);
+
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
       imageTimeout: 10000,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
-      windowWidth: element.scrollWidth,
-      windowHeight: element.scrollHeight,
+      width,
+      height,
+      windowWidth: width,
+      windowHeight: height,
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
-        // Remove height constraints and padding that cause layout shifts or empty space
+        // Keep invoice layout intact while removing only height constraints
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
           el.style.overflow = 'visible';
           el.style.maxHeight = 'none';
           el.style.minHeight = 'none';
           el.style.height = 'auto';
-          el.style.padding = '20px';
-          el.style.margin = '0';
         });
         onClone?.(clonedDoc);
       }
     });
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const canvasW = canvas.width;
     const canvasH = canvas.height;
-    // Use A4 width (210mm) and derive height from aspect ratio
-    const pdfWidthMM = 210;
-    const pdfHeightMM = (canvasH * pdfWidthMM) / canvasW;
 
     const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: [pdfWidthMM, pdfHeightMM],
-      compress: true
+      orientation: canvasW >= canvasH ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [canvasW, canvasH],
+      compress: true,
+      hotfixes: ['px_scaling']
     });
 
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMM, pdfHeightMM);
+    pdf.addImage(imgData, 'JPEG', 0, 0, canvasW, canvasH, undefined, 'FAST');
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
   }

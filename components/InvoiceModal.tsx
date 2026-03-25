@@ -6,7 +6,7 @@ import { CarSale } from '@/src/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { InvoicePriceSource } from './invoicePricing';
-import { generatePdf, printPdfBlob, sharePdfBlob } from './pdfUtils';
+import { generateImageBlobFromElement, generatePdf, isIosSafari, printPdfBlob, shareImageBlob, sharePdfBlob } from './pdfUtils';
 import { PdfTemplateEntry } from './PdfTemplateBuilder';
 
 interface Props {
@@ -107,6 +107,36 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         try {
             setIsDownloading(true);
             setStatusMessage(null);
+            const element = printRef.current;
+
+            if (isIosSafari() && element) {
+                const imageBlob = await generateImageBlobFromElement({
+                    element,
+                    onClone: (clonedDoc) => {
+                        const invoiceNode = clonedDoc.querySelector('#invoice-content');
+                        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(node => {
+                            if (invoiceNode && node.closest('#invoice-content')) {
+                                return;
+                            }
+                            node.remove();
+                        });
+                    }
+                });
+
+                const imageResult = await shareImageBlob({
+                    blob: imageBlob,
+                    filename: `Invoice_${sale.vin || 'unnamed'}.png`,
+                    title: `Invoice - ${sale.brand} ${sale.model}`,
+                    text: `Invoice for ${sale.vin}`,
+                    dialogTitle: 'Download or Share Invoice Image'
+                });
+
+                if (!imageResult.opened) {
+                    setStatusMessage('Popup blocked. We opened the invoice image in this tab so you can save it.');
+                }
+                return;
+            }
+
             const blob = pdfBlob ?? await buildPdfPreview();
             if (!blob) return;
             const shareResult = await sharePdfBlob({
