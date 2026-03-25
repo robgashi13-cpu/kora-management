@@ -3771,6 +3771,7 @@ export default function Dashboard() {
                                         <button
                                             key={item.id}
                                             onClick={() => {
+                                                setShowProfileMenu(false);
                                                 setView(item.view);
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
@@ -3807,6 +3808,7 @@ export default function Dashboard() {
                                         <React.Fragment key={item.id}>
                                             <button
                                                 onClick={() => {
+                                                    setShowProfileMenu(false);
                                                     setView(item.view);
                                                     if (item.category) setActiveCategory(item.category as any);
                                                     setIsMobileMenuOpen(false);
@@ -3822,6 +3824,7 @@ export default function Dashboard() {
                                             {item.id === 'INVOICES' && pdfNavItem && (!pdfNavItem.adminOnly || isAdmin) && (
                                                 <button
                                                     onClick={() => {
+                                                        setShowProfileMenu(false);
                                                         setView(pdfNavItem.view);
                                                         if (pdfNavItem.category) setActiveCategory(pdfNavItem.category as any);
                                                         setIsMobileMenuOpen(false);
@@ -3865,6 +3868,7 @@ export default function Dashboard() {
                                         <button
                                             key={item.id}
                                             onClick={() => {
+                                                setShowProfileMenu(false);
                                                 setView(item.view);
                                                 if (item.category) setActiveCategory(item.category as any);
                                                 setIsMobileMenuOpen(false);
