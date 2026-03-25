@@ -191,6 +191,6 @@ const InlineEditableCell = memo(React.forwardRef<HTMLSpanElement, InlineEditable
       )}
     </span>
   );
-});
+}));
 
 export default InlineEditableCell;
