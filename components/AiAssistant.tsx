@@ -4,7 +4,8 @@ import { MessageCircle, X, Send, Loader2, Sparkles, Trash2 } from 'lucide-react'
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
-const AI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
+const AI_URL = `https://tbjihsqkbmjiblpxzojo.supabase.co/functions/v1/ai-assistant`;
+const AI_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE';
 
 interface AiAssistantProps {
   onAction?: (action: { type: string; data: any }) => void;
