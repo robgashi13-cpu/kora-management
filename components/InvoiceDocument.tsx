@@ -58,7 +58,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
 
         const resolvedPriceValue = resolveInvoicePriceValue(displaySale, priceSource, priceValue);
         const soldPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
-        const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+        const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
         const defaultServicesValue = 169.49;
         const defaultTaxValue = 30.51;
         const defaultFeesTotal = defaultServicesValue + defaultTaxValue;

@@ -56,7 +56,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
     const sellerBusinessId = 'NR.Biznesit 810062092';
     const fullSellerName = 'RG SH.P.K';
 
-    const referenceId = (displaySale.invoiceId || displaySale.id || displaySale.vin || '').toString().slice(-8).toUpperCase() || 'N/A';
+    const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
     const isSinglePage = type === 'deposit' || type === 'full_shitblerje';
     const rootPaddingClass = type === 'deposit'
         ? 'p-[48px] pt-[64px]'
