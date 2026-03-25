@@ -191,6 +191,6 @@ const InlineEditableCell = memo(function InlineEditableCell({
       )}
     </span>
   );
-}));
+});
 
 export default InlineEditableCell;
