@@ -245,7 +245,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-3 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 pb-28 md:pb-4 space-y-3 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {pdfMessage && (
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                                 {pdfMessage}
