@@ -142,7 +142,7 @@ type CustomDashboard = {
     updatedAt: string;
 };
 
-function PdfDropdownMenu({ sale, openPdfDocument }: { sale: CarSale; openPdfDocument: (s: CarSale, type: string, e: React.MouseEvent, arg4?: boolean, arg5?: boolean) => void }) {
+function PdfDropdownMenu({ sale, openPdfDocument }: { sale: CarSale; openPdfDocument: (s: CarSale, type: any, e: React.MouseEvent, arg4?: boolean, arg5?: boolean) => void }) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
