@@ -26,6 +26,7 @@ import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
+import AiAssistant from './AiAssistant';
 
 const safeSetItem = (key: string, value: string) => {
     try {
@@ -6429,6 +6430,7 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5 mx-auto" />
                 </button>
             )}
+            {isAdmin && <AiAssistant />}
         </div>
     );
 }
