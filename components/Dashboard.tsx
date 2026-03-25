@@ -787,7 +787,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        window.safeSetItem(INVOICE_HISTORY_STORAGE_KEY, JSON.stringify(invoiceHistory));
+        safeSetItem(INVOICE_HISTORY_STORAGE_KEY, JSON.stringify(invoiceHistory));
     }, [invoiceHistory]);
 
     const trackInvoiceCreated = useCallback(async (sale: CarSale, sourceContext: InvoiceSourceContext) => {
