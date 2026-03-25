@@ -4185,25 +4185,53 @@ export default function Dashboard() {
                 <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
-                    <div className="flex w-full flex-col gap-3">
-                        <div className="flex items-center justify-between gap-3 md:gap-4">
-                            <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
+                    <div className="flex w-full flex-col gap-2">
+                        {/* Mobile: single row with menu, search, sync */}
+                        <div className={`flex items-center gap-2 ${forceMobileLayout ? '' : 'md:hidden'}`}>
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
                                 aria-label="Open navigation menu"
-                                className={`ui-control p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? '' : 'md:hidden'}`}
+                                className={`ui-control p-2 rounded-xl transition-colors flex-shrink-0 ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'}`}
                             >
-                                <Menu className="w-6 h-6" />
+                                <Menu className="w-5 h-5" />
                             </button>
+                            <div className="relative group flex-1 min-w-0">
+                                <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                                <input
+                                    placeholder="Search sales..."
+                                    aria-label="Search sales"
+                                    className={`ui-control w-full rounded-xl pl-10 pr-4 py-2 text-sm border transition-all outline-none ${theme === 'dark'
+                                        ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
+                                        : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <button
+                                onClick={() => userProfile && performAutoSync(supabaseUrl, supabaseKey, userProfile)}
+                                className={`ui-control p-2 rounded-xl transition-all flex-shrink-0 ${isSyncing
+                                    ? `${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} animate-spin`
+                                    : theme === 'dark'
+                                        ? 'text-slate-400 hover:text-slate-100 hover:bg-white/10'
+                                        : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                                title="Sync Now"
+                            >
+                                <RefreshCw className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Desktop: original layout */}
+                        <div className={`flex items-center justify-between gap-3 md:gap-4 ${forceMobileLayout ? 'hidden' : 'hidden md:flex'}`}>
+                            <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                className={`ui-control p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'} ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}
+                                className={`ui-control p-2 -ml-2 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-white/10 text-slate-200' : 'hover:bg-slate-100 text-slate-600'}`}
                                 title={isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}
                                 aria-label={isSidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
                             >
                                 <Menu className="w-6 h-6" />
                             </button>
-                            <h2 className={`text-sm sm:text-base lg:text-lg font-bold hidden sm:flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                            <h2 className={`text-sm sm:text-base lg:text-lg font-bold flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {filteredSales.length} {filteredSales.length === 1 ? 'car' : 'cars'}
@@ -4211,7 +4239,7 @@ export default function Dashboard() {
                             </h2>
                         </div>
 
-                        <div className={`flex-1 max-w-2xl ${forceMobileLayout ? 'hidden' : 'hidden md:block'}`}>
+                        <div className="flex-1 max-w-2xl">
                             <div className="relative group">
                                 <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600'}`} />
                                 <input
@@ -4262,22 +4290,6 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    </div>
-
-                    {/* Mobile Search - Visible only on mobile */}
-                    <div className={`mt-3 ${forceMobileLayout ? '' : 'md:hidden'}`}>
-                        <div className="relative group">
-                            <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                            <input
-                                placeholder="Search sales..."
-                                aria-label="Search sales"
-                                className={`ui-control w-full rounded-xl pl-11 pr-4 py-2.5 text-sm border transition-all outline-none ${theme === 'dark'
-                                    ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
-                                    : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
                     </div>
                 </header>
                 )}

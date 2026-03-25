@@ -245,7 +245,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 space-y-3 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <div className="flex-1 overflow-y-auto p-2.5 sm:p-4 pb-28 md:pb-4 space-y-3 scroll-container" style={{ WebkitOverflowScrolling: 'touch' }}>
                         {pdfMessage && (
                             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
                                 {pdfMessage}
@@ -394,7 +394,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                         </div>
                     </div>
 
-                    {/* Footer */}
+                    {/* Desktop Footer */}
                     <div className="hidden md:flex justify-end gap-3 px-5 py-4 border-t border-slate-200 bg-slate-50">
                         <button
                             type="button"
@@ -404,16 +404,19 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                             Close
                         </button>
                     </div>
-                    <div className="mobile-sticky-actions md:hidden" aria-label="Sale actions">
-                        <button type="button" onClick={() => onEdit?.(sale)} className="rounded-xl bg-slate-900 text-white text-xs font-semibold">
-                            <Edit className="w-4 h-4 mx-auto mb-1" />Edit
-                        </button>
-                        <button type="button" onClick={() => document.querySelector('[data-documents-section="true"]')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
-                            <FolderOpen className="w-4 h-4 mx-auto mb-1" />Documents
-                        </button>
-                        <button type="button" onClick={handleViewPdf} disabled={isGeneratingPdf} className="rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-semibold">
-                            <MoreHorizontal className="w-4 h-4 mx-auto mb-1" />PDF
-                        </button>
+                    {/* Mobile Fixed Bottom Bar */}
+                    <div className="fixed bottom-0 left-0 right-0 z-[105] md:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200/60 shadow-[0_-8px_32px_-4px_rgba(15,23,42,0.1)]" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+                        <div className="grid grid-cols-3 gap-2.5 px-4 pt-3">
+                            <button type="button" onClick={() => onEdit?.(sale)} className="ui-control flex flex-col items-center justify-center gap-1.5 min-h-[52px] rounded-2xl bg-slate-900 text-white text-[11px] font-semibold active:scale-[0.95] transition-all shadow-sm">
+                                <Edit className="w-4 h-4" />Edit
+                            </button>
+                            <button type="button" onClick={() => document.querySelector('[data-documents-section="true"]')?.scrollIntoView({behavior: 'smooth', block: 'start'})} className="ui-control flex flex-col items-center justify-center gap-1.5 min-h-[52px] rounded-2xl border border-slate-200 bg-white text-slate-700 text-[11px] font-semibold active:scale-[0.95] transition-all shadow-sm">
+                                <FolderOpen className="w-4 h-4" />Documents
+                            </button>
+                            <button type="button" onClick={handleViewPdf} disabled={isGeneratingPdf} className="ui-control flex flex-col items-center justify-center gap-1.5 min-h-[52px] rounded-2xl border border-slate-200 bg-white text-slate-700 text-[11px] font-semibold active:scale-[0.95] transition-all shadow-sm disabled:opacity-50">
+                                <FileText className="w-4 h-4" />{isGeneratingPdf ? 'Loading...' : 'PDF'}
+                            </button>
+                        </div>
                     </div>
                 </motion.div>
             </div>
