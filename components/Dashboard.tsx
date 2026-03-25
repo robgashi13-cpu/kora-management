@@ -2304,7 +2304,8 @@ export default function Dashboard() {
                             setView('invoices');
                         }
                     } else {
-                        setView('landing');
+                        setView('dashboard');
+                        setActiveCategory('SALES');
                     }
                     safeSetItem(SESSION_PROFILE_STORAGE_KEY, storedProfile);
                 }
@@ -2379,11 +2380,6 @@ export default function Dashboard() {
                             expandedGroups?: string[];
                             scrollTop?: number;
                         };
-                        if (parsed.view) {
-                            // Never auto-open the Add/Edit Sale form on app launch from persisted state.
-                            setView(parsed.view === 'sale_form' ? 'dashboard' : parsed.view);
-                        }
-                        if (parsed.activeCategory) setActiveCategory(parsed.activeCategory);
                         if (typeof parsed.searchTerm === 'string') setSearchTerm(parsed.searchTerm);
                         if (parsed.sortBy) setSortBy(parsed.sortBy);
                         if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') setSortDir(parsed.sortDir);
@@ -3635,7 +3631,8 @@ export default function Dashboard() {
                                 setView('invoices');
                             }
                         } else {
-                            setView('landing');
+                            setView('dashboard');
+                            setActiveCategory('SALES');
                         }
                         setRememberProfile(remember);
                         persistUserProfile(normalizedProfile, remember);
