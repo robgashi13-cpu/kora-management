@@ -603,6 +603,13 @@ export default function Dashboard() {
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
     const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
     const hasSyncedTransportPaidRef = useRef(false);
+    const [showAccountantPdfOptions, setShowAccountantPdfOptions] = useState(false);
+    const accountantPdfOptionsRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const handler = (e: MouseEvent) => { if (accountantPdfOptionsRef.current && !accountantPdfOptionsRef.current.contains(e.target as Node)) setShowAccountantPdfOptions(false); };
+        if (showAccountantPdfOptions) document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [showAccountantPdfOptions]);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
     const isRecordAdmin = userProfile === ADMIN_PROFILE;
