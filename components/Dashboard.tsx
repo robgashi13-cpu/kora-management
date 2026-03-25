@@ -672,7 +672,7 @@ export default function Dashboard() {
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
-    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history'>('create');
+    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant'>('create');
     const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
     const [invoiceHistoryMonthFilter, setInvoiceHistoryMonthFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -5512,9 +5512,12 @@ export default function Dashboard() {
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className="mt-2 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-3' : 'grid-cols-2'}`}>
                                                 <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
+                                                {(isAdmin || isFullSalesViewer(userProfile)) && (
+                                                    <button type="button" onClick={() => setInvoicesSubTab('accountant')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'accountant' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Accountant</button>
+                                                )}
                                             </div>
                                         </div>
                                         {view === 'invoices' && invoicesSubTab === 'create' && (
@@ -5567,7 +5570,101 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {invoicesSubTab === 'history' ? (
+                                    {invoicesSubTab === 'accountant' ? (() => {
+                                        // Group ALL sales by month (shipping date), then by status category
+                                        const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled');
+                                        const byMonth: Record<string, { shipped: CarSale[]; done: CarSale[] }> = {};
+                                        allSalesForAccountant.forEach(s => {
+                                            const dateStr = s.shippingDate || s.createdAt;
+                                            const dt = new Date(dateStr);
+                                            const key = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}`;
+                                            if (!byMonth[key]) byMonth[key] = { shipped: [], done: [] };
+                                            if (s.status === 'Shipped' || s.status === 'In Progress') {
+                                                byMonth[key].shipped.push(s);
+                                            } else if (s.status === 'Completed') {
+                                                byMonth[key].done.push(s);
+                                            }
+                                        });
+                                        const sortedMonths = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+                                        const handleAccountantPdfDownload = async () => {
+                                            let html = '<html><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:10px;margin:20px;color:#1e293b}h1{font-size:16px;margin-bottom:12px}h2{font-size:13px;margin:16px 0 6px;padding:4px 8px;background:#f1f5f9;border-radius:4px}h3{font-size:11px;margin:10px 0 4px;color:#475569}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:2px solid #e2e8f0;padding:4px 6px}td{padding:3px 6px;border-bottom:1px solid #f1f5f9;font-size:10px}.right{text-align:right}@media print{body{margin:10mm}}</style></head><body>';
+                                            html += '<h1>Monthly Sales Report — Accountant</h1>';
+                                            html += `<p style="color:#94a3b8;font-size:9px">Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>`;
+                                            const renderTable = (items: CarSale[]) => {
+                                                if (items.length === 0) return '<p style="color:#94a3b8;font-size:9px">No cars</p>';
+                                                let t = '<table><tr><th>Car</th><th>VIN</th><th>Plate</th><th class="right">Bought €</th><th class="right">Sold €</th><th>Buyer</th><th>Date</th></tr>';
+                                                items.forEach(s => {
+                                                    t += `<tr><td style="font-weight:600">${s.brand} ${s.model} ${s.year}</td><td style="font-family:monospace;font-size:9px">${(s.vin || '-').slice(-8)}</td><td>${s.plateNumber || '-'}</td><td class="right">${(s.costToBuy || 0).toLocaleString()}</td><td class="right">${(s.soldPrice || 0).toLocaleString()}</td><td>${s.buyerName || '-'}</td><td>${s.shippingDate ? new Date(s.shippingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td></tr>`;
+                                                });
+                                                t += '</table>';
+                                                return t;
+                                            };
+                                            sortedMonths.forEach(month => {
+                                                const data = byMonth[month];
+                                                const [y, m] = month.split('-').map(Number);
+                                                const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                                                html += `<h2>${label} (${data.shipped.length + data.done.length} cars)</h2>`;
+                                                if (data.shipped.length > 0) { html += `<h3>🚚 Shipping (${data.shipped.length})</h3>`; html += renderTable(data.shipped); }
+                                                if (data.done.length > 0) { html += `<h3>✅ Completed (${data.done.length})</h3>`; html += renderTable(data.done); }
+                                            });
+                                            html += '</body></html>';
+                                            const blob = new Blob([html], { type: 'text/html' });
+                                            const url = URL.createObjectURL(blob);
+                                            const w = window.open(url, '_blank');
+                                            if (w) { setTimeout(() => { w.print(); }, 600); }
+                                        };
+                                        return (
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-[10px] text-slate-500">All sales by month — Shipping & Completed</p>
+                                                    <button type="button" onClick={handleAccountantPdfDownload} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[10px] font-bold active:scale-95 transition-all">
+                                                        <Download className="w-3 h-3" /> Download PDF
+                                                    </button>
+                                                </div>
+                                                {sortedMonths.length === 0 ? (
+                                                    <div className="text-center text-slate-400 py-16 text-sm">No sales data</div>
+                                                ) : sortedMonths.map(month => {
+                                                    const data = byMonth[month];
+                                                    const [y, m] = month.split('-').map(Number);
+                                                    const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                                                    const total = data.shipped.length + data.done.length;
+                                                    const renderRows = (items: CarSale[], tag: string, tagColor: string) => items.map(s => (
+                                                        <div key={s.id} className="flex items-center gap-2 px-2.5 py-1.5 text-[11px] border-b border-slate-50 last:border-0 hover:bg-slate-50/60">
+                                                            <span className={`shrink-0 text-[8px] font-black uppercase tracking-tight px-1.5 py-0.5 rounded ${tagColor}`}>{tag}</span>
+                                                            <span className="font-bold text-slate-900 truncate min-w-0">{s.brand} {s.model}</span>
+                                                            <span className="text-[9px] text-slate-400">{s.year}</span>
+                                                            <span className="font-mono text-[9px] text-slate-400 hidden sm:inline">{(s.vin || '').slice(-8)}</span>
+                                                            <span className="text-[9px] text-slate-500 hidden sm:inline">{s.plateNumber || '-'}</span>
+                                                            <div className="ml-auto flex items-center gap-2 shrink-0">
+                                                                <span className="text-[10px] text-slate-500">€{(s.costToBuy || 0).toLocaleString()}</span>
+                                                                <span className="text-[10px] font-bold text-emerald-600">€{(s.soldPrice || 0).toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                    return (
+                                                        <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
+                                                            <div className="px-2.5 py-2 bg-slate-50 flex items-center justify-between border-b border-slate-200">
+                                                                <span className="text-xs font-black text-slate-800">{label}</span>
+                                                                <span className="text-[10px] text-slate-500">{total} cars</span>
+                                                            </div>
+                                                            {data.shipped.length > 0 && (
+                                                                <>
+                                                                    <div className="px-2.5 py-1 text-[9px] font-bold text-amber-700 bg-amber-50/50 border-b border-amber-100">🚚 Shipping ({data.shipped.length})</div>
+                                                                    {renderRows(data.shipped, 'SHIP', 'bg-amber-100 text-amber-700')}
+                                                                </>
+                                                            )}
+                                                            {data.done.length > 0 && (
+                                                                <>
+                                                                    <div className="px-2.5 py-1 text-[9px] font-bold text-emerald-700 bg-emerald-50/50 border-b border-emerald-100">✅ Completed ({data.done.length})</div>
+                                                                    {renderRows(data.done, 'DONE', 'bg-emerald-100 text-emerald-700')}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })() : invoicesSubTab === 'history' ? (
                                         <div className="space-y-3">
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
