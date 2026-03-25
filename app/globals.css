@@ -1150,7 +1150,7 @@ button:active,
   }
 
   .app-content {
-    padding-inline: clamp(8px, 2.8vw, 14px);
+    padding-inline: 0;
   }
 }
 
