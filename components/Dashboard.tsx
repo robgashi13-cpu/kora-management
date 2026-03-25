@@ -5827,12 +5827,7 @@ export default function Dashboard() {
                                                                                 {/* Row 3: Action buttons — horizontal */}
                                                                                 <div className="flex items-center gap-1 pl-7 flex-wrap">
                                                                                     {view === 'pdf_list' ? (
-                                                                                        <>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_shitblerje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Kontrata</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'deposit', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Deposite</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'full_marreveshje', e)} className="px-2 py-1 rounded-md border border-slate-300 text-[9px] font-bold text-slate-700 hover:bg-slate-100">Marv.</button>
-                                                                                            <button onClick={(e) => openPdfDocument(s, 'invoice', e, false, true)} className="px-2 py-1 rounded-md bg-slate-900 text-[9px] font-bold text-white">Fatura</button>
-                                                                                        </>
+                                                                                        <PdfDropdownMenu sale={s} openPdfDocument={openPdfDocument} />
                                                                                     ) : (
                                                                                         <button
                                                                                             onClick={(e) => { e.stopPropagation(); openInvoice(s, e, false, true); }}
