@@ -93,3 +93,25 @@ export interface CarSale {
     archivedBy?: string;
     archivedFromStatus?: SaleStatus;
 }
+
+export type MechanicCarSource = 'sale' | 'shipped';
+
+export interface MechanicRepairRecord {
+    id: string;
+    carId: string;
+    carSource: MechanicCarSource;
+    brand: string;
+    model: string;
+    year: number;
+    km: number;
+    plateNumber: string;
+    vin: string;
+    inspectedCity: string;
+    repairedWork: string;
+    needsRepairWork: string;
+    repairCost: number;
+    isRepaired: boolean;
+    isPaid: boolean;
+    createdAt: string;
+    createdBy: string;
+}
