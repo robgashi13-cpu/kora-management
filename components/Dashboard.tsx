@@ -30,7 +30,7 @@ import AiAssistant from './AiAssistant';
 
 const safeSetItem = (key: string, value: string) => {
     try {
-        safeSetItem(key, value);
+        localStorage.setItem(key, value);
     } catch (e: any) {
         if (e?.name === 'QuotaExceededError' || e?.code === 22) {
             console.warn('[Storage] Quota exceeded, clearing old caches...');
@@ -41,7 +41,7 @@ const safeSetItem = (key: string, value: string) => {
                 if (k && !keysToKeep.has(k)) toRemove.push(k);
             }
             toRemove.forEach(k => localStorage.removeItem(k));
-            try { safeSetItem(key, value); } catch { /* still full, skip */ }
+            try { localStorage.setItem(key, value); } catch { /* still full, skip */ }
         }
     }
 };
