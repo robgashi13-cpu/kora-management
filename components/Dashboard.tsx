@@ -3265,10 +3265,24 @@ export default function Dashboard() {
         () => sales.filter((sale) => sale.status === 'Shipped'),
         [sales]
     );
-    const mechanicCarOptions = mechanicFormData.carSource === 'sale' ? mechanicSaleOptions : mechanicShippedOptions;
+    const mechanicGroupedCarOptions = useMemo(
+        () => ({
+            sale: mechanicSaleOptions.map((sale) => ({ sale, source: 'sale' as const })),
+            shipped: mechanicShippedOptions.map((sale) => ({ sale, source: 'shipped' as const }))
+        }),
+        [mechanicSaleOptions, mechanicShippedOptions]
+    );
+    const selectedMechanicCarOption = useMemo(
+        () => (
+            mechanicGroupedCarOptions.sale.find((entry) => entry.sale.id === mechanicFormData.carId)
+            || mechanicGroupedCarOptions.shipped.find((entry) => entry.sale.id === mechanicFormData.carId)
+            || null
+        ),
+        [mechanicGroupedCarOptions, mechanicFormData.carId]
+    );
     const selectedMechanicCar = useMemo(
-        () => sales.find((sale) => sale.id === mechanicFormData.carId) || null,
-        [sales, mechanicFormData.carId]
+        () => selectedMechanicCarOption?.sale || null,
+        [selectedMechanicCarOption]
     );
     const selectedMechanicRecord = useMemo(
         () => mechanicRecords.find((record) => record.id === selectedMechanicRecordId) || null,
@@ -3296,7 +3310,7 @@ export default function Dashboard() {
         const createdRecord: MechanicRepairRecord = {
             id: crypto.randomUUID(),
             carId: selectedMechanicCar.id,
-            carSource: mechanicFormData.carSource,
+            carSource: selectedMechanicCarOption?.source || mechanicFormData.carSource,
             brand: selectedMechanicCar.brand,
             model: selectedMechanicCar.model,
             year: selectedMechanicCar.year,
@@ -6624,34 +6638,34 @@ export default function Dashboard() {
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><X className="w-4 h-4" /></button>
                         </div>
                         <div className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                <label className="text-sm font-semibold text-slate-700">
-                                    Source
-                                    <select
-                                        value={mechanicFormData.carSource}
-                                        onChange={(event) => setMechanicFormData((prev) => ({ ...prev, carSource: event.target.value as 'sale' | 'shipped', carId: '' }))}
-                                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                                    >
-                                        <option value="sale">On Sale</option>
-                                        <option value="shipped">Shipped</option>
-                                    </select>
-                                </label>
-                                <label className="text-sm font-semibold text-slate-700 md:col-span-2">
-                                    Select Car
-                                    <select
-                                        value={mechanicFormData.carId}
-                                        onChange={(event) => setMechanicFormData((prev) => ({ ...prev, carId: event.target.value }))}
-                                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-                                    >
-                                        <option value="">Choose car...</option>
-                                        {mechanicCarOptions.map((sale) => (
-                                            <option key={sale.id} value={sale.id}>
-                                                {sale.brand} {sale.model} ({sale.year}) · {sale.plateNumber || sale.vin || sale.id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
+                            <label className="block text-sm font-semibold text-slate-700">
+                                Select car (Sales / Shipped)
+                                <select
+                                    value={mechanicFormData.carId}
+                                    onChange={(event) => setMechanicFormData((prev) => ({ ...prev, carId: event.target.value }))}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                >
+                                    <option value="">Choose car...</option>
+                                    {mechanicGroupedCarOptions.sale.length > 0 && (
+                                        <optgroup label="On Sale">
+                                            {mechanicGroupedCarOptions.sale.map(({ sale }) => (
+                                                <option key={sale.id} value={sale.id}>
+                                                    {sale.brand} {sale.model} ({sale.year}) · {sale.plateNumber || sale.vin || sale.id}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                    {mechanicGroupedCarOptions.shipped.length > 0 && (
+                                        <optgroup label="Shipped">
+                                            {mechanicGroupedCarOptions.shipped.map(({ sale }) => (
+                                                <option key={sale.id} value={sale.id}>
+                                                    {sale.brand} {sale.model} ({sale.year}) · {sale.plateNumber || sale.vin || sale.id}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                </select>
+                            </label>
 
                             {selectedMechanicCar && (
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs">
@@ -6909,7 +6923,7 @@ export default function Dashboard() {
                     </>
                 )}
             </AnimatePresence>
-            {view !== 'sale_form' && (
+            {view !== 'sale_form' && view !== 'mechanic' && (
                 <button
                     onClick={() => openSaleForm(null)}
                     className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-24 z-[110] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
