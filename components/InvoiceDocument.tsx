@@ -470,8 +470,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-stamp {
-                    width: 50mm;
-                    height: 50mm;
+                    width: auto;
+                    height: auto;
+                    max-width: 50mm;
+                    max-height: 50mm;
+                    aspect-ratio: auto;
                     object-fit: contain;
                     margin-top: -10mm;
                     margin-right: 2mm;
