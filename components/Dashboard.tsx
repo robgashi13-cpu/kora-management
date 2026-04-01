@@ -614,6 +614,7 @@ export default function Dashboard() {
         if (showAccountantPdfOptions) document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [showAccountantPdfOptions]);
+    const [mechanicRecords, setMechanicRecords] = useState<MechanicRepairRecord[]>([]);
 
     useEffect(() => {
         let cancelled = false;
