@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
-import { Attachment, CarSale, ContractType, MechanicRepairRecord, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
+import { Attachment, CarDocumentRecord, CarSale, ContractType, MechanicRepairRecord, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
@@ -60,6 +60,7 @@ const PROFILE_AVATARS_CONFIG_KEY = 'profile_avatars';
 const PDF_TEMPLATES_CONFIG_KEY = 'pdf_templates';
 const INVOICE_HISTORY_STORAGE_KEY = 'invoice_history_v1';
 const MECHANIC_RECORDS_STORAGE_KEY = 'mechanic_records_v1';
+const CAR_DOCUMENTS_STORAGE_KEY = 'car_documents_v1';
 
 const normalizeProfileName = (name?: string | null | unknown) => {
     if (typeof name !== 'string' || !name) return '';
@@ -615,6 +616,7 @@ export default function Dashboard() {
         return () => document.removeEventListener('mousedown', handler);
     }, [showAccountantPdfOptions]);
     const [mechanicRecords, setMechanicRecords] = useState<MechanicRepairRecord[]>([]);
+    const [carDocuments, setCarDocuments] = useState<CarDocumentRecord[]>([]);
 
     useEffect(() => {
         let cancelled = false;
@@ -642,6 +644,33 @@ export default function Dashboard() {
         }
         void Preferences.set({ key: MECHANIC_RECORDS_STORAGE_KEY, value: serialized });
     }, [mechanicRecords]);
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadCarDocuments = async () => {
+            try {
+                const stored = await Preferences.get({ key: CAR_DOCUMENTS_STORAGE_KEY });
+                const raw = stored.value || (typeof window !== 'undefined' ? localStorage.getItem(CAR_DOCUMENTS_STORAGE_KEY) : null);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (!cancelled && Array.isArray(parsed)) {
+                    setCarDocuments(parsed as CarDocumentRecord[]);
+                }
+            } catch (error) {
+                console.error('Failed to load car documents', error);
+            }
+        };
+        void loadCarDocuments();
+        return () => { cancelled = true; };
+    }, []);
+
+    useEffect(() => {
+        const serialized = JSON.stringify(carDocuments);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(CAR_DOCUMENTS_STORAGE_KEY, serialized);
+        }
+        void Preferences.set({ key: CAR_DOCUMENTS_STORAGE_KEY, value: serialized });
+    }, [carDocuments]);
 
     const isAdmin = userProfile === ADMIN_PROFILE;
     const isRecordAdmin = userProfile === ADMIN_PROFILE;
@@ -750,6 +779,8 @@ export default function Dashboard() {
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
     // mechanicRecords state moved above its useEffect
     const [showMechanicForm, setShowMechanicForm] = useState(false);
+    const [showCarDocumentsForm, setShowCarDocumentsForm] = useState(false);
+    const [mechanicSubTab, setMechanicSubTab] = useState<'records' | 'car_documents'>('records');
     const [mechanicFormData, setMechanicFormData] = useState({
         carSource: 'sale' as 'sale' | 'shipped',
         carId: '',
@@ -757,6 +788,11 @@ export default function Dashboard() {
         repairedWork: '',
         needsRepairWork: '',
         repairCost: ''
+    });
+    const [carDocumentsFormData, setCarDocumentsFormData] = useState({
+        shipName: '',
+        carCount: '',
+        files: [] as File[]
     });
     const [selectedMechanicRecordId, setSelectedMechanicRecordId] = useState<string | null>(null);
 
@@ -3302,6 +3338,15 @@ export default function Dashboard() {
         setShowMechanicForm(true);
     };
 
+    const openCarDocumentsForm = () => {
+        setCarDocumentsFormData({
+            shipName: '',
+            carCount: '',
+            files: []
+        });
+        setShowCarDocumentsForm(true);
+    };
+
     const handleCreateMechanicRecord = () => {
         if (!selectedMechanicCar) {
             alert('Please select a car first.');
@@ -3336,6 +3381,39 @@ export default function Dashboard() {
         setMechanicRecords((prev) => prev.map((record) => (
             record.id === recordId ? { ...record, [field]: !record[field] } : record
         )));
+    };
+
+    const handleCreateCarDocumentRecord = () => {
+        const shipName = carDocumentsFormData.shipName.trim();
+        const carCount = Number(carDocumentsFormData.carCount);
+        if (!shipName) {
+            alert('Please enter ship name.');
+            return;
+        }
+        if (!Number.isFinite(carCount) || carCount <= 0) {
+            alert('Please enter a valid number of cars.');
+            return;
+        }
+        if (carDocumentsFormData.files.length === 0) {
+            alert('Please add at least one file.');
+            return;
+        }
+
+        const createdEntry: CarDocumentRecord = {
+            id: crypto.randomUUID(),
+            shipName,
+            carCount: Math.floor(carCount),
+            files: carDocumentsFormData.files.map((file) => ({
+                id: crypto.randomUUID(),
+                name: file.name,
+                size: file.size,
+                type: file.type
+            })),
+            createdAt: new Date().toISOString(),
+            createdBy: normalizeProfileName(userProfile) || 'unknown'
+        };
+        setCarDocuments((prev) => [createdEntry, ...prev]);
+        setShowCarDocumentsForm(false);
     };
 
     const canAccessSale = useCallback((sale: CarSale) => {
@@ -4322,8 +4400,8 @@ export default function Dashboard() {
                             <div className="relative group flex-1 min-w-0">
                                 <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                                 <input
-                                    placeholder={view === 'mechanic' ? 'Search mechanic records...' : 'Search sales...'}
-                                    aria-label={view === 'mechanic' ? 'Search mechanic records' : 'Search sales'}
+                                    placeholder={view === 'mechanic' ? (mechanicSubTab === 'records' ? 'Search mechanic records...' : 'Search car documents...') : 'Search sales...'}
+                                    aria-label={view === 'mechanic' ? (mechanicSubTab === 'records' ? 'Search mechanic records' : 'Search car documents') : 'Search sales'}
                                     className={`ui-control w-full rounded-xl pl-10 pr-4 py-2 text-sm border transition-all outline-none ${theme === 'dark'
                                         ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30'
                                         : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300'}`}
@@ -4354,10 +4432,10 @@ export default function Dashboard() {
                             )}
                             {view === 'mechanic' && (
                                 <button
-                                    onClick={openMechanicForm}
+                                    onClick={mechanicSubTab === 'records' ? openMechanicForm : openCarDocumentsForm}
                                     className={`ui-control p-2 rounded-xl transition-all flex-shrink-0 ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-                                    title="Add mechanic record"
-                                    aria-label="Add mechanic record"
+                                    title={mechanicSubTab === 'records' ? 'Add mechanic record' : 'Add car documents'}
+                                    aria-label={mechanicSubTab === 'records' ? 'Add mechanic record' : 'Add car documents'}
                                 >
                                     <Plus className="w-5 h-5" />
                                 </button>
@@ -4378,7 +4456,15 @@ export default function Dashboard() {
                             <h2 className={`text-sm sm:text-base lg:text-lg font-bold flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                                 {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
-                                    {view === 'mechanic' ? mechanicRecords.length : filteredSales.length} {view === 'mechanic' ? (mechanicRecords.length === 1 ? 'record' : 'records') : (filteredSales.length === 1 ? 'car' : 'cars')}
+                                    {view === 'mechanic'
+                                        ? (mechanicSubTab === 'records' ? mechanicRecords.length : carDocuments.length)
+                                        : filteredSales.length}
+                                    {' '}
+                                    {view === 'mechanic'
+                                        ? (mechanicSubTab === 'records'
+                                            ? (mechanicRecords.length === 1 ? 'record' : 'records')
+                                            : (carDocuments.length === 1 ? 'shipment' : 'shipments'))
+                                        : (filteredSales.length === 1 ? 'car' : 'cars')}
                                 </span>
                             </h2>
                         </div>
@@ -4387,8 +4473,8 @@ export default function Dashboard() {
                             <div className="relative group">
                                 <Search className={`w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-500 group-focus-within:text-slate-300' : 'text-slate-400 group-focus-within:text-slate-600'}`} />
                                 <input
-                                    placeholder={view === 'mechanic' ? 'Search mechanic records...' : 'Search sales...'}
-                                    aria-label={view === 'mechanic' ? 'Search mechanic records' : 'Search sales'}
+                                    placeholder={view === 'mechanic' ? (mechanicSubTab === 'records' ? 'Search mechanic records...' : 'Search car documents...') : 'Search sales...'}
+                                    aria-label={view === 'mechanic' ? (mechanicSubTab === 'records' ? 'Search mechanic records' : 'Search car documents') : 'Search sales'}
                                     className={`w-full rounded-2xl pl-11 pr-4 py-2 text-sm border transition-all outline-none ${theme === 'dark'
                                         ? 'bg-white/5 border-white/15 text-slate-100 placeholder:text-slate-500 focus:bg-white/10 focus:border-white/30 focus:ring-4 focus:ring-white/10'
                                         : 'bg-slate-100 border-transparent text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-slate-300 focus:ring-4 focus:ring-slate-900/5'}`}
@@ -4444,10 +4530,10 @@ export default function Dashboard() {
                             )}
                             {view === 'mechanic' && (
                                 <button
-                                    onClick={openMechanicForm}
+                                    onClick={mechanicSubTab === 'records' ? openMechanicForm : openCarDocumentsForm}
                                     className={`ui-control p-2.5 rounded-xl transition-all ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-                                    title="Add mechanic record"
-                                    aria-label="Add mechanic record"
+                                    title={mechanicSubTab === 'records' ? 'Add mechanic record' : 'Add car documents'}
+                                    aria-label={mechanicSubTab === 'records' ? 'Add mechanic record' : 'Add car documents'}
                                 >
                                     <Plus className="w-5 h-5" />
                                 </button>
@@ -4463,88 +4549,127 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'mechanic' ? (
-                                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4 p-4 md:p-0">
-                                    <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container">
-                                        <div className="divide-y divide-slate-100">
-                                            <div className="grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
-                                                <div>Car</div>
-                                                <div>Repaired</div>
-                                                <div>Paid</div>
+                                <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
+                                    <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+                                        <button type="button" onClick={() => setMechanicSubTab('records')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${mechanicSubTab === 'records' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Mechanic</button>
+                                        <button type="button" onClick={() => setMechanicSubTab('car_documents')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${mechanicSubTab === 'car_documents' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Car Documents</button>
+                                    </div>
+                                    {mechanicSubTab === 'records' ? (
+                                        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4">
+                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container">
+                                                <div className="divide-y divide-slate-100">
+                                                    <div className="grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                        <div>Car</div>
+                                                        <div>Repaired</div>
+                                                        <div>Paid</div>
+                                                    </div>
+                                                    {mechanicRecords
+                                                        .filter((record) => {
+                                                            const term = searchTerm.trim().toLowerCase();
+                                                            if (!term) return true;
+                                                            const blob = [record.brand, record.model, record.plateNumber, record.vin, record.inspectedCity].join(' ').toLowerCase();
+                                                            return blob.includes(term);
+                                                        })
+                                                        .map((record) => (
+                                                            <button
+                                                                key={record.id}
+                                                                type="button"
+                                                                onClick={() => setSelectedMechanicRecordId(record.id)}
+                                                                className={`w-full text-left grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 transition-colors ${selectedMechanicRecordId === record.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                                                            >
+                                                                <div className="min-w-0">
+                                                                    <p className="font-semibold text-slate-900 truncate">{record.brand} {record.model} ({record.year})</p>
+                                                                    <p className="text-xs text-slate-500 truncate">KM: {record.km || 0} · Plate: {record.plateNumber || 'N/A'} · VIN: {record.vin || 'N/A'}</p>
+                                                                </div>
+                                                                <div>
+                                                                    <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${record.isRepaired ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                                        {record.isRepaired ? 'DONE' : 'PENDING'}
+                                                                    </span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${record.isPaid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                                        {record.isPaid ? 'PAID' : 'NOT PAID'}
+                                                                    </span>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    {mechanicRecords.length === 0 && (
+                                                        <div className="px-5 py-12 text-center text-sm text-slate-400">No mechanic records yet. Click + to add one.</div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {mechanicRecords
-                                                .filter((record) => {
+
+                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] p-5 overflow-auto scroll-container">
+                                                {selectedMechanicRecord ? (
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <h3 className="text-lg font-bold text-slate-900">{selectedMechanicRecord.brand} {selectedMechanicRecord.model}</h3>
+                                                            <p className="text-xs text-slate-500 mt-1">Created {new Date(selectedMechanicRecord.createdAt).toLocaleString()}</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                                            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Year</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.year || '-'}</p></div>
+                                                            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">KM</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.km || '-'}</p></div>
+                                                            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Plate</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.plateNumber || '-'}</p></div>
+                                                            <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">VIN</p><p className="font-semibold text-slate-900 break-all">{selectedMechanicRecord.vin || '-'}</p></div>
+                                                        </div>
+                                                        <div className="rounded-xl border border-slate-200 p-3">
+                                                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Inspected city</p>
+                                                            <p className="text-sm font-semibold text-slate-900">{selectedMechanicRecord.inspectedCity || '-'}</p>
+                                                        </div>
+                                                        <div className="rounded-xl border border-slate-200 p-3">
+                                                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">What was repaired</p>
+                                                            <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedMechanicRecord.repairedWork || '-'}</p>
+                                                        </div>
+                                                        <div className="rounded-xl border border-slate-200 p-3">
+                                                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">What still needs repair</p>
+                                                            <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedMechanicRecord.needsRepairWork || '-'}</p>
+                                                        </div>
+                                                        <div className="rounded-xl border border-slate-200 p-3">
+                                                            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Repair cost</p>
+                                                            <p className="text-lg font-black text-slate-900">€{Number(selectedMechanicRecord.repairCost || 0).toLocaleString()}</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isRepaired')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isRepaired ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Repaired: {selectedMechanicRecord.isRepaired ? 'YES' : 'NO'}</button>
+                                                            <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isPaid')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Paid: {selectedMechanicRecord.isPaid ? 'YES' : 'NO'}</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-full flex items-center justify-center text-sm text-slate-400">Select a record to see full details.</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container divide-y divide-slate-100">
+                                            {carDocuments
+                                                .filter((document) => {
                                                     const term = searchTerm.trim().toLowerCase();
                                                     if (!term) return true;
-                                                    const blob = [record.brand, record.model, record.plateNumber, record.vin, record.inspectedCity].join(' ').toLowerCase();
-                                                    return blob.includes(term);
+                                                    return [document.shipName, String(document.carCount), ...document.files.map((file) => file.name)].join(' ').toLowerCase().includes(term);
                                                 })
-                                                .map((record) => (
-                                                    <button
-                                                        key={record.id}
-                                                        type="button"
-                                                        onClick={() => setSelectedMechanicRecordId(record.id)}
-                                                        className={`w-full text-left grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 transition-colors ${selectedMechanicRecordId === record.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
-                                                    >
-                                                        <div className="min-w-0">
-                                                            <p className="font-semibold text-slate-900 truncate">{record.brand} {record.model} ({record.year})</p>
-                                                            <p className="text-xs text-slate-500 truncate">KM: {record.km || 0} · Plate: {record.plateNumber || 'N/A'} · VIN: {record.vin || 'N/A'}</p>
+                                                .map((document) => (
+                                                    <div key={document.id} className="p-4 md:p-5 space-y-3">
+                                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                                            <div>
+                                                                <h3 className="text-base font-bold text-slate-900">{document.shipName}</h3>
+                                                                <p className="text-xs text-slate-500">{document.carCount} cars · Created {new Date(document.createdAt).toLocaleString()}</p>
+                                                            </div>
+                                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{document.files.length} files</span>
                                                         </div>
-                                                        <div>
-                                                            <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${record.isRepaired ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                                {record.isRepaired ? 'DONE' : 'PENDING'}
-                                                            </span>
+                                                        <div className="grid gap-2">
+                                                            {document.files.map((file) => (
+                                                                <div key={file.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 flex items-center justify-between gap-2">
+                                                                    <span className="truncate">{file.name}</span>
+                                                                    <span className="text-xs text-slate-500 whitespace-nowrap">{(file.size / 1024).toFixed(1)} KB</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                        <div>
-                                                            <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${record.isPaid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                                {record.isPaid ? 'PAID' : 'NOT PAID'}
-                                                            </span>
-                                                        </div>
-                                                    </button>
+                                                    </div>
                                                 ))}
-                                            {mechanicRecords.length === 0 && (
-                                                <div className="px-5 py-12 text-center text-sm text-slate-400">No mechanic records yet. Click + to add one.</div>
+                                            {carDocuments.length === 0 && (
+                                                <div className="px-5 py-12 text-center text-sm text-slate-400">No car documents yet. Open the Car Documents tab and click + to add files.</div>
                                             )}
                                         </div>
-                                    </div>
-
-                                    <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] p-5 overflow-auto scroll-container">
-                                        {selectedMechanicRecord ? (
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <h3 className="text-lg font-bold text-slate-900">{selectedMechanicRecord.brand} {selectedMechanicRecord.model}</h3>
-                                                    <p className="text-xs text-slate-500 mt-1">Created {new Date(selectedMechanicRecord.createdAt).toLocaleString()}</p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                                    <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Year</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.year || '-'}</p></div>
-                                                    <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">KM</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.km || '-'}</p></div>
-                                                    <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">Plate</p><p className="font-semibold text-slate-900">{selectedMechanicRecord.plateNumber || '-'}</p></div>
-                                                    <div className="rounded-xl bg-slate-50 p-3"><p className="text-xs text-slate-500">VIN</p><p className="font-semibold text-slate-900 break-all">{selectedMechanicRecord.vin || '-'}</p></div>
-                                                </div>
-                                                <div className="rounded-xl border border-slate-200 p-3">
-                                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Inspected city</p>
-                                                    <p className="text-sm font-semibold text-slate-900">{selectedMechanicRecord.inspectedCity || '-'}</p>
-                                                </div>
-                                                <div className="rounded-xl border border-slate-200 p-3">
-                                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">What was repaired</p>
-                                                    <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedMechanicRecord.repairedWork || '-'}</p>
-                                                </div>
-                                                <div className="rounded-xl border border-slate-200 p-3">
-                                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">What still needs repair</p>
-                                                    <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedMechanicRecord.needsRepairWork || '-'}</p>
-                                                </div>
-                                                <div className="rounded-xl border border-slate-200 p-3">
-                                                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Repair cost</p>
-                                                    <p className="text-lg font-black text-slate-900">€{Number(selectedMechanicRecord.repairCost || 0).toLocaleString()}</p>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isRepaired')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isRepaired ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Repaired: {selectedMechanicRecord.isRepaired ? 'YES' : 'NO'}</button>
-                                                    <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isPaid')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Paid: {selectedMechanicRecord.isPaid ? 'YES' : 'NO'}</button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="h-full flex items-center justify-center text-sm text-slate-400">Select a record to see full details.</div>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
                             ) : view === 'dashboard' ? (<>
                                 {/* Inspection tab: simplified list */}
@@ -6720,6 +6845,78 @@ export default function Dashboard() {
                         <div className="mt-5 flex justify-end gap-2">
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
                             <button type="button" onClick={handleCreateMechanicRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">Done</button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+            {showCarDocumentsForm && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+                    onClick={() => setShowCarDocumentsForm(false)}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.94, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: 6 }}
+                        className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 md:p-6"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900">Add Car Documents</h3>
+                            <button type="button" onClick={() => setShowCarDocumentsForm(false)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><X className="w-4 h-4" /></button>
+                        </div>
+                        <div className="space-y-4">
+                            <label className="block text-sm font-semibold text-slate-700">
+                                Name of ship
+                                <input
+                                    value={carDocumentsFormData.shipName}
+                                    onChange={(event) => setCarDocumentsFormData((prev) => ({ ...prev, shipName: event.target.value }))}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                    placeholder="e.g. Morning Calm"
+                                />
+                            </label>
+                            <label className="block text-sm font-semibold text-slate-700">
+                                How many cars are in there
+                                <input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={carDocumentsFormData.carCount}
+                                    onChange={(event) => setCarDocumentsFormData((prev) => ({ ...prev, carCount: event.target.value }))}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                    placeholder="0"
+                                />
+                            </label>
+                            <label className="block text-sm font-semibold text-slate-700">
+                                Add files
+                                <input
+                                    type="file"
+                                    multiple
+                                    onChange={(event) => setCarDocumentsFormData((prev) => ({ ...prev, files: Array.from(event.target.files || []) }))}
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-white"
+                                />
+                            </label>
+                            {carDocumentsFormData.files.length > 0 && (
+                                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Selected files</p>
+                                    <div className="space-y-2">
+                                        {carDocumentsFormData.files.map((file) => (
+                                            <div key={`${file.name}-${file.size}`} className="text-sm text-slate-700 flex items-center justify-between gap-2">
+                                                <span className="truncate">{file.name}</span>
+                                                <span className="text-xs text-slate-500 whitespace-nowrap">{(file.size / 1024).toFixed(1)} KB</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-5 flex justify-end gap-2">
+                            <button type="button" onClick={() => setShowCarDocumentsForm(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
+                            <button type="button" onClick={handleCreateCarDocumentRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">Save</button>
                         </div>
                     </motion.div>
                 </motion.div>
