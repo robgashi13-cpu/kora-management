@@ -116,3 +116,17 @@ export interface MechanicRepairRecord {
     createdAt: string;
     createdBy: string;
 }
+
+export interface CarDocumentRecord {
+    id: string;
+    shipName: string;
+    carCount: number;
+    files: Array<{
+        id: string;
+        name: string;
+        size: number;
+        type: string;
+    }>;
+    createdAt: string;
+    createdBy: string;
+}
