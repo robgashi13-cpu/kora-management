@@ -614,6 +614,7 @@ export default function Dashboard() {
         if (showAccountantPdfOptions) document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, [showAccountantPdfOptions]);
+    const [mechanicRecords, setMechanicRecords] = useState<MechanicRepairRecord[]>([]);
 
     useEffect(() => {
         let cancelled = false;
@@ -747,7 +748,7 @@ export default function Dashboard() {
     }, [isAdmin, sortBy]);
 
     const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
-    const [mechanicRecords, setMechanicRecords] = useState<MechanicRepairRecord[]>([]);
+    // mechanicRecords state moved above its useEffect
     const [showMechanicForm, setShowMechanicForm] = useState(false);
     const [mechanicFormData, setMechanicFormData] = useState({
         carSource: 'sale' as 'sale' | 'shipped',
