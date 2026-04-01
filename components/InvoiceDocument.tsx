@@ -163,6 +163,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </div>
                                 <div className="invoice-subline">
                                     <span>VIN: {renderText('vin', '', { className: 'font-mono break-all' })}</span>
+                                    <span>Year: {renderText('year', '—')}</span>
                                     <span>Color: {renderText('color')}</span>
                                     <span>Plate: {renderText('plateNumber', '—')}</span>
                                 </div>
