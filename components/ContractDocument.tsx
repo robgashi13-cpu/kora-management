@@ -63,7 +63,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
         : type === 'full_shitblerje'
             ? 'p-[1.6cm] pt-[2cm]'
             : 'p-0';
-    const rootHeightClass = isSinglePage ? 'h-[29.7cm]' : 'min-h-[29.7cm]';
+    const rootHeightClass = type === 'deposit' ? 'min-h-[29.7cm]' : (isSinglePage ? 'h-[29.7cm]' : 'min-h-[29.7cm]');
 
     return (
         <div
@@ -79,7 +79,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 boxSizing: 'border-box',
                 textRendering: 'optimizeLegibility',
                 WebkitFontSmoothing: 'antialiased',
-                overflow: isSinglePage ? 'hidden' : 'visible'
+                overflow: type === 'deposit' ? 'visible' : (isSinglePage ? 'hidden' : 'visible')
             }}
         >
             {type === 'deposit' && (
@@ -204,7 +204,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     </div>
 
                     {/* Signatures - Compact */}
-                    <div className="signature-section border-t border-black pt-3">
+                    <div className="signature-section signature-section-deposit border-t border-black pt-3">
                         <div className="signature-grid">
                             <div className="signature-column">
                                 <div className="signature-label">Shitësi (Nënshkrimi)</div>
@@ -222,7 +222,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             </div>
                         </div>
                         {withStamp && (
-                            <div className="signature-stamp-row">
+                            <div className="signature-stamp-row signature-stamp-row-deposit">
                                 <StampImage className={`signature-stamp ${type === 'deposit' ? 'signature-stamp-deposit' : ''}`} />
                             </div>
                         )}
@@ -576,6 +576,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 .car-details .value { text-align: right; word-break: break-word; overflow-wrap: anywhere; }
                 .car-details div:last-child { border-bottom: none; margin-bottom: 0; }
                 .signature-section { margin-top: 72px; position: relative; }
+                .signature-section-deposit { margin-top: 32px; }
                 .signature-grid { display: flex; gap: 16.9mm; width: 175.7mm; margin: 0 auto; }
                 .signature-column { width: 79.4mm; display: flex; flex-direction: column; align-items: flex-start; text-align: left; position: relative; }
                 .signature-label { line-height: 20px; }
@@ -592,6 +593,12 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     justify-content: flex-start;
                     pointer-events: none;
                 }
+                .signature-stamp-row-deposit {
+                    position: static;
+                    width: 100%;
+                    margin-top: 8px;
+                    justify-content: flex-end;
+                }
                 .signature-stamp {
                     width: 50mm;
                     height: 50mm;
@@ -601,8 +608,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     opacity: 0.85;
                 }
                 .signature-stamp-deposit {
-                    margin-left: -10.6mm;
-                    margin-top: -10mm;
+                    margin-left: 0;
+                    margin-top: 0;
                 }
                 .pdf-root,
                 .pdf-root * {

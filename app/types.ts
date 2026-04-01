@@ -82,6 +82,7 @@ export interface CarSale {
     depositInvoices?: Attachment[]; // New Multi-file
 
     notes?: string;
+    invoiceDescription?: string;
     createdAt: string;
     sortOrder?: number;
     soldBy?: string;

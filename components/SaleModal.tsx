@@ -43,6 +43,7 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     amountPaidToKorea: 0, paidDateToKorea: null, paidDateFromClient: null,
     paymentMethod: 'Bank', status: 'New',
     isPaid: false,
+    invoiceDescription: '',
     soldBy: ''
 };
 
@@ -414,7 +415,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         if (type === 'number') {
             const parsed = value === '' ? 0 : Number(value);
@@ -754,6 +755,15 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
 
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
+                        <div className="grid grid-cols-1 gap-4">
+                            <TextArea
+                                label='Invoice Description'
+                                name="invoiceDescription"
+                                value={formData.invoiceDescription || ''}
+                                onChange={handleChange}
+                                placeholder='This text appears under "SHERBIMET DOGANORE PAGUHEN NGA KLIENTI" on the invoice PDF.'
+                            />
+                        </div>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div>
                                 <div className="text-sm font-semibold text-slate-700">Documents</div>
@@ -1136,6 +1146,20 @@ const DateInput = ({ label, required, ...props }: any) => (
         <input
             type="date"
             className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full h-10 cursor-pointer"
+            required={required}
+            {...props}
+        />
+    </div>
+);
+
+const TextArea = ({ label, className = "", required, ...props }: any) => (
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
+        <label className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+            {label}
+            {!required && <span className="text-[10px] font-medium text-slate-400">(Opt)</span>}
+        </label>
+        <textarea
+            className="bg-white border border-slate-200 hover:border-slate-300 focus:border-slate-400 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none transition-all placeholder:text-slate-400 w-full min-h-[86px] resize-y"
             required={required}
             {...props}
         />

@@ -73,6 +73,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const vehicleDisplayName = [displaySale.brand, displaySale.model].filter(Boolean).join(' ') || '—';
+        const invoiceDescription = String(displaySale.invoiceDescription || '').trim();
 
         return (
             <div
@@ -177,6 +178,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             <tr>
                                 <td style={{ padding: '10px 0' }}>
                                     <div style={{ color: '#000000', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.8rem' }}>SHERBIMET DOGANORE PAGUHEN NGA KLIENTI</div>
+                                    {invoiceDescription && (
+                                        <div className="invoice-note">
+                                            {invoiceDescription}
+                                        </div>
+                                    )}
                                 </td>
                                 <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}></td>
                             </tr>
@@ -455,7 +461,6 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     align-items: flex-end;
                     margin-top: 32px;
                     gap: 8px;
-                    position: relative;
                 }
 
                 .invoice-signature-line {
@@ -467,10 +472,21 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     width: 50mm;
                     height: 50mm;
                     object-fit: contain;
-                    margin-top: -28mm;
-                    margin-right: 4mm;
+                    margin-top: -10mm;
+                    margin-right: 2mm;
                     opacity: 0.85;
                     pointer-events: none;
+                }
+
+                .invoice-note {
+                    margin-top: 6px;
+                    color: #111827;
+                    font-size: 0.76rem;
+                    line-height: 1.5;
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                    text-transform: none;
+                    font-weight: 500;
                 }
 
                 .invoice-root--pdf .invoice-header {
