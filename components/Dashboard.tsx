@@ -3424,7 +3424,7 @@ export default function Dashboard() {
         }
     };
 
-
+    const handleCreateCarDocumentRecord = () => {
         const shipName = carDocumentsFormData.shipName.trim();
         const carCount = Number(carDocumentsFormData.carCount);
         if (!shipName) {
