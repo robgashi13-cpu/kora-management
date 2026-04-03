@@ -624,8 +624,10 @@ export default function Dashboard() {
         const loadMechanicRecords = async () => {
             try {
                 // Try loading from Supabase first
-                if (supabaseUrl && supabaseKey) {
-                    const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const sbUrl = import.meta.env.VITE_SUPABASE_URL || '';
+                const sbKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+                if (sbUrl && sbKey) {
+                    const client = createSupabaseClient(sbUrl, sbKey);
                     const { data, error } = await client.from('mechanic_records').select('*').order('created_at', { ascending: false });
                     if (!error && data && !cancelled) {
                         const mapped: MechanicRepairRecord[] = data.map((r: any) => ({
