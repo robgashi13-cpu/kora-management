@@ -7025,8 +7025,9 @@ export default function Dashboard() {
                     {(() => {
                         const restrictedTabs = getProfileAllowedTabs(userProfile);
                         const mobileNavItems = [
-                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
+                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const, targetCategory: 'SALES' as const },
                             { id: 'mechanic', navId: 'MECHANIC', label: 'Mechanic', icon: Wrench, targetView: 'mechanic' as const },
+                            { id: 'inspections', navId: 'INSPECTIONS', label: 'Inspection', icon: Search, targetView: 'dashboard' as const, targetCategory: 'INSPECTIONS' as const },
                             { id: 'invoices', navId: 'INVOICES', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
                             { id: 'pdf', navId: 'PDF', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
                             { id: 'balance_due', navId: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
