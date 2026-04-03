@@ -77,6 +77,7 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 // If a profile is NOT in this map, they get full access (subject to adminOnly checks)
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
     'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC']),
+    'kr': new Set(['MECHANIC', 'INSPECTIONS']),
 };
 
 // Profiles that can VIEW all sales (from all sellers) on their allowed tabs
