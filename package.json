@@ -20,7 +20,7 @@
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/share": "^8.0.0",
     "@google/generative-ai": "^0.24.1",
-    "@lovable.dev/cloud-auth-js": "^0.0.4",
+    "@lovable.dev/cloud-auth-js": "^1.0.0",
     "@supabase/supabase-js": "^2.87.1",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "clsx": "^2.1.1",
