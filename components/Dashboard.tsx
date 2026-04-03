@@ -81,7 +81,7 @@ const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
 };
 
 // Profiles that can VIEW all sales (from all sellers) on their allowed tabs
-const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa']);
+const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa', 'kr']);
 
 const isFullSalesViewer = (profile: string | null): boolean => {
     if (!profile) return false;
