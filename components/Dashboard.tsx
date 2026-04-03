@@ -796,6 +796,7 @@ export default function Dashboard() {
         files: [] as File[]
     });
     const [selectedMechanicRecordId, setSelectedMechanicRecordId] = useState<string | null>(null);
+    const [editingMechanicRecordId, setEditingMechanicRecordId] = useState<string | null>(null);
 
     useEffect(() => {
         if (isAdmin) return;
