@@ -4673,6 +4673,9 @@ export default function Dashboard() {
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isRepaired')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isRepaired ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Repaired: {selectedMechanicRecord.isRepaired ? 'YES' : 'NO'}</button>
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isPaid')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Paid: {selectedMechanicRecord.isPaid ? 'YES' : 'NO'}</button>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button type="button" onClick={() => startEditMechanicRecord(selectedMechanicRecord)} className="rounded-xl px-3 py-2 text-xs font-bold border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-1"><Edit className="w-3 h-3" /> Edit</button>
+                                                            <button type="button" onClick={() => deleteMechanicRecord(selectedMechanicRecord.id)} className="rounded-xl px-3 py-2 text-xs font-bold border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 flex items-center justify-center gap-1"><Trash2 className="w-3 h-3" /> Delete</button>
                                                         </div>
                                                     </div>
                                                 ) : (
