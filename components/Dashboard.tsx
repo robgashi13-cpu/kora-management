@@ -7033,12 +7033,12 @@ export default function Dashboard() {
                             { id: 'balance_due', navId: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
                         ].filter(item => !restrictedTabs || restrictedTabs.has(item.navId));
                         return mobileNavItems.map((item) => {
-                        const isActive = view === item.targetView;
+                        const isActive = view === item.targetView && (!('targetCategory' in item) || activeCategory === (item as any).targetCategory);
                         return (
                             <button
                                 key={item.id}
                                 type="button"
-                                onClick={() => setView(item.targetView)}
+                                onClick={() => { setView(item.targetView); if ('targetCategory' in item && (item as any).targetCategory) setActiveCategory((item as any).targetCategory); }}
                                 className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
