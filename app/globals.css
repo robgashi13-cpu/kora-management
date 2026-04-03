@@ -1127,11 +1127,11 @@ button:active,
   gap: 2px;
   border-radius: 10px;
   color: #94a3b8;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  min-height: 40px;
-  padding: 4px 2px;
+  min-height: 38px;
+  padding: 3px 1px;
   transition: all 240ms var(--luxury-ease);
 }
 
