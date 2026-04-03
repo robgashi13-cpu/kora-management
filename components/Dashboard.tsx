@@ -3373,7 +3373,34 @@ export default function Dashboard() {
         setShowCarDocumentsForm(true);
     };
 
-    const handleCreateMechanicRecord = () => {
+    const getMechanicDbClient = () => {
+        const sbUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        const sbKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+        if (!sbUrl || !sbKey) return null;
+        return createSupabaseClient(sbUrl, sbKey);
+    };
+
+    const toDbRecord = (r: MechanicRepairRecord) => ({
+        id: r.id,
+        car_id: r.carId,
+        car_source: r.carSource,
+        brand: r.brand,
+        model: r.model,
+        year: r.year,
+        km: r.km,
+        plate_number: r.plateNumber,
+        vin: r.vin,
+        inspected_city: r.inspectedCity,
+        repaired_work: r.repairedWork,
+        needs_repair_work: r.needsRepairWork,
+        repair_cost: r.repairCost,
+        is_repaired: r.isRepaired,
+        is_paid: r.isPaid,
+        created_at: r.createdAt,
+        created_by: r.createdBy,
+    });
+
+    const handleCreateMechanicRecord = async () => {
         if (!selectedMechanicCar) {
             alert('Please select a car first.');
             return;
@@ -3401,18 +3428,36 @@ export default function Dashboard() {
         setMechanicRecords((prev) => [createdRecord, ...prev]);
         setShowMechanicForm(false);
         setSelectedMechanicRecordId(createdRecord.id);
+        const client = getMechanicDbClient();
+        if (client) {
+            await client.from('mechanic_records').upsert(toDbRecord(createdRecord));
+        }
     };
 
-    const toggleMechanicRecordStatus = (recordId: string, field: 'isRepaired' | 'isPaid') => {
-        setMechanicRecords((prev) => prev.map((record) => (
-            record.id === recordId ? { ...record, [field]: !record[field] } : record
-        )));
+    const toggleMechanicRecordStatus = async (recordId: string, field: 'isRepaired' | 'isPaid') => {
+        let newValue = false;
+        setMechanicRecords((prev) => prev.map((record) => {
+            if (record.id === recordId) {
+                newValue = !record[field];
+                return { ...record, [field]: newValue };
+            }
+            return record;
+        }));
+        const client = getMechanicDbClient();
+        if (client) {
+            const dbField = field === 'isRepaired' ? 'is_repaired' : 'is_paid';
+            await client.from('mechanic_records').update({ [dbField]: newValue }).eq('id', recordId);
+        }
     };
 
-    const deleteMechanicRecord = (recordId: string) => {
+    const deleteMechanicRecord = async (recordId: string) => {
         if (!confirm('Delete this mechanic record?')) return;
         setMechanicRecords((prev) => prev.filter((r) => r.id !== recordId));
         if (selectedMechanicRecordId === recordId) setSelectedMechanicRecordId(null);
+        const client = getMechanicDbClient();
+        if (client) {
+            await client.from('mechanic_records').delete().eq('id', recordId);
+        }
     };
 
     const startEditMechanicRecord = (record: MechanicRepairRecord) => {
@@ -3428,21 +3473,29 @@ export default function Dashboard() {
         setShowMechanicForm(true);
     };
 
-    const handleSaveMechanicRecord = () => {
+    const handleSaveMechanicRecord = async () => {
         if (editingMechanicRecordId) {
-            // Edit existing
             const repairCost = Number(mechanicFormData.repairCost || 0);
+            const updates = {
+                inspectedCity: mechanicFormData.inspectedCity.trim(),
+                repairedWork: mechanicFormData.repairedWork.trim(),
+                needsRepairWork: mechanicFormData.needsRepairWork.trim(),
+                repairCost: Number.isFinite(repairCost) ? Math.max(repairCost, 0) : 0,
+            };
             setMechanicRecords((prev) => prev.map((record) =>
-                record.id === editingMechanicRecordId ? {
-                    ...record,
-                    inspectedCity: mechanicFormData.inspectedCity.trim(),
-                    repairedWork: mechanicFormData.repairedWork.trim(),
-                    needsRepairWork: mechanicFormData.needsRepairWork.trim(),
-                    repairCost: Number.isFinite(repairCost) ? Math.max(repairCost, 0) : 0,
-                } : record
+                record.id === editingMechanicRecordId ? { ...record, ...updates } : record
             ));
             setShowMechanicForm(false);
             setEditingMechanicRecordId(null);
+            const client = getMechanicDbClient();
+            if (client) {
+                await client.from('mechanic_records').update({
+                    inspected_city: updates.inspectedCity,
+                    repaired_work: updates.repairedWork,
+                    needs_repair_work: updates.needsRepairWork,
+                    repair_cost: updates.repairCost,
+                }).eq('id', editingMechanicRecordId);
+            }
         } else {
             handleCreateMechanicRecord();
         }
