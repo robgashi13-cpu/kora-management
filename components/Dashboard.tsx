@@ -3385,7 +3385,46 @@ export default function Dashboard() {
         )));
     };
 
-    const handleCreateCarDocumentRecord = () => {
+    const deleteMechanicRecord = (recordId: string) => {
+        if (!confirm('Delete this mechanic record?')) return;
+        setMechanicRecords((prev) => prev.filter((r) => r.id !== recordId));
+        if (selectedMechanicRecordId === recordId) setSelectedMechanicRecordId(null);
+    };
+
+    const startEditMechanicRecord = (record: MechanicRepairRecord) => {
+        setMechanicFormData({
+            carSource: record.carSource,
+            carId: record.carId,
+            inspectedCity: record.inspectedCity,
+            repairedWork: record.repairedWork,
+            needsRepairWork: record.needsRepairWork,
+            repairCost: String(record.repairCost || '')
+        });
+        setEditingMechanicRecordId(record.id);
+        setShowMechanicForm(true);
+    };
+
+    const handleSaveMechanicRecord = () => {
+        if (editingMechanicRecordId) {
+            // Edit existing
+            const repairCost = Number(mechanicFormData.repairCost || 0);
+            setMechanicRecords((prev) => prev.map((record) =>
+                record.id === editingMechanicRecordId ? {
+                    ...record,
+                    inspectedCity: mechanicFormData.inspectedCity.trim(),
+                    repairedWork: mechanicFormData.repairedWork.trim(),
+                    needsRepairWork: mechanicFormData.needsRepairWork.trim(),
+                    repairCost: Number.isFinite(repairCost) ? Math.max(repairCost, 0) : 0,
+                } : record
+            ));
+            setShowMechanicForm(false);
+            setEditingMechanicRecordId(null);
+        } else {
+            handleCreateMechanicRecord();
+        }
+    };
+
+
         const shipName = carDocumentsFormData.shipName.trim();
         const carCount = Number(carDocumentsFormData.carCount);
         if (!shipName) {
