@@ -623,6 +623,35 @@ export default function Dashboard() {
         let cancelled = false;
         const loadMechanicRecords = async () => {
             try {
+                // Try loading from Supabase first
+                if (supabaseUrl && supabaseKey) {
+                    const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                    const { data, error } = await client.from('mechanic_records').select('*').order('created_at', { ascending: false });
+                    if (!error && data && !cancelled) {
+                        const mapped: MechanicRepairRecord[] = data.map((r: any) => ({
+                            id: r.id,
+                            carId: r.car_id || '',
+                            carSource: r.car_source || 'sale',
+                            brand: r.brand || '',
+                            model: r.model || '',
+                            year: r.year || 0,
+                            km: r.km || 0,
+                            plateNumber: r.plate_number || '',
+                            vin: r.vin || '',
+                            inspectedCity: r.inspected_city || '',
+                            repairedWork: r.repaired_work || '',
+                            needsRepairWork: r.needs_repair_work || '',
+                            repairCost: Number(r.repair_cost) || 0,
+                            isRepaired: r.is_repaired || false,
+                            isPaid: r.is_paid || false,
+                            createdAt: r.created_at,
+                            createdBy: r.created_by || 'unknown',
+                        }));
+                        setMechanicRecords(mapped);
+                        return;
+                    }
+                }
+                // Fallback to local storage
                 const stored = await Preferences.get({ key: MECHANIC_RECORDS_STORAGE_KEY });
                 const raw = stored.value || (typeof window !== 'undefined' ? localStorage.getItem(MECHANIC_RECORDS_STORAGE_KEY) : null);
                 if (!raw) return;
@@ -636,15 +665,7 @@ export default function Dashboard() {
         };
         void loadMechanicRecords();
         return () => { cancelled = true; };
-    }, []);
-
-    useEffect(() => {
-        const serialized = JSON.stringify(mechanicRecords);
-        if (typeof window !== 'undefined') {
-            localStorage.setItem(MECHANIC_RECORDS_STORAGE_KEY, serialized);
-        }
-        void Preferences.set({ key: MECHANIC_RECORDS_STORAGE_KEY, value: serialized });
-    }, [mechanicRecords]);
+    }, [supabaseUrl, supabaseKey]);
 
     useEffect(() => {
         let cancelled = false;
