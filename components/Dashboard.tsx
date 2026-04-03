@@ -6806,7 +6806,7 @@ export default function Dashboard() {
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">New Mechanic Record</h3>
+                            <h3 className="text-lg font-bold text-slate-900">{editingMechanicRecordId ? 'Edit Mechanic Record' : 'New Mechanic Record'}</h3>
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><X className="w-4 h-4" /></button>
                         </div>
                         <div className="space-y-4">
