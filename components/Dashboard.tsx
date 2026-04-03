@@ -3337,6 +3337,7 @@ export default function Dashboard() {
             needsRepairWork: '',
             repairCost: ''
         });
+        setEditingMechanicRecordId(null);
         setShowMechanicForm(true);
     };
 
