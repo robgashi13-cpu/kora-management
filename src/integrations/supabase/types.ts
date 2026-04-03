@@ -65,6 +65,66 @@ export type Database = {
         }
         Relationships: []
       }
+      mechanic_records: {
+        Row: {
+          brand: string | null
+          car_id: string | null
+          car_source: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inspected_city: string | null
+          is_paid: boolean | null
+          is_repaired: boolean | null
+          km: number | null
+          model: string | null
+          needs_repair_work: string | null
+          plate_number: string | null
+          repair_cost: number | null
+          repaired_work: string | null
+          vin: string | null
+          year: number | null
+        }
+        Insert: {
+          brand?: string | null
+          car_id?: string | null
+          car_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inspected_city?: string | null
+          is_paid?: boolean | null
+          is_repaired?: boolean | null
+          km?: number | null
+          model?: string | null
+          needs_repair_work?: string | null
+          plate_number?: string | null
+          repair_cost?: number | null
+          repaired_work?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Update: {
+          brand?: string | null
+          car_id?: string | null
+          car_source?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inspected_city?: string | null
+          is_paid?: boolean | null
+          is_repaired?: boolean | null
+          km?: number | null
+          model?: string | null
+          needs_repair_work?: string | null
+          plate_number?: string | null
+          repair_cost?: number | null
+          repaired_work?: string | null
+          vin?: string | null
+          year?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

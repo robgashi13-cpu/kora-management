@@ -1108,8 +1108,8 @@ button:active,
   right: 0;
   z-index: 60;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: clamp(2px, 0.8vw, 6px);
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: clamp(1px, 0.5vw, 4px);
   border-top: 1px solid hsl(var(--border) / 0.3);
   background: rgba(255, 255, 255, 0.88);
   padding: 6px max(8px, calc(8px + var(--sal))) max(8px, calc(8px + var(--sab))) max(8px, calc(8px + var(--sar)));
@@ -1127,11 +1127,11 @@ button:active,
   gap: 2px;
   border-radius: 10px;
   color: #94a3b8;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  min-height: 40px;
-  padding: 4px 2px;
+  min-height: 38px;
+  padding: 3px 1px;
   transition: all 240ms var(--luxury-ease);
 }
 
