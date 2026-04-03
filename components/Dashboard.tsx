@@ -6815,7 +6815,8 @@ export default function Dashboard() {
                                 <select
                                     value={mechanicFormData.carId}
                                     onChange={(event) => setMechanicFormData((prev) => ({ ...prev, carId: event.target.value }))}
-                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+                                    disabled={!!editingMechanicRecordId}
                                 >
                                     <option value="">Choose car...</option>
                                     {mechanicGroupedCarOptions.sale.length > 0 && (
