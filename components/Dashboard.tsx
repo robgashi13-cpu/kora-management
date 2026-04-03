@@ -69,7 +69,7 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA'];
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA', 'KR'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
 
@@ -77,10 +77,11 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 // If a profile is NOT in this map, they get full access (subject to adminOnly checks)
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
     'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC']),
+    'kr': new Set(['MECHANIC', 'INSPECTIONS']),
 };
 
 // Profiles that can VIEW all sales (from all sellers) on their allowed tabs
-const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa']);
+const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa', 'kr']);
 
 const isFullSalesViewer = (profile: string | null): boolean => {
     if (!profile) return false;
@@ -795,6 +796,7 @@ export default function Dashboard() {
         files: [] as File[]
     });
     const [selectedMechanicRecordId, setSelectedMechanicRecordId] = useState<string | null>(null);
+    const [editingMechanicRecordId, setEditingMechanicRecordId] = useState<string | null>(null);
 
     useEffect(() => {
         if (isAdmin) return;
@@ -3335,6 +3337,7 @@ export default function Dashboard() {
             needsRepairWork: '',
             repairCost: ''
         });
+        setEditingMechanicRecordId(null);
         setShowMechanicForm(true);
     };
 
@@ -3381,6 +3384,45 @@ export default function Dashboard() {
         setMechanicRecords((prev) => prev.map((record) => (
             record.id === recordId ? { ...record, [field]: !record[field] } : record
         )));
+    };
+
+    const deleteMechanicRecord = (recordId: string) => {
+        if (!confirm('Delete this mechanic record?')) return;
+        setMechanicRecords((prev) => prev.filter((r) => r.id !== recordId));
+        if (selectedMechanicRecordId === recordId) setSelectedMechanicRecordId(null);
+    };
+
+    const startEditMechanicRecord = (record: MechanicRepairRecord) => {
+        setMechanicFormData({
+            carSource: record.carSource,
+            carId: record.carId,
+            inspectedCity: record.inspectedCity,
+            repairedWork: record.repairedWork,
+            needsRepairWork: record.needsRepairWork,
+            repairCost: String(record.repairCost || '')
+        });
+        setEditingMechanicRecordId(record.id);
+        setShowMechanicForm(true);
+    };
+
+    const handleSaveMechanicRecord = () => {
+        if (editingMechanicRecordId) {
+            // Edit existing
+            const repairCost = Number(mechanicFormData.repairCost || 0);
+            setMechanicRecords((prev) => prev.map((record) =>
+                record.id === editingMechanicRecordId ? {
+                    ...record,
+                    inspectedCity: mechanicFormData.inspectedCity.trim(),
+                    repairedWork: mechanicFormData.repairedWork.trim(),
+                    needsRepairWork: mechanicFormData.needsRepairWork.trim(),
+                    repairCost: Number.isFinite(repairCost) ? Math.max(repairCost, 0) : 0,
+                } : record
+            ));
+            setShowMechanicForm(false);
+            setEditingMechanicRecordId(null);
+        } else {
+            handleCreateMechanicRecord();
+        }
     };
 
     const handleCreateCarDocumentRecord = () => {
@@ -4631,6 +4673,10 @@ export default function Dashboard() {
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isRepaired')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isRepaired ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Repaired: {selectedMechanicRecord.isRepaired ? 'YES' : 'NO'}</button>
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isPaid')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Paid: {selectedMechanicRecord.isPaid ? 'YES' : 'NO'}</button>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button type="button" onClick={() => startEditMechanicRecord(selectedMechanicRecord)} className="rounded-xl px-3 py-2 text-xs font-bold border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center justify-center gap-1"><Edit className="w-3 h-3" /> Edit</button>
+                                                            <button type="button" onClick={() => deleteMechanicRecord(selectedMechanicRecord.id)} className="rounded-xl px-3 py-2 text-xs font-bold border border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100 flex items-center justify-center gap-1"><Trash2 className="w-3 h-3" /> Delete</button>
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -6750,7 +6796,7 @@ export default function Dashboard() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-                    onClick={() => setShowMechanicForm(false)}
+                    onClick={() => { setShowMechanicForm(false); setEditingMechanicRecordId(null); }}
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.94, y: 10 }}
@@ -6760,7 +6806,7 @@ export default function Dashboard() {
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold text-slate-900">New Mechanic Record</h3>
+                            <h3 className="text-lg font-bold text-slate-900">{editingMechanicRecordId ? 'Edit Mechanic Record' : 'New Mechanic Record'}</h3>
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><X className="w-4 h-4" /></button>
                         </div>
                         <div className="space-y-4">
@@ -6769,7 +6815,8 @@ export default function Dashboard() {
                                 <select
                                     value={mechanicFormData.carId}
                                     onChange={(event) => setMechanicFormData((prev) => ({ ...prev, carId: event.target.value }))}
-                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+                                    disabled={!!editingMechanicRecordId}
                                 >
                                     <option value="">Choose car...</option>
                                     {mechanicGroupedCarOptions.sale.length > 0 && (
@@ -6844,7 +6891,7 @@ export default function Dashboard() {
                         </div>
                         <div className="mt-5 flex justify-end gap-2">
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
-                            <button type="button" onClick={handleCreateMechanicRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">Done</button>
+                            <button type="button" onClick={handleSaveMechanicRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">{editingMechanicRecordId ? 'Save' : 'Done'}</button>
                         </div>
                     </motion.div>
                 </motion.div>
@@ -6979,19 +7026,20 @@ export default function Dashboard() {
                     {(() => {
                         const restrictedTabs = getProfileAllowedTabs(userProfile);
                         const mobileNavItems = [
-                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const },
+                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const, targetCategory: 'SALES' as const },
                             { id: 'mechanic', navId: 'MECHANIC', label: 'Mechanic', icon: Wrench, targetView: 'mechanic' as const },
+                            { id: 'inspections', navId: 'INSPECTIONS', label: 'Inspection', icon: Search, targetView: 'dashboard' as const, targetCategory: 'INSPECTIONS' as const },
                             { id: 'invoices', navId: 'INVOICES', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
                             { id: 'pdf', navId: 'PDF', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
                             { id: 'balance_due', navId: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
                         ].filter(item => !restrictedTabs || restrictedTabs.has(item.navId));
                         return mobileNavItems.map((item) => {
-                        const isActive = view === item.targetView;
+                        const isActive = view === item.targetView && (!('targetCategory' in item) || activeCategory === (item as any).targetCategory);
                         return (
                             <button
                                 key={item.id}
                                 type="button"
-                                onClick={() => setView(item.targetView)}
+                                onClick={() => { setView(item.targetView); if ('targetCategory' in item && (item as any).targetCategory) setActiveCategory((item as any).targetCategory); }}
                                 className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
