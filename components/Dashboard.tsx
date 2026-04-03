@@ -6796,7 +6796,7 @@ export default function Dashboard() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
-                    onClick={() => setShowMechanicForm(false)}
+                    onClick={() => { setShowMechanicForm(false); setEditingMechanicRecordId(null); }}
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.94, y: 10 }}
