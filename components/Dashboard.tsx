@@ -667,7 +667,7 @@ export default function Dashboard() {
         };
         void loadMechanicRecords();
         return () => { cancelled = true; };
-    }, [supabaseUrl, supabaseKey]);
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
