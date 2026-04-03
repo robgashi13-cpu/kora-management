@@ -6890,7 +6890,7 @@ export default function Dashboard() {
                         </div>
                         <div className="mt-5 flex justify-end gap-2">
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
-                            <button type="button" onClick={handleCreateMechanicRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">Done</button>
+                            <button type="button" onClick={handleSaveMechanicRecord} className="px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold">{editingMechanicRecordId ? 'Save' : 'Done'}</button>
                         </div>
                     </motion.div>
                 </motion.div>
