@@ -5964,7 +5964,7 @@ export default function Dashboard() {
                                                                         {isSelected && <Check className="w-3 h-3" />}
                                                                     </div>
                                                                 </div>
-                                                                <div className="font-semibold text-slate-900 truncate">{sale.brand} {sale.model}</div>
+                                                                <div className="font-semibold text-slate-900 truncate"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewingSaleId(sale.id); }}>{sale.brand} {sale.model}</button></div>
                                                                 <div className="text-slate-600 font-semibold uppercase">{scopeStatus}</div>
                                                                 <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                 <div className="text-right font-bold text-red-600">€{calculateBalance(sale).toLocaleString()}</div>
@@ -5989,7 +5989,7 @@ export default function Dashboard() {
                                                                             {isSelected && <Check className="w-3 h-3" />}
                                                                         </div>
                                                                         <div className="min-w-0">
-                                                                            <p className="text-sm font-semibold text-slate-900 overflow-wrap-anywhere">{sale.brand} {sale.model}</p>
+                                                                            <p className="text-sm font-semibold overflow-wrap-anywhere"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewingSaleId(sale.id); }}>{sale.brand} {sale.model}</button></p>
                                                                             <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
                                                                         </div>
                                                                     </div>
