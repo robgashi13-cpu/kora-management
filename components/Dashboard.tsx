@@ -4188,6 +4188,7 @@ export default function Dashboard() {
 
             <nav className="flex-1 min-h-0 overflow-y-auto scroll-container px-4 mt-4 pb-4">
                 <div className="space-y-2">
+                    {salesGroupItems.length > 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
@@ -4224,6 +4225,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
+                    )}
 
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
@@ -4280,6 +4282,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    {financeControlGroupItems.length > 0 && (
                     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-1.5">
                         <button
                             type="button"
@@ -4326,6 +4329,7 @@ export default function Dashboard() {
                             </div>
                         </div>
                     </div>
+                    )}
 
                     <div className="space-y-1 pt-1">
                         {combinedNavItems.map((item) => {
