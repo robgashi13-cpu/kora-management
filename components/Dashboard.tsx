@@ -4663,7 +4663,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-hidden bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6`}>
+                <main className={`app-content flex-1 overflow-auto bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6`}>
                     {view !== 'sale_form' && (
                         <div className="flex flex-col flex-1 min-h-0">
 
