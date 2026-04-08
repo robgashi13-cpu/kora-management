@@ -4714,10 +4714,10 @@ export default function Dashboard() {
                                         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4">
                                             <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container">
                                                 <div className="divide-y divide-slate-100">
-                                                    <div className="grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                                                    <div className={`grid ${isKrProfile(userProfile) ? 'grid-cols-[minmax(0,1fr)_120px]' : 'grid-cols-[minmax(0,1fr)_120px_110px]'} gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500`}>
                                                         <div>Car</div>
                                                         <div>Repaired</div>
-                                                        <div>Paid</div>
+                                                        {!isKrProfile(userProfile) && <div>Paid</div>}
                                                     </div>
                                                     {mechanicRecords
                                                         .filter((record) => {
@@ -4731,7 +4731,7 @@ export default function Dashboard() {
                                                                 key={record.id}
                                                                 type="button"
                                                                 onClick={() => setSelectedMechanicRecordId(record.id)}
-                                                                className={`w-full text-left grid grid-cols-[minmax(0,1fr)_120px_110px] gap-4 px-5 py-3 transition-colors ${selectedMechanicRecordId === record.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                                                                className={`w-full text-left grid ${isKrProfile(userProfile) ? 'grid-cols-[minmax(0,1fr)_120px]' : 'grid-cols-[minmax(0,1fr)_120px_110px]'} gap-4 px-5 py-3 transition-colors ${selectedMechanicRecordId === record.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
                                                             >
                                                                 <div className="min-w-0">
                                                                     <p className="font-semibold text-slate-900 truncate">{record.brand} {record.model} ({record.year})</p>
@@ -4742,11 +4742,13 @@ export default function Dashboard() {
                                                                         {record.isRepaired ? 'DONE' : 'PENDING'}
                                                                     </span>
                                                                 </div>
+                                                                {!isKrProfile(userProfile) && (
                                                                 <div>
                                                                     <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-bold ${record.isPaid ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                                                                         {record.isPaid ? 'PAID' : 'NOT PAID'}
                                                                     </span>
                                                                 </div>
+                                                                )}
                                                             </button>
                                                         ))}
                                                     {mechanicRecords.length === 0 && (
