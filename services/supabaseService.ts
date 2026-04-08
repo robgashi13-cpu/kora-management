@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { cloudClient } from './cloudAuth';
 import { CarSale } from '@/src/types';
 
 const ADMIN_PROFILE = 'Robert';
@@ -10,15 +11,6 @@ const normalizeProfileName = (name?: string | null) => {
 
 const isAdminProfile = (profile?: string | null) => normalizeProfileName(profile) === ADMIN_PROFILE;
 
-const clientCache = new Map<string, SupabaseClient>();
-
-const encodeStorageKey = (value: string) => {
-    if (typeof btoa === 'function') {
-        return btoa(value);
-    }
-    return Buffer.from(value, 'utf-8').toString('base64');
-};
-
 const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa']);
 
 const canAccessSale = (sale: CarSale, profile: string) => {
@@ -28,42 +20,13 @@ const canAccessSale = (sale: CarSale, profile: string) => {
     return normalizeProfileName(sale.soldBy) === normalizedProfile || normalizeProfileName(sale.sellerName) === normalizedProfile;
 };
 
-export const createSupabaseClient = (url: string, key: string): SupabaseClient => {
-    const cacheKey = `${url}::${key}`;
-    const cachedClient = clientCache.get(cacheKey);
-    if (cachedClient) {
-        return cachedClient;
-    }
-
-    const client = createClient(url, key, {
-        auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false,
-            storageKey: `kora-supabase-${encodeStorageKey(url).replace(/[^a-zA-Z0-9_-]/g, '')}`,
-        },
-        global: {
-            fetch: (input, init) => {
-                const headers = new Headers(init?.headers || {});
-                headers.set('cache-control', 'no-store, no-cache, must-revalidate');
-                headers.set('pragma', 'no-cache');
-                headers.set('expires', '0');
-                return fetch(input, {
-                    ...init,
-                    cache: 'no-store',
-                    headers,
-                });
-            }
-        },
-        realtime: {
-            params: {
-                eventsPerSecond: 10,
-            }
-        }
-    });
-
-    clientCache.set(cacheKey, client);
-    return client;
+/**
+ * Returns the authenticated cloudClient.
+ * The url/key params are kept for API compatibility but ignored –
+ * all DB operations now go through the authenticated session.
+ */
+export const createSupabaseClient = (_url?: string, _key?: string): SupabaseClient => {
+    return cloudClient as unknown as SupabaseClient;
 };
 
 const tryRefreshSchemaCache = async (client: SupabaseClient) => {
