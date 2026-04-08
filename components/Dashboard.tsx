@@ -3739,6 +3739,31 @@ export default function Dashboard() {
         });
     };
 
+    const unmarkSalePaidInKorea = async (sale: CarSale) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex((s) => s.id === sale.id);
+        if (index === -1) return;
+        const updatedSale = {
+            ...currentSales[index],
+            amountPaidToKorea: 0,
+            paidDateToKorea: null
+        };
+        const newSales = [...currentSales];
+        newSales[index] = updatedSale;
+        dirtyIds.current.add(sale.id);
+        const result = await updateSalesAndSave(newSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale',
+            entityId: sale.id,
+            beforeData: currentSales[index],
+            afterData: updatedSale,
+            pageContext: 'balance_due',
+            metadata: { action: 'UNMARK_PAID_IN_KOREA' }
+        });
+    };
+
     const markBalanceDuePaid = async (saleIds: string[]) => {
         if (saleIds.length === 0) return;
         const currentSales = salesRef.current;
@@ -6056,17 +6081,16 @@ export default function Dashboard() {
                                                                     </div>
                                                                     <div className="text-slate-600">{sale.paidDateToKorea || '-'}</div>
                                                                     <div>
-                                                                        <button
+                                                                         <button
                                                                             type="button"
                                                                             onClick={(event) => {
                                                                                 event.preventDefault();
                                                                                 event.stopPropagation();
-                                                                                void markSalePaidInKorea(sale);
+                                                                                isPaid ? void unmarkSalePaidInKorea(sale) : void markSalePaidInKorea(sale);
                                                                             }}
-                                                                            disabled={isPaid}
-                                                                            className="rounded-lg bg-slate-900 text-white px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                            className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold ${isPaid ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-900 text-white'}`}
                                                                         >
-                                                                            {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                            {isPaid ? 'Undo Paid' : 'Mark Paid in Korea'}
                                                                         </button>
                                                                     </div>
                                                                 </div>
@@ -6096,11 +6120,10 @@ export default function Dashboard() {
                                                                     </button>
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => void markSalePaidInKorea(sale)}
-                                                                        disabled={isPaid}
-                                                                        className="mt-2 w-full rounded-lg bg-slate-900 text-white px-3 py-2 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                        onClick={() => isPaid ? void unmarkSalePaidInKorea(sale) : void markSalePaidInKorea(sale)}
+                                                                        className={`mt-2 w-full rounded-lg px-3 py-2 text-xs font-semibold ${isPaid ? 'bg-amber-500 text-white' : 'bg-slate-900 text-white'}`}
                                                                     >
-                                                                        {isPaid ? 'Marked Paid' : 'Mark Paid in Korea'}
+                                                                        {isPaid ? 'Undo Paid' : 'Mark Paid in Korea'}
                                                                     </button>
                                                                 </div>
                                                             );
