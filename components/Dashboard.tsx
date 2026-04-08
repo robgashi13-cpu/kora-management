@@ -1756,14 +1756,15 @@ export default function Dashboard() {
 
     const saveTransactions = async (txs: any[]) => {
         setTransactions(txs);
+        transactionsDirtyRef.current = true;
         await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txs) });
 
-        // Sync to Supabase
         if (supabaseUrl && supabaseKey && userProfile) {
             const client = createSupabaseClient(supabaseUrl.trim(), supabaseKey.trim());
-            syncTransactionsWithSupabase(client, txs, userProfile.trim())
+            syncTransactionsWithSupabase(client, txs, userProfile.trim(), { fetchLatest: false })
                 .then(res => {
                     if (res.success && res.data) {
+                        transactionsDirtyRef.current = false;
                         setTransactions(res.data);
                         Preferences.set({ key: 'bank_transactions', value: JSON.stringify(res.data) });
                     } else if (res.error) {
