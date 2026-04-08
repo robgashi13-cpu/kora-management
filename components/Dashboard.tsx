@@ -3752,9 +3752,10 @@ export default function Dashboard() {
             const balance = calculateBalance(before);
             if (balance <= 0) continue;
             befores.push(before);
-            // Fill remaining balance by adding to amountPaidByClient
+            // Fill remaining balance by adding the shortfall to amountPaidCash
             const updated = {
                 ...before,
+                amountPaidCash: (before.amountPaidCash || 0) + balance,
                 amountPaidByClient: (before.soldPrice || 0),
                 paidDateFromClient: new Date().toISOString().split('T')[0],
             };
