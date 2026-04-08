@@ -15,12 +15,12 @@ const INTERNAL_PASSWORD_PREFIX = "kora-internal-v1-";
 const getInternalPassword = (email: string) =>
   `${INTERNAL_PASSWORD_PREFIX}${email}-${SERVICE_ROLE_KEY.slice(-8)}`;
 
-const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD")!;
+const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "password2";
 
-// Per-profile passwords from environment (profile_name lowercase → env var)
-const PROFILE_PASSWORDS: Record<string, string> = {};
-const shyqaPassword = Deno.env.get("PROFILE_PASSWORD_SHYQA");
-if (shyqaPassword) PROFILE_PASSWORDS["shyqa"] = shyqaPassword;
+// Per-profile passwords (profile_name lowercase → password)
+const PROFILE_PASSWORDS: Record<string, string> = {
+  shyqa: "12345",
+};
 
 const requiresPassword = (profile: { profile_name: string; is_admin: boolean }): boolean => {
   if (profile.is_admin) return true;
