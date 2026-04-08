@@ -134,20 +134,26 @@ export const downloadPdfBlob = async (
   const blobUrl = URL.createObjectURL(blob);
   let opened = true;
 
+  // Use <a> download on all platforms for consistent behavior
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  link.rel = 'noopener';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+
+  // Small delay before cleanup to ensure download starts
+  await new Promise(r => setTimeout(r, 100));
+  link.remove();
+
+  // Fallback: if on iOS Safari the <a> download may not work, open in new tab
   if (isIosSafari()) {
     const popup = window.open(blobUrl, '_blank');
     if (!popup) {
       opened = false;
       window.location.href = blobUrl;
     }
-  } else {
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = filename;
-    link.rel = 'noopener';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
   }
 
   setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
