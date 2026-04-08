@@ -4567,7 +4567,7 @@ export default function Dashboard() {
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            {activeCategory === 'INSPECTIONS' && (
+                            {activeCategory === 'INSPECTIONS' && view === 'dashboard' && (
                                 <button
                                     onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
                                     className={`ui-control p-2 rounded-xl transition-all flex-shrink-0 ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
@@ -4665,7 +4665,7 @@ export default function Dashboard() {
                                 </div>
 
                             </div>
-                            {activeCategory === 'INSPECTIONS' && (
+                            {activeCategory === 'INSPECTIONS' && view === 'dashboard' && (
                                 <button
                                     onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
                                     className={`ui-control p-2.5 rounded-xl transition-all ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
