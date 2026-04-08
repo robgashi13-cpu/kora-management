@@ -93,10 +93,31 @@ const getQuotaExceededMessage = (error: any): string | null => {
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
+    if (!message) return null;
+
+    const directMatches = [
+        'quota has been exceeded',
+        'quota exceeded',
+        'resource exhausted',
+        'resource_exhausted',
+        'insufficient_quota',
+        'limit reached',
+        'over capacity'
+    ];
+
+    if (directMatches.some((hint) => message.includes(hint))) {
+        return 'Cloud sync quota is exceeded. Local changes are saved, and remote sync is temporarily paused. Please retry shortly or upgrade your Lovable Cloud instance if this keeps happening.';
+    }
+
     const quotaHints = ['quota', 'exceeded', 'billing', 'insufficient', 'limit reached', 'resource exhausted', 'over capacity'];
     const matchedHints = quotaHints.filter((hint) => message.includes(hint));
-    if (matchedHints.length < 2 && !message.includes('quota exceeded')) return null;
-    return 'Cloud sync quota is exceeded. Local changes are saved, but remote sync is temporarily paused. Please upgrade/reset your Supabase quota and retry.';
+    if (matchedHints.length < 2) return null;
+
+    return 'Cloud sync quota is exceeded. Local changes are saved, and remote sync is temporarily paused. Please retry shortly or upgrade your Lovable Cloud instance if this keeps happening.';
+};
+
+type SyncOptions = {
+    fetchLatest?: boolean;
 };
 
 // Helper to map Local (camel) to Remote (snake)
@@ -114,7 +135,7 @@ const toRemote = (sale: CarSale, userProfile: string) => {
         vin: s.vin,
         seller_name: s.sellerName,
         buyer_name: s.buyerName,
-        buyer_personal_id: s.buyerPersonalId, // Now mapped to actual column
+        buyer_personal_id: s.buyerPersonalId,
         shipping_name: s.shippingName,
         shipping_date: s.shippingDate,
         include_transport: s.includeTransport,
@@ -137,13 +158,11 @@ const toRemote = (sale: CarSale, userProfile: string) => {
         payment_method: s.paymentMethod,
         status: s.status,
         sort_order: s.sortOrder,
-        // CRITICAL: These fields MUST be mapped to their DB columns for persistence
-        group: s.group, // Group assignment - MUST persist to column
-        notes: s.notes, // Notes - MUST persist to column
-        sold_by: s.soldBy, // Sold by - MUST persist to column
-        // Use attachments JSONB for flexible storage and full backup
+        group: s.group,
+        notes: s.notes,
+        sold_by: s.soldBy,
         attachments: {
-            ...s, // Data Redundancy: Save ALL scalar fields and arrays to JSONB to ensure nothing is lost
+            ...s,
             soldBy: s.soldBy,
             sellerAudit: s.sellerAudit,
             last_edited_by: userProfile
@@ -151,7 +170,6 @@ const toRemote = (sale: CarSale, userProfile: string) => {
         last_edited_by: userProfile,
     } as Record<string, unknown>;
 
-    // Filter out undefined values, but KEEP null values (explicit removal)
     return Object.fromEntries(
         Object.entries(payload).filter(([, value]) => value !== undefined)
     );
@@ -196,13 +214,9 @@ const fromRemote = (r: any): CarSale => ({
     paymentMethod: (r.payment_method ?? r.attachments?.paymentMethod) as any,
     status: (r.status ?? r.attachments?.status) as any,
     sortOrder: r.sort_order ?? r.attachments?.sortOrder,
-    
-    // CRITICAL: These fields MUST read from columns first, then fallback to attachments
-    group: r.group ?? r.attachments?.group, // Group assignment from column
-    notes: r.notes ?? r.attachments?.notes, // Notes from column
-    soldBy: r.sold_by ?? r.attachments?.soldBy, // Sold by from column
-    
-    // Extract attachments and extras (only available in attachments)
+    group: r.group ?? r.attachments?.group,
+    notes: r.notes ?? r.attachments?.notes,
+    soldBy: r.sold_by ?? r.attachments?.soldBy,
     bankReceipt: r.attachments?.bankReceipt,
     bankReceipts: r.attachments?.bankReceipts,
     bankInvoice: r.attachments?.bankInvoice,
@@ -210,37 +224,41 @@ const fromRemote = (r: any): CarSale => ({
     depositInvoices: r.attachments?.depositInvoices,
     shitblerjeOverrides: r.attachments?.shitblerjeOverrides,
     sellerAudit: r.attachments?.sellerAudit,
-
     createdAt: r.created_at ?? r.attachments?.createdAt ?? new Date().toISOString(),
 });
 
 export const syncSalesWithSupabase = async (
     client: SupabaseClient,
     localSales: CarSale[],
-    userProfile: string
+    userProfile: string,
+    options: SyncOptions = {}
 ): Promise<{ success: boolean; data?: CarSale[]; error?: string; failedIds?: string[] }> => {
-    try {
-        const roleScopedSales = localSales
-            .filter((sale) => canAccessSale(sale, userProfile));
+    const { fetchLatest = true } = options;
 
-        // 1. Upsert Local to Remote (Single batch to ensure all-or-none behavior)
-        const salesToPush = roleScopedSales.map(s => toRemote(s, userProfile));
+    try {
+        const roleScopedSales = localSales.filter((sale) => canAccessSale(sale, userProfile));
+        const salesToPush = roleScopedSales.map((s) => toRemote(s, userProfile));
         let latestUpsertedRows: any[] = [];
+
         if (salesToPush.length > 0) {
             const syncInChunks = async (payload: Record<string, unknown>[]) => {
                 const BATCH_SIZE = 100;
                 const aggregatedRows: any[] = [];
+
                 for (let i = 0; i < payload.length; i += BATCH_SIZE) {
                     const chunk = payload.slice(i, i + BATCH_SIZE);
                     const { data: chunkRows, error: chunkError } = await client
                         .from('sales')
                         .upsert(chunk, { onConflict: 'id' })
                         .select('*');
+
                     if (chunkError) {
                         return { data: null, error: chunkError };
                     }
+
                     aggregatedRows.push(...(chunkRows || []));
                 }
+
                 return { data: aggregatedRows, error: null };
             };
 
@@ -283,6 +301,7 @@ export const syncSalesWithSupabase = async (
                     if (droppedColumns.size > 0) {
                         console.warn(`Sales sync retry succeeded after dropping missing columns: ${Array.from(droppedColumns).join(', ')}`);
                     }
+
                     lastError = null;
                     break;
                 }
@@ -317,42 +336,54 @@ export const syncSalesWithSupabase = async (
             }
 
             if (lastError) {
-                console.error("Sync Error Batch:", lastError.message || lastError.code || lastError.details || JSON.stringify(lastError));
+                const quotaMessage = getQuotaExceededMessage(lastError);
+                console.error('Sync Error Batch:', lastError.message || lastError.code || lastError.details || JSON.stringify(lastError));
                 console.error('[sales.sync] payload sample', payloadToPush[0]);
-                return { success: false, error: lastError.message || lastError.code || lastError.details || "Unknown sync error" };
+                return {
+                    success: false,
+                    error: quotaMessage || lastError.message || lastError.code || lastError.details || 'Unknown sync error'
+                };
             }
         }
 
-        // 2. Fetch Latest State from Supabase
+        if (!fetchLatest) {
+            return {
+                success: true,
+                data: latestUpsertedRows
+                    .map((row) => fromRemote(row))
+                    .filter((sale) => canAccessSale(sale, userProfile))
+            };
+        }
+
         const { data: remoteSales, error: fetchError } = await client
             .from('sales')
             .select('*');
 
         if (fetchError) {
-            console.error("Fetch Error:", fetchError);
-            return { success: false, error: fetchError.message };
+            const quotaMessage = getQuotaExceededMessage(fetchError);
+            console.error('Fetch Error:', fetchError);
+            return { success: false, error: quotaMessage || fetchError.message };
         }
 
-        // 3. Map Remote to Local
-        // Merge upsert response rows over fetched rows to avoid stale read-after-write windows.
         const mergedRemoteRows = new Map<string, any>();
         (remoteSales || []).forEach((row: any) => {
             if (row?.id) mergedRemoteRows.set(row.id, row);
         });
         (latestUpsertedRows || []).forEach((row: any) => {
-            if (row?.id) {
-                mergedRemoteRows.set(row.id, row);
-            }
+            if (row?.id) mergedRemoteRows.set(row.id, row);
         });
 
         const syncedSales = Array.from(mergedRemoteRows.values())
-            .map(r => fromRemote(r))
+            .map((row) => fromRemote(row))
             .filter((sale) => canAccessSale(sale, userProfile));
-        // Return latest remote state with locally upserted rows merged in for consistency.
-        return { success: true, data: syncedSales };
 
+        return { success: true, data: syncedSales };
     } catch (e: any) {
-        console.error("Supabase Sync Exception:", e);
+        console.error('Supabase Sync Exception:', e);
+        const quotaMessage = getQuotaExceededMessage(e);
+        if (quotaMessage) {
+            return { success: false, error: quotaMessage };
+        }
         if (e instanceof TypeError && e.message === 'Load failed') {
             return { success: false, error: 'Network/CORS Error: Check your internet connection.' };
         }
@@ -363,23 +394,14 @@ export const syncSalesWithSupabase = async (
 export const syncTransactionsWithSupabase = async (
     client: SupabaseClient,
     localTxs: any[],
-    userProfile: string
+    userProfile: string,
+    options: SyncOptions = {}
 ): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+    const { fetchLatest = true } = options;
+
     try {
-        // 1. Fetch Remote Data
-        const { data: remoteTxs, error: fetchError } = await client
-            .from('bank_transactions')
-            .select('*');
-
-        if (fetchError) {
-            return { success: false, error: fetchError.message };
-        }
-
-        // 2. Prepare Local Data for Upsert
-        // We need IDs. If local tx doesn't have ID, generate one.
-        // NOTE: This modifies localTxs slightly by adding IDs if missing, which we should prop back.
-        const txsToPush = localTxs.map(tx => {
-            const id = tx.id || crypto.randomUUID(); // Ensure ID
+        const txsToPush = localTxs.map((tx) => {
+            const id = tx.id || crypto.randomUUID();
             return {
                 ...tx,
                 id,
@@ -391,26 +413,39 @@ export const syncTransactionsWithSupabase = async (
             };
         });
 
-        // Upsert
-        const { error: upsertError } = await client
-            .from('bank_transactions')
-            .upsert(txsToPush, { onConflict: 'id' });
+        if (txsToPush.length > 0) {
+            const { error: upsertError } = await client
+                .from('bank_transactions')
+                .upsert(txsToPush, { onConflict: 'id' });
 
-        if (upsertError) return { success: false, error: upsertError.message };
+            if (upsertError) {
+                const quotaMessage = getQuotaExceededMessage(upsertError);
+                return { success: false, error: quotaMessage || upsertError.message };
+            }
+        }
 
-        // 3. Fetch Final State
+        if (!fetchLatest) {
+            return { success: true, data: txsToPush };
+        }
+
         const { data: finalTxs, error: finalFetchError } = await client
             .from('bank_transactions')
             .select('*');
 
-        if (finalFetchError) return { success: false, error: finalFetchError.message };
+        if (finalFetchError) {
+            const quotaMessage = getQuotaExceededMessage(finalFetchError);
+            return { success: false, error: quotaMessage || finalFetchError.message };
+        }
 
-        return { success: true, data: finalTxs };
-
+        return { success: true, data: finalTxs || [] };
     } catch (e: any) {
-        console.error("Supabase TX Sync Exception:", e);
+        console.error('Supabase TX Sync Exception:', e);
+        const quotaMessage = getQuotaExceededMessage(e);
+        if (quotaMessage) {
+            return { success: false, error: quotaMessage };
+        }
         if (e instanceof TypeError && e.message === 'Load failed') {
-            return { success: false, error: 'Network/CORS Error: Check your internet connection and Supabase CORS settings.' };
+            return { success: false, error: 'Network/CORS Error: Check your internet connection and backend CORS settings.' };
         }
         return { success: false, error: e.message || 'Unknown Sync Error' };
     }
