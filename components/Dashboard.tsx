@@ -6990,6 +6990,7 @@ export default function Dashboard() {
                                     placeholder="Describe pending repairs..."
                                 />
                             </label>
+                            {!isKrProfile(userProfile) && (
                             <label className="block text-sm font-semibold text-slate-700">
                                 Repair cost (€)
                                 <input
@@ -7002,6 +7003,7 @@ export default function Dashboard() {
                                     placeholder="0.00"
                                 />
                             </label>
+                            )}
                         </div>
                         <div className="mt-5 flex justify-end gap-2">
                             <button type="button" onClick={() => setShowMechanicForm(false)} className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold">Cancel</button>
