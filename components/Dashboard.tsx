@@ -3739,6 +3739,31 @@ export default function Dashboard() {
         });
     };
 
+    const unmarkSalePaidInKorea = async (sale: CarSale) => {
+        const currentSales = salesRef.current;
+        const index = currentSales.findIndex((s) => s.id === sale.id);
+        if (index === -1) return;
+        const updatedSale = {
+            ...currentSales[index],
+            amountPaidToKorea: 0,
+            paidDateToKorea: null
+        };
+        const newSales = [...currentSales];
+        newSales[index] = updatedSale;
+        dirtyIds.current.add(sale.id);
+        const result = await updateSalesAndSave(newSales);
+        if (!result.success) return;
+        await logAuditEvent({
+            actionType: 'UPDATE',
+            entityType: 'sale',
+            entityId: sale.id,
+            beforeData: currentSales[index],
+            afterData: updatedSale,
+            pageContext: 'balance_due',
+            metadata: { action: 'UNMARK_PAID_IN_KOREA' }
+        });
+    };
+
     const markBalanceDuePaid = async (saleIds: string[]) => {
         if (saleIds.length === 0) return;
         const currentSales = salesRef.current;
