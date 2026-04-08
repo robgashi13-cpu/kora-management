@@ -902,6 +902,7 @@ export default function Dashboard() {
     const interactionGuardRef = useRef<Record<number, { x: number; y: number; moved: boolean }>>({});
     const lastSuccessfulSyncAtRef = useRef(0);
     const syncBackoffUntilRef = useRef(0);
+    const transactionsDirtyRef = useRef(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
