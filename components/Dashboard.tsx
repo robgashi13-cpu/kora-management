@@ -2755,8 +2755,9 @@ export default function Dashboard() {
 
         const dirtyItems = localSalesToSync.filter(s => dirtyIds.current.has(s.id));
         const hasDirtyItems = dirtyItems.length > 0;
-        const shouldRunIdlePull = now - lastSuccessfulSyncAtRef.current >= AUTO_SYNC_IDLE_PULL_INTERVAL_MS;
-        if (!hasDirtyItems && !shouldRunIdlePull) {
+        const shouldRunIdlePull = !hasDirtyItems && now - lastSuccessfulSyncAtRef.current >= AUTO_SYNC_IDLE_PULL_INTERVAL_MS;
+        const shouldSyncTransactions = transactionsDirtyRef.current;
+        if (!hasDirtyItems && !shouldRunIdlePull && !shouldSyncTransactions) {
             return { success: true };
         }
 
@@ -2767,13 +2768,11 @@ export default function Dashboard() {
         try {
             const client = createSupabaseClient(url.trim(), key.trim());
 
-            // 1. Identify Dirty Items to Push
             if (localSalesToSync.length > 0 && dirtyIds.current.size === 0) {
                 console.log("No local changes to push (Clean Sync)");
             }
 
-            // 2. Sync (Upsert Dirty -> Fetch All)
-            const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim());
+            const salesRes = await syncSalesWithSupabase(client, dirtyItems, profile.trim(), { fetchLatest: shouldRunIdlePull });
             if (!salesRes.success) {
                 syncErrorMessage = salesRes.error || 'Sales sync failed.';
             }
@@ -2821,6 +2820,7 @@ export default function Dashboard() {
                         syncedDirtyIds.forEach((id) => dirtyIds.current.delete(id));
                         await persistDirtyIds(dirtyIds.current);
                     }
+                    lastSuccessfulSyncAtRef.current = Date.now();
                 }
             } else if (salesRes.error) {
                 console.error("Sales Sync Failed:", salesRes.error);
@@ -2834,22 +2834,23 @@ export default function Dashboard() {
                 setSyncError(`Sales Sync Warning: ${salesRes.error} `);
             }
 
-            // Sync Transactions
-            const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
-            let localTxs = [];
-            try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
+            if (shouldSyncTransactions) {
+                const { value: txJson } = await Preferences.get({ key: 'bank_transactions' });
+                let localTxs = [];
+                try { localTxs = txJson ? JSON.parse(txJson) : []; } catch (e) { }
 
-            const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim());
-            if (txRes.success && txRes.data) {
-                console.log("TX Sync Success:", txRes.data.length);
-                setTransactions(txRes.data);
-                await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
-                lastSuccessfulSyncAtRef.current = Date.now();
-            } else if (txRes.error) {
-                console.error("TX Sync Failed:", txRes.error);
-                setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
+                const txRes = await syncTransactionsWithSupabase(client, localTxs, profile.trim(), { fetchLatest: false });
+                if (txRes.success && txRes.data) {
+                    console.log("TX Sync Success:", txRes.data.length);
+                    transactionsDirtyRef.current = false;
+                    setTransactions(txRes.data);
+                    await Preferences.set({ key: 'bank_transactions', value: JSON.stringify(txRes.data) });
+                    lastSuccessfulSyncAtRef.current = Date.now();
+                } else if (txRes.error) {
+                    console.error("TX Sync Failed:", txRes.error);
+                    setSyncError(prev => prev ? `${prev} | TX Sync Failed: ${txRes.error} ` : `TX Sync Failed: ${txRes.error} `);
+                }
             }
-
         } catch (e: any) {
             console.error("Auto Sync Exception", e);
             syncErrorMessage = e.message || 'Sync Exception';
