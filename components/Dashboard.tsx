@@ -4780,10 +4780,12 @@ export default function Dashboard() {
                                                             <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">What still needs repair</p>
                                                             <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedMechanicRecord.needsRepairWork || '-'}</p>
                                                         </div>
+                                                        {!isKrProfile(userProfile) && (
                                                         <div className="rounded-xl border border-slate-200 p-3">
                                                             <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Repair cost</p>
                                                             <p className="text-lg font-black text-slate-900">€{Number(selectedMechanicRecord.repairCost || 0).toLocaleString()}</p>
                                                         </div>
+                                                        )}
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isRepaired')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isRepaired ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Repaired: {selectedMechanicRecord.isRepaired ? 'YES' : 'NO'}</button>
                                                             <button type="button" onClick={() => toggleMechanicRecordStatus(selectedMechanicRecord.id, 'isPaid')} className={`rounded-xl px-3 py-2 text-xs font-bold border ${selectedMechanicRecord.isPaid ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700'}`}>Paid: {selectedMechanicRecord.isPaid ? 'YES' : 'NO'}</button>
