@@ -1054,7 +1054,7 @@ button:active,
   line-height: 1.25;
   font-weight: 650;
   letter-spacing: -0.01em;
-  color: #0f172a;
+  color: hsl(var(--foreground));
   max-width: min(100%, 16ch);
   word-break: break-word;
 }
@@ -1066,35 +1066,35 @@ button:active,
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 14px;
-  color: #334155;
+  color: hsl(var(--muted-foreground));
   transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .nav-item:hover {
-  background-color: #f1f5f9;
+  background-color: hsl(var(--accent));
   transform: translateY(-1px);
 }
 
 .nav-item-active {
-  background-color: #0f172a;
-  color: #fff;
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .app-topbar {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid hsl(var(--border) / 0.5);
-  background: rgba(255, 255, 255, 0.82);
-  padding: max(14px, calc(14px + var(--sat))) clamp(14px, 4vw, 22px) 14px;
+  border-bottom: 1px solid hsl(var(--border) / 0.4);
+  background: hsl(var(--background) / 0.88);
+  padding: max(12px, calc(12px + var(--sat))) clamp(12px, 4vw, 20px) 12px;
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   transition: background-color 280ms var(--luxury-ease), box-shadow 280ms var(--luxury-ease), border-color 280ms var(--luxury-ease);
-  box-shadow: 0 1px 0 hsl(var(--border) / 0.15), 0 4px 20px -4px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 0 hsl(var(--border) / 0.12), 0 4px 16px -4px hsl(var(--foreground) / 0.04);
 }
 
 .app-content {
-  padding: clamp(12px, 2.5vw, 16px);
+  padding: clamp(10px, 2.5vw, 16px);
   overflow: auto;
   min-height: 0;
   flex: 1;
@@ -1109,14 +1109,14 @@ button:active,
   z-index: 60;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
-  gap: clamp(1px, 0.5vw, 4px);
-  border-top: 1px solid hsl(var(--border) / 0.3);
-  background: rgba(255, 255, 255, 0.88);
-  padding: 6px max(8px, calc(8px + var(--sal))) max(8px, calc(8px + var(--sab))) max(8px, calc(8px + var(--sar)));
+  gap: 2px;
+  border-top: 1px solid hsl(var(--border) / 0.25);
+  background: hsl(var(--background) / 0.92);
+  padding: 4px max(6px, calc(6px + var(--sal))) max(6px, calc(6px + var(--sab))) max(6px, calc(6px + var(--sar)));
   backdrop-filter: saturate(180%) blur(28px);
   -webkit-backdrop-filter: saturate(180%) blur(28px);
   transition: background-color 280ms var(--luxury-ease);
-  box-shadow: 0 -1px 0 hsl(var(--border) / 0.1), 0 -8px 32px -4px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -1px 0 hsl(var(--border) / 0.08), 0 -6px 24px -4px hsl(var(--foreground) / 0.06);
 }
 
 .mobile-nav-item {
@@ -1124,25 +1124,28 @@ button:active,
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  border-radius: 10px;
-  color: #94a3b8;
-  font-size: 8px;
+  gap: 1px;
+  border-radius: 8px;
+  color: hsl(var(--muted-foreground));
+  font-size: 7.5px;
   font-weight: 600;
-  letter-spacing: 0.01em;
-  min-height: 38px;
-  padding: 3px 1px;
-  transition: all 240ms var(--luxury-ease);
+  letter-spacing: 0.02em;
+  min-height: 36px;
+  padding: 3px 1px 2px;
+  transition: all 200ms var(--luxury-ease);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mobile-nav-item:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
 }
 
 .mobile-nav-item-active {
-  background: hsl(220 20% 96%);
-  color: #0f172a;
-  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.1);
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  box-shadow: 0 1px 4px -1px hsl(var(--foreground) / 0.08);
   font-weight: 700;
 }
 
@@ -1153,8 +1156,9 @@ button:active,
 
 @media (max-width: 768px) {
   .app-topbar {
-    padding-top: max(10px, calc(10px + var(--sat)));
-    padding-inline: 12px;
+    padding-top: max(8px, calc(8px + var(--sat)));
+    padding-inline: 10px;
+    padding-bottom: 8px;
   }
 
   .app-title {
@@ -1163,8 +1167,26 @@ button:active,
 
   .app-content {
     padding-inline: 0;
-    padding-top: 6px;
-    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    padding-top: 4px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+}
+
+/* iPad / Tablet refinements */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .app-topbar {
+    padding: max(12px, calc(12px + var(--sat))) 16px 12px;
+  }
+  
+  .app-content {
+    padding: 12px;
+    padding-bottom: 16px;
+  }
+  
+  .mobile-nav-item {
+    font-size: 9px;
+    min-height: 40px;
+    gap: 2px;
   }
 }
 

@@ -4567,7 +4567,7 @@ export default function Dashboard() {
                             >
                                 <RefreshCw className="w-5 h-5" />
                             </button>
-                            {activeCategory === 'INSPECTIONS' && (
+                            {activeCategory === 'INSPECTIONS' && view === 'dashboard' && (
                                 <button
                                     onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
                                     className={`ui-control p-2 rounded-xl transition-all flex-shrink-0 ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
@@ -4665,7 +4665,7 @@ export default function Dashboard() {
                                 </div>
 
                             </div>
-                            {activeCategory === 'INSPECTIONS' && (
+                            {activeCategory === 'INSPECTIONS' && view === 'dashboard' && (
                                 <button
                                     onClick={() => { setInspectionFormData({ carName: '', plateNumber: '', link: '' }); setShowInspectionForm(true); }}
                                     className={`ui-control p-2.5 rounded-xl transition-all ${theme === 'dark' ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
@@ -4691,7 +4691,7 @@ export default function Dashboard() {
                 </header>
                 )}
 
-                <main className={`app-content flex-1 overflow-auto bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6`}>
+                <main className={`app-content flex-1 overflow-auto bg-slate-50/70 ${isFormOpen ? 'p-0' : 'px-0 py-0 md:p-6'} flex flex-col relative min-h-0 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-6`}>
                     {view !== 'sale_form' && (
                         <div className="flex flex-col flex-1 min-h-0">
 
@@ -7146,8 +7146,8 @@ export default function Dashboard() {
                                 className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
-                                <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-                                <span>{item.label}</span>
+                                <item.icon className={`h-3.5 w-3.5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+                                <span className="truncate max-w-full">{item.label}</span>
                             </button>
                         );
                     });
@@ -7272,10 +7272,10 @@ export default function Dashboard() {
                     </>
                 )}
             </AnimatePresence>
-            {view !== 'sale_form' && view !== 'mechanic' && (
+            {view !== 'sale_form' && view !== 'mechanic' && activeCategory !== 'INSPECTIONS' && (
                 <button
                     onClick={() => openSaleForm(null)}
-                    className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-24 z-[110] h-14 w-14 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
+                    className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 md:bottom-6 md:right-24 z-[110] h-13 w-13 rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg shadow-slate-900/20 hover:shadow-xl hover:border-slate-300 hover:scale-105 transition-all duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40"
                     aria-label="Add sale"
                     type="button"
                 >
