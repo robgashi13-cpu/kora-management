@@ -88,6 +88,11 @@ const isFullSalesViewer = (profile: string | null): boolean => {
     return FULL_SALES_VIEWER_PROFILES.has(profile.toLowerCase());
 };
 
+const isKrProfile = (profile: string | null): boolean => {
+    if (!profile) return false;
+    return profile.toLowerCase() === 'kr';
+};
+
 const getProfileAllowedTabs = (profile: string | null): Set<string> | null => {
     if (!profile) return null;
     const key = profile.toLowerCase();
