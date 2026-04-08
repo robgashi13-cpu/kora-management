@@ -7146,8 +7146,8 @@ export default function Dashboard() {
                                 className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
                                 aria-current={isActive ? 'page' : undefined}
                             >
-                                <item.icon className={`h-4 w-4 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-                                <span>{item.label}</span>
+                                <item.icon className={`h-3.5 w-3.5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
+                                <span className="truncate max-w-full">{item.label}</span>
                             </button>
                         );
                     });
