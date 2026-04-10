@@ -203,8 +203,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div style={{ borderBottom: '1.5px solid hsl(0 0% 7%)', width: '55mm' }} />
                                 <div style={{ fontSize: '8.5pt', fontWeight: 700, color: 'hsl(0 0% 7%)', marginTop: '6px', minHeight: '10px' }}>{seller.name}</div>
                                 {withStamp && (
-                                    <div style={{ position: 'absolute', top: '-3mm', left: '10mm', width: '28mm', height: '28mm', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                                        <StampImage style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', opacity: 0.85 }} />
+                                    <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
+                                        <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
                                     </div>
                                 )}
                             </div>
