@@ -4840,7 +4840,7 @@ export default function Dashboard() {
                                 {activeCategory === 'INSPECTIONS' ? (
                                     <div
                                         ref={scrollContainerRef}
-                                        className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
+                                        className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden lg:block'} overflow-auto scroll-container flex-1`}
                                     >
                                         <div className="divide-y divide-slate-100">
                                             <div className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -4881,7 +4881,7 @@ export default function Dashboard() {
                                 ) : (
                                 <div
                                     ref={scrollContainerRef}
-                                    className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
+                                    className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden lg:block'} overflow-auto scroll-container flex-1`}
                                 >
                                     <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                         style={{
@@ -5317,7 +5317,7 @@ export default function Dashboard() {
                                 )}
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
-                                <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
+                                <div className={`${forceMobileLayout ? '' : 'lg:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 no-scrollbar">
                                         <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
                                             <div className="flex items-center justify-between text-[11px] text-slate-600">
@@ -5990,7 +5990,7 @@ export default function Dashboard() {
                                                     <div className="hidden md:grid grid-cols-[32px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                         <div></div><div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 hidden md:block">
+                                                    <div className="divide-y divide-slate-100 hidden lg:block">
                                                         {balanceDueRows.map(({ sale, scopeStatus }) => {
                                                             const isSelected = balanceDueSelectedIds.has(sale.id);
                                                             return (
@@ -6015,7 +6015,7 @@ export default function Dashboard() {
                                                             );
                                                         })}
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                    <div className="divide-y divide-slate-100 lg:hidden">
                                                         {balanceDueRows.map(({ sale, scopeStatus }) => {
                                                             const isSelected = balanceDueSelectedIds.has(sale.id);
                                                             return (
@@ -6076,7 +6076,7 @@ export default function Dashboard() {
                                                     <div className="hidden md:grid grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                         <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div><div>Action</div>
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 hidden md:block">
+                                                    <div className="divide-y divide-slate-100 hidden lg:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
@@ -6113,7 +6113,7 @@ export default function Dashboard() {
                                                             );
                                                         })}
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 md:hidden">
+                                                    <div className="divide-y divide-slate-100 lg:hidden">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
@@ -6481,7 +6481,7 @@ export default function Dashboard() {
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             {/* Mobile card layout */}
-                                                                            <div className="md:hidden space-y-2">
+                                                                            <div className="lg:hidden space-y-2">
                                                                                 {/* Row 1: Checkbox + Vehicle + Buyer */}
                                                                                 <div className="flex items-start gap-2">
                                                                                     <button
