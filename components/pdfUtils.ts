@@ -474,10 +474,17 @@ export const generatePdf = async ({
   if (singlePage) {
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
+    const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
+    const a4WidthPx = Math.round((210 / 25.4) * 96);
+    const a4HeightPx = Math.round((297 / 25.4) * 96);
 
     const rect = element.getBoundingClientRect();
-    const width = Math.max(Math.ceil(rect.width), 1);
-    const height = Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
+    const width = isLockedDepositPage
+      ? a4WidthPx
+      : Math.max(Math.ceil(rect.width), 1);
+    const height = isLockedDepositPage
+      ? a4HeightPx
+      : Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -487,21 +494,36 @@ export const generatePdf = async ({
       imageTimeout: 10000,
       width,
       height,
+      windowWidth: width,
+      windowHeight: height,
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
-        // Keep invoice layout intact while removing only height constraints
-        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
+        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content, [data-contract-document]').forEach((el) => {
+          const isDepositContract = el.matches('[data-contract-document][data-contract-type="deposit"]');
+          if (isDepositContract) {
+            el.style.width = '210mm';
+            el.style.minWidth = '210mm';
+            el.style.maxWidth = '210mm';
+            el.style.height = '297mm';
+            el.style.minHeight = '297mm';
+            el.style.maxHeight = '297mm';
+            el.style.overflow = 'hidden';
+            el.style.margin = '0';
+            el.style.boxSizing = 'border-box';
+            return;
+          }
+
           el.style.overflow = 'visible';
           el.style.maxHeight = 'none';
-          el.style.minHeight = 'none';
+          el.style.minHeight = '0';
           el.style.height = 'auto';
         });
         onClone?.(clonedDoc);
       }
     });
 
-    const outputCanvas = trimCanvasBottomWhitespace(canvas);
+    const outputCanvas = isLockedDepositPage ? canvas : trimCanvasBottomWhitespace(canvas);
     const imgData = outputCanvas.toDataURL('image/png', 1.0);
 
     // A4 dimensions in mm
@@ -534,9 +556,12 @@ export const generatePdf = async ({
       precision: 16,
     });
 
-    // Center horizontally with a tiny inset to prevent overflow/blank trailing pages in PDF viewers
-    const offsetX = (A4_W - imgW) / 2;
-    pdf.addImage(imgData, 'PNG', offsetX, PAGE_INSET_MM, imgW, imgH, undefined, 'FAST');
+    if (isLockedDepositPage) {
+      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'FAST');
+    } else {
+      const offsetX = (A4_W - imgW) / 2;
+      pdf.addImage(imgData, 'PNG', offsetX, PAGE_INSET_MM, imgW, imgH, undefined, 'FAST');
+    }
     if (typeof pdf.viewerPreferences === 'function') {
       pdf.viewerPreferences({
         PrintScaling: 'None',

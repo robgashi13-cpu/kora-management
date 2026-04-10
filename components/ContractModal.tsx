@@ -70,7 +70,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const result = await generatePdf({
                 element,
                 filename: `Contract_${safeBrand}_${safeModel}.pdf`,
-                singlePage: isDeposit
+                singlePage: isDeposit,
+                editableText: false
             });
             setPdfBlob(result.blob);
             setPdfUrl((prev) => {
@@ -221,7 +222,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             )}
                         </div>
                     </div>
-                    <div className="absolute -left-[9999px] top-0 opacity-0 pointer-events-none" aria-hidden="true">
+                    <div className="fixed left-0 top-0 -z-10 opacity-0 pointer-events-none" aria-hidden="true">
                         <ContractDocument sale={sale} type={type} documentRef={printRef} withStamp={withStamp} />
                     </div>
                 </div>
