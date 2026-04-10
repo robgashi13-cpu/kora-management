@@ -13,11 +13,11 @@ export type PdfTemplateEntry = {
 
 export type PdfTemplateMap = Record<PdfTemplateType, PdfTemplateEntry>;
 
-const BLOCKED_TEMPLATE_TEXT_PATTERN = /ky template kontrollon tekstin shtes[eë]\s+t[ëe]\s+fatur[ëe]s/gi;
+const BLOCKED_TEMPLATE_TEXT_PATTERN = /ky template kontrollon[^\n]*/gi;
 
 export const sanitizePdfTemplateBody = (body: unknown): string => {
   if (typeof body !== 'string') return '';
-  return body.replace(BLOCKED_TEMPLATE_TEXT_PATTERN, '');
+  return body.replace(BLOCKED_TEMPLATE_TEXT_PATTERN, '').replace(/\n{2,}/g, '\n').trim();
 };
 
 export const sanitizePdfTemplateMap = (templates: PdfTemplateMap): PdfTemplateMap => {

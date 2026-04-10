@@ -180,7 +180,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <table style={{ borderCollapse: 'collapse', width: '100%' }}>
                                     <tbody>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Llogaria:</td><td style={{ fontWeight: 'bold' }}>RG SH.P.K.</td></tr>
-                                        <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Banka:</td><td>TEB Bank</td></tr>
+                                        <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Banka:</td><td>Banka Ekonomike</td></tr>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>IBAN:</td><td style={{ fontWeight: 'bold' }}>4020-0050-7015-2943</td></tr>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap' }}>Nr. Biznesit:</td><td>810062092</td></tr>
                                     </tbody>
