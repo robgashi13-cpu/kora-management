@@ -408,6 +408,57 @@ type PdfGenerationOptions = {
   singlePage?: boolean;
 };
 
+const trimCanvasBottomWhitespace = (canvas: HTMLCanvasElement, paddingPx = 12): HTMLCanvasElement => {
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return canvas;
+
+  const { width, height } = canvas;
+  const imageData = context.getImageData(0, 0, width, height);
+  const { data } = imageData;
+  const whiteThreshold = 248;
+  const alphaThreshold = 10;
+
+  let lastVisibleRow = height - 1;
+  let foundContent = false;
+
+  for (let y = height - 1; y >= 0; y -= 1) {
+    const rowOffset = y * width * 4;
+    for (let x = 0; x < width; x += 1) {
+      const index = rowOffset + (x * 4);
+      const r = data[index];
+      const g = data[index + 1];
+      const b = data[index + 2];
+      const a = data[index + 3];
+
+      if (a > alphaThreshold && (r < whiteThreshold || g < whiteThreshold || b < whiteThreshold)) {
+        lastVisibleRow = y;
+        foundContent = true;
+        break;
+      }
+    }
+
+    if (foundContent) break;
+  }
+
+  if (!foundContent) return canvas;
+
+  const trimmedHeight = Math.min(height, Math.max(1, lastVisibleRow + 1 + paddingPx));
+  if (trimmedHeight >= height) return canvas;
+
+  const trimmedCanvas = document.createElement('canvas');
+  trimmedCanvas.width = width;
+  trimmedCanvas.height = trimmedHeight;
+
+  const trimmedContext = trimmedCanvas.getContext('2d');
+  if (!trimmedContext) return canvas;
+
+  trimmedContext.fillStyle = '#ffffff';
+  trimmedContext.fillRect(0, 0, width, trimmedHeight);
+  trimmedContext.drawImage(canvas, 0, 0, width, trimmedHeight, 0, 0, width, trimmedHeight);
+
+  return trimmedCanvas;
+};
+
 export const generatePdf = async ({
   element,
   filename,
@@ -450,25 +501,29 @@ export const generatePdf = async ({
       }
     });
 
-    const imgData = canvas.toDataURL('image/png', 1.0);
+    const outputCanvas = trimCanvasBottomWhitespace(canvas);
+    const imgData = outputCanvas.toDataURL('image/png', 1.0);
 
     // A4 dimensions in mm
     const A4_W = 210;
     const A4_H = 297;
+    const PAGE_INSET_MM = 1.5;
+    const CONTENT_W = A4_W - (PAGE_INSET_MM * 2);
+    const CONTENT_H = A4_H - (PAGE_INSET_MM * 2);
 
     // Calculate aspect-ratio-preserving dimensions
-    const contentAspect = canvas.width / canvas.height;
-    const a4Aspect = A4_W / A4_H;
+    const contentAspect = outputCanvas.width / outputCanvas.height;
+    const a4Aspect = CONTENT_W / CONTENT_H;
 
     let imgW: number, imgH: number;
     if (contentAspect >= a4Aspect) {
       // Content is wider relative to A4 — fit to width
-      imgW = A4_W;
-      imgH = A4_W / contentAspect;
+      imgW = CONTENT_W;
+      imgH = CONTENT_W / contentAspect;
     } else {
       // Content is taller relative to A4 — fit to height
-      imgH = A4_H;
-      imgW = A4_H * contentAspect;
+      imgH = CONTENT_H;
+      imgW = CONTENT_H * contentAspect;
     }
 
     const pdf = new jsPDF({
@@ -476,11 +531,18 @@ export const generatePdf = async ({
       unit: 'mm',
       format: 'a4',
       compress: true,
+      precision: 16,
     });
 
-    // Center horizontally, place at top
+    // Center horizontally with a tiny inset to prevent overflow/blank trailing pages in PDF viewers
     const offsetX = (A4_W - imgW) / 2;
-    pdf.addImage(imgData, 'PNG', offsetX, 0, imgW, imgH, undefined, 'FAST');
+    pdf.addImage(imgData, 'PNG', offsetX, PAGE_INSET_MM, imgW, imgH, undefined, 'FAST');
+    if (typeof pdf.viewerPreferences === 'function') {
+      pdf.viewerPreferences({
+        PrintScaling: 'None',
+        PickTrayByPDFSize: true
+      });
+    }
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
