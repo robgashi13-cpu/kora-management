@@ -476,9 +476,11 @@ export const generatePdf = async ({
     const { jsPDF } = await import('jspdf');
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
     const isLockedContractPage = isLockedDepositPage || element.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || element.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
+    const isInvoicePage = element.matches('#invoice-content') || element.matches('.invoice-root');
+    const isLockedPage = isLockedContractPage || isInvoicePage;
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedContractPage ? 4 : 2;
+    const captureScale = isLockedPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
     const width = isLockedContractPage
