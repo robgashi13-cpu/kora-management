@@ -58,6 +58,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
     const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
     const isSinglePage = type === 'deposit' || type === 'full_shitblerje';
+    const depositScale = 0.965;
     const rootPaddingClass = type === 'deposit'
         ? ''
         : type === 'full_shitblerje'
@@ -89,7 +90,17 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             }}
         >
             {type === 'deposit' && (
-                <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
+                    <div
+                        style={{
+                            height: `calc(100% / ${depositScale})`,
+                            width: `calc(100% / ${depositScale})`,
+                            transform: `scale(${depositScale})`,
+                            transformOrigin: 'top left',
+                            display: 'flex',
+                            flexDirection: 'column'
+                        }}
+                    >
                     <div style={{ flex: 1, minHeight: 0 }}>
                         {/* Header */}
                         <div style={{ textAlign: 'center', marginBottom: '8px', paddingBottom: '6px', borderBottom: '2px solid #000' }}>
@@ -109,7 +120,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '7px' }}>
                             <div>
                                 <div style={{ fontWeight: 'bold', fontSize: '8.3pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>1. Shitësi:</div>
-                                <table style={{ fontSize: '8.2pt', lineHeight: 1.32, borderCollapse: 'collapse' }}>
+                                <table style={{ fontSize: '8.2pt', lineHeight: 1.32, borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
                                     <tbody>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '8px', whiteSpace: 'nowrap' }}>Emri:</td><td style={{ fontWeight: 'bold' }}>{seller.name}</td></tr>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '8px', whiteSpace: 'nowrap' }}>Nr. personal:</td><td>{seller.id}</td></tr>
@@ -119,7 +130,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             </div>
                             <div>
                                 <div style={{ fontWeight: 'bold', fontSize: '8.3pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>2. Blerësi (Kaparidhënësi):</div>
-                                <table style={{ fontSize: '8.2pt', lineHeight: 1.32, borderCollapse: 'collapse' }}>
+                                <table style={{ fontSize: '8.2pt', lineHeight: 1.32, borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
                                     <tbody>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '8px', whiteSpace: 'nowrap' }}>Emri:</td><td style={{ fontWeight: 'bold' }}>{safeString(displaySale.buyerName)}</td></tr>
                                         <tr><td style={{ fontWeight: 600, paddingRight: '8px', whiteSpace: 'nowrap' }}>Nr. personal:</td><td>{safeString(displaySale.buyerPersonalId)}</td></tr>
@@ -172,7 +183,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             <div style={{ fontWeight: 'bold', fontSize: '8.3pt', textAlign: 'center', padding: '3px 0', borderBottom: '1px solid #000', backgroundColor: '#f5f5f5' }}>Të dhënat bankare për pagesë</div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', fontSize: '8.05pt' }}>
                                 <div style={{ padding: '5px 8px', borderRight: '1px solid #000' }}>
-                                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                                    <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
                                         <tbody>
                                             <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Llogaria:</td><td style={{ fontWeight: 'bold' }}>RG SH.P.K.</td></tr>
                                             <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Banka:</td><td>Raiffeisen Bank</td></tr>
@@ -182,7 +193,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                     </table>
                                 </div>
                                 <div style={{ padding: '5px 8px' }}>
-                                    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                                    <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
                                         <tbody>
                                             <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Llogaria:</td><td style={{ fontWeight: 'bold' }}>RG SH.P.K.</td></tr>
                                             <tr><td style={{ fontWeight: 600, paddingRight: '6px', whiteSpace: 'nowrap', paddingBottom: '2px' }}>Banka:</td><td>Banka Ekonomike</td></tr>
@@ -213,7 +224,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div style={{ fontSize: '8.3pt', fontWeight: 'bold', marginTop: '6px' }}>{seller.name}</div>
                                 {withStamp && (
                                     <div style={{ position: 'absolute', top: '-5mm', left: '10mm', width: '32mm', pointerEvents: 'none' }}>
-                                        <StampImage style={{ width: '32mm', height: 'auto', display: 'block', opacity: 0.85 }} />
+                                        <StampImage style={{ width: '30mm', height: 'auto', display: 'block', opacity: 0.85 }} />
                                     </div>
                                 )}
                             </div>
@@ -223,6 +234,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div style={{ fontSize: '8.3pt', fontWeight: 'bold', marginTop: '6px', wordBreak: 'break-word' }}>{safeString(displaySale.buyerName)}</div>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
             )}
