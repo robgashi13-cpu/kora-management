@@ -83,7 +83,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 WebkitFontSmoothing: 'antialiased',
                 width: '210mm',
                 maxWidth: '210mm',
-                padding: isDeposit ? '8.5mm 9mm 8.5mm' : undefined,
+                padding: isDeposit ? '12mm 14mm 10mm' : undefined,
                 height: isDeposit ? '297mm' : undefined,
                 minHeight: isDeposit ? '297mm' : undefined,
                 overflow: isDeposit ? 'hidden' : (isSinglePage ? 'hidden' : 'visible')
