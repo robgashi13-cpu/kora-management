@@ -90,7 +90,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     width: '210mm',
                     maxWidth: '210mm',
                     minHeight: '297mm',
-                    height: 'auto',
+                    height: '297mm',
                     overflowWrap: 'anywhere',
                     wordBreak: 'break-word',
                     textRendering: 'optimizeLegibility',
