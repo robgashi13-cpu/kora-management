@@ -475,15 +475,16 @@ export const generatePdf = async ({
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
+    const isLockedContractPage = isLockedDepositPage || element.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || element.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedDepositPage ? 4 : 2;
+    const captureScale = isLockedContractPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
-    const width = isLockedDepositPage
+    const width = isLockedContractPage
       ? a4WidthPx
       : Math.max(Math.ceil(rect.width), 1);
-    const height = isLockedDepositPage
+    const height = isLockedContractPage
       ? a4HeightPx
       : Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
@@ -501,8 +502,8 @@ export const generatePdf = async ({
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content, [data-contract-document]').forEach((el) => {
-          const isDepositContract = el.matches('[data-contract-document][data-contract-type="deposit"]');
-          if (isDepositContract) {
+          const isContractLocked = el.matches('[data-contract-document][data-contract-type="deposit"]') || el.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || el.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
+          if (isContractLocked) {
             el.style.width = '210mm';
             el.style.minWidth = '210mm';
             el.style.maxWidth = '210mm';
@@ -524,7 +525,7 @@ export const generatePdf = async ({
       }
     });
 
-    const outputCanvas = isLockedDepositPage ? canvas : trimCanvasBottomWhitespace(canvas);
+    const outputCanvas = isLockedContractPage ? canvas : trimCanvasBottomWhitespace(canvas);
     const imgData = outputCanvas.toDataURL('image/png', 1.0);
 
     // A4 dimensions in mm
