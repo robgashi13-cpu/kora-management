@@ -90,7 +90,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     width: '210mm',
                     maxWidth: '210mm',
                     minHeight: '297mm',
-                    height: 'auto',
+                    height: '297mm',
                     overflowWrap: 'anywhere',
                     wordBreak: 'break-word',
                     textRendering: 'optimizeLegibility',
@@ -234,13 +234,18 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     </div>
                 </div>
 
-                {/* Stamp Section - Only shown when withStamp is true */}
-                {withStamp && (
-                    <div className="invoice-signature">
-                        <div className="invoice-signature-line" />
-                        <StampImage className="invoice-stamp" />
+                {/* Signature & Stamp Section */}
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'flex-end', marginTop: '24px', paddingRight: '14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '60mm', position: 'relative' }}>
+                        <div style={{ width: '100%', borderBottom: '1px solid #000', marginBottom: '6px' }} />
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#000' }}>RG SH.P.K.</div>
+                        {withStamp && (
+                            <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
+                                <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
 
                 <style>{`
                 .invoice-root {
@@ -456,31 +461,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     display: inline-block;
                 }
 
-                .invoice-signature {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-end;
-                    margin-top: 32px;
-                    gap: 8px;
-                }
-
-                .invoice-signature-line {
-                    width: 58mm;
-                    border-bottom: 1px solid #000000;
-                }
-
-                .invoice-stamp {
-                    width: auto;
-                    height: auto;
-                    max-width: 50mm;
-                    max-height: 50mm;
-                    aspect-ratio: auto;
-                    object-fit: contain;
-                    margin-top: -10mm;
-                    margin-right: 2mm;
-                    opacity: 0.85;
-                    pointer-events: none;
-                }
+                
 
                 .invoice-note {
                     margin-top: 6px;

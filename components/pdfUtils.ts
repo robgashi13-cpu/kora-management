@@ -476,15 +476,17 @@ export const generatePdf = async ({
     const { jsPDF } = await import('jspdf');
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
     const isLockedContractPage = isLockedDepositPage || element.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || element.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
+    const isInvoicePage = element.matches('#invoice-content') || element.matches('.invoice-root');
+    const isLockedPage = isLockedContractPage || isInvoicePage;
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedContractPage ? 4 : 2;
+    const captureScale = isLockedPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
-    const width = isLockedContractPage
+    const width = isLockedPage
       ? a4WidthPx
       : Math.max(Math.ceil(rect.width), 1);
-    const height = isLockedContractPage
+    const height = isLockedPage
       ? a4HeightPx
       : Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
@@ -502,8 +504,8 @@ export const generatePdf = async ({
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content, [data-contract-document]').forEach((el) => {
-          const isContractLocked = el.matches('[data-contract-document][data-contract-type="deposit"]') || el.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || el.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
-          if (isContractLocked) {
+          const isElLocked = el.matches('[data-contract-document][data-contract-type="deposit"]') || el.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || el.matches('[data-contract-document][data-contract-type="full_shitblerje"]') || el.matches('#invoice-content') || el.matches('.invoice-root');
+          if (isElLocked) {
             el.style.width = '210mm';
             el.style.minWidth = '210mm';
             el.style.maxWidth = '210mm';
@@ -525,7 +527,7 @@ export const generatePdf = async ({
       }
     });
 
-    const outputCanvas = isLockedContractPage ? canvas : trimCanvasBottomWhitespace(canvas);
+    const outputCanvas = isLockedPage ? canvas : trimCanvasBottomWhitespace(canvas);
     const imgData = outputCanvas.toDataURL('image/png', 1.0);
 
     // A4 dimensions in mm
@@ -558,7 +560,7 @@ export const generatePdf = async ({
       precision: 16,
     });
 
-    if (isLockedDepositPage) {
+    if (isLockedPage) {
       pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'SLOW');
     } else {
       const offsetX = (A4_W - imgW) / 2;
