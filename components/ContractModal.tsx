@@ -66,9 +66,11 @@ export default function ContractModal({ sale, type, onClose }: Props) {
 
             const safeBrand = safeString(sale.brand, 'Unknown');
             const safeModel = safeString(sale.model, 'Car');
+            const isDeposit = type === 'deposit';
             const result = await generatePdf({
                 element,
-                filename: `Contract_${safeBrand}_${safeModel}.pdf`
+                filename: `Contract_${safeBrand}_${safeModel}.pdf`,
+                singlePage: isDeposit
             });
             setPdfBlob(result.blob);
             setPdfUrl((prev) => {
