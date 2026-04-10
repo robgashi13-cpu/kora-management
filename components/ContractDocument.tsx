@@ -201,16 +201,16 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     {/* Signatures with inline stamp */}
                     <div style={{ borderTop: '1px solid #000', paddingTop: '16px', position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <div style={{ width: '40%' }}>
+                            <div style={{ width: '40%', position: 'relative' }}>
                                 <div style={{ fontSize: '9pt', fontWeight: 'bold', marginBottom: '4px' }}>Shitësi (Nënshkrimi)</div>
                                 <div style={{ borderBottom: '1px solid #000', width: '60mm', marginTop: '40px' }} />
                                 <div style={{ fontSize: '9pt', fontWeight: 'bold', marginTop: '6px' }}>{seller.name}</div>
+                                {withStamp && (
+                                    <div style={{ position: 'absolute', top: '-5mm', left: '10mm', pointerEvents: 'none' }}>
+                                        <StampImage style={{ width: '38mm', height: '38mm', objectFit: 'contain', opacity: 0.85 }} />
+                                    </div>
+                                )}
                             </div>
-                            {withStamp && (
-                                <div style={{ position: 'absolute', left: '50%', top: '0', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
-                                    <StampImage style={{ width: '42mm', height: '42mm', objectFit: 'contain', opacity: 0.85 }} />
-                                </div>
-                            )}
                             <div style={{ width: '40%', textAlign: 'left' }}>
                                 <div style={{ fontSize: '9pt', fontWeight: 'bold', marginBottom: '4px' }}>Blerësi (Nënshkrimi)</div>
                                 <div style={{ borderBottom: '1px solid #000', width: '60mm', marginTop: '40px' }} />
