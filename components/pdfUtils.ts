@@ -477,7 +477,7 @@ export const generatePdf = async ({
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedDepositPage ? 3 : 2;
+    const captureScale = isLockedDepositPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
     const width = isLockedDepositPage

@@ -147,14 +147,18 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            <div style={{ background: 'hsl(0 0% 7%)', borderRadius: '6px', padding: '10px 12px', color: 'hsl(0 0% 100%)' }}>
-                                <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: 'hsl(0 0% 72%)', letterSpacing: '0.5px' }}>Çmimi Total</div>
-                                <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.soldPrice)}€</div>
-                            </div>
-                            <div style={{ background: 'hsl(0 0% 7%)', borderRadius: '6px', padding: '10px 12px', color: 'hsl(0 0% 100%)' }}>
-                                <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: 'hsl(0 0% 72%)', letterSpacing: '0.5px' }}>Kapari</div>
-                                <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.deposit)}€</div>
+                        {/* Neni 2 – Financial */}
+                        <div>
+                            <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(0 0% 55%)', letterSpacing: '1px', marginBottom: '6px' }}>Neni 2 – Shuma e Kaparit</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div style={{ background: 'hsl(0 0% 7%)', borderRadius: '6px', padding: '10px 12px', color: 'hsl(0 0% 100%)' }}>
+                                    <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: 'hsl(0 0% 72%)', letterSpacing: '0.5px' }}>Çmimi Total</div>
+                                    <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.soldPrice)}€</div>
+                                </div>
+                                <div style={{ background: 'hsl(0 0% 7%)', borderRadius: '6px', padding: '10px 12px', color: 'hsl(0 0% 100%)' }}>
+                                    <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: 'hsl(0 0% 72%)', letterSpacing: '0.5px' }}>Kapari</div>
+                                    <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.deposit)}€</div>
+                                </div>
                             </div>
                         </div>
 
