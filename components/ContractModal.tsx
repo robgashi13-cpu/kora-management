@@ -70,7 +70,8 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             const result = await generatePdf({
                 element,
                 filename: `Contract_${safeBrand}_${safeModel}.pdf`,
-                singlePage: isDeposit
+                singlePage: isDeposit,
+                singlePageFormat: isDeposit ? 'content' : 'a4'
             });
             setPdfBlob(result.blob);
             setPdfUrl((prev) => {
