@@ -406,8 +406,6 @@ type PdfGenerationOptions = {
   compact?: boolean;
   /** When true, uses single-canvas capture sized to exact content — guarantees 1 page, pixel-perfect match to preview */
   singlePage?: boolean;
-  /** Controls whether a single-page PDF keeps A4 size or matches the preview content height exactly. */
-  singlePageFormat?: 'a4' | 'content';
 };
 
 export const generatePdf = async ({
@@ -417,12 +415,11 @@ export const generatePdf = async ({
   pagebreakMode,
   editableText = true,
   compact = false,
-  singlePage = false,
-  singlePageFormat = 'a4'
+  singlePage = false
 }: PdfGenerationOptions): Promise<{ pdf: any; blob: Blob; filename: string }> => {
   await waitForImages(element);
 
-  // --- Single-page exact capture path (used by invoices and deposit contracts) ---
+  // --- Invoice single-page path: html2canvas + jsPDF, no multi-page logic ---
   if (singlePage) {
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
@@ -454,27 +451,24 @@ export const generatePdf = async ({
 
     const imgData = canvas.toDataURL('image/png', 1.0);
 
-    const PX_TO_MM = 25.4 / 96;
+    // A4 dimensions in mm
     const A4_W = 210;
     const A4_H = 297;
+
+    // Scale image to fill A4 width, maintain aspect ratio
     const imgAspect = canvas.height / canvas.width;
     const scaledHeight = A4_W * imgAspect;
-    const contentWidthMm = Math.max(canvas.width * PX_TO_MM, 1);
-    const contentHeightMm = Math.max(canvas.height * PX_TO_MM, 1);
-    const useContentSizedPage = singlePageFormat === 'content';
-    const pageWidth = useContentSizedPage ? contentWidthMm : A4_W;
-    const pageHeight = useContentSizedPage ? contentHeightMm : A4_H;
-    const imageWidth = useContentSizedPage ? contentWidthMm : A4_W;
-    const imageHeight = useContentSizedPage ? contentHeightMm : Math.min(scaledHeight, A4_H);
 
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: useContentSizedPage ? [pageWidth, pageHeight] : 'a4',
+      format: 'a4',
       compress: true,
     });
 
-    pdf.addImage(imgData, 'PNG', 0, 0, imageWidth, imageHeight, undefined, 'FAST');
+    // If content fits in one page, center it; otherwise fill the page
+    const finalHeight = Math.min(scaledHeight, A4_H);
+    pdf.addImage(imgData, 'PNG', 0, 0, A4_W, finalHeight, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };

@@ -4545,7 +4545,7 @@ export default function Dashboard() {
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="flex w-full flex-col gap-2">
                         {/* Mobile: single row with menu, search, sync */}
-                        <div className={`flex items-center gap-2 ${forceMobileLayout ? '' : 'lg:hidden'}`}>
+                        <div className={`flex items-center gap-2 ${forceMobileLayout ? '' : 'md:hidden'}`}>
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
                                 aria-label="Open navigation menu"
@@ -4599,7 +4599,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Desktop: original layout */}
-                        <div className={`flex items-center justify-between gap-3 md:gap-4 ${forceMobileLayout ? 'hidden' : 'hidden lg:flex'}`}>
+                        <div className={`flex items-center justify-between gap-3 md:gap-4 ${forceMobileLayout ? 'hidden' : 'hidden md:flex'}`}>
                             <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -4840,7 +4840,7 @@ export default function Dashboard() {
                                 {activeCategory === 'INSPECTIONS' ? (
                                     <div
                                         ref={scrollContainerRef}
-                                        className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden lg:block'} overflow-auto scroll-container flex-1`}
+                                        className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
                                     >
                                         <div className="divide-y divide-slate-100">
                                             <div className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -4881,7 +4881,7 @@ export default function Dashboard() {
                                 ) : (
                                 <div
                                     ref={scrollContainerRef}
-                                    className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden lg:block'} overflow-auto scroll-container flex-1`}
+                                    className={`premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] relative ${forceMobileLayout ? 'hidden' : 'hidden md:block'} overflow-auto scroll-container flex-1`}
                                 >
                                     <div className="grid text-[10px] xl:text-xs divide-y divide-slate-200 min-w-max"
                                         style={{
@@ -5317,7 +5317,7 @@ export default function Dashboard() {
                                 )}
                                 {/* Mobile Card View */}
                                 {/* Mobile Compact List View - Swipeable */}
-                                <div className={`${forceMobileLayout ? '' : 'lg:hidden'} flex flex-col flex-1 min-h-0 relative`}>
+                                <div className={`${forceMobileLayout ? '' : 'md:hidden'} flex flex-col flex-1 min-h-0 relative`}>
                                     <div className="flex flex-col flex-1 overflow-y-auto scroll-container pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-4 no-scrollbar">
                                         <div className="sticky top-0 z-20 bg-slate-50/95 backdrop-blur border-b border-slate-200 px-2 py-1.5">
                                             <div className="flex items-center justify-between text-[11px] text-slate-600">
@@ -5990,7 +5990,7 @@ export default function Dashboard() {
                                                     <div className="hidden md:grid grid-cols-[32px_1.2fr_100px_1fr_140px_120px_120px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                         <div></div><div>Car</div><div>Status</div><div>VIN / Plate</div><div className="text-right">Balance Due</div><div>Ship Date</div><div>Sale Date</div>
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 hidden lg:block">
+                                                    <div className="divide-y divide-slate-100 hidden md:block">
                                                         {balanceDueRows.map(({ sale, scopeStatus }) => {
                                                             const isSelected = balanceDueSelectedIds.has(sale.id);
                                                             return (
@@ -6015,7 +6015,7 @@ export default function Dashboard() {
                                                             );
                                                         })}
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 lg:hidden">
+                                                    <div className="divide-y divide-slate-100 md:hidden">
                                                         {balanceDueRows.map(({ sale, scopeStatus }) => {
                                                             const isSelected = balanceDueSelectedIds.has(sale.id);
                                                             return (
@@ -6076,7 +6076,7 @@ export default function Dashboard() {
                                                     <div className="hidden md:grid grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-4 py-2.5 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 bg-slate-50 border-b border-slate-200">
                                                         <div>Car</div><div>VIN / Plate</div><div className="text-right">Cost</div><div className="text-right">Paid</div><div className="text-right">Left</div><div>Status</div><div>Paid Date</div><div>Action</div>
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 hidden lg:block">
+                                                    <div className="divide-y divide-slate-100 hidden md:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
@@ -6113,7 +6113,7 @@ export default function Dashboard() {
                                                             );
                                                         })}
                                                     </div>
-                                                    <div className="divide-y divide-slate-100 lg:hidden">
+                                                    <div className="divide-y divide-slate-100 md:hidden">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
                                                             const isPaid = remaining <= 0;
@@ -6481,7 +6481,7 @@ export default function Dashboard() {
                                                                             onClick={() => openInvoice(s, { stopPropagation: () => { } } as any, false, true)}
                                                                         >
                                                                             {/* Mobile card layout */}
-                                                                            <div className="lg:hidden space-y-2">
+                                                                            <div className="md:hidden space-y-2">
                                                                                 {/* Row 1: Checkbox + Vehicle + Buyer */}
                                                                                 <div className="flex items-start gap-2">
                                                                                     <button
@@ -7140,7 +7140,7 @@ export default function Dashboard() {
                 )
             }
             {view !== 'sale_form' && (
-                <nav className="app-mobile-nav lg:hidden" aria-label="Mobile quick navigation">
+                <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
                     {(() => {
                         const restrictedTabs = getProfileAllowedTabs(userProfile);
                         const mobileNavItems = [
@@ -7179,7 +7179,7 @@ export default function Dashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.25, ease: 'easeOut' }}
-                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] lg:hidden"
+                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] md:hidden"
                             onClick={() => setLongPressActionSale(null)}
                             aria-label="Close sold car actions"
                         />
@@ -7188,7 +7188,7 @@ export default function Dashboard() {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: '100%', opacity: 0 }}
                             transition={{ type: 'spring', damping: 30, stiffness: 320, mass: 0.7 }}
-                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-[28px] border-t border-slate-100 bg-white/98 backdrop-blur-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-16px_rgba(0,0,0,0.18)] lg:hidden"
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-[28px] border-t border-slate-100 bg-white/98 backdrop-blur-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-16px_rgba(0,0,0,0.18)] md:hidden"
                             role="dialog"
                             aria-modal="true"
                             aria-label="Sale actions"
