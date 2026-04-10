@@ -425,8 +425,8 @@ export const generatePdf = async ({
     const { jsPDF } = await import('jspdf');
 
     const rect = element.getBoundingClientRect();
-    const width = Math.max(Math.ceil(rect.width), 1);
-    const height = Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
+    const captureWidth = Math.max(Math.ceil(rect.width), 1);
+    const captureHeight = Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -434,13 +434,12 @@ export const generatePdf = async ({
       logging: false,
       backgroundColor: '#ffffff',
       imageTimeout: 10000,
-      width,
-      height,
+      width: captureWidth,
+      height: captureHeight,
       onclone: (clonedDoc: Document) => {
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
-        // Keep invoice layout intact while removing only height constraints
-        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content').forEach((el) => {
+        clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], [data-contract-document], #invoice-content').forEach((el) => {
           el.style.overflow = 'visible';
           el.style.maxHeight = 'none';
           el.style.minHeight = 'none';
@@ -456,6 +455,10 @@ export const generatePdf = async ({
     const A4_W = 210;
     const A4_H = 297;
 
+    // Scale image to fill A4 width, maintain aspect ratio
+    const imgAspect = canvas.height / canvas.width;
+    const scaledHeight = A4_W * imgAspect;
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -463,8 +466,9 @@ export const generatePdf = async ({
       compress: true,
     });
 
-    // Force edge-to-edge A4 placement for consistent full-fit output and no side gaps.
-    pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'FAST');
+    // If content fits in one page, center it; otherwise fill the page
+    const finalHeight = Math.min(scaledHeight, A4_H);
+    pdf.addImage(imgData, 'PNG', 0, 0, A4_W, finalHeight, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
