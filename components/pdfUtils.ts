@@ -502,8 +502,8 @@ export const generatePdf = async ({
         sanitizePdfCloneStyles(clonedDoc);
         normalizePdfLayout(clonedDoc);
         clonedDoc.querySelectorAll<HTMLElement>('.pdf-root, [data-invoice-document], #invoice-content, [data-contract-document]').forEach((el) => {
-          const isDepositContract = el.matches('[data-contract-document][data-contract-type="deposit"]');
-          if (isDepositContract) {
+          const isContractLocked = el.matches('[data-contract-document][data-contract-type="deposit"]') || el.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || el.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
+          if (isContractLocked) {
             el.style.width = '210mm';
             el.style.minWidth = '210mm';
             el.style.maxWidth = '210mm';
@@ -525,7 +525,7 @@ export const generatePdf = async ({
       }
     });
 
-    const outputCanvas = isLockedDepositPage ? canvas : trimCanvasBottomWhitespace(canvas);
+    const outputCanvas = isLockedContractPage ? canvas : trimCanvasBottomWhitespace(canvas);
     const imgData = outputCanvas.toDataURL('image/png', 1.0);
 
     // A4 dimensions in mm
