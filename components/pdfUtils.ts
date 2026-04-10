@@ -475,9 +475,10 @@ export const generatePdf = async ({
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
+    const isLockedContractPage = isLockedDepositPage || element.matches('[data-contract-document][data-contract-type="full_marreveshje"]') || element.matches('[data-contract-document][data-contract-type="full_shitblerje"]');
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedDepositPage ? 4 : 2;
+    const captureScale = isLockedContractPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
     const width = isLockedDepositPage
