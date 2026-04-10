@@ -73,10 +73,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             data-contract-type={type}
             className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${rootHeightClass} ${rootPaddingClass}`}
             style={{
-                fontFamily: '"Times New Roman", Times, serif',
                 fontFamily: isDeposit ? '"Helvetica Neue", Helvetica, Arial, sans-serif' : '"Times New Roman", Times, serif',
                 fontSize: isDeposit ? '8pt' : type === 'full_shitblerje' ? '9.5pt' : '10pt',
-                lineHeight: isDeposit ? 1.4 : 1.4,
+                lineHeight: 1.4,
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word',
                 boxSizing: 'border-box',
