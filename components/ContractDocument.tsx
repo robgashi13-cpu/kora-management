@@ -446,8 +446,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 </div>
                             </div>
                             {withStamp && (
-                                <div className="signature-stamp-row">
-                                    <StampImage className="signature-stamp" />
+                                <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
+                                    <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
                                 </div>
                             )}
                         </div>
@@ -546,8 +546,8 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                             </div>
                         </div>
                         {withStamp && (
-                            <div className="signature-stamp-row">
-                                <StampImage className="signature-stamp" />
+                            <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
+                                <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
                             </div>
                         )}
                     </div>
