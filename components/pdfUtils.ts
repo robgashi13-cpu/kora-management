@@ -456,6 +456,21 @@ export const generatePdf = async ({
     const A4_W = 210;
     const A4_H = 297;
 
+    // Calculate aspect-ratio-preserving dimensions
+    const contentAspect = canvas.width / canvas.height;
+    const a4Aspect = A4_W / A4_H;
+
+    let imgW: number, imgH: number;
+    if (contentAspect >= a4Aspect) {
+      // Content is wider relative to A4 — fit to width
+      imgW = A4_W;
+      imgH = A4_W / contentAspect;
+    } else {
+      // Content is taller relative to A4 — fit to height
+      imgH = A4_H;
+      imgW = A4_H * contentAspect;
+    }
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -463,8 +478,9 @@ export const generatePdf = async ({
       compress: true,
     });
 
-    // Force edge-to-edge A4 placement for consistent full-fit output and no side gaps.
-    pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'FAST');
+    // Center horizontally, place at top
+    const offsetX = (A4_W - imgW) / 2;
+    pdf.addImage(imgData, 'PNG', offsetX, 0, imgW, imgH, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     return { pdf, blob, filename };
