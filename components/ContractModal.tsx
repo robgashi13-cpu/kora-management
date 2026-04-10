@@ -42,9 +42,11 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
     const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const [isPreviewStale, setIsPreviewStale] = useState(true);
 
     // Validate contract data
     const validation = type === 'deposit' ? validateDepositContract(sale) : { valid: true, missingFields: [] };
+    const validationKey = validation.missingFields.join('|');
 
     const buildPdfPreview = useCallback(async () => {
         const element = printRef.current;
@@ -78,25 +80,34 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                 if (prev) URL.revokeObjectURL(prev);
                 return URL.createObjectURL(result.blob);
             });
+            setIsPreviewStale(false);
             return result.blob;
         } catch (error) {
             console.error('Download failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             setError(`Could not generate PDF: ${errorMessage}. Please try again.`);
+            setIsPreviewStale(true);
             return null;
         } finally {
             setIsGeneratingPreview(false);
         }
-    }, [sale, validation]);
+    }, [sale, type, validation.valid, validationKey]);
 
     useEffect(() => {
+        setIsPreviewStale(true);
+        setPdfBlob(null);
+        setPdfUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return null;
+        });
+
         const timer = setTimeout(() => {
             if (validation.valid) {
                 buildPdfPreview();
             }
         }, 150);
         return () => clearTimeout(timer);
-    }, [buildPdfPreview, validation.valid, withStamp, type]);
+    }, [buildPdfPreview, validation.valid, withStamp, type, validationKey]);
 
     useEffect(() => {
         return () => {
@@ -108,11 +119,11 @@ export default function ContractModal({ sale, type, onClose }: Props) {
     }, []);
 
     const handleDownload = useCallback(async () => {
-        if (isDownloading) return;
+        if (isDownloading || isGeneratingPreview) return;
         setIsDownloading(true);
         setStatusMessage(null);
         try {
-            const blob = pdfBlob ?? await buildPdfPreview();
+            const blob = !isPreviewStale && pdfBlob ? pdfBlob : await buildPdfPreview();
             if (!blob) return;
             const safeBrand = safeString(sale.brand, 'Unknown');
             const safeModel = safeString(sale.model, 'Car');
@@ -130,10 +141,10 @@ export default function ContractModal({ sale, type, onClose }: Props) {
         } finally {
             setIsDownloading(false);
         }
-    }, [buildPdfPreview, isDownloading, pdfBlob, sale.brand, sale.model, sale.vin]);
+    }, [buildPdfPreview, isDownloading, isGeneratingPreview, isPreviewStale, pdfBlob, sale.brand, sale.model, sale.vin]);
 
     const handlePrint = async () => {
-        const blob = pdfBlob ?? await buildPdfPreview();
+        const blob = !isPreviewStale && pdfBlob ? pdfBlob : await buildPdfPreview();
         if (!blob) return;
         const printResult = await printPdfBlob(blob);
         if (!printResult.opened) {
@@ -172,11 +183,11 @@ export default function ContractModal({ sale, type, onClose }: Props) {
                             </button>
                             <button
                                 onClick={handleDownload}
-                                disabled={isDownloading || !validation.valid}
+                                disabled={isDownloading || isGeneratingPreview || !validation.valid}
                                 className="flex items-center gap-1 px-2.5 py-1 bg-black text-white rounded-md hover:bg-slate-900 transition-all font-semibold text-[11px] shadow-sm shadow-black/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isDownloading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Printer className="w-3 h-3" />}
-                                {isDownloading ? 'Generating...' : 'Download'}
+                                {(isDownloading || isGeneratingPreview) ? <Loader2 className="w-3 h-3 animate-spin" /> : <Printer className="w-3 h-3" />}
+                                {(isDownloading || isGeneratingPreview) ? 'Generating...' : 'Download'}
                             </button>
                             <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-700">
                                 <X className="w-6 h-6" />
