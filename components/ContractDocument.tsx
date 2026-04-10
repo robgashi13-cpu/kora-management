@@ -73,9 +73,9 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
             data-contract-type={type}
             className={`bg-white text-black w-[21cm] shadow-2xl box-border pdf-root ${rootHeightClass} ${rootPaddingClass}`}
             style={{
-                fontFamily: '"Times New Roman", Times, serif',
-                fontSize: isDeposit ? '8.05pt' : type === 'full_shitblerje' ? '9.5pt' : '10pt',
-                lineHeight: isDeposit ? 1.42 : 1.4,
+                fontFamily: isDeposit ? '"Helvetica Neue", Helvetica, Arial, sans-serif' : '"Times New Roman", Times, serif',
+                fontSize: isDeposit ? '8pt' : type === 'full_shitblerje' ? '9.5pt' : '10pt',
+                lineHeight: 1.4,
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word',
                 boxSizing: 'border-box',
@@ -83,145 +83,140 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                 WebkitFontSmoothing: 'antialiased',
                 width: '210mm',
                 maxWidth: '210mm',
-                padding: isDeposit ? '8.5mm 9mm 8.5mm' : undefined,
+                padding: isDeposit ? '12mm 14mm 10mm' : undefined,
                 height: isDeposit ? '297mm' : undefined,
                 minHeight: isDeposit ? '297mm' : undefined,
                 overflow: isDeposit ? 'hidden' : (isSinglePage ? 'hidden' : 'visible')
             }}
         >
             {isDeposit && (
-                <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ flex: 1, minHeight: 0 }}>
-                        {/* Header */}
-                        <div style={{ textAlign: 'center', marginBottom: '6px', paddingBottom: '5px', borderBottom: '1px solid #000' }}>
-                            <img src="/logo.jpg" style={{ display: 'block', margin: '0 auto 4px', height: '30px' }} alt="Logo" />
-                            <div style={{ fontSize: '11pt', fontWeight: 'bold', letterSpacing: '1.2px', color: '#000' }}>KORAUTO</div>
-                            <div style={{ fontSize: '9.5pt', fontWeight: 'bold', marginTop: '2px', color: '#000' }}>{template?.title || 'KONTRATË PËR KAPAR'}</div>
-                            {!!template?.body && <div style={{ fontSize: '7.9pt', marginTop: '4px', whiteSpace: 'pre-wrap', lineHeight: 1.36 }}>{sanitizePdfTemplateBody(template.body)}</div>}
-                        </div>
-
-                        {/* Reference and Date */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '7.95pt' }}>
-                            <div>Nr. Ref: <strong>{referenceId}</strong></div>
-                            <div>Data: <strong>{today}</strong></div>
-                        </div>
-
-                        {/* Parties */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '6px' }}>
+                <div style={{ height: '100%', width: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif' }}>
+                    {/* Modern Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', paddingBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <img src="/logo.jpg" style={{ height: '36px', borderRadius: '4px' }} alt="Logo" />
                             <div>
-                                <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>1. Shitësi:</div>
-                                <table style={{ fontSize: '8pt', lineHeight: 1.38, borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
-                                    <tbody>
-                                        <tr><td style={{ width: '36%', fontWeight: 600, paddingRight: '8px', paddingBottom: '3px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Emri:</td><td style={{ fontWeight: 'bold', paddingBottom: '3px', verticalAlign: 'top' }}>{seller.name}</td></tr>
-                                        <tr><td style={{ width: '36%', fontWeight: 600, paddingRight: '8px', paddingBottom: '3px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Nr. personal:</td><td style={{ paddingBottom: '3px', verticalAlign: 'top' }}>{seller.id}</td></tr>
-                                        <tr><td style={{ width: '36%', fontWeight: 600, paddingRight: '8px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Tel:</td><td style={{ verticalAlign: 'top' }}>{seller.phone}</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div>
-                                <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>2. Blerësi (Kaparidhënësi):</div>
-                                <table style={{ fontSize: '8pt', lineHeight: 1.38, borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
-                                    <tbody>
-                                        <tr><td style={{ width: '36%', fontWeight: 600, paddingRight: '8px', paddingBottom: '3px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Emri:</td><td style={{ fontWeight: 'bold', paddingBottom: '3px', verticalAlign: 'top' }}>{safeString(displaySale.buyerName)}</td></tr>
-                                        <tr><td style={{ width: '36%', fontWeight: 600, paddingRight: '8px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Nr. personal:</td><td style={{ verticalAlign: 'top' }}>{safeString(displaySale.buyerPersonalId)}</td></tr>
-                                    </tbody>
-                                </table>
+                                <div style={{ fontSize: '13pt', fontWeight: 700, letterSpacing: '1.5px', color: '#111' }}>KORAUTO</div>
+                                <div style={{ fontSize: '7pt', color: '#666', letterSpacing: '0.5px' }}>Nr. Biznesit: 810062092</div>
                             </div>
                         </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '7.5pt', color: '#888' }}>Nr. Ref</div>
+                            <div style={{ fontSize: '9pt', fontWeight: 700, color: '#111' }}>{referenceId}</div>
+                            <div style={{ fontSize: '7.5pt', color: '#888', marginTop: '2px' }}>{today}</div>
+                        </div>
+                    </div>
 
-                        {/* Article 1 */}
-                        <div style={{ marginBottom: '5px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>Neni 1 – Objekti i Kontratës</div>
-                            <p style={{ fontSize: '8.02pt', marginBottom: '3px', lineHeight: 1.4 }}>
+                    {/* Title Bar */}
+                    <div style={{ background: '#111', color: '#fff', padding: '7px 14px', borderRadius: '6px', marginBottom: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '10pt', fontWeight: 700, letterSpacing: '2px' }}>{template?.title || 'KONTRATË PËR KAPAR'}</div>
+                    </div>
+                    {!!template?.body && <div style={{ fontSize: '7.5pt', marginBottom: '8px', whiteSpace: 'pre-wrap', lineHeight: 1.36, color: '#444' }}>{sanitizePdfTemplateBody(template.body)}</div>}
+
+                    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* Parties - Two columns */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ background: '#f7f7f7', borderRadius: '6px', padding: '8px 10px' }}>
+                                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#888', letterSpacing: '1px', marginBottom: '5px' }}>Shitësi</div>
+                                <div style={{ fontSize: '9pt', fontWeight: 700, color: '#111', marginBottom: '2px' }}>{seller.name}</div>
+                                <div style={{ fontSize: '7.5pt', color: '#555' }}>{seller.id}</div>
+                                <div style={{ fontSize: '7.5pt', color: '#555' }}>Tel: {seller.phone}</div>
+                            </div>
+                            <div style={{ background: '#f7f7f7', borderRadius: '6px', padding: '8px 10px' }}>
+                                <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#888', letterSpacing: '1px', marginBottom: '5px' }}>Blerësi</div>
+                                <div style={{ fontSize: '9pt', fontWeight: 700, color: '#111', marginBottom: '2px' }}>{safeString(displaySale.buyerName)}</div>
+                                <div style={{ fontSize: '7.5pt', color: '#555' }}>Nr. personal: {safeString(displaySale.buyerPersonalId)}</div>
+                            </div>
+                        </div>
+
+                        {/* Vehicle Info Card */}
+                        <div style={{ border: '1.5px solid #111', borderRadius: '6px', padding: '8px 12px' }}>
+                            <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#888', letterSpacing: '1px', marginBottom: '6px' }}>Neni 1 – Objekti i Kontratës</div>
+                            <div style={{ fontSize: '7.8pt', color: '#333', marginBottom: '6px', lineHeight: 1.4 }}>
                                 Shitësi pranon të rezervojë dhe shesë veturën me të dhënat më poshtë, ndërsa blerësi jep një shumë kapari si paradhënie për blerje:
-                            </p>
-                            <div style={{ fontSize: '8.02pt', fontWeight: 'bold', lineHeight: 1.4, paddingLeft: '7px', display: 'grid', rowGap: '1px' }}>
-                                <div>• Marka: {safeString(displaySale.brand)}</div>
-                                <div>• Modeli: {safeString(displaySale.model)}</div>
-                                <div>• Nr. shasie: {safeString(displaySale.vin)}</div>
                             </div>
-                        </div>
-
-                        {/* Article 2 */}
-                        <div style={{ marginBottom: '5px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>Neni 2 – Shuma e Kaparit</div>
-                            <p style={{ fontSize: '8.02pt', lineHeight: 1.4 }}>
-                                Blerësi i dorëzon shitësit kaparin në shumë prej <strong>{formatCurrency(displaySale.deposit)}€</strong> si pjesë e pagesës përfundimtare për veturën, e cila kushton <strong>{formatCurrency(displaySale.soldPrice)}€</strong>. Deri ne Prishtine
-                            </p>
-                        </div>
-
-                        {/* Article 3 */}
-                        <div style={{ marginBottom: '5px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>Neni 3 – Detyrimet e Palëve</div>
-                            <div style={{ fontSize: '8.02pt', lineHeight: 1.38, paddingLeft: '7px', display: 'grid', rowGap: '2px' }}>
-                                <div>• Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh nga data e nënshkrimit.</div>
-                                <div>• Blerësi angazhohet ta përfundojë pagesën dhe ta marrë veturën brenda afatit të caktuar.</div>
-                            </div>
-                        </div>
-
-                        {/* Article 4 */}
-                        <div style={{ marginBottom: '5px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>Neni 4 – Anulimi i Marrëveshjes</div>
-                            <div style={{ fontSize: '8.02pt', lineHeight: 1.38, paddingLeft: '7px', display: 'grid', rowGap: '2px' }}>
-                                <div>• Nëse blerësi heq dorë, kapari nuk kthehet.</div>
-                                <div>• Nëse shitësi heq dorë ose nuk e përmbush marrëveshjen, është i obliguar të kthejë shumën e kaparit.</div>
-                            </div>
-                        </div>
-
-                        {/* Bank Information - Two banks side by side */}
-                        <div style={{ marginBottom: '5px', border: '1px solid #000', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.1pt', textAlign: 'center', padding: '3px 0', borderBottom: '1px solid #000', backgroundColor: '#f5f5f5' }}>Të dhënat bankare për pagesë</div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', fontSize: '7.85pt' }}>
-                                <div style={{ padding: '5px 8px', borderRight: '1px solid #000' }}>
-                                    <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', lineHeight: 1.38 }}>
-                                        <tbody>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Llogaria:</td><td style={{ fontWeight: 'bold', paddingBottom: '2px', verticalAlign: 'top' }}>RG SH.P.K.</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Banka:</td><td style={{ paddingBottom: '2px', verticalAlign: 'top' }}>Raiffeisen Bank</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>IBAN:</td><td style={{ fontWeight: 'bold', paddingBottom: '2px', verticalAlign: 'top' }}>1501080002435404</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Nr. Biznesit:</td><td style={{ verticalAlign: 'top' }}>810062092</td></tr>
-                                        </tbody>
-                                    </table>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                                <div style={{ background: '#f7f7f7', borderRadius: '4px', padding: '6px 8px' }}>
+                                    <div style={{ fontSize: '6.5pt', color: '#999', textTransform: 'uppercase' }}>Marka</div>
+                                    <div style={{ fontSize: '9pt', fontWeight: 700, color: '#111' }}>{safeString(displaySale.brand)}</div>
                                 </div>
-                                <div style={{ padding: '5px 8px' }}>
-                                    <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', lineHeight: 1.38 }}>
-                                        <tbody>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Llogaria:</td><td style={{ fontWeight: 'bold', paddingBottom: '2px', verticalAlign: 'top' }}>RG SH.P.K.</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Banka:</td><td style={{ paddingBottom: '2px', verticalAlign: 'top' }}>Banka Ekonomike</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', paddingBottom: '2px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>IBAN:</td><td style={{ fontWeight: 'bold', paddingBottom: '2px', verticalAlign: 'top' }}>1401000100922471</td></tr>
-                                            <tr><td style={{ width: '38%', fontWeight: 600, paddingRight: '6px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>Nr. Biznesit:</td><td style={{ verticalAlign: 'top' }}>810062092</td></tr>
-                                        </tbody>
-                                    </table>
+                                <div style={{ background: '#f7f7f7', borderRadius: '4px', padding: '6px 8px' }}>
+                                    <div style={{ fontSize: '6.5pt', color: '#999', textTransform: 'uppercase' }}>Modeli</div>
+                                    <div style={{ fontSize: '9pt', fontWeight: 700, color: '#111' }}>{safeString(displaySale.model)}</div>
+                                </div>
+                                <div style={{ background: '#f7f7f7', borderRadius: '4px', padding: '6px 8px' }}>
+                                    <div style={{ fontSize: '6.5pt', color: '#999', textTransform: 'uppercase' }}>Nr. Shasie</div>
+                                    <div style={{ fontSize: '8pt', fontWeight: 700, color: '#111', wordBreak: 'break-all' }}>{safeString(displaySale.vin)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Financial Summary */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <div style={{ background: '#111', borderRadius: '6px', padding: '10px 12px', color: '#fff' }}>
+                                <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: '#aaa', letterSpacing: '0.5px' }}>Çmimi Total</div>
+                                <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.soldPrice)}€</div>
+                            </div>
+                            <div style={{ background: '#111', borderRadius: '6px', padding: '10px 12px', color: '#fff' }}>
+                                <div style={{ fontSize: '6.5pt', textTransform: 'uppercase', color: '#aaa', letterSpacing: '0.5px' }}>Kapari</div>
+                                <div style={{ fontSize: '14pt', fontWeight: 700 }}>{formatCurrency(displaySale.deposit)}€</div>
+                            </div>
+                        </div>
+
+                        {/* Articles - compact */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                            <div style={{ background: '#fafafa', borderRadius: '6px', padding: '7px 10px', borderLeft: '3px solid #111' }}>
+                                <div style={{ fontSize: '7pt', fontWeight: 700, color: '#111', marginBottom: '4px' }}>Neni 3 – Detyrimet</div>
+                                <div style={{ fontSize: '7.2pt', color: '#444', lineHeight: 1.45 }}>
+                                    Shitësi angazhohet të mos e shesë veturën ndonjë pale tjetër për periudhën prej 7 ditësh. Blerësi angazhohet ta përfundojë pagesën brenda afatit.
+                                </div>
+                            </div>
+                            <div style={{ background: '#fafafa', borderRadius: '6px', padding: '7px 10px', borderLeft: '3px solid #111' }}>
+                                <div style={{ fontSize: '7pt', fontWeight: 700, color: '#111', marginBottom: '4px' }}>Neni 4 – Anulimi</div>
+                                <div style={{ fontSize: '7.2pt', color: '#444', lineHeight: 1.45 }}>
+                                    Nëse blerësi heq dorë, kapari nuk kthehet. Nëse shitësi heq dorë, është i obliguar të kthejë shumën e kaparit.
                                 </div>
                             </div>
                         </div>
 
                         {/* Article 5 */}
-                        <div style={{ marginBottom: '4px' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '8.2pt', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '3px' }}>Neni 5 – Dispozita të Përgjithshme</div>
-                            <div style={{ fontSize: '8.02pt', lineHeight: 1.38, paddingLeft: '7px', display: 'grid', rowGap: '2px' }}>
-                                <div>• Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion.</div>
-                                <div>• Për çdo kontest eventual, palët pajtohen që të zgjidhet me marrëveshje ose në Gjykatën kompetente në Prishtine.</div>
+                        <div style={{ fontSize: '7.2pt', color: '#555', lineHeight: 1.4, padding: '0 2px' }}>
+                            <span style={{ fontWeight: 700, color: '#111' }}>Neni 5:</span> Palët e pranojnë marrëveshjen me vullnet të lirë dhe pa asnjë presion. Për çdo kontest eventual, palët pajtohen që të zgjidhet me marrëveshje ose në Gjykatën kompetente në Prishtine.
+                        </div>
+
+                        {/* Bank Details */}
+                        <div style={{ borderRadius: '6px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                            <div style={{ fontSize: '7pt', fontWeight: 700, textTransform: 'uppercase', color: '#888', letterSpacing: '1px', padding: '5px 10px', background: '#f7f7f7', borderBottom: '1px solid #ddd' }}>Të dhënat bankare</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', fontSize: '7.2pt' }}>
+                                <div style={{ padding: '6px 10px', borderRight: '1px solid #eee' }}>
+                                    <div style={{ fontWeight: 700, color: '#111', marginBottom: '2px' }}>Raiffeisen Bank</div>
+                                    <div style={{ color: '#555' }}>RG SH.P.K. — IBAN: <strong style={{ color: '#111' }}>1501080002435404</strong></div>
+                                </div>
+                                <div style={{ padding: '6px 10px' }}>
+                                    <div style={{ fontWeight: 700, color: '#111', marginBottom: '2px' }}>Banka Ekonomike</div>
+                                    <div style={{ color: '#555' }}>RG SH.P.K. — IBAN: <strong style={{ color: '#111' }}>1401000100922471</strong></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Signatures with inline stamp */}
-                    <div style={{ borderTop: '1px solid #000', paddingTop: '8px', position: 'relative', marginTop: 'auto', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16mm', width: '100%' }}>
-                            <div style={{ flex: '1 1 0', position: 'relative', maxWidth: '74mm' }}>
-                                <div style={{ fontSize: '8.1pt', fontWeight: 'bold', marginBottom: '4px' }}>Shitësi (Nënshkrimi)</div>
-                                <div style={{ borderBottom: '1px solid #000', width: '56mm', marginTop: '24px' }} />
-                                <div style={{ fontSize: '8.1pt', fontWeight: 'bold', marginTop: '6px' }}>{seller.name}</div>
+                    {/* Signatures */}
+                    <div style={{ marginTop: 'auto', paddingTop: '10px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20mm' }}>
+                            <div style={{ flex: '1 1 0', position: 'relative' }}>
+                                <div style={{ fontSize: '7pt', textTransform: 'uppercase', color: '#888', letterSpacing: '1px', marginBottom: '28px' }}>Shitësi</div>
+                                <div style={{ borderBottom: '1.5px solid #111', width: '55mm' }} />
+                                <div style={{ fontSize: '8.5pt', fontWeight: 700, color: '#111', marginTop: '5px' }}>{seller.name}</div>
                                 {withStamp && (
-                                    <div style={{ position: 'absolute', top: '-3mm', left: '12mm', width: '27mm', height: '27mm', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                                        <StampImage style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', opacity: 0.86 }} />
+                                    <div style={{ position: 'absolute', top: '-5mm', left: '14mm', width: '28mm', height: '28mm', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                                        <StampImage style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', opacity: 0.85 }} />
                                     </div>
                                 )}
                             </div>
-                            <div style={{ flex: '1 1 0', textAlign: 'left', maxWidth: '74mm' }}>
-                                <div style={{ fontSize: '8.1pt', fontWeight: 'bold', marginBottom: '4px' }}>Blerësi (Nënshkrimi)</div>
-                                <div style={{ borderBottom: '1px solid #000', width: '56mm', marginTop: '24px' }} />
-                                <div style={{ fontSize: '8.1pt', fontWeight: 'bold', marginTop: '6px', wordBreak: 'break-word' }}>{safeString(displaySale.buyerName)}</div>
+                            <div style={{ flex: '1 1 0' }}>
+                                <div style={{ fontSize: '7pt', textTransform: 'uppercase', color: '#888', letterSpacing: '1px', marginBottom: '28px' }}>Blerësi</div>
+                                <div style={{ borderBottom: '1.5px solid #111', width: '55mm' }} />
+                                <div style={{ fontSize: '8.5pt', fontWeight: 700, color: '#111', marginTop: '5px', wordBreak: 'break-word' }}>{safeString(displaySale.buyerName)}</div>
                             </div>
                         </div>
                     </div>
