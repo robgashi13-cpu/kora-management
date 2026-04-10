@@ -481,10 +481,10 @@ export const generatePdf = async ({
     const captureScale = isLockedContractPage ? 4 : 2;
 
     const rect = element.getBoundingClientRect();
-    const width = isLockedDepositPage
+    const width = isLockedContractPage
       ? a4WidthPx
       : Math.max(Math.ceil(rect.width), 1);
-    const height = isLockedDepositPage
+    const height = isLockedContractPage
       ? a4HeightPx
       : Math.max(Math.ceil(rect.height), element.scrollHeight, 1);
 
