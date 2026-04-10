@@ -4545,7 +4545,7 @@ export default function Dashboard() {
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="flex w-full flex-col gap-2">
                         {/* Mobile: single row with menu, search, sync */}
-                        <div className={`flex items-center gap-2 ${forceMobileLayout ? '' : 'md:hidden'}`}>
+                        <div className={`flex items-center gap-2 ${forceMobileLayout ? '' : 'lg:hidden'}`}>
                             <button
                                 onClick={() => setIsMobileMenuOpen(true)}
                                 aria-label="Open navigation menu"
@@ -4599,7 +4599,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* Desktop: original layout */}
-                        <div className={`flex items-center justify-between gap-3 md:gap-4 ${forceMobileLayout ? 'hidden' : 'hidden md:flex'}`}>
+                        <div className={`flex items-center justify-between gap-3 md:gap-4 ${forceMobileLayout ? 'hidden' : 'hidden lg:flex'}`}>
                             <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
                             <button
                                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
