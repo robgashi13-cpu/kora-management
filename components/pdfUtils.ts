@@ -477,7 +477,7 @@ export const generatePdf = async ({
     const isLockedDepositPage = element.matches('[data-contract-document][data-contract-type="deposit"]');
     const a4WidthPx = Math.round((210 / 25.4) * 96);
     const a4HeightPx = Math.round((297 / 25.4) * 96);
-    const captureScale = isLockedDepositPage ? 2.5 : 2;
+    const captureScale = isLockedDepositPage ? 3 : 2;
 
     const rect = element.getBoundingClientRect();
     const width = isLockedDepositPage
@@ -558,7 +558,7 @@ export const generatePdf = async ({
     });
 
     if (isLockedDepositPage) {
-      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'MEDIUM');
+      pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'SLOW');
     } else {
       const offsetX = (A4_W - imgW) / 2;
       pdf.addImage(imgData, 'PNG', offsetX, PAGE_INSET_MM, imgW, imgH, undefined, 'FAST');
