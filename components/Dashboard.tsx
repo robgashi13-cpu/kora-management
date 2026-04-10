@@ -7140,7 +7140,7 @@ export default function Dashboard() {
                 )
             }
             {view !== 'sale_form' && (
-                <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
+                <nav className="app-mobile-nav lg:hidden" aria-label="Mobile quick navigation">
                     {(() => {
                         const restrictedTabs = getProfileAllowedTabs(userProfile);
                         const mobileNavItems = [
@@ -7179,7 +7179,7 @@ export default function Dashboard() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.25, ease: 'easeOut' }}
-                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] md:hidden"
+                            className="fixed inset-0 z-[95] bg-slate-900/50 backdrop-blur-[6px] lg:hidden"
                             onClick={() => setLongPressActionSale(null)}
                             aria-label="Close sold car actions"
                         />
@@ -7188,7 +7188,7 @@ export default function Dashboard() {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: '100%', opacity: 0 }}
                             transition={{ type: 'spring', damping: 30, stiffness: 320, mass: 0.7 }}
-                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-[28px] border-t border-slate-100 bg-white/98 backdrop-blur-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-16px_rgba(0,0,0,0.18)] md:hidden"
+                            className="fixed inset-x-0 bottom-0 z-[96] rounded-t-[28px] border-t border-slate-100 bg-white/98 backdrop-blur-2xl p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-24px_80px_-16px_rgba(0,0,0,0.18)] lg:hidden"
                             role="dialog"
                             aria-modal="true"
                             aria-label="Sale actions"
