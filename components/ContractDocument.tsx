@@ -477,7 +477,7 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                         <div className="font-bold mb-1 underline text-xs">Palët Kontraktuese:</div>
                         <ul className="list-disc ml-4 text-xs" style={{ lineHeight: 1.4 }}>
                             <li className="mb-1">
-                                <strong>{fullSellerName}</strong>, me {sellerBusinessId}, i lindur më 13.06.1996 në Prishtinë, në cilësinë e <strong>Shitësit</strong>
+                                <strong>{fullSellerName}</strong>, me {sellerBusinessId}, në cilësinë e <strong>Shitësit</strong>
                             </li>
                             <li>
                                 <strong>Z. {safeString(displaySale.buyerName)}</strong> ne cilesin e blersit me nr personal <strong>{safeString(displaySale.buyerPersonalId)}</strong>
