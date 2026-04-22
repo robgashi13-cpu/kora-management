@@ -530,12 +530,17 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
 
                     <div className="signature-section">
                         <div className="signature-grid">
-                            <div className="signature-column">
+                            <div className="signature-column" style={{ position: 'relative' }}>
                                 <div className="signature-label font-bold text-xs">RG SH.P.K.</div>
                                 <div className="signature-line-row">
                                     <div className="signature-line" />
                                 </div>
                                 <div className="signature-name text-xs">Owner: Robert Gashi</div>
+                                {withStamp && (
+                                    <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
+                                        <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
+                                    </div>
+                                )}
                             </div>
                             <div className="signature-column">
                                 <div className="signature-label font-bold text-xs">Blerësi</div>
@@ -545,11 +550,6 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                                 <div className="signature-name text-xs break-words">{safeString(displaySale.buyerName)}</div>
                             </div>
                         </div>
-                        {withStamp && (
-                            <div style={{ position: 'absolute', top: '-6mm', left: '8mm', height: '30mm', pointerEvents: 'none', transform: 'rotate(-8deg)' }}>
-                                <StampImage style={{ height: '100%', width: 'auto', display: 'block', opacity: 0.82 }} />
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
