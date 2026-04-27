@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KORAUTO",
-  description: "Advanced Car Sales Management System",
+  title: "KORAUTO — Car Sales Management",
+  description: "KORAUTO dealership platform for managing inventory, sales, invoices, contracts and customer records.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
