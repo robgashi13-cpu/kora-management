@@ -4504,11 +4504,11 @@ export default function Dashboard() {
                 {!isFormOpen && !isSidebarCollapsed && (
                     <motion.aside
                         key="desktop-sidebar"
-                        initial={{ width: 0, opacity: 0 }}
-                        animate={{ width: 256, opacity: 1 }}
-                        exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                        className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-[width,opacity]`}
+                        initial={{ x: -24, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -24, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-transform`}
                     >
                         <SidebarContent />
                     </motion.aside>
@@ -4542,9 +4542,9 @@ export default function Dashboard() {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
+            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
                 {!isFormOpen && (
-                <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
+                <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="flex w-full flex-col gap-2">
