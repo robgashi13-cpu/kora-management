@@ -4092,7 +4092,7 @@ export default function Dashboard() {
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={handleLogout}
-                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
+                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/95 border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
                 >
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </motion.button>
@@ -4470,7 +4470,7 @@ export default function Dashboard() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center"
+                        className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center"
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
@@ -4526,7 +4526,7 @@ export default function Dashboard() {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
+                            className={`fixed inset-0 bg-slate-900/60 z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
                             key="mobile-drawer"
