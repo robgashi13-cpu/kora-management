@@ -1324,3 +1324,194 @@ button, [role="button"] {
 [data-list-row='true']:hover {
   background-color: hsl(220 14% 97%);
 }
+
+/* ============================================================
+   Global 120fps Motion Layer — micro-animations & smoothness
+   Non-invasive: only enhances transitions/animations.
+   ============================================================ */
+:root {
+  --motion-fast: 140ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --motion-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-snap: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-soft: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Promote interactive surfaces to their own layer for buttery 120fps repaints */
+button,
+a,
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+.sidebar-nav-item,
+.ui-control,
+.tab-trigger,
+[data-state],
+[data-radix-popper-content-wrapper] {
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Universal smooth transition for common interactive props (won't override explicit transitions) */
+button:not([style*="transition"]),
+a:not([style*="transition"]),
+[role="button"]:not([style*="transition"]),
+[role="tab"]:not([style*="transition"]),
+[role="menuitem"]:not([style*="transition"]) {
+  transition:
+    background-color var(--motion-fast) var(--motion-snap),
+    color var(--motion-fast) var(--motion-snap),
+    border-color var(--motion-fast) var(--motion-snap),
+    box-shadow var(--motion-base) var(--motion-spring),
+    transform 160ms var(--motion-spring),
+    opacity var(--motion-fast) var(--motion-snap);
+  will-change: transform;
+}
+
+/* Tap/active feedback — micro press */
+button:active:not(:disabled),
+[role="button"]:active:not([aria-disabled="true"]),
+[role="tab"]:active,
+[role="menuitem"]:active {
+  transform: scale(0.97);
+  transition-duration: 90ms;
+}
+
+/* Tabs — smooth indicator + content swap */
+[role="tab"] {
+  position: relative;
+}
+[role="tab"][data-state="active"] {
+  transition: color var(--motion-base) var(--motion-spring);
+}
+[role="tabpanel"][data-state="active"],
+[role="tabpanel"]:not([hidden]) {
+  animation: tabPanelIn 280ms var(--motion-spring);
+}
+@keyframes tabPanelIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Radix-style data-state animations (dialogs, popovers, dropdowns, sheets, tooltips) */
+[data-state="open"][data-radix-popper-content-wrapper] > *,
+[data-state="open"].radix-dialog-content,
+[data-state="open"][role="dialog"],
+[data-state="open"][role="menu"],
+[data-state="open"][role="listbox"],
+[data-state="open"][role="tooltip"] {
+  animation: overlayIn var(--motion-base) var(--motion-spring);
+}
+[data-state="closed"][data-radix-popper-content-wrapper] > *,
+[data-state="closed"].radix-dialog-content,
+[data-state="closed"][role="dialog"],
+[data-state="closed"][role="menu"],
+[data-state="closed"][role="listbox"],
+[data-state="closed"][role="tooltip"] {
+  animation: overlayOut 160ms var(--motion-snap);
+}
+@keyframes overlayIn {
+  from { opacity: 0; transform: scale(0.97) translateY(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes overlayOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(0.98) translateY(2px); }
+}
+
+/* Modals/dialogs root-level (works for our custom modals using fixed overlay + panel) */
+.modal-overlay,
+[data-modal-overlay="true"] {
+  animation: fadeIn var(--motion-base) var(--motion-snap);
+}
+.modal-panel,
+[data-modal-panel="true"] {
+  animation: panelIn 320ms var(--motion-spring);
+  will-change: transform, opacity;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Sheets / drawers / sidebars sliding in */
+[data-side="right"][data-state="open"] { animation: slideInRight 280ms var(--motion-spring); }
+[data-side="left"][data-state="open"]  { animation: slideInLeft  280ms var(--motion-spring); }
+[data-side="top"][data-state="open"]   { animation: slideInTop   280ms var(--motion-spring); }
+[data-side="bottom"][data-state="open"]{ animation: slideInBottom 280ms var(--motion-spring); }
+[data-side="right"][data-state="closed"] { animation: slideOutRight 200ms var(--motion-snap); }
+[data-side="left"][data-state="closed"]  { animation: slideOutLeft  200ms var(--motion-snap); }
+[data-side="top"][data-state="closed"]   { animation: slideOutTop   200ms var(--motion-snap); }
+[data-side="bottom"][data-state="closed"]{ animation: slideOutBottom 200ms var(--motion-snap); }
+@keyframes slideInRight  { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideOutRight { from { transform: translateX(0); }    to { transform: translateX(100%); } }
+@keyframes slideInLeft   { from { transform: translateX(-100%); }to { transform: translateX(0); } }
+@keyframes slideOutLeft  { from { transform: translateX(0); }    to { transform: translateX(-100%); } }
+@keyframes slideInTop    { from { transform: translateY(-100%); }to { transform: translateY(0); } }
+@keyframes slideOutTop   { from { transform: translateY(0); }    to { transform: translateY(-100%); } }
+@keyframes slideInBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes slideOutBottom{ from { transform: translateY(0); }    to { transform: translateY(100%); } }
+
+/* Navbar/tab bar items — refined micro-hover */
+nav button,
+nav a,
+[data-nav-item="true"] {
+  transition:
+    color 160ms var(--motion-snap),
+    background-color 160ms var(--motion-snap),
+    transform 200ms var(--motion-spring);
+}
+nav button:hover,
+nav a:hover,
+[data-nav-item="true"]:hover {
+  transform: translateY(-1px);
+}
+nav button:active,
+nav a:active,
+[data-nav-item="true"]:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* Inputs & selects — gentle focus ring transition */
+input,
+textarea,
+select {
+  transition:
+    border-color 160ms var(--motion-snap),
+    box-shadow 200ms var(--motion-spring),
+    background-color 160ms var(--motion-snap);
+}
+
+/* Page/route content — subtle enter */
+main > *,
+[data-page-root="true"] {
+  animation: pageEnter 320ms var(--motion-spring);
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Smoother scrolling everywhere */
+.scroll-container,
+[data-scroll="true"] {
+  scroll-behavior: smooth;
+}
+
+/* Honor reduced-motion: kill all the above motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
