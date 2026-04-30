@@ -162,7 +162,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] print:p-0">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md print:hidden" onClick={onClose} />
+            <div className="absolute inset-0 bg-black/80 print:hidden" onClick={onClose} />
 
             <motion.div
                 initial={{ opacity: 0, y: 16, scale: 0.97 }}
