@@ -1324,7 +1324,6 @@ a,
 .sidebar-nav-item,
 .ui-control,
 .tab-trigger,
-[data-state],
 [data-radix-popper-content-wrapper] {
   -webkit-font-smoothing: antialiased;
   backface-visibility: hidden;
@@ -1352,7 +1351,7 @@ button:active:not(:disabled),
 [role="button"]:active:not([aria-disabled="true"]),
 [role="tab"]:active,
 [role="menuitem"]:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
   transition-duration: 90ms;
 }
 
@@ -1365,7 +1364,7 @@ button:active:not(:disabled),
 }
 [role="tabpanel"][data-state="active"],
 [role="tabpanel"]:not([hidden]) {
-  animation: tabPanelIn 280ms var(--motion-spring);
+  animation: tabPanelIn 180ms var(--motion-spring);
 }
 @keyframes tabPanelIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -1467,7 +1466,6 @@ select {
 }
 
 /* Page/route content — subtle enter */
-main > *,
 [data-page-root="true"] {
   animation: pageEnter 320ms var(--motion-spring);
 }
