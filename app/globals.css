@@ -956,22 +956,8 @@ body[data-theme='dark'] {
   --gentle-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-button,
-a,
-[role='button'],
-select,
-input,
-textarea {
-  transition: transform 180ms var(--luxury-ease), box-shadow 220ms var(--luxury-ease), background-color 180ms var(--luxury-ease), border-color 180ms var(--luxury-ease), opacity 180ms var(--luxury-ease), color 180ms var(--luxury-ease);
-}
-
-button:active,
-[role='button']:active {
-  transform: scale(0.98);
-}
-
 [data-page-shell='true'] {
-  animation: pageFadeIn 320ms var(--luxury-ease);
+  animation: pageFadeIn 220ms var(--luxury-ease);
 }
 
 @keyframes pageFadeIn {
@@ -1011,14 +997,9 @@ button:active,
   will-change: opacity, transform;
 }
 
-/* Smooth backdrop blur animation */
-@keyframes backdropBlurIn {
-  from { opacity: 0; backdrop-filter: blur(0px); }
-  to { opacity: 1; backdrop-filter: blur(8px); }
-}
-
+/* Backdrops should fade only; animating blur causes repaint flicker */
 .backdrop-animate-in {
-  animation: backdropBlurIn 280ms var(--luxury-ease) forwards;
+  animation: fadeIn 180ms var(--luxury-ease) forwards;
 }
 
 /* Sheet slide-up from bottom */
@@ -1087,8 +1068,8 @@ button:active,
   border-bottom: 1px solid hsl(var(--border) / 0.4);
   background: hsl(var(--background) / 0.88);
   padding: max(12px, calc(12px + var(--sat))) clamp(12px, 4vw, 20px) 12px;
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
   transition: background-color 280ms var(--luxury-ease), box-shadow 280ms var(--luxury-ease), border-color 280ms var(--luxury-ease);
   box-shadow: 0 1px 0 hsl(var(--border) / 0.12), 0 4px 16px -4px hsl(var(--foreground) / 0.04);
 }
@@ -1113,8 +1094,8 @@ button:active,
   border-top: 1px solid hsl(var(--border) / 0.25);
   background: hsl(var(--background) / 0.92);
   padding: 4px max(6px, calc(6px + var(--sal))) max(6px, calc(6px + var(--sab))) max(6px, calc(6px + var(--sar)));
-  backdrop-filter: saturate(180%) blur(28px);
-  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  backdrop-filter: saturate(140%) blur(10px);
+  -webkit-backdrop-filter: saturate(140%) blur(10px);
   transition: background-color 280ms var(--luxury-ease);
   box-shadow: 0 -1px 0 hsl(var(--border) / 0.08), 0 -6px 24px -4px hsl(var(--foreground) / 0.06);
 }
@@ -1204,7 +1185,7 @@ button:active,
   border: 1px solid hsl(var(--border));
   border-bottom: 0;
   border-radius: 16px 16px 0 0;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
 }
 
 .mobile-sticky-actions button {
@@ -1282,13 +1263,8 @@ button:active,
 }
 
 /* Smooth modal backdrop */
-@keyframes backdropFade {
-  from { opacity: 0; backdrop-filter: blur(0); }
-  to { opacity: 1; backdrop-filter: blur(8px); }
-}
-
 .modal-backdrop-enter {
-  animation: backdropFade 0.3s ease forwards;
+  animation: fadeIn 0.2s ease forwards;
 }
 
 /* Staggered list item entrance */
@@ -1348,7 +1324,6 @@ a,
 .sidebar-nav-item,
 .ui-control,
 .tab-trigger,
-[data-state],
 [data-radix-popper-content-wrapper] {
   -webkit-font-smoothing: antialiased;
   backface-visibility: hidden;
@@ -1376,7 +1351,7 @@ button:active:not(:disabled),
 [role="button"]:active:not([aria-disabled="true"]),
 [role="tab"]:active,
 [role="menuitem"]:active {
-  transform: scale(0.97);
+  transform: scale(0.985);
   transition-duration: 90ms;
 }
 
@@ -1389,7 +1364,7 @@ button:active:not(:disabled),
 }
 [role="tabpanel"][data-state="active"],
 [role="tabpanel"]:not([hidden]) {
-  animation: tabPanelIn 280ms var(--motion-spring);
+  animation: tabPanelIn 180ms var(--motion-spring);
 }
 @keyframes tabPanelIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -1491,7 +1466,6 @@ select {
 }
 
 /* Page/route content — subtle enter */
-main > *,
 [data-page-root="true"] {
   animation: pageEnter 320ms var(--motion-spring);
 }

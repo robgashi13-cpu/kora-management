@@ -61,6 +61,8 @@ const PDF_TEMPLATES_CONFIG_KEY = 'pdf_templates';
 const INVOICE_HISTORY_STORAGE_KEY = 'invoice_history_v1';
 const MECHANIC_RECORDS_STORAGE_KEY = 'mechanic_records_v1';
 const CAR_DOCUMENTS_STORAGE_KEY = 'car_documents_v1';
+const CURRENT_BACKEND_URL = import.meta.env.VITE_SUPABASE_URL || 'https://tbjihsqkbmjiblpxzojo.supabase.co';
+const CURRENT_BACKEND_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE';
 
 const normalizeProfileName = (name?: string | null | unknown) => {
     if (typeof name !== 'string' || !name) return '';
@@ -1612,6 +1614,10 @@ export default function Dashboard() {
             if (supabaseUrl && supabaseKey && userProfile) {
                 const syncResult = await performAutoSync(supabaseUrl, supabaseKey, userProfile, normalizedSales);
                 if (!syncResult.success) {
+                    if (isQuotaSyncIssue(syncResult.error) || syncResult.error?.includes('temporarily paused')) {
+                        setSyncError(syncResult.error || 'Cloud sync is temporarily paused. Local changes stay saved and will sync automatically later.');
+                        return { success: true };
+                    }
                     setSales(previousSales);
                     alert(`Save failed: ${syncResult.error || 'Sync failed.'}`);
                     return { success: false, error: syncResult.error || 'Sync failed.' };
@@ -2365,23 +2371,19 @@ export default function Dashboard() {
     }, [supabaseUrl, supabaseKey, userProfile]);
     useEffect(() => {
         const initSettings = async () => {
-            // Hardcoded Credentials (as fallback/default)
-            const SUPABASE_URL = "https://zqsofkosyepcaealphbu.supabase.co";
-            const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxc29ma29zeWVwY2FlYWxwaGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUzMDc5NzgsImV4cCI6MjA4MDg4Mzk3OH0.QaVhZ8vTDwvSrQ0lp_tw5Uximi_yvliOISHvySke0H0";
-
             try {
-                // Ensure Supabase URL/Key exist
-                let { value: url } = await Preferences.get({ key: 'supabase_url' });
-                let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
+                const resolvedUrl = CURRENT_BACKEND_URL;
+                const resolvedKey = CURRENT_BACKEND_KEY;
 
-                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
-                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
+                setSupabaseUrl(resolvedUrl);
+                setSupabaseKey(resolvedKey);
+                syncBackoffUntilRef.current = 0;
 
-                setSupabaseUrl(url);
-                setSupabaseKey(keyName);
+                const { value: url } = await Preferences.get({ key: 'supabase_url' });
+                const { value: keyName } = await Preferences.get({ key: 'supabase_key' });
 
-                if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
-                if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
+                if (url !== resolvedUrl) await Preferences.set({ key: 'supabase_url', value: resolvedUrl });
+                if (keyName !== resolvedKey) await Preferences.set({ key: 'supabase_key', value: resolvedKey });
 
                 const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
                 if (apiKeyVal) setApiKey(apiKeyVal);
@@ -2868,6 +2870,8 @@ export default function Dashboard() {
         if (syncErrorMessage) {
             return { success: false, error: syncErrorMessage };
         }
+        syncBackoffUntilRef.current = 0;
+        setSyncError('');
         return { success: true };
     };
 
@@ -4088,7 +4092,7 @@ export default function Dashboard() {
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={handleLogout}
-                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
+                    className="z-10 mt-12 flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors bg-white/95 border border-slate-200 px-5 py-2.5 rounded-full text-sm font-semibold shadow-sm hover:shadow-md"
                 >
                     <LogOut className="w-4 h-4" /> Switch Profile
                 </motion.button>
@@ -4466,7 +4470,7 @@ export default function Dashboard() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.25 }}
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center"
+                        className="fixed inset-0 bg-slate-900/40 z-[100] flex items-center justify-center"
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
@@ -4500,11 +4504,11 @@ export default function Dashboard() {
                 {!isFormOpen && !isSidebarCollapsed && (
                     <motion.aside
                         key="desktop-sidebar"
-                        initial={{ width: 0, opacity: 0 }}
-                        animate={{ width: 256, opacity: 1 }}
-                        exit={{ width: 0, opacity: 0 }}
-                        transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                        className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-[width,opacity]`}
+                        initial={{ x: -24, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: -24, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                        className={`${forceMobileLayout ? 'hidden' : 'hidden md:flex'} w-64 flex-col bg-slate-900 text-white shadow-xl z-20 shrink-0 overflow-hidden will-change-transform`}
                     >
                         <SidebarContent />
                     </motion.aside>
@@ -4522,7 +4526,7 @@ export default function Dashboard() {
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            className={`fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
+                            className={`fixed inset-0 bg-slate-900/60 z-[60] ${forceMobileLayout ? '' : 'md:hidden'}`}
                         />
                         <motion.div
                             key="mobile-drawer"
@@ -4538,9 +4542,9 @@ export default function Dashboard() {
                 )}
             </AnimatePresence>
 
-            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden transition-[width] duration-200 ease-out">
+            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
                 {!isFormOpen && (
-                <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 backdrop-blur-xl transition-colors ${theme === 'dark'
+                <header className={`app-topbar sticky top-0 z-40 border-b px-3 py-3 md:px-4 md:py-3.5 transition-colors ${theme === 'dark'
                     ? 'bg-black/90 border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.45)]'
                     : 'bg-white/90 border-black/10 shadow-[0_10px_24px_rgba(15,23,42,0.08)]'}`}>
                     <div className="flex w-full flex-col gap-2">
@@ -6911,7 +6915,7 @@ export default function Dashboard() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4"
                     onClick={() => { setShowMechanicForm(false); setEditingMechanicRecordId(null); }}
                 >
                     <motion.div
@@ -7020,7 +7024,7 @@ export default function Dashboard() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 p-4"
                     onClick={() => setShowCarDocumentsForm(false)}
                 >
                     <motion.div
@@ -7093,7 +7097,7 @@ export default function Dashboard() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40"
                         onClick={() => setShowPasswordModal(false)}
                     >
                         <motion.div
@@ -7306,7 +7310,7 @@ export default function Dashboard() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[120]"
+                            className="fixed inset-0 bg-slate-900/50 z-[120]"
                             onClick={() => setShowInspectionForm(false)}
                         />
                         <motion.div
