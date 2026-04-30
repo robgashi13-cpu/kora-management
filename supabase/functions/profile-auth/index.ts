@@ -74,11 +74,11 @@ Deno.serve(async (req) => {
     }
 
     const email = profile.email;
+    // Supabase Auth requires passwords ≥ 6 chars. User-facing passwords (like "12345")
+    // are validated above; the actual auth password is always the internal one (admin uses ADMIN_PASSWORD).
     const signInPassword = profile.is_admin
       ? ADMIN_PASSWORD
-      : requiresPassword(profile)
-        ? (PROFILE_PASSWORDS[profile.profile_name.toLowerCase()] || getInternalPassword(email))
-        : getInternalPassword(email);
+      : getInternalPassword(email);
 
     // Ensure the user has the correct password set
     // (first-time setup or password sync)
