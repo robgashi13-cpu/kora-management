@@ -569,6 +569,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'MECHANIC', label: 'Mechanic', icon: Wrench, view: 'mechanic' },
+    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana' },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
