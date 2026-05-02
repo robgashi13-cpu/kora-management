@@ -158,7 +158,7 @@ export default function ContractModal({ sale, type, onClose }: Props) {
             ? 'Full Contract Preview - Marrëveshje'
             : 'Full Contract Preview - Shitblerje';
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40" onClick={onClose}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pt-[max(4rem,env(safe-area-inset-top))] bg-slate-900/40 backdrop-blur-md" onClick={onClose}>
             <div className="bg-white text-slate-900 w-full max-w-5xl h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200" onClick={e => e.stopPropagation()}>
                 {/* Header Actions */}
                 <div className="flex flex-col border-b border-slate-200 bg-slate-50">
