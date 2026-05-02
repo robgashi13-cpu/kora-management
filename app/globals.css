@@ -1517,6 +1517,54 @@ main > *,
   scroll-behavior: smooth;
 }
 
+/* Polish: unified focus ring (subtle, premium) */
+:where(button, a, input, select, textarea, [role="button"], [role="tab"], [role="menuitem"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.12), 0 0 0 4px rgba(15, 23, 42, 0.04);
+  border-radius: inherit;
+  transition: box-shadow var(--motion-fast) var(--motion-snap);
+}
+
+/* Polish: hover lift on cards */
+.premium-card,
+[data-card="true"] {
+  transition: transform var(--motion-base) var(--motion-spring),
+              box-shadow var(--motion-base) var(--motion-spring);
+}
+.premium-card:hover,
+[data-card="true"]:hover {
+  transform: translateY(-1px);
+}
+
+/* Polish: animated underline for nav */
+.sidebar-nav-item,
+.nav-item {
+  position: relative;
+}
+.sidebar-nav-item[data-active="true"]::after,
+.nav-item[aria-current="page"]::after {
+  content: '';
+  position: absolute;
+  left: 8px; right: 8px; bottom: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.85;
+  animation: navUnderline var(--motion-base) var(--motion-spring);
+}
+@keyframes navUnderline {
+  from { transform: scaleX(0.4); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 0.85; }
+}
+
+/* Mobile: larger tap targets without affecting desktop */
+@media (max-width: 768px) {
+  button, [role="button"], a {
+    min-height: 36px;
+  }
+  .ui-control { min-height: 40px; }
+}
+
 /* Honor reduced-motion: kill all the above motion */
 @media (prefers-reduced-motion: reduce) {
   *,
