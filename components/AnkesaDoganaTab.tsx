@@ -145,7 +145,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       // Also persist status even before refund amount is entered
       void upsert(carId, source, { status });
     } else {
-      void upsert(carId, source, { status, ...(status !== 'refunded' ? {} : {}) });
+      void upsert(carId, source, { status });
     }
   };
 
