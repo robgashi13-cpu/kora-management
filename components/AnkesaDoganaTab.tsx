@@ -109,18 +109,18 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   }, [rows]);
 
   const upsert = useCallback(async (carId: string, source: string, patch: Partial<ComplaintRow>) => {
-    setComplaints((prev) => ({
-      ...prev,
-      [carId]: {
+    setComplaints((prev) => {
+      const existing = prev[carId];
+      const merged: ComplaintRow = {
         car_id: carId,
         car_source: source,
-        status: 'started',
-        refund_amount: null,
-        notes: null,
-        ...prev[carId],
+        status: existing?.status || 'started',
+        refund_amount: existing?.refund_amount ?? null,
+        notes: existing?.notes ?? null,
         ...patch,
-      },
-    }));
+      };
+      return { ...prev, [carId]: merged };
+    });
     if (!client) return;
     try {
       await client.from('customs_complaints').upsert({
