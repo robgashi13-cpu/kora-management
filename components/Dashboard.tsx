@@ -4707,7 +4707,9 @@ export default function Dashboard() {
                     {view !== 'sale_form' && (
                         <div className="flex flex-col flex-1 min-h-0">
 
-                            {view === 'mechanic' ? (
+                            {view === 'ankesa_dogana' ? (
+                                <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                            ) : view === 'mechanic' ? (
                                 <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
                                     <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
                                         <button type="button" onClick={() => setMechanicSubTab('records')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${mechanicSubTab === 'records' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Mechanic</button>
