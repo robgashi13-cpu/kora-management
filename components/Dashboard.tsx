@@ -4112,7 +4112,7 @@ export default function Dashboard() {
                 return true;
             });
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
-            const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES', 'MECHANIC'].includes(item.id));
+            const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES', 'MECHANIC', 'ANKESA_DOGANA'].includes(item.id));
             const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
             const secondaryNavItems = restrictedTabs ? [] : navItems.filter((item) => item.id === 'SETTINGS');
