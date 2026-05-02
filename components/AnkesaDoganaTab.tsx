@@ -5,10 +5,11 @@ import { Loader2, Search, X } from 'lucide-react';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
 
-export type CustomsStatus = 'started' | 'dogana' | 'gjykata' | 'refunded' | 'rejected';
+export type CustomsStatus = 'started' | 'klienti' | 'dogana' | 'gjykata' | 'refunded' | 'rejected';
 
 const STATUS_OPTIONS: { value: CustomsStatus; label: string; tone: string }[] = [
   { value: 'started',  label: 'Started',  tone: 'bg-slate-100 text-slate-700 border-slate-200' },
+  { value: 'klienti',  label: 'Klienti',  tone: 'bg-violet-50 text-violet-800 border-violet-200' },
   { value: 'dogana',   label: 'Dogana',   tone: 'bg-amber-50 text-amber-800 border-amber-200' },
   { value: 'gjykata',  label: 'Gjykata',  tone: 'bg-blue-50 text-blue-800 border-blue-200' },
   { value: 'refunded', label: 'Refunded', tone: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
