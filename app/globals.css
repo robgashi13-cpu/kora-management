@@ -1330,12 +1330,23 @@ button, [role="button"] {
    Non-invasive: only enhances transitions/animations.
    ============================================================ */
 :root {
-  --motion-fast: 140ms;
-  --motion-base: 200ms;
-  --motion-slow: 320ms;
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 280ms;
   --motion-spring: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-snap: cubic-bezier(0.4, 0, 0.2, 1);
   --motion-soft: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hint browser to schedule animation frames at high refresh */
+html {
+  /* Safari/Chrome use this to bias toward smoother frame pacing */
+  scroll-behavior: smooth;
+}
+*, *::before, *::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Promote interactive surfaces to their own layer for buttery 120fps repaints */
