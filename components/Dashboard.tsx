@@ -843,6 +843,7 @@ export default function Dashboard() {
         if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
         if (view === 'mechanic') return 'MECHANIC';
+        if (view === 'ankesa_dogana') return 'ANKESA_DOGANA';
         if (view === 'balance_due') return 'BALANCE_DUE';
         if (view === 'transport') return 'TRANSPORTI';
         if (view === 'pdf_templates' || view === 'pdf_list') return 'PDF';
