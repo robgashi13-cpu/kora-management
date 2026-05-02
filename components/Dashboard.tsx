@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarDocumentRecord, CarSale, ContractType, MechanicRepairRecord, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench, Gavel } from 'lucide-react';
+import AnkesaDoganaTab from '@/components/AnkesaDoganaTab';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -568,6 +569,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'MECHANIC', label: 'Mechanic', icon: Wrench, view: 'mechanic' },
+    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana' },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
@@ -841,6 +843,7 @@ export default function Dashboard() {
         if (view === 'record') return 'RECORD';
         if (view === 'invoices') return 'INVOICES';
         if (view === 'mechanic') return 'MECHANIC';
+        if (view === 'ankesa_dogana') return 'ANKESA_DOGANA';
         if (view === 'balance_due') return 'BALANCE_DUE';
         if (view === 'transport') return 'TRANSPORTI';
         if (view === 'pdf_templates' || view === 'pdf_list') return 'PDF';
@@ -4610,7 +4613,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-sm sm:text-base lg:text-lg font-bold flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : view === 'ankesa_dogana' ? 'Ankesa Dogana' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {view === 'mechanic'
                                         ? (mechanicSubTab === 'records' ? mechanicRecords.length : carDocuments.length)
@@ -4704,7 +4707,9 @@ export default function Dashboard() {
                     {view !== 'sale_form' && (
                         <div className="flex flex-col flex-1 min-h-0">
 
-                            {view === 'mechanic' ? (
+                            {view === 'ankesa_dogana' ? (
+                                <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                            ) : view === 'mechanic' ? (
                                 <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
                                     <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
                                         <button type="button" onClick={() => setMechanicSubTab('records')} className={`rounded-lg px-3 py-2 text-xs font-semibold ${mechanicSubTab === 'records' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Mechanic</button>
