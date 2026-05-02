@@ -65,6 +65,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customs_complaints: {
+        Row: {
+          car_id: string
+          car_source: string
+          created_at: string
+          id: string
+          last_edited_by: string | null
+          notes: string | null
+          refund_amount: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          car_id: string
+          car_source?: string
+          created_at?: string
+          id?: string
+          last_edited_by?: string | null
+          notes?: string | null
+          refund_amount?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          car_id?: string
+          car_source?: string
+          created_at?: string
+          id?: string
+          last_edited_by?: string | null
+          notes?: string | null
+          refund_amount?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mechanic_records: {
         Row: {
           brand: string | null
