@@ -361,6 +361,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
                             <button
                                 type="button"
                                 onClick={() => {
+                                    setPriceModalTarget('invoice');
                                     setInvoicePriceSource(null);
                                     setShowInvoicePriceModal(true);
                                     setShowDocumentMenu(false);
