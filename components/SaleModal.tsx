@@ -8,7 +8,7 @@ import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
-import { InvoicePriceSource } from './invoicePricing';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 interface Props {
     isOpen: boolean;
