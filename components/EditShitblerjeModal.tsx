@@ -385,7 +385,13 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
                 onSelect={(source) => {
                     setInvoicePriceSource(source);
                     setShowInvoicePriceModal(false);
-                    setShowDoganeSelection(true);
+                    if (priceModalTarget === 'shitblerje') {
+                        const price = resolveInvoicePriceValue(previewSale, source);
+                        setContractSoldPriceOverride(price);
+                        setContractType('full_shitblerje');
+                    } else {
+                        setShowDoganeSelection(true);
+                    }
                 }}
                 onCancel={() => {
                     setInvoicePriceSource(null);
