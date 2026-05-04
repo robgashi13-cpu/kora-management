@@ -200,9 +200,9 @@ export default function EditablePreviewModal({
         element,
         filename,
         editableText: false,
-        singlePage: isInvoiceType,
-        compact: isInvoiceType,
-        pagebreakMode: isInvoiceType ? ['css', 'legacy'] : undefined
+        singlePage: true,
+        compact: true,
+        pagebreakMode: ['css', 'legacy']
       });
 
       if (!Capacitor.isNativePlatform()) {
