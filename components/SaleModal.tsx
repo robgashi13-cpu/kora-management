@@ -867,7 +867,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
+                        onClick={() => { setPriceModalTarget('invoice'); setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                     >
                         <div>
