@@ -32,6 +32,8 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
     const [contractType, setContractType] = useState<ContractType | null>(null);
+    const [priceModalTarget, setPriceModalTarget] = useState<'invoice' | 'shitblerje'>('invoice');
+    const [contractSoldPriceOverride, setContractSoldPriceOverride] = useState<number | null>(null);
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
