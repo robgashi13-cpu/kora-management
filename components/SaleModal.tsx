@@ -8,7 +8,7 @@ import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
-import { InvoicePriceSource } from './invoicePricing';
+import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
 interface Props {
     isOpen: boolean;
@@ -30,7 +30,7 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     brand: '', model: '', year: new Date().getFullYear(), km: 0,
     color: '', plateNumber: '', vin: '',
     sellerName: '', buyerName: '',
-    shippingName: '', shippingDate: '',
+    shippingName: '', shippingDate: new Date().toISOString().split('T')[0],
     costToBuy: 0, soldPrice: 0,
     baseCostToBuy: 0,
     customPriceDiscount: 0,
@@ -60,12 +60,14 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
+    const [contractSoldPriceOverride, setContractSoldPriceOverride] = useState<number | null>(null);
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
     const [invoiceTaxAmount, setInvoiceTaxAmount] = useState<number | undefined>(undefined);
     const [invoicePriceSource, setInvoicePriceSource] = useState<InvoicePriceSource | null>(null);
     const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
+    const [priceModalTarget, setPriceModalTarget] = useState<'invoice' | 'shitblerje'>('invoice');
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
@@ -387,7 +389,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             ...(!isAdmin && isCreate ? {
                 ...sellerFromSession,
                 shippingName: '',
-                shippingDate: ''
+                shippingDate: new Date().toISOString().split('T')[0]
             } : {}),
             id: existingSale?.id || crypto.randomUUID(),
             costToBuy: isAutosalloniSale ? baseCostToBuy + customPrice : baseCostToBuy,
@@ -843,7 +845,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setContractType('full_shitblerje'); setShowDocumentMenu(false); }}
+                        onClick={() => { setPriceModalTarget('shitblerje'); setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                     >
                         <div>
@@ -865,7 +867,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
+                        onClick={() => { setPriceModalTarget('invoice'); setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
                         className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-emerald-300 hover:bg-emerald-50/40 transition"
                     >
                         <div>
@@ -906,7 +908,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             onSelect={(source) => {
                 setInvoicePriceSource(source);
                 setShowInvoicePriceModal(false);
-                setShowDoganeSelection(true);
+                if (priceModalTarget === 'shitblerje') {
+                    const price = resolveInvoicePriceValue(formData as CarSale, source);
+                    setContractSoldPriceOverride(price);
+                    setContractType('full_shitblerje');
+                } else {
+                    setShowDoganeSelection(true);
+                }
             }}
             onCancel={() => {
                 setInvoicePriceSource(null);
@@ -1032,8 +1040,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 {contractType && (
                     <EditablePreviewModal
                         isOpen={!!contractType}
-                        onClose={() => setContractType(null)}
-                        sale={formData as CarSale}
+                        onClose={() => { setContractType(null); setContractSoldPriceOverride(null); }}
+                        sale={(contractType === 'full_shitblerje' && contractSoldPriceOverride !== null
+                            ? { ...formData, soldPrice: contractSoldPriceOverride, shitblerjeOverrides: { ...(formData.shitblerjeOverrides || {}), soldPrice: contractSoldPriceOverride } }
+                            : formData) as CarSale}
                         documentType={contractType}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
@@ -1071,8 +1081,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             {contractType && (
                 <EditablePreviewModal
                     isOpen={!!contractType}
-                    onClose={() => setContractType(null)}
-                    sale={formData as CarSale}
+                    onClose={() => { setContractType(null); setContractSoldPriceOverride(null); }}
+                    sale={(contractType === 'full_shitblerje' && contractSoldPriceOverride !== null
+                        ? { ...formData, soldPrice: contractSoldPriceOverride, shitblerjeOverrides: { ...(formData.shitblerjeOverrides || {}), soldPrice: contractSoldPriceOverride } }
+                        : formData) as CarSale}
                     documentType={contractType}
                     onSaveToSale={handlePreviewSaveToSale}
                     templates={pdfTemplates}

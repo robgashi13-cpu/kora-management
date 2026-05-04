@@ -32,6 +32,8 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
     const [contractType, setContractType] = useState<ContractType | null>(null);
+    const [priceModalTarget, setPriceModalTarget] = useState<'invoice' | 'shitblerje'>('invoice');
+    const [contractSoldPriceOverride, setContractSoldPriceOverride] = useState<number | null>(null);
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
@@ -336,7 +338,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setContractType('full_shitblerje'); setShowDocumentMenu(false); }}
+                                onClick={() => { setPriceModalTarget('shitblerje'); setInvoicePriceSource(null); setShowInvoicePriceModal(true); setShowDocumentMenu(false); }}
                                 className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-left hover:border-slate-400 hover:bg-slate-50/40 transition"
                             >
                                 <div>
@@ -359,6 +361,7 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
                             <button
                                 type="button"
                                 onClick={() => {
+                                    setPriceModalTarget('invoice');
                                     setInvoicePriceSource(null);
                                     setShowInvoicePriceModal(true);
                                     setShowDocumentMenu(false);
@@ -382,7 +385,13 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
                 onSelect={(source) => {
                     setInvoicePriceSource(source);
                     setShowInvoicePriceModal(false);
-                    setShowDoganeSelection(true);
+                    if (priceModalTarget === 'shitblerje') {
+                        const price = resolveInvoicePriceValue(previewSale, source);
+                        setContractSoldPriceOverride(price);
+                        setContractType('full_shitblerje');
+                    } else {
+                        setShowDoganeSelection(true);
+                    }
                 }}
                 onCancel={() => {
                     setInvoicePriceSource(null);
@@ -504,9 +513,11 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
             {contractType && (
                 <EditablePreviewModal
                     isOpen={!!contractType}
-                    sale={previewSale}
+                    sale={contractType === 'full_shitblerje' && contractSoldPriceOverride !== null
+                        ? { ...previewSale, soldPrice: contractSoldPriceOverride, shitblerjeOverrides: { ...(previewSale.shitblerjeOverrides || {}), soldPrice: contractSoldPriceOverride } }
+                        : previewSale}
                     documentType={contractType}
-                    onClose={() => setContractType(null)}
+                    onClose={() => { setContractType(null); setContractSoldPriceOverride(null); }}
                     onSaveToSale={() => {}}
                     templates={pdfTemplates}
                 />
