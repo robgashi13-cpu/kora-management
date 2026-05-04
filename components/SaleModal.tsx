@@ -1090,9 +1090,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     templates={pdfTemplates}
                 />
             )}
-                    templates={pdfTemplates}
-                />
-            )}
             {showViewSale && existingSale && (
                 <ViewSaleModal
                     isOpen={showViewSale}
