@@ -1040,8 +1040,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 {contractType && (
                     <EditablePreviewModal
                         isOpen={!!contractType}
-                        onClose={() => setContractType(null)}
-                        sale={formData as CarSale}
+                        onClose={() => { setContractType(null); setContractSoldPriceOverride(null); }}
+                        sale={(contractType === 'full_shitblerje' && contractSoldPriceOverride !== null
+                            ? { ...formData, soldPrice: contractSoldPriceOverride, shitblerjeOverrides: { ...(formData.shitblerjeOverrides || {}), soldPrice: contractSoldPriceOverride } }
+                            : formData) as CarSale}
                         documentType={contractType}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
