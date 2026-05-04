@@ -908,7 +908,13 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             onSelect={(source) => {
                 setInvoicePriceSource(source);
                 setShowInvoicePriceModal(false);
-                setShowDoganeSelection(true);
+                if (priceModalTarget === 'shitblerje') {
+                    const price = resolveInvoicePriceValue(formData as CarSale, source);
+                    setContractSoldPriceOverride(price);
+                    setContractType('full_shitblerje');
+                } else {
+                    setShowDoganeSelection(true);
+                }
             }}
             onCancel={() => {
                 setInvoicePriceSource(null);
