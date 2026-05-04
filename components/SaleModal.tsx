@@ -30,7 +30,7 @@ const EMPTY_SALE: Omit<CarSale, 'id' | 'createdAt'> = {
     brand: '', model: '', year: new Date().getFullYear(), km: 0,
     color: '', plateNumber: '', vin: '',
     sellerName: '', buyerName: '',
-    shippingName: '', shippingDate: '',
+    shippingName: '', shippingDate: new Date().toISOString().split('T')[0],
     costToBuy: 0, soldPrice: 0,
     baseCostToBuy: 0,
     customPriceDiscount: 0,
