@@ -1955,6 +1955,7 @@ export default function Dashboard() {
         const { blob } = await generatePdf({
             element: contractElement || container,
             filename: fileName,
+            singlePage: true,
             editableText: false
         });
 
