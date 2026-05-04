@@ -60,6 +60,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [contractType, setContractType] = useState<ContractType | null>(null);
     const [showDocumentMenu, setShowDocumentMenu] = useState(false);
+    const [contractSoldPriceOverride, setContractSoldPriceOverride] = useState<number | null>(null);
     const [showInvoice, setShowInvoice] = useState(false);
     const [showDoganeSelection, setShowDoganeSelection] = useState(false);
     const [invoiceWithDogane, setInvoiceWithDogane] = useState(false);
