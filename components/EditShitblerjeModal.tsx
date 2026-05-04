@@ -513,9 +513,11 @@ function EditShitblerjeModalInner({ isOpen, sale, onClose, onSave, pdfTemplates,
             {contractType && (
                 <EditablePreviewModal
                     isOpen={!!contractType}
-                    sale={previewSale}
+                    sale={contractType === 'full_shitblerje' && contractSoldPriceOverride !== null
+                        ? { ...previewSale, soldPrice: contractSoldPriceOverride, shitblerjeOverrides: { ...(previewSale.shitblerjeOverrides || {}), soldPrice: contractSoldPriceOverride } }
+                        : previewSale}
                     documentType={contractType}
-                    onClose={() => setContractType(null)}
+                    onClose={() => { setContractType(null); setContractSoldPriceOverride(null); }}
                     onSaveToSale={() => {}}
                     templates={pdfTemplates}
                 />
