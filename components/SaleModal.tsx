@@ -66,6 +66,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [invoiceTaxAmount, setInvoiceTaxAmount] = useState<number | undefined>(undefined);
     const [invoicePriceSource, setInvoicePriceSource] = useState<InvoicePriceSource | null>(null);
     const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
+    const [priceModalTarget, setPriceModalTarget] = useState<'invoice' | 'shitblerje'>('invoice');
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
