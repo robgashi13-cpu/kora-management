@@ -258,7 +258,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   }, []);
 
   const toggleGroup = (key: string) => {
-    setCollapsedGroups((p) => ({ ...p, [key]: !p[key] }));
+    setCollapsedGroups((p) => ({ ...p, [key]: !(p[key] ?? true) }));
   };
 
   const renderCarRow = (sale: CarSale, bucket: 'sale' | 'shipped' | 'autosalloni') => {
