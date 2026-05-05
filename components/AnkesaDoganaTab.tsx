@@ -267,8 +267,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const tone = STATUS_OPTIONS.find((o) => o.value === status)?.tone || '';
     const fileCount = Object.values(c?.files || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
     return (
-      <li key={sale.id} className="px-4 py-2.5 flex flex-wrap items-center gap-2.5 hover:bg-slate-50/60 transition-colors">
-        <div className="flex-1 min-w-[160px]">
+      <li key={sale.id} className="px-3 sm:px-4 py-2.5 flex items-center gap-2 hover:bg-slate-50/60 transition-colors">
+        <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-slate-900 truncate">
             {sale.brand} {sale.model}
             {sale.year ? <span className="text-slate-400 font-normal"> · {sale.year}</span> : null}
@@ -278,39 +278,41 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setFilesFor(sale)}
-          className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
-          title="Manage files"
-        >
-          <Paperclip className="w-3.5 h-3.5" />
-          {fileCount > 0 && <span className="text-slate-900">{fileCount}</span>}
-        </button>
-
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(sale.id, bucket === 'shipped' ? 'shipped' : 'sale', e.target.value as CustomsStatus)}
-          className={`ui-control text-xs font-semibold rounded-lg border px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400/30 ${tone}`}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
-        {status === 'refunded' && (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             type="button"
-            onClick={() => {
-              setRefundFor({ id: sale.id, current: c?.refund_amount ?? 0 });
-              setRefundInput(String(c?.refund_amount ?? ''));
-            }}
-            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-            title="Edit refund amount"
+            onClick={() => setFilesFor(sale)}
+            className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+            title="Manage files"
           >
-            € {Number(c?.refund_amount ?? 0).toLocaleString()}
+            <Paperclip className="w-3.5 h-3.5" />
+            {fileCount > 0 && <span className="text-slate-900">{fileCount}</span>}
           </button>
-        )}
+
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(sale.id, bucket === 'shipped' ? 'shipped' : 'sale', e.target.value as CustomsStatus)}
+            className={`ui-control text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400/30 max-w-[110px] sm:max-w-none ${tone}`}
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
+          {status === 'refunded' && (
+            <button
+              type="button"
+              onClick={() => {
+                setRefundFor({ id: sale.id, current: c?.refund_amount ?? 0 });
+                setRefundInput(String(c?.refund_amount ?? ''));
+              }}
+              className="text-[11px] font-semibold px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+              title="Edit refund amount"
+            >
+              € {Number(c?.refund_amount ?? 0).toLocaleString()}
+            </button>
+          )}
+        </div>
       </li>
     );
   };
