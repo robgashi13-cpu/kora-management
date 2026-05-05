@@ -4710,7 +4710,10 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'ankesa_dogana' ? (
-                                <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                                ['Robert', 'Renato'].includes(userProfile || '')
+                                    ? <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                                    : <div className="p-8 text-center text-sm text-slate-500">You don't have access to this section.</div>
+                            
                             ) : view === 'mechanic' ? (
                                 <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
                                     <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
