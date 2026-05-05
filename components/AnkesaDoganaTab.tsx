@@ -384,6 +384,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setShowArchived((v) => !v)}
+          className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${showArchived ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+          title="Toggle archived groups"
+        >
+          {showArchived ? 'Hide archived' : `Show archived${archivedGroups.size ? ` (${archivedGroups.size})` : ''}`}
+        </button>
         <span className="text-[11px] text-slate-500 ml-auto">Showing cars from {currentYear}</span>
       </div>
 
