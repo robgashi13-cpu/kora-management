@@ -525,7 +525,16 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
           })}
         </div>
 
-        <footer className="px-5 py-3 border-t border-slate-200 flex justify-end">
+        <footer className="px-5 py-3 border-t border-slate-200 flex justify-between items-center gap-2">
+          <button
+            type="button"
+            disabled={zipping || Object.values(files).every((a) => !a || a.length === 0)}
+            onClick={handleCreateZip}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {zipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+            Create ZIP
+          </button>
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors">Done</button>
         </footer>
       </div>
