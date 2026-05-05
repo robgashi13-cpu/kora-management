@@ -562,7 +562,7 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
         const { error } = await client.storage.from('customs-files').upload(path, file, {
           cacheControl: '3600', upsert: false, contentType: file.type,
         });
-        if (error) { console.error(error); continue; }
+        if (error) { console.error('Upload error', error); alert(`Upload failed: ${error.message || 'unknown error'}`); continue; }
         const { data: pub } = client.storage.from('customs-files').getPublicUrl(path);
         uploaded.push({
           name: file.name,
