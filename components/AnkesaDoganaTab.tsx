@@ -322,6 +322,10 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           <div>
             {groups.map(([groupName, groupItems]) => {
               const key = `${sectionKey}:${groupName}`;
+              const isRemoved = removedGroups.has(key);
+              const isArchived = archivedGroups.has(key);
+              if (isRemoved) return null;
+              if (isArchived && !showArchived) return null;
               const collapsed = collapsedGroups[key];
               const label = groupName === UNGROUPED ? 'Ungrouped' : groupName;
               return (
@@ -329,10 +333,16 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
                   <button
                     type="button"
                     onClick={() => toggleGroup(key)}
-                    className="w-full flex items-center gap-2 px-4 py-1.5 bg-slate-50/70 hover:bg-slate-100/80 text-left transition-colors"
+                    onContextMenu={(e) => { e.preventDefault(); openGroupMenu(key, label, e.clientX, e.clientY); }}
+                    onTouchStart={(e) => startLongPress(key, label, e)}
+                    onTouchEnd={cancelLongPress}
+                    onTouchMove={cancelLongPress}
+                    onTouchCancel={cancelLongPress}
+                    className={`w-full flex items-center gap-2 px-4 py-1.5 text-left transition-colors ${isArchived ? 'bg-amber-50/60 hover:bg-amber-100/60' : 'bg-slate-50/70 hover:bg-slate-100/80'}`}
                   >
                     {collapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 truncate">{label}</span>
+                    {isArchived && <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">Archived</span>}
                     <span className="text-[10px] text-slate-400 ml-auto">{groupItems.length}</span>
                   </button>
                   {!collapsed && (
