@@ -470,6 +470,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         </div>
       )}
     </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────
 // Files Modal
