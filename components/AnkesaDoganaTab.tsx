@@ -70,6 +70,54 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [archivedGroups, setArchivedGroups] = useState<Set<string>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_archived_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
+  });
+  const [removedGroups, setRemovedGroups] = useState<Set<string>>(() => {
+    try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_removed_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
+  });
+  const [showArchived, setShowArchived] = useState(false);
+  const [groupMenu, setGroupMenu] = useState<{ key: string; label: string; x: number; y: number } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistArchived = (next: Set<string>) => {
+    setArchivedGroups(next);
+    try { localStorage.setItem('ankesa_dogana_archived_groups', JSON.stringify(Array.from(next))); } catch {}
+  };
+  const persistRemoved = (next: Set<string>) => {
+    setRemovedGroups(next);
+    try { localStorage.setItem('ankesa_dogana_removed_groups', JSON.stringify(Array.from(next))); } catch {}
+  };
+
+  const archiveGroup = (key: string) => {
+    const next = new Set(archivedGroups); next.add(key); persistArchived(next);
+    setGroupMenu(null);
+  };
+  const removeGroup = (key: string) => {
+    const next = new Set(removedGroups); next.add(key); persistRemoved(next);
+    const a = new Set(archivedGroups); a.delete(key); persistArchived(a);
+    setGroupMenu(null);
+  };
+  const restoreGroup = (key: string) => {
+    const a = new Set(archivedGroups); a.delete(key); persistArchived(a);
+    const r = new Set(removedGroups); r.delete(key); persistRemoved(r);
+  };
+
+  const openGroupMenu = (key: string, label: string, x: number, y: number) => {
+    const maxX = typeof window !== 'undefined' ? window.innerWidth - 200 : x;
+    const maxY = typeof window !== 'undefined' ? window.innerHeight - 140 : y;
+    setGroupMenu({ key, label, x: Math.min(x, maxX), y: Math.min(y, maxY) });
+  };
+
+  const startLongPress = (key: string, label: string, e: React.TouchEvent) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    const t = e.touches[0];
+    const x = t?.clientX ?? 0, y = t?.clientY ?? 0;
+    longPressTimer.current = setTimeout(() => openGroupMenu(key, label, x, y), 3000);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
 
   const client = useMemo(() => {
     const url = (import.meta as any).env?.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
