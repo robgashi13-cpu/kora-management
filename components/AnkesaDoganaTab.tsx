@@ -267,8 +267,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const tone = STATUS_OPTIONS.find((o) => o.value === status)?.tone || '';
     const fileCount = Object.values(c?.files || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
     return (
-      <li key={sale.id} className="px-4 py-2.5 flex flex-wrap items-center gap-2.5 hover:bg-slate-50/60 transition-colors">
-        <div className="flex-1 min-w-[160px]">
+      <li key={sale.id} className="px-3 sm:px-4 py-2.5 flex items-center gap-2 hover:bg-slate-50/60 transition-colors">
+        <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-slate-900 truncate">
             {sale.brand} {sale.model}
             {sale.year ? <span className="text-slate-400 font-normal"> · {sale.year}</span> : null}
@@ -278,39 +278,41 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setFilesFor(sale)}
-          className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
-          title="Manage files"
-        >
-          <Paperclip className="w-3.5 h-3.5" />
-          {fileCount > 0 && <span className="text-slate-900">{fileCount}</span>}
-        </button>
-
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(sale.id, bucket === 'shipped' ? 'shipped' : 'sale', e.target.value as CustomsStatus)}
-          className={`ui-control text-xs font-semibold rounded-lg border px-2.5 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400/30 ${tone}`}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-
-        {status === 'refunded' && (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
             type="button"
-            onClick={() => {
-              setRefundFor({ id: sale.id, current: c?.refund_amount ?? 0 });
-              setRefundInput(String(c?.refund_amount ?? ''));
-            }}
-            className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-            title="Edit refund amount"
+            onClick={() => setFilesFor(sale)}
+            className="relative inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+            title="Manage files"
           >
-            € {Number(c?.refund_amount ?? 0).toLocaleString()}
+            <Paperclip className="w-3.5 h-3.5" />
+            {fileCount > 0 && <span className="text-slate-900">{fileCount}</span>}
           </button>
-        )}
+
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(sale.id, bucket === 'shipped' ? 'shipped' : 'sale', e.target.value as CustomsStatus)}
+            className={`ui-control text-xs font-semibold rounded-lg border px-2 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-400/30 max-w-[110px] sm:max-w-none ${tone}`}
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
+          {status === 'refunded' && (
+            <button
+              type="button"
+              onClick={() => {
+                setRefundFor({ id: sale.id, current: c?.refund_amount ?? 0 });
+                setRefundInput(String(c?.refund_amount ?? ''));
+              }}
+              className="text-[11px] font-semibold px-2 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors whitespace-nowrap"
+              title="Edit refund amount"
+            >
+              € {Number(c?.refund_amount ?? 0).toLocaleString()}
+            </button>
+          )}
+        </div>
       </li>
     );
   };
@@ -367,9 +369,9 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0 animate-fade-in overflow-hidden">
-      <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
-        <div className="relative flex-1 min-w-[180px]">
+    <div className="flex-1 min-h-0 flex flex-col gap-3 p-3 sm:p-4 md:p-0 animate-fade-in overflow-hidden">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 flex-shrink-0">
+        <div className="relative flex-1 min-w-0 sm:min-w-[180px] w-full">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -379,27 +381,29 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400 transition-shadow"
           />
         </div>
-        <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-          {(['all', 'sale', 'shipped', 'autosalloni'] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-all ${filter === f ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              {f === 'all' ? 'All' : f}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm overflow-x-auto">
+            {(['all', 'sale', 'shipped', 'autosalloni'] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold capitalize transition-all whitespace-nowrap ${filter === f ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              >
+                {f === 'all' ? 'All' : f}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowArchived((v) => !v)}
+            className={`rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all border whitespace-nowrap ${showArchived ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+            title="Toggle archived groups"
+          >
+            {showArchived ? 'Hide archived' : `Archived${archivedGroups.size ? ` (${archivedGroups.size})` : ''}`}
+          </button>
+          <span className="text-[11px] text-slate-500 ml-auto hidden sm:inline">Showing {currentYear}</span>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowArchived((v) => !v)}
-          className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${showArchived ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-          title="Toggle archived groups"
-        >
-          {showArchived ? 'Hide archived' : `Show archived${archivedGroups.size ? ` (${archivedGroups.size})` : ''}`}
-        </button>
-        <span className="text-[11px] text-slate-500 ml-auto">Showing cars from {currentYear}</span>
       </div>
 
       {loading ? (
@@ -407,7 +411,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-y-auto pb-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pb-24 md:pb-4 items-start">
           {(filter === 'all' || filter === 'sale') && renderSection('On Sale', grouped.sale, 'No on-sale cars this year.', 'sale')}
           {(filter === 'all' || filter === 'shipped') && renderSection('Shipped', grouped.shipped, 'No shipped cars this year.', 'shipped')}
           {(filter === 'all' || filter === 'autosalloni') && renderSection('Autosalloni', grouped.autosalloni, 'No autosalloni cars this year.', 'autosalloni')}
