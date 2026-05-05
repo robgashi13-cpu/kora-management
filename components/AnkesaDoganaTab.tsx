@@ -445,9 +445,31 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           }}
         />
       )}
+
+      {groupMenu && (
+        <div className="fixed inset-0 z-[70]" onClick={() => setGroupMenu(null)} onContextMenu={(e) => { e.preventDefault(); setGroupMenu(null); }}>
+          <div
+            className="absolute bg-white border border-slate-200 rounded-xl shadow-2xl py-1 min-w-[180px] animate-scale-in"
+            style={{ left: groupMenu.x, top: groupMenu.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 truncate">{groupMenu.label}</div>
+            {archivedGroups.has(groupMenu.key) || removedGroups.has(groupMenu.key) ? (
+              <button type="button" onClick={() => { restoreGroup(groupMenu.key); setGroupMenu(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <RotateCcw className="w-3.5 h-3.5" /> Restore
+              </button>
+            ) : (
+              <button type="button" onClick={() => archiveGroup(groupMenu.key)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <Archive className="w-3.5 h-3.5" /> Archive group
+              </button>
+            )}
+            <button type="button" onClick={() => { if (confirm(`Remove group "${groupMenu.label}" from this view?`)) removeGroup(groupMenu.key); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
+              <Trash2 className="w-3.5 h-3.5" /> Remove from view
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────
 // Files Modal
