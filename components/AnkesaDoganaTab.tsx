@@ -397,9 +397,52 @@ interface FilesModalProps {
 function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalProps) {
   const [files, setFiles] = useState<FilesByCategory>(complaint?.files || {});
   const [uploading, setUploading] = useState<FileCategory | null>(null);
+  const [zipping, setZipping] = useState(false);
   const inputRefs = useRef<Record<FileCategory, HTMLInputElement | null>>({
     dokumentat: null, dudat: null, faturat: null,
   });
+
+  const carLabel = useMemo(() => {
+    const parts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
+    return (parts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+  }, [sale]);
+
+  const handleCreateZip = async () => {
+    const all = Object.entries(files) as [FileCategory, StoredFile[] | undefined][];
+    if (all.every(([, arr]) => !arr || arr.length === 0)) return;
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      for (const [cat, arr] of all) {
+        if (!arr || arr.length === 0) continue;
+        const folder = zip.folder(CATEGORY_LABELS[cat]) || zip;
+        for (const f of arr) {
+          try {
+            const res = await fetch(f.url);
+            if (!res.ok) continue;
+            const blob = await res.blob();
+            folder.file(f.name, blob);
+          } catch (err) {
+            console.error('Failed to fetch', f.name, err);
+          }
+        }
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${carLabel}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Zip failed', e);
+      alert('Failed to create ZIP');
+    } finally {
+      setZipping(false);
+    }
+  };
 
   useEffect(() => { setFiles(complaint?.files || {}); }, [complaint]);
 
