@@ -145,7 +145,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             map[r.car_id] = {
               car_id: r.car_id,
               car_source: r.car_source,
-              status: (r.status as CustomsStatus) || 'started',
+              status: (r.status as CustomsStatus) || 'not_started',
               refund_amount: r.refund_amount,
               notes: r.notes,
               files: (r.files as FilesByCategory) || {},
@@ -196,7 +196,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       const merged: ComplaintRow = {
         car_id: carId,
         car_source: source,
-        status: existing?.status || 'started',
+        status: existing?.status || 'not_started',
         refund_amount: existing?.refund_amount ?? null,
         notes: existing?.notes ?? null,
         files: existing?.files ?? {},
@@ -263,7 +263,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
 
   const renderCarRow = (sale: CarSale, bucket: 'sale' | 'shipped' | 'autosalloni') => {
     const c = complaints[sale.id];
-    const status: CustomsStatus = c?.status || 'started';
+    const status: CustomsStatus = c?.status || 'not_started';
     const tone = STATUS_OPTIONS.find((o) => o.value === status)?.tone || '';
     const fileCount = Object.values(c?.files || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
     return (
