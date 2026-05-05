@@ -120,10 +120,15 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   };
 
   const client = useMemo(() => {
-    const url = (import.meta as any).env?.VITE_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
-    if (!url || !key) return null;
-    try { return createSupabaseClient(url, key); } catch { return null; }
+    const FALLBACK_URL = 'https://tbjihsqkbmjiblpxzojo.supabase.co';
+    const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE';
+    let url = '', key = '';
+    try { url = (import.meta as any).env?.VITE_SUPABASE_URL || ''; key = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY || ''; } catch {}
+    if (!url) { try { url = (process as any)?.env?.NEXT_PUBLIC_SUPABASE_URL || ''; } catch {} }
+    if (!key) { try { key = (process as any)?.env?.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ''; } catch {} }
+    if (!url) url = FALLBACK_URL;
+    if (!key) key = FALLBACK_KEY;
+    try { return createSupabaseClient(url, key); } catch (e) { console.error('[AnkesaDogana] client init failed', e); return null; }
   }, []);
 
   useEffect(() => {
@@ -557,7 +562,7 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
         const { error } = await client.storage.from('customs-files').upload(path, file, {
           cacheControl: '3600', upsert: false, contentType: file.type,
         });
-        if (error) { console.error(error); continue; }
+        if (error) { console.error('Upload error', error); alert(`Upload failed: ${error.message || 'unknown error'}`); continue; }
         const { data: pub } = client.storage.from('customs-files').getPublicUrl(path);
         uploaded.push({
           name: file.name,
