@@ -70,6 +70,7 @@ export type Database = {
           car_id: string
           car_source: string
           created_at: string
+          files: Json
           id: string
           last_edited_by: string | null
           notes: string | null
@@ -81,6 +82,7 @@ export type Database = {
           car_id: string
           car_source?: string
           created_at?: string
+          files?: Json
           id?: string
           last_edited_by?: string | null
           notes?: string | null
@@ -92,6 +94,7 @@ export type Database = {
           car_id?: string
           car_source?: string
           created_at?: string
+          files?: Json
           id?: string
           last_edited_by?: string | null
           notes?: string | null
