@@ -17,13 +17,14 @@ const STATUS_OPTIONS: { value: CustomsStatus; label: string; tone: string }[] = 
   { value: 'rejected', label: 'Rejected', tone: 'bg-rose-50 text-rose-800 border-rose-200' },
 ];
 
-type FileCategory = 'dokumentat' | 'dudat' | 'dudat_me_rritje' | 'faturat';
+type FileCategory = 'dokumentat' | 'dudat' | 'dudat_me_rritje' | 'faturat' | 'transferi_bankar';
 
 const CATEGORY_LABELS: Record<FileCategory, string> = {
   dokumentat: 'Dokumentat e kerrit',
   dudat: 'Dudi pa rritje',
   dudat_me_rritje: 'Dudi me rritje',
   faturat: 'Faturat',
+  transferi_bankar: 'Transferi bankar',
 };
 
 interface StoredFile {
@@ -495,7 +496,7 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
   const [uploading, setUploading] = useState<FileCategory | null>(null);
   const [zipping, setZipping] = useState(false);
   const inputRefs = useRef<Record<FileCategory, HTMLInputElement | null>>({
-    dokumentat: null, dudat: null, dudat_me_rritje: null, faturat: null,
+    dokumentat: null, dudat: null, dudat_me_rritje: null, faturat: null, transferi_bankar: null,
   });
 
   const carLabel = useMemo(() => {
