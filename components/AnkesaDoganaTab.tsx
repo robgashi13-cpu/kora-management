@@ -210,7 +210,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       await client.from('customs_complaints').upsert({
         car_id: carId,
         car_source: source,
-        status: patch.status ?? cur?.status ?? 'started',
+        status: patch.status ?? cur?.status ?? 'not_started',
         refund_amount: patch.refund_amount ?? cur?.refund_amount ?? 0,
         notes: patch.notes ?? cur?.notes ?? null,
         files: patch.files ?? cur?.files ?? {},
