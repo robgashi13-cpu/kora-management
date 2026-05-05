@@ -4206,7 +4206,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {salesGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     return (
                                         <button
@@ -4244,7 +4244,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {operationsGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     return (
                                         <React.Fragment key={item.id}>
@@ -4300,7 +4300,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isFinanceGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {financeControlGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     const badge = item.id === 'TRANSPORTI'
                                         ? `${transportClientPaidCount}/${transportSales.length}`
@@ -4338,7 +4338,7 @@ export default function Dashboard() {
 
                     <div className="space-y-1 pt-1">
                         {combinedNavItems.map((item) => {
-                            if (item.adminOnly && !isAdmin) return null;
+                            if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                             const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
                             const isCustomDashboardItem = item.view === 'custom_dashboard' && !navItems.some((navItem) => navItem.id === item.id);
                             return (
