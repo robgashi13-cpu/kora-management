@@ -258,7 +258,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   }, []);
 
   const toggleGroup = (key: string) => {
-    setCollapsedGroups((p) => ({ ...p, [key]: !p[key] }));
+    setCollapsedGroups((p) => ({ ...p, [key]: !(p[key] ?? true) }));
   };
 
   const renderCarRow = (sale: CarSale, bucket: 'sale' | 'shipped' | 'autosalloni') => {
@@ -336,7 +336,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
               const isArchived = archivedGroups.has(key);
               if (isRemoved) return null;
               if (isArchived && !showArchived) return null;
-              const collapsed = collapsedGroups[key];
+              const collapsed = collapsedGroups[key] ?? true;
               const label = groupName === UNGROUPED ? 'Ungrouped' : groupName;
               return (
                 <div key={key} className="border-b border-slate-100 last:border-b-0">
