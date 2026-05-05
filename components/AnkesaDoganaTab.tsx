@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import JSZip from 'jszip';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
 
@@ -396,9 +397,52 @@ interface FilesModalProps {
 function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalProps) {
   const [files, setFiles] = useState<FilesByCategory>(complaint?.files || {});
   const [uploading, setUploading] = useState<FileCategory | null>(null);
+  const [zipping, setZipping] = useState(false);
   const inputRefs = useRef<Record<FileCategory, HTMLInputElement | null>>({
     dokumentat: null, dudat: null, faturat: null,
   });
+
+  const carLabel = useMemo(() => {
+    const parts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
+    return (parts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+  }, [sale]);
+
+  const handleCreateZip = async () => {
+    const all = Object.entries(files) as [FileCategory, StoredFile[] | undefined][];
+    if (all.every(([, arr]) => !arr || arr.length === 0)) return;
+    setZipping(true);
+    try {
+      const zip = new JSZip();
+      for (const [cat, arr] of all) {
+        if (!arr || arr.length === 0) continue;
+        const folder = zip.folder(CATEGORY_LABELS[cat]) || zip;
+        for (const f of arr) {
+          try {
+            const res = await fetch(f.url);
+            if (!res.ok) continue;
+            const blob = await res.blob();
+            folder.file(f.name, blob);
+          } catch (err) {
+            console.error('Failed to fetch', f.name, err);
+          }
+        }
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${carLabel}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Zip failed', e);
+      alert('Failed to create ZIP');
+    } finally {
+      setZipping(false);
+    }
+  };
 
   useEffect(() => { setFiles(complaint?.files || {}); }, [complaint]);
 
@@ -524,7 +568,16 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
           })}
         </div>
 
-        <footer className="px-5 py-3 border-t border-slate-200 flex justify-end">
+        <footer className="px-5 py-3 border-t border-slate-200 flex justify-between items-center gap-2">
+          <button
+            type="button"
+            disabled={zipping || Object.values(files).every((a) => !a || a.length === 0)}
+            onClick={handleCreateZip}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {zipping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Package className="w-4 h-4" />}
+            Create ZIP
+          </button>
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors">Done</button>
         </footer>
       </div>
