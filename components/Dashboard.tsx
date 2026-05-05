@@ -561,6 +561,7 @@ type NavItem = {
     view: string;
     category?: string;
     adminOnly?: boolean;
+    allowedProfiles?: string[];
 };
 
 const navItems: NavItem[] = [
@@ -569,7 +570,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'MECHANIC', label: 'Mechanic', icon: Wrench, view: 'mechanic' },
-    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana' },
+    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana', allowedProfiles: ['Robert', 'Renato'] },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
@@ -4205,7 +4206,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isSalesGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {salesGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     return (
                                         <button
@@ -4243,7 +4244,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isOperationsGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {operationsGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     return (
                                         <React.Fragment key={item.id}>
@@ -4299,7 +4300,7 @@ export default function Dashboard() {
                         <div className={`grid overflow-hidden sidebar-group-panel ${isFinanceGroupOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-50 mt-0'}`}>
                             <div className="min-h-0 space-y-1 px-1 pb-1">
                                 {financeControlGroupItems.map((item) => {
-                                    if (item.adminOnly && !isAdmin) return null;
+                                    if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                                     const isActive = currentNavId === item.id;
                                     const badge = item.id === 'TRANSPORTI'
                                         ? `${transportClientPaidCount}/${transportSales.length}`
@@ -4337,7 +4338,7 @@ export default function Dashboard() {
 
                     <div className="space-y-1 pt-1">
                         {combinedNavItems.map((item) => {
-                            if (item.adminOnly && !isAdmin) return null;
+                            if (item.adminOnly && !isAdmin) return null; if (item.allowedProfiles && !item.allowedProfiles.includes(userProfile || "")) return null;
                             const isActive = currentNavId === item.id || (item.view === 'custom_dashboard' && activeCustomDashboardId === item.id);
                             const isCustomDashboardItem = item.view === 'custom_dashboard' && !navItems.some((navItem) => navItem.id === item.id);
                             return (
@@ -4709,7 +4710,10 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'ankesa_dogana' ? (
-                                <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                                ['Robert', 'Renato'].includes(userProfile || '')
+                                    ? <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
+                                    : <div className="p-8 text-center text-sm text-slate-500">You don't have access to this section.</div>
+                            
                             ) : view === 'mechanic' ? (
                                 <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
                                     <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
