@@ -2744,8 +2744,20 @@ export default function Dashboard() {
                 void performAutoSync(supabaseUrl, supabaseKey, userProfile);
             }
         }, AUTO_SYNC_INTERVAL_MS);
-        return () => window.clearInterval(timer);
+
+        // Flush queued offline changes immediately when connectivity returns
+        const onOnline = () => {
+            console.log('[sync] Back online — flushing queued offline changes to Lovable Cloud');
+            void performAutoSync(supabaseUrl, supabaseKey, userProfile);
+        };
+        window.addEventListener('online', onOnline);
+
+        return () => {
+            window.clearInterval(timer);
+            window.removeEventListener('online', onOnline);
+        };
     }, [userProfile, supabaseUrl, supabaseKey]);
+
 
     const performAutoSync = async (
         url: string,
