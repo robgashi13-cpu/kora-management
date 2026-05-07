@@ -184,7 +184,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       const hay = `${sale.brand} ${sale.model} ${sale.plateNumber} ${sale.vin} ${sale.buyerName} ${sale.group || ''} ${sale.shippingName || ''}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [sales, search, filter]);
+  }, [sales, search, filter, userProfile]);
 
   const grouped = useMemo(() => {
     const buckets: Record<'sale' | 'shipped' | 'autosalloni', typeof rows> = { sale: [], shipped: [], autosalloni: [] };
