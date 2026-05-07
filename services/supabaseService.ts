@@ -19,7 +19,7 @@ const encodeStorageKey = (value: string) => {
     return Buffer.from(value, 'utf-8').toString('base64');
 };
 
-const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa', 'besi']);
+const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa', 'besi', 'renat']);
 
 const canAccessSale = (sale: CarSale, profile: string) => {
     if (isAdminProfile(profile)) return true;
