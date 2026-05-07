@@ -6,16 +6,17 @@ import JSZip from 'jszip';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
 
-export type CustomsStatus = 'not_started' | 'started' | 'klienti' | 'dogana' | 'gjykata' | 'refunded' | 'rejected';
+export type CustomsStatus = 'not_started' | 'started' | 'klienti' | 'dogana' | 'gjykata' | 'nuk_ka_rritje' | 'refunded' | 'rejected';
 
 const STATUS_OPTIONS: { value: CustomsStatus; label: string; tone: string }[] = [
-  { value: 'not_started', label: 'Not Started', tone: 'bg-gray-100 text-gray-700 border-gray-300' },
-  { value: 'started',     label: 'Started',     tone: 'bg-sky-100 text-sky-800 border-sky-300' },
-  { value: 'klienti',     label: 'Klienti',     tone: 'bg-violet-100 text-violet-800 border-violet-300' },
-  { value: 'dogana',      label: 'Dogana',      tone: 'bg-amber-100 text-amber-900 border-amber-300' },
-  { value: 'gjykata',     label: 'Gjykata',     tone: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
-  { value: 'refunded',    label: 'Refunded',    tone: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-  { value: 'rejected',    label: 'Rejected',    tone: 'bg-rose-100 text-rose-800 border-rose-300' },
+  { value: 'not_started',   label: 'Not Started',    tone: 'bg-gray-100 text-gray-700 border-gray-300' },
+  { value: 'started',       label: 'Started',        tone: 'bg-sky-100 text-sky-800 border-sky-300' },
+  { value: 'klienti',       label: 'Klienti',        tone: 'bg-violet-100 text-violet-800 border-violet-300' },
+  { value: 'dogana',        label: 'Dogana',         tone: 'bg-amber-100 text-amber-900 border-amber-300' },
+  { value: 'gjykata',       label: 'Gjykata',        tone: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
+  { value: 'nuk_ka_rritje', label: 'Nuk ka rritje',  tone: 'bg-teal-100 text-teal-800 border-teal-300' },
+  { value: 'refunded',      label: 'Refunded',       tone: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  { value: 'rejected',      label: 'Rejected',       tone: 'bg-rose-100 text-rose-800 border-rose-300' },
 ];
 
 type FileCategory = 'dokumentat' | 'dudat' | 'dudat_me_rritje' | 'faturat' | 'transferi_bankar';
