@@ -23,7 +23,9 @@ interface ProfileSelectorProps {
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false, verifyAdminPassword }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
-    const PASSWORD_PROFILES = new Set(['Robert', 'SHYQA']);
+    // All profiles now require a password (Robert/Shyqa unchanged, others use `<name>123`)
+    const PASSWORD_PROFILES = new Set<string>();
+    const requiresPasswordPrompt = (_p: string) => true;
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -74,13 +76,22 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
             const { data, error } = await cloudClient.functions.invoke('profile-auth', {
                 body: { profileName, password: pwd },
             });
+
+            // FunctionsHttpError exposes the response body via .context.response
+            let serverError: string | null = null;
+            if (error && (error as any).context?.response) {
+                try {
+                    const body = await (error as any).context.response.clone().json();
+                    serverError = body?.error || null;
+                } catch { /* ignore */ }
+            }
+
             if (error || !data?.session) {
-                const msg = data?.error || error?.message || 'Sign-in failed';
-                setAuthError(msg);
+                const msg = serverError || data?.error || error?.message || 'Sign-in failed';
+                setAuthError(msg === 'Incorrect password' ? 'Incorrect Password!' : msg);
                 setIsAuthLoading(false);
                 return false;
             }
-            // Set the session from the edge function response
             await cloudClient.auth.setSession({
                 access_token: data.session.access_token,
                 refresh_token: data.session.refresh_token,
@@ -95,7 +106,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const handleSelect = async (p: string) => {
-        if (PASSWORD_PROFILES.has(p)) {
+        if (requiresPasswordPrompt(p)) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
