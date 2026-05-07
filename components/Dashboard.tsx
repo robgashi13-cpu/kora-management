@@ -4155,6 +4155,11 @@ export default function Dashboard() {
                                 {availableProfiles.map(p => (
                                     <button key={p} onClick={async (e) => {
                                         e.stopPropagation();
+                                        e.preventDefault();
+                                        if (userProfile === p) {
+                                            setShowProfileMenu(false);
+                                            return;
+                                        }
                                         if ((p === ADMIN_PROFILE || p.toUpperCase() === 'SHYQA') && userProfile !== p) {
                                             setPendingProfile(p);
                                             setPasswordInput('');
@@ -4163,14 +4168,15 @@ export default function Dashboard() {
                                             setShowProfileMenu(false);
                                             return;
                                         }
-                                        // Non-admin: authenticate via edge function
+                                        // Close menu immediately so the click feels responsive
+                                        setShowProfileMenu(false);
+                                        // Optimistically switch profile, then authenticate in background
+                                        startTransition(() => { setUserProfile(p); });
+                                        persistUserProfile(p);
                                         const result = await authenticateProfile(p);
                                         if (!result) {
                                             console.warn('Profile auth failed for', p);
                                         }
-                                        setShowProfileMenu(false);
-                                        startTransition(() => { setUserProfile(p); });
-                                        persistUserProfile(p);
                                         setTimeout(() => performAutoSync(supabaseUrl, supabaseKey, p), 100);
                                     }}
                                         className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all flex items-center justify-between ${userProfile === p ? 'bg-zinc-800 text-white font-medium' : 'text-slate-300 hover:bg-zinc-900'}`}>
