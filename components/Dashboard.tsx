@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback
 import { Attachment, CarDocumentRecord, CarSale, ContractType, MechanicRepairRecord, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench, Gavel } from 'lucide-react';
 import AnkesaDoganaTab from '@/components/AnkesaDoganaTab';
+import PerPagesTab from '@/components/PerPagesTab';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
@@ -77,7 +78,7 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 // Profiles with restricted tab access (profile name → allowed nav item IDs)
 // If a profile is NOT in this map, they get full access (subject to adminOnly checks)
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
-    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC']),
+    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC', 'PER_PAGES']),
     'kr': new Set(['MECHANIC', 'INSPECTIONS']),
     'besi': new Set(['ANKESA_DOGANA']),
 };
@@ -577,6 +578,7 @@ const navItems: NavItem[] = [
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
+    { id: 'PER_PAGES', label: 'Për Pages', icon: FileText, view: 'per_pages', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
@@ -4622,7 +4624,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-sm sm:text-base lg:text-lg font-bold flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : view === 'ankesa_dogana' ? 'Ankesa Dogana' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : view === 'ankesa_dogana' ? 'Ankesa Dogana' : view === 'per_pages' ? 'Për Pages' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {view === 'mechanic'
                                         ? (mechanicSubTab === 'records' ? mechanicRecords.length : carDocuments.length)
@@ -4717,10 +4719,13 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'ankesa_dogana' ? (
-                                ['Robert', 'Renato'].includes(userProfile || '')
+                                ['Robert', 'Renato', 'Besi'].includes(userProfile || '')
                                     ? <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
                                     : <div className="p-8 text-center text-sm text-slate-500">You don't have access to this section.</div>
-                            
+                            ) : view === 'per_pages' ? (
+                                (userProfile === ADMIN_PROFILE || (userProfile || '').toUpperCase() === 'SHYQA')
+                                    ? <PerPagesTab userProfile={userProfile} />
+                                    : <div className="p-8 text-center text-sm text-slate-500">You don't have access to this section.</div>
                             ) : view === 'mechanic' ? (
                                 <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-0">
                                     <div className="inline-flex w-fit items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
