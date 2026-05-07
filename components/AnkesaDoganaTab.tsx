@@ -466,6 +466,10 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         />
       )}
 
+      {infoFor && (
+        <CarInfoModal sale={infoFor} onClose={() => setInfoFor(null)} />
+      )}
+
       {groupMenu && (
         <div className="fixed inset-0 z-[70]" onClick={() => setGroupMenu(null)} onContextMenu={(e) => { e.preventDefault(); setGroupMenu(null); }}>
           <div
