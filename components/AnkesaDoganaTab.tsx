@@ -271,7 +271,12 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const fileCount = Object.values(c?.files || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
     return (
       <li key={sale.id} className="px-3 sm:px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 hover:bg-slate-50/60 transition-colors">
-        <div className="flex-1 min-w-[120px] basis-full sm:basis-0 pr-1 order-1">
+        <button
+          type="button"
+          onClick={() => setInfoFor(sale)}
+          className="flex-1 min-w-[120px] basis-full sm:basis-0 pr-1 order-1 text-left hover:bg-slate-100/60 -mx-1 px-1 rounded transition-colors"
+          title="View car info"
+        >
           <div className="text-sm font-semibold text-slate-900 truncate">
             {sale.brand} {sale.model}
             {sale.year ? <span className="text-slate-400 font-normal"> · {sale.year}</span> : null}
@@ -279,7 +284,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           <div className="text-[11px] text-slate-500 truncate">
             {sale.plateNumber || sale.vin || sale.buyerName || '—'}
           </div>
-        </div>
+        </button>
 
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto order-2">
           <button
