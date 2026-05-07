@@ -23,7 +23,9 @@ interface ProfileSelectorProps {
 
 export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, onEdit, onRestore, avatars, onEditAvatar, rememberDefault = false, verifyAdminPassword }: ProfileSelectorProps) {
     const ADMIN_PROFILE = 'Robert';
-    const PASSWORD_PROFILES = new Set(['Robert', 'SHYQA']);
+    // All profiles now require a password (Robert/Shyqa unchanged, others use `<name>123`)
+    const PASSWORD_PROFILES = new Set<string>();
+    const requiresPasswordPrompt = (_p: string) => true;
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
@@ -95,7 +97,7 @@ export default function ProfileSelector({ profiles, onSelect, onAdd, onDelete, o
     };
 
     const handleSelect = async (p: string) => {
-        if (PASSWORD_PROFILES.has(p)) {
+        if (requiresPasswordPrompt(p)) {
             setPendingProfile(p);
             setAdminAction('select');
             setShowPasswordModal(true);
