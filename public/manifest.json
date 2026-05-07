@@ -1,6 +1,6 @@
 {
-  "name": "KORAUTO — Car Sales Management",
-  "short_name": "KORAUTO",
+  "name": "Korautogroup",
+  "short_name": "Korautogroup",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
