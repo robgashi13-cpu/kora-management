@@ -81,7 +81,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_removed_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
   });
   const [showArchived, setShowArchived] = useState(false);
-  const [groupMenu, setGroupMenu] = useState<{ key: string; label: string; x: number; y: number } | null>(null);
+  const [groupMenu, setGroupMenu] = useState<{ key: string; label: string; x: number; y: number; sales: CarSale[] } | null>(null);
+  const [groupZipping, setGroupZipping] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persistArchived = (next: Set<string>) => {
