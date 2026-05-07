@@ -124,6 +124,55 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
   };
 
+  const handleCreateGroupZip = async (label: string, groupSales: CarSale[]) => {
+    // exclude cars with status nuk_ka_rritje
+    const eligible = groupSales.filter((s) => (complaints[s.id]?.status || 'not_started') !== 'nuk_ka_rritje');
+    if (eligible.length === 0) { alert('No eligible cars in this group (all marked "Nuk ka rritje").'); return; }
+    setGroupZipping(true);
+    setGroupMenu(null);
+    try {
+      const zip = new JSZip();
+      const orderedCats: FileCategory[] = ['dokumentat', 'dudat', 'dudat_me_rritje', 'faturat', 'transferi_bankar'];
+      const safeGroupName = (label || 'group').replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const root = zip.folder(safeGroupName) || zip;
+      for (const sale of eligible) {
+        const carParts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
+        const carLabel = (carParts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+        const carFolder = root.folder(carLabel) || root;
+        const carFiles = complaints[sale.id]?.files || {};
+        for (const cat of orderedCats) {
+          const catFolder = carFolder.folder(CATEGORY_LABELS[cat]) || carFolder;
+          const arr = carFiles[cat];
+          if (!arr || arr.length === 0) continue;
+          for (const f of arr) {
+            try {
+              const res = await fetch(f.url);
+              if (!res.ok) continue;
+              const blob = await res.blob();
+              catFolder.file(f.name, blob);
+            } catch (err) {
+              console.error('Failed to fetch', f.name, err);
+            }
+          }
+        }
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeGroupName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Group zip failed', e);
+      alert('Failed to create group ZIP');
+    } finally {
+      setGroupZipping(false);
+    }
+  };
+
   const client = useMemo(() => {
     const FALLBACK_URL = 'https://tbjihsqkbmjiblpxzojo.supabase.co';
     const FALLBACK_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE';
