@@ -71,6 +71,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [refundFor, setRefundFor] = useState<{ id: string; current: number } | null>(null);
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
+  const [infoFor, setInfoFor] = useState<CarSale | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [archivedGroups, setArchivedGroups] = useState<Set<string>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_archived_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
@@ -270,7 +271,12 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const fileCount = Object.values(c?.files || {}).reduce((acc, arr) => acc + (arr?.length || 0), 0);
     return (
       <li key={sale.id} className="px-3 sm:px-4 py-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 hover:bg-slate-50/60 transition-colors">
-        <div className="flex-1 min-w-[120px] basis-full sm:basis-0 pr-1 order-1">
+        <button
+          type="button"
+          onClick={() => setInfoFor(sale)}
+          className="flex-1 min-w-[120px] basis-full sm:basis-0 pr-1 order-1 text-left hover:bg-slate-100/60 -mx-1 px-1 rounded transition-colors"
+          title="View car info"
+        >
           <div className="text-sm font-semibold text-slate-900 truncate">
             {sale.brand} {sale.model}
             {sale.year ? <span className="text-slate-400 font-normal"> · {sale.year}</span> : null}
@@ -278,7 +284,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           <div className="text-[11px] text-slate-500 truncate">
             {sale.plateNumber || sale.vin || sale.buyerName || '—'}
           </div>
-        </div>
+        </button>
 
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto order-2">
           <button
@@ -458,6 +464,10 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             void upsert(filesFor.id, bucket, { files });
           }}
         />
+      )}
+
+      {infoFor && (
+        <CarInfoModal sale={infoFor} onClose={() => setInfoFor(null)} />
       )}
 
       {groupMenu && (
@@ -684,6 +694,71 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
             Create ZIP
           </button>
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors">Done</button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Car Info Modal — shows car details only (no prices/profits)
+// ─────────────────────────────────────────────────────────────────
+
+function CarInfoModal({ sale, onClose }: { sale: CarSale; onClose: () => void }) {
+  const fmtDate = (d?: string | null) => {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString(); } catch { return d; }
+  };
+  const rows: Array<[string, React.ReactNode]> = [
+    ['Brand', sale.brand || '—'],
+    ['Model', sale.model || '—'],
+    ['Year', sale.year || '—'],
+    ['KM', sale.km ? sale.km.toLocaleString() : '—'],
+    ['Color', sale.color || '—'],
+    ['Plate Number', sale.plateNumber || '—'],
+    ['VIN', sale.vin || '—'],
+    ['Buyer', sale.buyerName || '—'],
+    ['Buyer Personal ID', sale.buyerPersonalId || '—'],
+    ['Seller', sale.sellerName || '—'],
+    ['Shipping Name', sale.shippingName || '—'],
+    ['Shipping Date', fmtDate(sale.shippingDate)],
+    ['Status', sale.status || '—'],
+    ['Group', sale.group || '—'],
+    ['Sold By', sale.soldBy || '—'],
+  ];
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in p-3" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <header className="flex items-start justify-between px-5 py-4 border-b border-slate-200">
+          <div className="min-w-0">
+            <h4 className="text-base font-bold text-slate-900 truncate">
+              {sale.brand} {sale.model}
+              {sale.year ? <span className="text-slate-400 font-normal"> · {sale.year}</span> : null}
+            </h4>
+            <div className="text-xs text-slate-500 truncate">Car Information</div>
+          </div>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Close">
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </header>
+        <div className="flex-1 overflow-y-auto p-5">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex flex-col border-b border-slate-100 pb-1.5">
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{label}</dt>
+                <dd className="text-sm text-slate-900 truncate">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {sale.notes && (
+            <div className="mt-4">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Notes</div>
+              <div className="text-sm text-slate-800 bg-slate-50 border border-slate-200 rounded-lg p-2.5 whitespace-pre-wrap">{sale.notes}</div>
+            </div>
+          )}
+        </div>
+        <footer className="px-5 py-3 border-t border-slate-200 flex justify-end">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors">Close</button>
         </footer>
       </div>
     </div>
