@@ -1574,3 +1574,54 @@ main > *,
     transition: none !important;
   }
 }
+
+/* ============================================================
+   Global Mobile Optimization Pass (<= 768px)
+   Safe, conservative rules. Use .mobile-stack on a grid to
+   collapse to a single column. Add .keep-desktop to opt out.
+   ============================================================ */
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; }
+  img, svg, video, canvas { max-width: 100%; height: auto; }
+
+  /* Inputs: prevent iOS auto-zoom (>=16px), comfy tap height */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select, textarea {
+    font-size: 16px;
+    min-height: 40px;
+  }
+  textarea { min-height: 80px; }
+
+  /* Long IDs / VINs / emails: never break layout */
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Sticky bottom action bars get safe-area padding */
+  .mobile-sticky-actions {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  /* Opt-in: collapse a grid to one column on mobile */
+  .mobile-stack { grid-template-columns: 1fr !important; }
+
+  /* Opt-in: horizontal scroll a wide block (e.g. tables) */
+  .mobile-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Opt-in: full-bleed dialog filling the viewport */
+  .mobile-fullscreen-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .text-xl { font-size: 1.05rem; }
+  .text-2xl { font-size: 1.2rem; }
+}
+
