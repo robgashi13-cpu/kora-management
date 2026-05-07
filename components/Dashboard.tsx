@@ -77,7 +77,7 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 // Profiles with restricted tab access (profile name → allowed nav item IDs)
 // If a profile is NOT in this map, they get full access (subject to adminOnly checks)
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
-    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC']),
+    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC', 'PER_PAGES']),
     'kr': new Set(['MECHANIC', 'INSPECTIONS']),
     'besi': new Set(['ANKESA_DOGANA']),
 };
@@ -577,6 +577,7 @@ const navItems: NavItem[] = [
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
+    { id: 'PER_PAGES', label: 'Për Pages', icon: FileText, view: 'per_pages', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
