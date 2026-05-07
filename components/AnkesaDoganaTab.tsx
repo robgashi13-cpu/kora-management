@@ -421,7 +421,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pb-24 md:pb-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pb-24 md:pb-32 items-start">
           {(filter === 'all' || filter === 'sale') && renderSection('On Sale', grouped.sale, 'No on-sale cars this year.', 'sale')}
           {(filter === 'all' || filter === 'shipped') && renderSection('Shipped', grouped.shipped, 'No shipped cars this year.', 'shipped')}
           {(filter === 'all' || filter === 'autosalloni') && renderSection('Autosalloni', grouped.autosalloni, 'No autosalloni cars this year.', 'autosalloni')}
