@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw } from 'lucide-react';
+import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw, Download } from 'lucide-react';
 import JSZip from 'jszip';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
@@ -81,7 +81,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_removed_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
   });
   const [showArchived, setShowArchived] = useState(false);
-  const [groupMenu, setGroupMenu] = useState<{ key: string; label: string; x: number; y: number } | null>(null);
+  const [groupMenu, setGroupMenu] = useState<{ key: string; label: string; x: number; y: number; sales: CarSale[] } | null>(null);
+  const [groupZipping, setGroupZipping] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persistArchived = (next: Set<string>) => {
@@ -107,20 +108,69 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const r = new Set(removedGroups); r.delete(key); persistRemoved(r);
   };
 
-  const openGroupMenu = (key: string, label: string, x: number, y: number) => {
+  const openGroupMenu = (key: string, label: string, x: number, y: number, groupSales: CarSale[]) => {
     const maxX = typeof window !== 'undefined' ? window.innerWidth - 200 : x;
-    const maxY = typeof window !== 'undefined' ? window.innerHeight - 140 : y;
-    setGroupMenu({ key, label, x: Math.min(x, maxX), y: Math.min(y, maxY) });
+    const maxY = typeof window !== 'undefined' ? window.innerHeight - 180 : y;
+    setGroupMenu({ key, label, x: Math.min(x, maxX), y: Math.min(y, maxY), sales: groupSales });
   };
 
-  const startLongPress = (key: string, label: string, e: React.TouchEvent) => {
+  const startLongPress = (key: string, label: string, e: React.TouchEvent, groupSales: CarSale[]) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     const t = e.touches[0];
     const x = t?.clientX ?? 0, y = t?.clientY ?? 0;
-    longPressTimer.current = setTimeout(() => openGroupMenu(key, label, x, y), 3000);
+    longPressTimer.current = setTimeout(() => openGroupMenu(key, label, x, y, groupSales), 3000);
   };
   const cancelLongPress = () => {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  };
+
+  const handleCreateGroupZip = async (label: string, groupSales: CarSale[]) => {
+    // exclude cars with status nuk_ka_rritje
+    const eligible = groupSales.filter((s) => (complaints[s.id]?.status || 'not_started') !== 'nuk_ka_rritje');
+    if (eligible.length === 0) { alert('No eligible cars in this group (all marked "Nuk ka rritje").'); return; }
+    setGroupZipping(true);
+    setGroupMenu(null);
+    try {
+      const zip = new JSZip();
+      const orderedCats: FileCategory[] = ['dokumentat', 'dudat', 'dudat_me_rritje', 'faturat', 'transferi_bankar'];
+      const safeGroupName = (label || 'group').replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const root = zip.folder(safeGroupName) || zip;
+      for (const sale of eligible) {
+        const carParts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
+        const carLabel = (carParts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+        const carFolder = root.folder(carLabel) || root;
+        const carFiles = complaints[sale.id]?.files || {};
+        for (const cat of orderedCats) {
+          const catFolder = carFolder.folder(CATEGORY_LABELS[cat]) || carFolder;
+          const arr = carFiles[cat];
+          if (!arr || arr.length === 0) continue;
+          for (const f of arr) {
+            try {
+              const res = await fetch(f.url);
+              if (!res.ok) continue;
+              const blob = await res.blob();
+              catFolder.file(f.name, blob);
+            } catch (err) {
+              console.error('Failed to fetch', f.name, err);
+            }
+          }
+        }
+      }
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeGroupName}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Group zip failed', e);
+      alert('Failed to create group ZIP');
+    } finally {
+      setGroupZipping(false);
+    }
   };
 
   const client = useMemo(() => {
@@ -352,8 +402,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
                   <button
                     type="button"
                     onClick={() => toggleGroup(key)}
-                    onContextMenu={(e) => { e.preventDefault(); openGroupMenu(key, label, e.clientX, e.clientY); }}
-                    onTouchStart={(e) => startLongPress(key, label, e)}
+                    onContextMenu={(e) => { e.preventDefault(); openGroupMenu(key, label, e.clientX, e.clientY, groupItems.map(g => g.sale)); }}
+                    onTouchStart={(e) => startLongPress(key, label, e, groupItems.map(g => g.sale))}
                     onTouchEnd={cancelLongPress}
                     onTouchMove={cancelLongPress}
                     onTouchCancel={cancelLongPress}
@@ -479,6 +529,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 truncate">{groupMenu.label}</div>
+            <button
+              type="button"
+              onClick={() => handleCreateGroupZip(groupMenu.label, groupMenu.sales)}
+              disabled={groupZipping}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> Create ZIP of group
+            </button>
             {archivedGroups.has(groupMenu.key) || removedGroups.has(groupMenu.key) ? (
               <button type="button" onClick={() => { restoreGroup(groupMenu.key); setGroupMenu(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                 <RotateCcw className="w-3.5 h-3.5" /> Restore
@@ -491,6 +549,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             <button type="button" onClick={() => { if (confirm(`Remove group "${groupMenu.label}" from this view?`)) removeGroup(groupMenu.key); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
               <Trash2 className="w-3.5 h-3.5" /> Remove from view
             </button>
+          </div>
+        </div>
+      )}
+      {groupZipping && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 px-6 py-5 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-700" />
+            <span className="text-sm font-semibold text-slate-800">Creating group ZIP…</span>
           </div>
         </div>
       )}
