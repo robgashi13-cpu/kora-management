@@ -529,6 +529,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 truncate">{groupMenu.label}</div>
+            <button
+              type="button"
+              onClick={() => handleCreateGroupZip(groupMenu.label, groupMenu.sales)}
+              disabled={groupZipping}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> Create ZIP of group
+            </button>
             {archivedGroups.has(groupMenu.key) || removedGroups.has(groupMenu.key) ? (
               <button type="button" onClick={() => { restoreGroup(groupMenu.key); setGroupMenu(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                 <RotateCcw className="w-3.5 h-3.5" /> Restore
