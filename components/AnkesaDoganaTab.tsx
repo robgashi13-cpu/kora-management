@@ -108,17 +108,17 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const r = new Set(removedGroups); r.delete(key); persistRemoved(r);
   };
 
-  const openGroupMenu = (key: string, label: string, x: number, y: number) => {
+  const openGroupMenu = (key: string, label: string, x: number, y: number, groupSales: CarSale[]) => {
     const maxX = typeof window !== 'undefined' ? window.innerWidth - 200 : x;
-    const maxY = typeof window !== 'undefined' ? window.innerHeight - 140 : y;
-    setGroupMenu({ key, label, x: Math.min(x, maxX), y: Math.min(y, maxY) });
+    const maxY = typeof window !== 'undefined' ? window.innerHeight - 180 : y;
+    setGroupMenu({ key, label, x: Math.min(x, maxX), y: Math.min(y, maxY), sales: groupSales });
   };
 
-  const startLongPress = (key: string, label: string, e: React.TouchEvent) => {
+  const startLongPress = (key: string, label: string, e: React.TouchEvent, groupSales: CarSale[]) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
     const t = e.touches[0];
     const x = t?.clientX ?? 0, y = t?.clientY ?? 0;
-    longPressTimer.current = setTimeout(() => openGroupMenu(key, label, x, y), 3000);
+    longPressTimer.current = setTimeout(() => openGroupMenu(key, label, x, y, groupSales), 3000);
   };
   const cancelLongPress = () => {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
