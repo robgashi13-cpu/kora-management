@@ -1576,79 +1576,52 @@ main > *,
 }
 
 /* ============================================================
-   Global Mobile Optimization Pass
-   Applies adaptive rules to all tabs, modals, tables and forms
-   on phones (<= 768px) without affecting desktop.
+   Global Mobile Optimization Pass (<= 768px)
+   Safe, conservative rules. Use .mobile-stack on a grid to
+   collapse to a single column. Add .keep-desktop to opt out.
    ============================================================ */
 @media (max-width: 768px) {
   html, body { overflow-x: hidden; }
-
-  /* Prevent any element from overflowing the viewport width */
-  * { max-width: 100vw; }
   img, svg, video, canvas { max-width: 100%; height: auto; }
 
-  /* Ensure all modals/dialogs fit within viewport with safe padding */
-  [class*="fixed"][class*="inset-0"] > [class*="rounded"],
-  [role="dialog"] {
-    max-width: calc(100vw - 16px) !important;
-    max-height: calc(100dvh - 24px) !important;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Modal inner padding: tighten on mobile */
-  [role="dialog"] > div,
-  [class*="modal"] [class*="p-8"] { padding: 1rem !important; }
-  [class*="p-6"]:not(.keep-desktop-padding) { padding: 0.75rem !important; }
-
-  /* Inputs / selects / textareas: prevent iOS auto-zoom (>=16px) */
-  input, select, textarea {
-    font-size: 16px !important;
+  /* Inputs: prevent iOS auto-zoom (>=16px), comfy tap height */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select, textarea {
+    font-size: 16px;
     min-height: 40px;
   }
   textarea { min-height: 80px; }
 
-  /* Tables: allow horizontal scroll instead of overflowing the page */
-  table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  thead, tbody, tr { width: 100%; }
+  /* Long IDs / VINs / emails: never break layout */
+  .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
 
-  /* Common grid containers: collapse to single column on mobile */
-  .grid.grid-cols-2:not(.keep-mobile-cols),
-  .grid.grid-cols-3:not(.keep-mobile-cols),
-  .grid.grid-cols-4:not(.keep-mobile-cols),
-  .grid.grid-cols-5:not(.keep-mobile-cols),
-  .grid.grid-cols-6:not(.keep-mobile-cols) {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Long words / IDs / VINs: never break layout */
-  .truncate-fallback, .break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
-
-  /* Button rows that wrap awkwardly: allow wrap with consistent gap */
-  .flex.gap-2, .flex.gap-3, .flex.gap-4 { flex-wrap: wrap; }
-
-  /* Sticky bottom action safe-area */
-  .mobile-sticky-actions, .app-mobile-nav {
+  /* Sticky bottom action bars get safe-area padding */
+  .mobile-sticky-actions {
     padding-bottom: calc(8px + env(safe-area-inset-bottom));
   }
 
-  /* Reduce overly large titles on mobile */
-  h1 { font-size: clamp(1.25rem, 5vw, 1.75rem) !important; line-height: 1.2; }
-  h2 { font-size: clamp(1.05rem, 4.2vw, 1.5rem) !important; line-height: 1.25; }
-  h3 { font-size: clamp(0.95rem, 3.6vw, 1.25rem) !important; line-height: 1.3; }
+  /* Opt-in: collapse a grid to one column on mobile */
+  .mobile-stack { grid-template-columns: 1fr !important; }
 
-  /* Cards: tighter radius + padding for density */
-  .rounded-2xl { border-radius: 1rem; }
-  .rounded-3xl { border-radius: 1.25rem; }
+  /* Opt-in: horizontal scroll a wide block (e.g. tables) */
+  .mobile-scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-  /* Prevent absolutely positioned action clusters from overflowing right edge */
-  .absolute.right-0 { right: max(0px, env(safe-area-inset-right)); }
-  .absolute.left-0  { left:  max(0px, env(safe-area-inset-left));  }
+  /* Opt-in: full-bleed dialog filling the viewport */
+  .mobile-fullscreen-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
 }
 
 /* Very small phones */
 @media (max-width: 380px) {
-  [role="dialog"] > div,
-  [class*="modal"] [class*="p-4"] { padding: 0.625rem !important; }
-  h1 { font-size: 1.15rem !important; }
+  .text-xl { font-size: 1.05rem; }
+  .text-2xl { font-size: 1.2rem; }
 }
+
