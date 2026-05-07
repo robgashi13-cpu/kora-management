@@ -353,8 +353,8 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
                   <button
                     type="button"
                     onClick={() => toggleGroup(key)}
-                    onContextMenu={(e) => { e.preventDefault(); openGroupMenu(key, label, e.clientX, e.clientY); }}
-                    onTouchStart={(e) => startLongPress(key, label, e)}
+                    onContextMenu={(e) => { e.preventDefault(); openGroupMenu(key, label, e.clientX, e.clientY, groupItems.map(g => g.sale)); }}
+                    onTouchStart={(e) => startLongPress(key, label, e, groupItems.map(g => g.sale))}
                     onTouchEnd={cancelLongPress}
                     onTouchMove={cancelLongPress}
                     onTouchCancel={cancelLongPress}
