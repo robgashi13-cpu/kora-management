@@ -1625,3 +1625,278 @@ main > *,
   .text-2xl { font-size: 1.2rem; }
 }
 
+/* ============================================================
+   MOBILE UI/UX TOTAL OVERHAUL (<= 768px)
+   Bold redesign: native iOS feel, larger tap targets,
+   8px rhythm, generous whitespace, consistent alignment,
+   safer modals, better tables → cards, premium typography.
+   Tablet refinements (769–1024px) included where helpful.
+   Desktop layout untouched.
+   ============================================================ */
+
+/* ---------- Mobile foundations ---------- */
+@media (max-width: 768px) {
+  :root {
+    --m-pad: 14px;
+    --m-gap: 10px;
+    --m-radius: 14px;
+    --m-radius-lg: 18px;
+    --m-tap: 44px;
+    --m-shadow-sm: 0 1px 2px rgba(15,23,42,0.05);
+    --m-shadow-md: 0 4px 14px rgba(15,23,42,0.08);
+    --m-shadow-lg: 0 10px 30px -8px rgba(15,23,42,0.18);
+  }
+
+  body {
+    font-size: 15px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Typography rhythm */
+  h1 { font-size: clamp(1.35rem, 5.2vw, 1.6rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1.18; }
+  h2 { font-size: clamp(1.1rem, 4.6vw, 1.3rem);  font-weight: 750; letter-spacing: -0.015em; line-height: 1.22; }
+  h3 { font-size: 1.0625rem; font-weight: 700; letter-spacing: -0.01em; }
+  h4 { font-size: 0.9375rem; font-weight: 650; }
+  p, li { font-size: 0.9375rem; }
+  small, .text-xs { font-size: 0.75rem; }
+
+  /* Tap targets */
+  button, [role="button"], a.ui-control, .btn, .ui-control {
+    min-height: var(--m-tap);
+    border-radius: var(--m-radius);
+  }
+  .ui-control:active, button:active { transform: scale(0.97); }
+
+  /* Inputs unified */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select, textarea {
+    font-size: 16px;
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    border-radius: 12px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: hsl(var(--ring));
+    box-shadow: 0 0 0 3px hsl(var(--ring) / 0.15);
+  }
+  textarea { min-height: 96px; line-height: 1.45; }
+  label { font-size: 0.8125rem; font-weight: 600; color: hsl(var(--muted-foreground)); }
+
+  /* App shell */
+  .app-shell { padding-top: env(safe-area-inset-top); }
+  .app-topbar {
+    position: sticky; top: 0; z-index: 40;
+    background: hsl(var(--background) / 0.92);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid hsl(var(--border) / 0.7);
+    padding: 10px var(--m-pad);
+    padding-top: calc(10px + env(safe-area-inset-top));
+    min-height: 52px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .app-content {
+    padding: var(--m-pad);
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    min-height: 100dvh;
+  }
+  .app-mobile-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    display: flex; justify-content: space-around; align-items: stretch;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: hsl(var(--background) / 0.95);
+    backdrop-filter: saturate(180%) blur(18px);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    border-top: 1px solid hsl(var(--border));
+    box-shadow: 0 -4px 18px rgba(15,23,42,0.06);
+  }
+  .mobile-nav-item, .app-mobile-nav button, .app-mobile-nav a {
+    flex: 1; min-height: 52px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; font-size: 10.5px; font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    border-radius: 12px;
+    padding: 4px 2px;
+  }
+  .mobile-nav-item-active, .app-mobile-nav [aria-current="page"] {
+    color: hsl(var(--foreground));
+    background: hsl(var(--secondary));
+  }
+
+  /* Cards & containers */
+  .premium-card,
+  [class*="rounded-xl"].border,
+  [class*="rounded-2xl"].border {
+    border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-sm);
+  }
+
+  /* Headers within pages — consistent alignment */
+  .page-header,
+  [data-page-header] {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  /* Generic flex/grid → stack on mobile */
+  .mobile-stack { display: grid !important; grid-template-columns: 1fr !important; gap: var(--m-gap) !important; }
+  .grid-cols-2.mobile-keep, .grid-cols-3.mobile-keep, .grid-cols-4.mobile-keep { /* opt-out marker */ }
+  .grid-cols-3:not(.mobile-keep), .grid-cols-4:not(.mobile-keep), .grid-cols-5:not(.mobile-keep), .grid-cols-6:not(.mobile-keep) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--m-gap) !important;
+  }
+
+  /* Tables → make them scroll cleanly */
+  table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table thead th { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  table td, table th { padding: 8px 10px; white-space: nowrap; }
+
+  /* Modals / dialogs full-screen feel */
+  [role="dialog"],
+  .modal-shell,
+  [data-modal="true"] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    inset: 0 !important;
+    display: flex; flex-direction: column;
+  }
+  [role="dialog"] > * { min-height: 0; }
+  [role="dialog"] header,
+  [data-modal-header="true"] {
+    position: sticky; top: 0; z-index: 5;
+    background: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+    padding: 12px var(--m-pad);
+    padding-top: calc(12px + env(safe-area-inset-top));
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  [data-modal-body="true"] {
+    flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: var(--m-pad);
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  [data-modal-footer="true"],
+  .mobile-sticky-actions {
+    position: sticky; bottom: 0; z-index: 5;
+    background: hsl(var(--background) / 0.96);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-top: 1px solid hsl(var(--border));
+    padding: 10px var(--m-pad);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 8px; align-items: center;
+  }
+  [data-modal-footer="true"] > button,
+  .mobile-sticky-actions > button {
+    flex: 1; min-height: 48px; font-weight: 650; border-radius: 12px;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  button.primary,
+  [data-variant="primary"] {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--m-shadow-md);
+  }
+  .btn-secondary,
+  button.secondary,
+  [data-variant="secondary"] {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+
+  /* FAB */
+  .fab, [data-fab="true"] {
+    position: fixed;
+    right: 16px;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    width: 58px; height: 58px;
+    border-radius: 999px;
+    display: flex; align-items: center; justify-content: center;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 12px 28px -6px rgba(15,23,42,0.35), 0 4px 10px rgba(15,23,42,0.18);
+    z-index: 45;
+  }
+  .fab:active { transform: scale(0.94); }
+
+  /* Lists / cards spacing rhythm */
+  .cars-sold-row,
+  [data-list-row="true"] {
+    border-radius: var(--m-radius);
+    padding: 12px 14px !important;
+    margin-bottom: 10px;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--m-shadow-sm);
+    white-space: normal !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.35 !important;
+    min-height: 64px;
+  }
+
+  /* Filter / search bars */
+  .filter-bar, [data-filter-bar="true"] {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding: 10px 0; margin-bottom: 10px;
+  }
+  .filter-bar > * { flex: 1 1 140px; min-width: 0; }
+
+  /* Chips & badges */
+  .chip, .badge, [data-chip="true"] {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 0.6875rem; font-weight: 650;
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+
+  /* Hide elements that don't make sense on mobile */
+  .hide-mobile, [data-hide-mobile="true"] { display: none !important; }
+
+  /* Side drawer/menu safe-area */
+  [data-drawer="true"], aside.drawer {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Selects with nicer chevron spacing */
+  select { padding-right: 32px; background-position: right 10px center; }
+
+  /* Long IDs etc */
+  .truncate-mobile { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* ---------- Tablet refinement (769–1024px) ---------- */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body { font-size: 14.5px; }
+  .app-content { padding: 18px; }
+  [role="dialog"] { border-radius: 18px; }
+  .grid-cols-5:not(.mobile-keep), .grid-cols-6:not(.mobile-keep) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Tiny devices polish */
+@media (max-width: 360px) {
+  :root { --m-pad: 12px; }
+  body { font-size: 14px; }
+  .mobile-nav-item, .app-mobile-nav button { font-size: 9.5px; }
+  .fab { width: 52px; height: 52px; }
+}
+
+
