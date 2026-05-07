@@ -4719,7 +4719,7 @@ export default function Dashboard() {
                         <div className="flex flex-col flex-1 min-h-0">
 
                             {view === 'ankesa_dogana' ? (
-                                ['Robert', 'Renato', 'Besi'].includes(userProfile || '')
+                                ['robert', 'renato', 'besi'].includes((userProfile || '').toLowerCase())
                                     ? <AnkesaDoganaTab sales={sales} userProfile={userProfile} />
                                     : <div className="p-8 text-center text-sm text-slate-500">You don't have access to this section.</div>
                             ) : view === 'per_pages' ? (
