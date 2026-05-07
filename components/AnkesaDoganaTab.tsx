@@ -642,7 +642,7 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
 
   const carLabel = useMemo(() => {
     const parts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
-    return (parts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+    return sanitizeFileName(parts || `car-${sale.id.slice(0, 6)}`, 'car');
   }, [sale]);
 
   const handleCreateZip = async () => {
@@ -651,30 +651,36 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
     setZipping(true);
     try {
       const zip = new JSZip();
+      const root = zip.folder(carLabel) || zip;
       for (const cat of orderedCats) {
+        const folder = root.folder(sanitizeFileName(CATEGORY_LABELS[cat], cat)) || root;
         const arr = files[cat];
-        const folder = zip.folder(CATEGORY_LABELS[cat]) || zip;
         if (!arr || arr.length === 0) continue;
+        const usedFileNames = new Set<string>();
         for (const f of arr) {
-          try {
-            const res = await fetch(f.url);
-            if (!res.ok) continue;
-            const blob = await res.blob();
-            folder.file(f.name, blob);
-          } catch (err) {
-            console.error('Failed to fetch', f.name, err);
-          }
+          const blob = await fetchAsBlob(f.url);
+          if (!blob) continue;
+          const safe = uniqueName(usedFileNames, sanitizeFileName(f.name, 'file'));
+          folder.file(safe, blob, { binary: true, date: f.uploadedAt ? new Date(f.uploadedAt) : new Date() });
         }
       }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
+      const blob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+        mimeType: 'application/zip',
+        platform: 'UNIX',
+      });
+      const out = new Blob([blob], { type: 'application/zip' });
+      const url = URL.createObjectURL(out);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${carLabel}.zip`;
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
       console.error('Zip failed', e);
       alert('Failed to create ZIP');
