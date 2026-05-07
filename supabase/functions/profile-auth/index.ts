@@ -72,9 +72,7 @@ Deno.serve(async (req) => {
 
     // Check if this profile requires a password
     if (requiresPassword(profile)) {
-      const expectedPassword = profile.is_admin
-        ? ADMIN_PASSWORD
-        : PROFILE_PASSWORDS[profile.profile_name.toLowerCase()];
+      const expectedPassword = getExpectedPassword(profile);
       if (!password || password !== expectedPassword) {
         return new Response(
           JSON.stringify({ error: "Incorrect password", requiresPassword: true }),
