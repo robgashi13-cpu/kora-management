@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Upload, FileText, Trash2, Download, Loader2, Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { cloudClient as supabase } from '@/services/cloudAuth';
 
 interface PerPagesUpload {
     id: string;
