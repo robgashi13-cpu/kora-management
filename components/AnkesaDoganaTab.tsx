@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw } from 'lucide-react';
+import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw, Download } from 'lucide-react';
 import JSZip from 'jszip';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
