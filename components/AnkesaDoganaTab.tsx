@@ -524,14 +524,15 @@ function FilesModal({ sale, complaint, client, onClose, onChange }: FilesModalPr
   }, [sale]);
 
   const handleCreateZip = async () => {
-    const all = Object.entries(files) as [FileCategory, StoredFile[] | undefined][];
-    if (all.every(([, arr]) => !arr || arr.length === 0)) return;
+    const orderedCats: FileCategory[] = ['dokumentat', 'dudat', 'dudat_me_rritje', 'faturat', 'transferi_bankar'];
+    if (orderedCats.every((c) => !files[c] || files[c]!.length === 0)) return;
     setZipping(true);
     try {
       const zip = new JSZip();
-      for (const [cat, arr] of all) {
-        if (!arr || arr.length === 0) continue;
+      for (const cat of orderedCats) {
+        const arr = files[cat];
         const folder = zip.folder(CATEGORY_LABELS[cat]) || zip;
+        if (!arr || arr.length === 0) continue;
         for (const f of arr) {
           try {
             const res = await fetch(f.url);
