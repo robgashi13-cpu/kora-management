@@ -29,6 +29,55 @@ const CATEGORY_LABELS: Record<FileCategory, string> = {
   transferi_bankar: 'Transferi bankar',
 };
 
+// Sanitize a filename so the resulting ZIP opens cleanly on Windows/macOS/Linux/iOS/Android.
+// - Strips path separators and characters illegal on Windows (<>:"/\|?*)
+// - Removes control chars
+// - Avoids reserved Windows device names (CON, PRN, AUX, NUL, COM1..9, LPT1..9)
+// - Trims trailing dots/spaces (illegal on Windows)
+// - Collapses to ASCII-safe fallback when needed and caps length
+const sanitizeFileName = (raw: string, fallback = 'file'): string => {
+  let n = (raw || '').toString().normalize('NFC');
+  n = n.replace(/[\\/]+/g, '_');
+  // eslint-disable-next-line no-control-regex
+  n = n.replace(/[\x00-\x1f<>:"|?*]+/g, '');
+  n = n.replace(/\s+/g, ' ').trim();
+  n = n.replace(/[. ]+$/g, '');
+  if (!n) n = fallback;
+  const reserved = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
+  if (reserved.test(n)) n = `_${n}`;
+  if (n.length > 180) {
+    const dot = n.lastIndexOf('.');
+    if (dot > 0 && n.length - dot <= 10) n = n.slice(0, 180 - (n.length - dot)) + n.slice(dot);
+    else n = n.slice(0, 180);
+  }
+  return n;
+};
+
+// Ensure unique filenames inside a folder by suffixing " (2)", " (3)", ...
+const uniqueName = (used: Set<string>, name: string): string => {
+  if (!used.has(name)) { used.add(name); return name; }
+  const dot = name.lastIndexOf('.');
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  const ext = dot > 0 ? name.slice(dot) : '';
+  let i = 2;
+  while (used.has(`${base} (${i})${ext}`)) i++;
+  const out = `${base} (${i})${ext}`;
+  used.add(out);
+  return out;
+};
+
+// Fetch a remote file as a blob, bypassing cache so we always get the latest bytes.
+const fetchAsBlob = async (url: string): Promise<Blob | null> => {
+  try {
+    const res = await fetch(url, { cache: 'no-store', mode: 'cors' });
+    if (!res.ok) return null;
+    return await res.blob();
+  } catch (e) {
+    console.error('fetchAsBlob failed', url, e);
+    return null;
+  }
+};
+
 interface StoredFile {
   name: string;
   path: string;
