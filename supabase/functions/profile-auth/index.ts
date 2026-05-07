@@ -18,14 +18,24 @@ const getInternalPassword = (email: string) =>
 const ADMIN_PASSWORD = Deno.env.get("ADMIN_PASSWORD") || "password2";
 
 // Per-profile passwords (profile_name lowercase → password)
+// Shyqa keeps her existing password. Robert (admin) uses ADMIN_PASSWORD.
+// Every other non-admin profile uses `<profile_name_lowercase>123`.
 const PROFILE_PASSWORDS: Record<string, string> = {
   shyqa: "12345",
 };
 
-const requiresPassword = (profile: { profile_name: string; is_admin: boolean }): boolean => {
-  if (profile.is_admin) return true;
-  return profile.profile_name.toLowerCase() in PROFILE_PASSWORDS;
+const getExpectedPassword = (profile: { profile_name: string; is_admin: boolean }): string => {
+  if (profile.is_admin) return ADMIN_PASSWORD;
+  const key = profile.profile_name.toLowerCase();
+  if (key in PROFILE_PASSWORDS) return PROFILE_PASSWORDS[key];
+  return `${key}123`;
 };
+
+const requiresPassword = (_profile: { profile_name: string; is_admin: boolean }): boolean => {
+  // All profiles now require a password.
+  return true;
+};
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,9 +72,7 @@ Deno.serve(async (req) => {
 
     // Check if this profile requires a password
     if (requiresPassword(profile)) {
-      const expectedPassword = profile.is_admin
-        ? ADMIN_PASSWORD
-        : PROFILE_PASSWORDS[profile.profile_name.toLowerCase()];
+      const expectedPassword = getExpectedPassword(profile);
       if (!password || password !== expectedPassword) {
         return new Response(
           JSON.stringify({ error: "Incorrect password", requiresPassword: true }),
