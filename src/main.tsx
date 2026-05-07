@@ -6,10 +6,15 @@ import '../app/globals.css';
 import AppLayout from './AppLayout';
 import NotFoundPage from './NotFoundPage';
 import ErrorBoundary from './ErrorBoundary';
+import OnlineStatusIndicator from './OnlineStatusIndicator';
+import { registerPWA } from './pwa';
+
+registerPWA();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
+      <OnlineStatusIndicator />
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
