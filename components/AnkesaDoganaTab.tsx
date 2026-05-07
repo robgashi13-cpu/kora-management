@@ -182,38 +182,45 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     try {
       const zip = new JSZip();
       const orderedCats: FileCategory[] = ['dokumentat', 'dudat', 'dudat_me_rritje', 'faturat', 'transferi_bankar'];
-      const safeGroupName = (label || 'group').replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const safeGroupName = sanitizeFileName(label || 'group', 'group');
       const root = zip.folder(safeGroupName) || zip;
+      const usedCarNames = new Set<string>();
       for (const sale of eligible) {
         const carParts = [sale.brand, sale.model, sale.plateNumber || sale.vin].filter(Boolean).join(' ');
-        const carLabel = (carParts || `car-${sale.id.slice(0, 6)}`).replace(/[^a-zA-Z0-9._-]+/g, '_');
+        const carLabelRaw = carParts || `car-${sale.id.slice(0, 6)}`;
+        const carLabel = uniqueName(usedCarNames, sanitizeFileName(carLabelRaw, 'car'));
         const carFolder = root.folder(carLabel) || root;
         const carFiles = complaints[sale.id]?.files || {};
         for (const cat of orderedCats) {
-          const catFolder = carFolder.folder(CATEGORY_LABELS[cat]) || carFolder;
+          const catFolder = carFolder.folder(sanitizeFileName(CATEGORY_LABELS[cat], cat)) || carFolder;
           const arr = carFiles[cat];
           if (!arr || arr.length === 0) continue;
+          const usedFileNames = new Set<string>();
           for (const f of arr) {
-            try {
-              const res = await fetch(f.url);
-              if (!res.ok) continue;
-              const blob = await res.blob();
-              catFolder.file(f.name, blob);
-            } catch (err) {
-              console.error('Failed to fetch', f.name, err);
-            }
+            const blob = await fetchAsBlob(f.url);
+            if (!blob) continue;
+            const safe = uniqueName(usedFileNames, sanitizeFileName(f.name, 'file'));
+            catFolder.file(safe, blob, { binary: true, date: f.uploadedAt ? new Date(f.uploadedAt) : new Date() });
           }
         }
       }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(blob);
+      const blob = await zip.generateAsync({
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 },
+        mimeType: 'application/zip',
+        platform: 'UNIX',
+      });
+      const out = new Blob([blob], { type: 'application/zip' });
+      const url = URL.createObjectURL(out);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${safeGroupName}.zip`;
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
       console.error('Group zip failed', e);
       alert('Failed to create group ZIP');
