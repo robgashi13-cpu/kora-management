@@ -70,7 +70,7 @@ const normalizeProfileName = (name?: string | null | unknown) => {
     return trimmed.toLowerCase() === LEGACY_ADMIN_PROFILE.toLowerCase() ? ADMIN_PROFILE : trimmed;
 };
 
-const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA', 'KR'];
+const ALLOWED_PROFILES = [ADMIN_PROFILE, 'ETNIK', 'GENC', 'LEONIT', 'RAJMOND', 'RENAT', 'SHYQA', 'KR', 'Besi'];
 const REQUIRED_PROFILES = ALLOWED_PROFILES;
 const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizeProfileName(profile)));
 
@@ -79,6 +79,7 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
     'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC']),
     'kr': new Set(['MECHANIC', 'INSPECTIONS']),
+    'besi': new Set(['ANKESA_DOGANA']),
 };
 
 // Profiles that can VIEW all sales (from all sellers) on their allowed tabs
@@ -570,7 +571,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'MECHANIC', label: 'Mechanic', icon: Wrench, view: 'mechanic' },
-    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana', allowedProfiles: ['Robert', 'Renato'] },
+    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana', allowedProfiles: ['Robert', 'Renato', 'Besi'] },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
