@@ -176,13 +176,15 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       });
 
     const q = search.trim().toLowerCase();
+    const isBesi = (userProfile || '').toLowerCase() === 'besi';
     return list.filter(({ sale, bucket }) => {
+      if (isBesi && bucket === 'sale') return false;
       if (filter !== 'all' && filter !== bucket) return false;
       if (!q) return true;
       const hay = `${sale.brand} ${sale.model} ${sale.plateNumber} ${sale.vin} ${sale.buyerName} ${sale.group || ''} ${sale.shippingName || ''}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [sales, search, filter]);
+  }, [sales, search, filter, userProfile]);
 
   const grouped = useMemo(() => {
     const buckets: Record<'sale' | 'shipped' | 'autosalloni', typeof rows> = { sale: [], shipped: [], autosalloni: [] };
