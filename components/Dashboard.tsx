@@ -3863,6 +3863,33 @@ export default function Dashboard() {
         });
     };
 
+    const updateTransportFieldBulk = async (saleIds: string[], field: 'transportPaid' | 'paidToTransportusi', value: TransportPaymentStatus) => {
+        const currentSales = salesRef.current;
+        const idSet = new Set(saleIds);
+        const beforeMap = new Map<string, TransportPaymentStatus | undefined>();
+        const nextSales = currentSales.map((sale) => {
+            if (!idSet.has(sale.id)) return sale;
+            if (field === 'transportPaid' && sale.includeTransport) return sale;
+            beforeMap.set(sale.id, sale[field] as TransportPaymentStatus | undefined);
+            dirtyIds.current.add(sale.id);
+            return { ...sale, [field]: value };
+        });
+        if (beforeMap.size === 0) return;
+        const result = await updateSalesAndSave(nextSales);
+        if (!result.success) return;
+        for (const [saleId, prev] of beforeMap.entries()) {
+            await logAuditEvent({
+                actionType: 'UPDATE',
+                entityType: 'sale_transport',
+                entityId: saleId,
+                beforeData: { [field]: prev },
+                afterData: { [field]: value },
+                pageContext: 'transport',
+                metadata: { action: field === 'transportPaid' ? 'TRANSPORT_PAID_CHANGE_BULK' : 'PAID_TO_TRANSPORTUSI_CHANGE_BULK' }
+            });
+        }
+    };
+
     // Toggle sort column
     const toggleSort = (column: string) => {
         if (sortBy === column) {
