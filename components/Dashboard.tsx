@@ -6219,31 +6219,77 @@ export default function Dashboard() {
                                             const groupSales = groupedTransportSales[groupName] || [];
                                             if (!groupSales.length) return null;
                                             const totalTransport = groupSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const totalCarsPrice = groupSales.reduce((sum, sale) => sum + (sale.soldPrice || 0), 0);
+                                            const totalCarsCost = groupSales.reduce((sum, sale) => sum + (sale.costToBuy || 0), 0);
                                             const clientPaid = groupSales.filter((sale) => getClientTransportPaidStatus(sale) === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             const transportusiPaid = groupSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const clientEligibleIds = groupSales.filter((s) => !s.includeTransport).map((s) => s.id);
+                                            const allClientPaid = clientEligibleIds.length > 0 && clientEligibleIds.every((id) => {
+                                                const s = groupSales.find((x) => x.id === id);
+                                                return s && getClientTransportPaidStatus(s) === 'PAID';
+                                            });
+                                            const allTransportusiPaid = groupSales.every((s) => s.paidToTransportusi === 'PAID');
                                             return (
                                                 <div key={groupName} className="rounded-2xl border border-slate-200 overflow-hidden">
-                                                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-sm font-bold text-slate-800">{groupName}</div>
-                                                    <div className="divide-y divide-slate-100">
-                                                        {groupSales.map((sale) => (
-                                                            <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_140px_190px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm">
-                                                                <div className="font-semibold text-slate-900">{sale.brand} {sale.model}</div>
-                                                                <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
-                                                                <select value={getClientTransportPaidStatus(sale)} onChange={(e) => updateTransportField(sale.id, 'transportPaid', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold" disabled={sale.includeTransport} title={sale.includeTransport ? 'Auto-set from Transport: Yes' : 'Set client payment status'}>
-                                                                    <option value="PAID">PAID</option>
-                                                                    <option value="NOT PAID">NOT PAID</option>
-                                                                </select>
-                                                                <select value={sale.paidToTransportusi || 'NOT PAID'} onChange={(e) => updateTransportField(sale.id, 'paidToTransportusi', e.target.value as TransportPaymentStatus)} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-semibold">
-                                                                    <option value="PAID">PAID</option>
-                                                                    <option value="NOT PAID">NOT PAID</option>
-                                                                </select>
-                                                            </div>
-                                                        ))}
+                                                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                                                        <div className="text-sm font-bold text-slate-800">{groupName} <span className="text-slate-500 font-semibold">· {groupSales.length} car{groupSales.length === 1 ? '' : 's'}</span></div>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {clientEligibleIds.length > 0 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => void updateTransportFieldBulk(clientEligibleIds, 'transportPaid', allClientPaid ? 'NOT PAID' : 'PAID')}
+                                                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${allClientPaid ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-600 border-emerald-600 text-white'}`}
+                                                                >
+                                                                    {allClientPaid ? 'Undo Client Paid' : 'Mark All Client Paid'}
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => void updateTransportFieldBulk(groupSales.map((s) => s.id), 'paidToTransportusi', allTransportusiPaid ? 'NOT PAID' : 'PAID')}
+                                                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${allTransportusiPaid ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-900 border-slate-900 text-white'}`}
+                                                            >
+                                                                {allTransportusiPaid ? 'Undo Transportusi Paid' : 'Mark All Transportusi Paid'}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 flex flex-wrap gap-3">
-                                                        <span>Total Transport: €{totalTransport.toLocaleString()}</span>
-                                                        <span>Client Paid: €{clientPaid.toLocaleString()} | Not Paid: €{(totalTransport - clientPaid).toLocaleString()}</span>
-                                                        <span>Paid to Transportusi: €{transportusiPaid.toLocaleString()} | Not Paid: €{(totalTransport - transportusiPaid).toLocaleString()}</span>
+                                                    <div className="divide-y divide-slate-100">
+                                                        {groupSales.map((sale) => {
+                                                            const clientStatus = getClientTransportPaidStatus(sale);
+                                                            const transportusiStatus = sale.paidToTransportusi || 'NOT PAID';
+                                                            return (
+                                                            <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_110px_160px_160px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm items-center">
+                                                                <div>
+                                                                    <div className="font-semibold text-slate-900">{sale.brand} {sale.model}</div>
+                                                                    <div className="text-[11px] text-slate-500">Sold €{(sale.soldPrice || 0).toLocaleString()} · Cost €{(sale.costToBuy || 0).toLocaleString()}</div>
+                                                                </div>
+                                                                <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
+                                                                <div className="text-slate-700 font-semibold">€{(sale.transportCost || 0).toLocaleString()}</div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateTransportField(sale.id, 'transportPaid', clientStatus === 'PAID' ? 'NOT PAID' : 'PAID')}
+                                                                    disabled={!!sale.includeTransport}
+                                                                    title={sale.includeTransport ? 'Auto-set from Transport: Yes' : 'Toggle client payment'}
+                                                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-bold border ${clientStatus === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600'} ${sale.includeTransport ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                                                >
+                                                                    Client: {clientStatus}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => updateTransportField(sale.id, 'paidToTransportusi', transportusiStatus === 'PAID' ? 'NOT PAID' : 'PAID')}
+                                                                    className={`rounded-lg px-2 py-1.5 text-[11px] font-bold border ${transportusiStatus === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-slate-200 text-slate-600'}`}
+                                                                >
+                                                                    Transportusi: {transportusiStatus}
+                                                                </button>
+                                                            </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <div className="bg-slate-50 border-t border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 flex flex-wrap gap-x-4 gap-y-1">
+                                                        <span>Cars Sold Total: <span className="text-slate-900">€{totalCarsPrice.toLocaleString()}</span></span>
+                                                        <span>Cars Cost Total: <span className="text-slate-900">€{totalCarsCost.toLocaleString()}</span></span>
+                                                        <span>Total Transport: <span className="text-slate-900">€{totalTransport.toLocaleString()}</span></span>
+                                                        <span>Client Paid: <span className="text-emerald-700">€{clientPaid.toLocaleString()}</span> | Not Paid: <span className="text-red-600">€{(totalTransport - clientPaid).toLocaleString()}</span></span>
+                                                        <span>Paid to Transportusi: <span className="text-emerald-700">€{transportusiPaid.toLocaleString()}</span> | Not Paid: <span className="text-red-600">€{(totalTransport - transportusiPaid).toLocaleString()}</span></span>
                                                     </div>
                                                 </div>
                                             );
@@ -6252,13 +6298,17 @@ export default function Dashboard() {
                                     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-700">
                                         {(() => {
                                             const total = transportSales.reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
+                                            const totalCarsPrice = transportSales.reduce((sum, sale) => sum + (sale.soldPrice || 0), 0);
+                                            const totalCarsCost = transportSales.reduce((sum, sale) => sum + (sale.costToBuy || 0), 0);
                                             const clientPaid = transportSales.filter((sale) => getClientTransportPaidStatus(sale) === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             const transportusiPaid = transportSales.filter((sale) => sale.paidToTransportusi === 'PAID').reduce((sum, sale) => sum + (sale.transportCost || 0), 0);
                                             return (
-                                                <div className="flex flex-wrap gap-3">
-                                                    <span>Overall Transport: €{total.toLocaleString()}</span>
-                                                    <span>Client Paid: €{clientPaid.toLocaleString()} | Not Paid: €{(total - clientPaid).toLocaleString()}</span>
-                                                    <span>Paid to Transportusi: €{transportusiPaid.toLocaleString()} | Not Paid: €{(total - transportusiPaid).toLocaleString()}</span>
+                                                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                                    <span>Overall Cars Sold: <span className="text-slate-900">€{totalCarsPrice.toLocaleString()}</span></span>
+                                                    <span>Overall Cars Cost: <span className="text-slate-900">€{totalCarsCost.toLocaleString()}</span></span>
+                                                    <span>Overall Transport: <span className="text-slate-900">€{total.toLocaleString()}</span></span>
+                                                    <span>Client Paid: <span className="text-emerald-700">€{clientPaid.toLocaleString()}</span> | Not Paid: <span className="text-red-600">€{(total - clientPaid).toLocaleString()}</span></span>
+                                                    <span>Paid to Transportusi: <span className="text-emerald-700">€{transportusiPaid.toLocaleString()}</span> | Not Paid: <span className="text-red-600">€{(total - transportusiPaid).toLocaleString()}</span></span>
                                                 </div>
                                             );
                                         })()}
