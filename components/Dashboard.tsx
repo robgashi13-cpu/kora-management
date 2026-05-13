@@ -4773,7 +4773,7 @@ export default function Dashboard() {
                                     </div>
                                     {mechanicSubTab === 'records' ? (
                                         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4">
-                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container">
+                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-5">
                                                 <div className="divide-y divide-slate-100">
                                                     <div className={`grid ${isKrProfile(userProfile) ? 'grid-cols-[minmax(0,1fr)_120px]' : 'grid-cols-[minmax(0,1fr)_120px_110px]'} gap-4 px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500`}>
                                                         <div>Car</div>
@@ -4818,7 +4818,7 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
 
-                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] p-5 overflow-auto scroll-container">
+                                            <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] p-5 overflow-auto scroll-container pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-5">
                                                 {selectedMechanicRecord ? (
                                                     <div className="space-y-4">
                                                         <div>
@@ -4864,7 +4864,7 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container divide-y divide-slate-100">
+                                        <div className="premium-card border border-slate-100 rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)] overflow-auto scroll-container pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-5 divide-y divide-slate-100">
                                             {carDocuments
                                                 .filter((document) => {
                                                     const term = searchTerm.trim().toLowerCase();
@@ -5870,7 +5870,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </> ) : view === 'custom_dashboard' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     {!activeCustomDashboard ? (
                                         <div className="text-center py-16">
                                             <p className="text-slate-500 mb-4">No custom dashboard selected.</p>
@@ -5952,7 +5952,7 @@ export default function Dashboard() {
                                         <p className="text-slate-500 mt-2">Record tab is restricted to ROBERT.</p>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
+                                    <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                         <h2 className="text-2xl font-black text-slate-900 mb-3">Record Timeline</h2>
                                         {isLoadingAudit ? (
                                             <p className="text-slate-500">Loading records...</p>
@@ -6212,7 +6212,7 @@ export default function Dashboard() {
                                     )}
                                 </div>
                             ) : view === 'transport' ? (
-                                <div className="flex-1 overflow-auto scroll-container p-3 md:p-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
+                                <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     <h2 className="text-2xl font-black text-slate-900 mb-3">Transporti</h2>
                                     <div className="space-y-3">
                                         {transportGroupOrder.map((groupName) => {
