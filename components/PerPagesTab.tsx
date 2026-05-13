@@ -92,7 +92,7 @@ export default function PerPagesTab({ userProfile }: Props) {
     };
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 md:p-6 overflow-auto">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6 overflow-auto">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                     <FileText className="w-5 h-5 text-slate-700" />
