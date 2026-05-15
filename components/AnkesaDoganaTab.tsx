@@ -398,6 +398,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto order-2">
           <button
             type="button"
+            onClick={() => setInvoiceFor(sale)}
+            className="inline-flex items-center justify-center w-9 h-8 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors flex-shrink-0"
+            title="Proform Invoice"
+          >
+            <Receipt className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
             onClick={() => setFilesFor(sale)}
             className="relative inline-flex items-center justify-center gap-1 text-[11px] font-semibold w-9 h-8 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors flex-shrink-0"
             title="Manage files"
