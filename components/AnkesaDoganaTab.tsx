@@ -123,6 +123,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
   const [infoFor, setInfoFor] = useState<CarSale | null>(null);
+  const [invoiceFor, setInvoiceFor] = useState<CarSale | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [archivedGroups, setArchivedGroups] = useState<Set<string>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_archived_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
