@@ -10,7 +10,9 @@ interface Props {
   onClose: () => void;
 }
 
-const fmtMoney = (n: number) => `€ ${(Number.isFinite(n) ? n : 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const fmtEur = (n: number) =>
+  ` € ${(Number.isFinite(n) ? n : 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} `;
+const fmtEurDash = (n: number) => (n > 0 ? fmtEur(n) : ' € -   ');
 
 const formatDate = (d: Date) => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -25,8 +27,7 @@ export default function ProformInvoiceModal({ sale, onClose }: Props) {
   const invoiceNo = `BH${vin.slice(-6) || '000000'}`;
   const carPrice = Number(sale.amountPaidBank || 0);
   const shippingCost = Number(sale.transportCost || 0);
-  // Subtotal & balance EXCLUDE transport per spec
-  const subTotal = carPrice;
+  const subTotal = carPrice + shippingCost;
   const balance = subTotal;
 
   const handleDownload = async () => {
@@ -58,22 +59,29 @@ export default function ProformInvoiceModal({ sale, onClose }: Props) {
 <style>
   @page { size: A4; margin: 0; }
   body { margin: 0; font-family: Arial, sans-serif; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { border: 1px solid #000; padding: 4px 6px; font-size: 11px; vertical-align: middle; }
-  .no-border td, .no-border th { border: none; }
-  .center { text-align: center; }
-  .right { text-align: right; }
-  .bold { font-weight: 700; }
-  .title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-  .small { font-size: 10px; }
 </style></head><body>${html}</body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 300);
   };
 
+  // Cell style helpers
+  const c: React.CSSProperties = {
+    border: '1px solid #000',
+    padding: '4px 6px',
+    fontSize: '11px',
+    verticalAlign: 'middle',
+    fontFamily: 'Arial, sans-serif',
+    color: '#000',
+  };
+  const bold: React.CSSProperties = { ...c, fontWeight: 700 };
+  const right: React.CSSProperties = { ...c, textAlign: 'right' };
+  const rightBold: React.CSSProperties = { ...c, textAlign: 'right', fontWeight: 700 };
+  const center: React.CSSProperties = { ...c, textAlign: 'center' };
+  const noBorder: React.CSSProperties = { ...c, border: 'none' };
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-2 sm:p-4 animate-fade-in" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[860px] max-h-[95vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[900px] max-h-[95vh] flex flex-col animate-scale-in" onClick={(e) => e.stopPropagation()}>
         <header className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-slate-200">
           <div className="min-w-0">
             <h4 className="text-base font-bold text-slate-900 truncate">Proform Invoice — {invoiceNo}</h4>
@@ -93,146 +101,191 @@ export default function ProformInvoiceModal({ sale, onClose }: Props) {
               width: '210mm',
               minHeight: '297mm',
               background: '#fff',
-              padding: '12mm 10mm',
+              padding: '14mm 12mm',
               fontFamily: 'Arial, sans-serif',
               color: '#000',
               boxSizing: 'border-box',
               fontSize: '11px',
             }}
           >
-            {/* Header */}
-            <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: 0 }}>
+            {/* HEADER BLOCK — exact layout of template */}
+            <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+              <colgroup>
+                <col style={{ width: '38%' }} />
+                <col style={{ width: '22%' }} />
+                <col style={{ width: '20%' }} />
+                <col style={{ width: '20%' }} />
+              </colgroup>
               <tbody>
                 <tr>
-                  <td style={cellStyle(true)} rowSpan={2}>
-                    <div style={{ fontSize: '10px', lineHeight: 1.4 }}>
+                  <td style={{ ...c, padding: '10px' }} rowSpan={2}>
+                    <div style={{ fontSize: '10.5px', lineHeight: 1.45 }}>
                       Ssancar LTD. Cho Tae Shin. 499, Aam-dero,<br />
                       Yeonsu-gu, Incheon, Korea<br />
                       Phone: +82-505-366-9977<br />
                       Email: ssancar9977@gmail.com
                     </div>
                   </td>
-                  <td style={{ ...cellStyle(true), textAlign: 'center', fontSize: '22px', fontWeight: 800, letterSpacing: 1 }} colSpan={2}>
+                  <td style={{ ...center, fontSize: '20px', fontWeight: 800, letterSpacing: 1, padding: '10px' }} colSpan={3}>
                     PROFORM INVOICE
                   </td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), width: '28%', fontWeight: 700 }}>Date</td>
-                  <td style={cellStyle(true)}>{formatDate(new Date())}</td>
+                  <td style={bold}>Date</td>
+                  <td style={c} colSpan={2}>{formatDate(new Date())}</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700, width: '34%' }}>&nbsp;</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Invoice No.</td>
-                  <td style={cellStyle(true)}>{invoiceNo}</td>
+                  <td style={noBorder}></td>
+                  <td style={bold}>Invoice No.</td>
+                  <td style={c} colSpan={2}>{invoiceNo}</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>&nbsp;</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Name</td>
-                  <td style={cellStyle(true)}>RG SH.P.K.</td>
+                  <td style={noBorder}></td>
+                  <td style={bold}>Name</td>
+                  <td style={c} colSpan={2}>RG SH.P.K.</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>&nbsp;</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>BISINESS No.</td>
-                  <td style={cellStyle(true)}>810062092</td>
+                  <td style={noBorder}></td>
+                  <td style={bold}>BISINESS No.</td>
+                  <td style={c} colSpan={2}>810062092</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>&nbsp;</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Adress</td>
-                  <td style={cellStyle(true)}>DURRES PORT</td>
+                  <td style={noBorder}></td>
+                  <td style={bold}>Adress</td>
+                  <td style={c} colSpan={2}>DURRES PORT</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>&nbsp;</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Phone</td>
-                  <td style={cellStyle(true)}>+38348181116</td>
+                  <td style={noBorder}></td>
+                  <td style={bold}>Phone</td>
+                  <td style={c} colSpan={2}>+38348181116</td>
+                </tr>
+                <tr><td style={noBorder} colSpan={4} >&nbsp;</td></tr>
+                <tr>
+                  <td style={noBorder}></td>
+                  <td style={bold}>Dollar Rate</td>
+                  <td style={center}>€ 1</td>
+                  <td style={center}>$1</td>
                 </tr>
               </tbody>
             </table>
 
-            {/* Bank info */}
-            <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: 4 }}>
+            {/* BANK INFO */}
+            <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: 6 }}>
               <tbody>
                 <tr>
-                  <td style={{ ...cellStyle(true), background: '#f1f5f9', textAlign: 'center', fontWeight: 700 }} colSpan={4}>BANK ACCOUNT INFORMATION</td>
+                  <td style={{ ...center, fontWeight: 700, background: '#f1f5f9' }} colSpan={4}>BANK ACCOUNT INFORMATION</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700, width: '20%' }}>Beneficiary</td>
-                  <td style={{ ...cellStyle(true), width: '30%' }}>SSANCAR LTD.</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700, width: '20%' }}>Bank Name</td>
-                  <td style={{ ...cellStyle(true), width: '30%' }}>SHINHAN BANK</td>
+                  <td style={{ ...bold, width: '22%' }}>Beneficiary</td>
+                  <td style={{ ...c, width: '28%' }}>SSANCAR LTD.</td>
+                  <td style={{ ...bold, width: '22%' }}>Bank Name</td>
+                  <td style={{ ...c, width: '28%' }}>SHINHAN BANK</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Swift Code</td>
-                  <td style={cellStyle(true)}>SHBKKRSE</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Bank Adress</td>
-                  <td style={cellStyle(true)} rowSpan={2}>20, Sejong-Daero9-Gil, Jung-Gu Seoul South Korea</td>
+                  <td style={bold}>Swift Cose</td>
+                  <td style={c}>SHBKKRSE</td>
+                  <td style={bold}>Bank Adress</td>
+                  <td style={c} rowSpan={2}>20,Sejong-Daero9-Gil,Jung-Gu Seoul South Korea</td>
                 </tr>
                 <tr>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Bank Account Number</td>
-                  <td style={cellStyle(true)}>180-008-400167</td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>Beneficiary Adress</td>
+                  <td style={bold}>Bank Account Number</td>
+                  <td style={c}>180-008-400167</td>
+                  <td style={bold}>Beneficiary Adress</td>
                 </tr>
               </tbody>
             </table>
 
-            {/* Items */}
-            <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: 4 }}>
+            {/* ITEMS TABLE — dual currency columns */}
+            <table style={{ borderCollapse: 'collapse', width: '100%', marginTop: 6 }}>
+              <colgroup>
+                <col style={{ width: '12%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '28%' }} />
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '15%' }} />
+              </colgroup>
               <thead>
                 <tr style={{ background: '#f1f5f9' }}>
-                  <th style={{ ...cellStyle(true), width: '14%' }}>Code</th>
-                  <th style={{ ...cellStyle(true), width: '16%' }}>Brand</th>
-                  <th style={{ ...cellStyle(true), width: '16%' }}>Model</th>
-                  <th style={{ ...cellStyle(true), width: '34%' }}>Chassis No.</th>
-                  <th style={{ ...cellStyle(true), width: '20%' }}>PRICE / EUR</th>
+                  <th style={center}>Code</th>
+                  <th style={center}>Brand</th>
+                  <th style={center}>Model</th>
+                  <th style={center}>Chassis No.</th>
+                  <th style={center}>PRICE/ EUR</th>
+                  <th style={center}>PRICE/ Eur</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td style={cellStyle(true)}>{invoiceNo}</td>
-                  <td style={cellStyle(true)}>{(sale.brand || '').toUpperCase()}</td>
-                  <td style={cellStyle(true)}>{(sale.model || '').toUpperCase()}</td>
-                  <td style={cellStyle(true)}>{vin || '—'}</td>
-                  <td style={{ ...cellStyle(true), textAlign: 'right' }}>{fmtMoney(carPrice)}</td>
+                  <td style={c}>{invoiceNo}</td>
+                  <td style={c}>{(sale.brand || '').toUpperCase()}</td>
+                  <td style={c}>{(sale.model || '').toUpperCase()}</td>
+                  <td style={c}>{vin || '—'}</td>
+                  <td style={right}></td>
+                  <td style={right}>{fmtEurDash(carPrice)}</td>
                 </tr>
-                {/* Empty rows to mirror template spacing */}
-                {Array.from({ length: 1 }).map((_, i) => (
-                  <tr key={i}><td style={cellStyle(true)}>&nbsp;</td><td style={cellStyle(true)}></td><td style={cellStyle(true)}></td><td style={cellStyle(true)}></td><td style={cellStyle(true)}></td></tr>
+                <tr>
+                  <td style={c}>&nbsp;</td>
+                  <td style={c}></td>
+                  <td style={c}></td>
+                  <td style={c}></td>
+                  <td style={right}></td>
+                  <td style={right}>{' € -   '}</td>
+                </tr>
+                <tr>
+                  <td style={c} colSpan={3}></td>
+                  <td style={bold}>SHIPPING COST</td>
+                  <td style={right}></td>
+                  <td style={right}>{fmtEurDash(shippingCost)}</td>
+                </tr>
+                <tr>
+                  <td style={c} colSpan={3}></td>
+                  <td style={bold}>AUTO LODING</td>
+                  <td style={right}></td>
+                  <td style={right}>{' € -   '}</td>
+                </tr>
+                <tr>
+                  <td style={c} colSpan={3}></td>
+                  <td style={bold}>TAX D/C</td>
+                  <td style={right}></td>
+                  <td style={right}>{' € -   '}</td>
+                </tr>
+                <tr>
+                  <td style={c} colSpan={3}></td>
+                  <td style={bold}>DEPOSIT</td>
+                  <td style={right}></td>
+                  <td style={right}>{' € -   '}</td>
+                </tr>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i}>
+                    <td style={c} colSpan={3}></td>
+                    <td style={c}></td>
+                    <td style={right}></td>
+                    <td style={right}></td>
+                  </tr>
                 ))}
                 <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>SHIPPING COST</td>
-                  <td style={{ ...cellStyle(true), textAlign: 'right' }}>{fmtMoney(shippingCost)}</td>
+                  <td style={c} colSpan={3}></td>
+                  <td style={rightBold}>SUB TOTAL</td>
+                  <td style={rightBold}>€ 0</td>
+                  <td style={rightBold}>{fmtEur(subTotal)}</td>
                 </tr>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i}>
+                    <td style={c} colSpan={3}></td>
+                    <td style={c}></td>
+                    <td style={right}></td>
+                    <td style={right}></td>
+                  </tr>
+                ))}
                 <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>AUTO LODING</td>
-                  <td style={{ ...cellStyle(true), textAlign: 'right' }}>{fmtMoney(0)}</td>
-                </tr>
-                <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>TAX D/C</td>
-                  <td style={{ ...cellStyle(true), textAlign: 'right' }}>{fmtMoney(0)}</td>
-                </tr>
-                <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), fontWeight: 700 }}>DEPOSIT</td>
-                  <td style={{ ...cellStyle(true), textAlign: 'right' }}>{fmtMoney(0)}</td>
-                </tr>
-                <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), background: '#f8fafc', fontWeight: 800 }}>SUB TOTAL</td>
-                  <td style={{ ...cellStyle(true), background: '#f8fafc', textAlign: 'right', fontWeight: 800 }}>{fmtMoney(subTotal)}</td>
-                </tr>
-                <tr>
-                  <td style={cellStyle(true)} colSpan={3}></td>
-                  <td style={{ ...cellStyle(true), background: '#fef3c7', fontWeight: 800 }}>BALANCE MONEY</td>
-                  <td style={{ ...cellStyle(true), background: '#fef3c7', textAlign: 'right', fontWeight: 800 }}>{fmtMoney(balance)}</td>
+                  <td style={c} colSpan={3}></td>
+                  <td style={rightBold}>BALANCE MONEY</td>
+                  <td style={rightBold}>€ 0</td>
+                  <td style={rightBold}>{fmtEur(balance)}</td>
                 </tr>
               </tbody>
             </table>
-
-            <div style={{ marginTop: 12, fontSize: '10px', color: '#475569' }}>
-              * Shipping cost is shown for reference and is not included in the total balance.
-            </div>
           </div>
         </div>
 
@@ -247,13 +300,4 @@ export default function ProformInvoiceModal({ sale, onClose }: Props) {
       </div>
     </div>
   );
-}
-
-function cellStyle(border: boolean): React.CSSProperties {
-  return {
-    border: border ? '1px solid #000' : 'none',
-    padding: '4px 6px',
-    fontSize: '11px',
-    verticalAlign: 'middle',
-  };
 }
