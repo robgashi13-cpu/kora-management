@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw, Download, Receipt } from 'lucide-react';
+import { Loader2, Search, X, Paperclip, Upload, Trash2, FileText, ChevronDown, ChevronRight, Package, Archive, EyeOff, RotateCcw, Download } from 'lucide-react';
 import JSZip from 'jszip';
 import { CarSale } from '@/src/types';
 import { createSupabaseClient } from '@/services/supabaseService';
-import ProformInvoiceModal from './ProformInvoiceModal';
 
 export type CustomsStatus = 'not_started' | 'started' | 'klienti' | 'dogana' | 'gjykata' | 'nuk_ka_rritje' | 'refunded' | 'rejected';
 
@@ -123,7 +122,6 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
   const [infoFor, setInfoFor] = useState<CarSale | null>(null);
-  const [invoiceFor, setInvoiceFor] = useState<CarSale | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [archivedGroups, setArchivedGroups] = useState<Set<string>>(() => {
     try { const s = typeof window !== 'undefined' ? localStorage.getItem('ankesa_dogana_archived_groups') : null; return new Set(s ? JSON.parse(s) : []); } catch { return new Set(); }
@@ -398,14 +396,6 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto order-2">
           <button
             type="button"
-            onClick={() => setInvoiceFor(sale)}
-            className="inline-flex items-center justify-center w-9 h-8 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors flex-shrink-0"
-            title="Proform Invoice"
-          >
-            <Receipt className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
             onClick={() => setFilesFor(sale)}
             className="relative inline-flex items-center justify-center gap-1 text-[11px] font-semibold w-9 h-8 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 transition-colors flex-shrink-0"
             title="Manage files"
@@ -585,10 +575,6 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
 
       {infoFor && (
         <CarInfoModal sale={infoFor} onClose={() => setInfoFor(null)} />
-      )}
-
-      {invoiceFor && (
-        <ProformInvoiceModal sale={invoiceFor} onClose={() => setInvoiceFor(null)} />
       )}
 
       {groupMenu && (
