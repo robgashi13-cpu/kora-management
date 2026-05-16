@@ -482,6 +482,78 @@ export const generatePdf = async ({
     const a4HeightPx = Math.round((297 / 25.4) * 96);
     const captureScale = isLockedPage ? 4 : 2;
 
+    // --- Multi-page locked contract path (e.g. Marrëveshje Interne with page-1/2/3) ---
+    const innerPageEls = isLockedContractPage
+      ? Array.from(element.querySelectorAll<HTMLElement>('.page-1, .page-2, .page-3, .page-4, .page-5'))
+      : [];
+    if (isLockedContractPage && innerPageEls.length > 1) {
+      const A4_W = 210;
+      const A4_H = 297;
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true,
+        precision: 16,
+      });
+
+      for (let i = 0; i < innerPageEls.length; i++) {
+        const pageEl = innerPageEls[i];
+        const pageCanvas = await html2canvas(pageEl, {
+          scale: captureScale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          imageTimeout: 10000,
+          width: a4WidthPx,
+          height: a4HeightPx,
+          windowWidth: a4WidthPx,
+          windowHeight: a4HeightPx,
+          onclone: (clonedDoc: Document) => {
+            sanitizePdfCloneStyles(clonedDoc);
+            normalizePdfLayout(clonedDoc);
+            clonedDoc.querySelectorAll<HTMLElement>('[data-contract-document]').forEach((el) => {
+              el.style.width = '210mm';
+              el.style.minWidth = '210mm';
+              el.style.maxWidth = '210mm';
+              el.style.height = 'auto';
+              el.style.minHeight = '0';
+              el.style.maxHeight = 'none';
+              el.style.overflow = 'visible';
+              el.style.margin = '0';
+              el.style.boxSizing = 'border-box';
+            });
+            clonedDoc.querySelectorAll<HTMLElement>('.page-1, .page-2, .page-3, .page-4, .page-5').forEach((el) => {
+              el.style.width = '210mm';
+              el.style.minWidth = '210mm';
+              el.style.maxWidth = '210mm';
+              el.style.height = '297mm';
+              el.style.minHeight = '297mm';
+              el.style.maxHeight = '297mm';
+              el.style.overflow = 'hidden';
+              el.style.boxSizing = 'border-box';
+              el.style.pageBreakBefore = 'auto';
+              el.style.breakBefore = 'auto';
+            });
+            onClone?.(clonedDoc);
+          }
+        });
+
+        const imgData = pageCanvas.toDataURL('image/png', 1.0);
+        if (i > 0) pdf.addPage('a4', 'portrait');
+        pdf.addImage(imgData, 'PNG', 0, 0, A4_W, A4_H, undefined, 'SLOW');
+      }
+
+      if (typeof pdf.viewerPreferences === 'function') {
+        pdf.viewerPreferences({
+          PrintScaling: 'None',
+          PickTrayByPDFSize: true
+        });
+      }
+      const blob = pdf.output('blob');
+      return { pdf, blob, filename };
+    }
+
     const rect = element.getBoundingClientRect();
     const width = isLockedPage
       ? a4WidthPx
