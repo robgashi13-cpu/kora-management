@@ -6541,9 +6541,20 @@ export default function Dashboard() {
                                                 {/* Sales (New) on top — not grouped by month */}
                                                 {newSales.length > 0 && (
                                                     <div className="rounded-xl border border-blue-200 overflow-hidden">
-                                                        <div className="px-2.5 py-2 bg-blue-50 flex items-center justify-between border-b border-blue-200">
-                                                            <span className="text-xs font-black text-blue-800">🆕 Sales</span>
-                                                            <span className="text-[10px] text-blue-600">{newSales.length} cars</span>
+                                                        <div className="px-2.5 py-2 bg-blue-50 flex items-center justify-between border-b border-blue-200 gap-2">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="text-xs font-black text-blue-800 truncate">🆕 Sales (tu ardh)</span>
+                                                                <span className="text-[10px] text-blue-600 shrink-0">{newSales.length} cars</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); downloadGroupZip('new', 'Sales_tu_ardh', newSales); }}
+                                                                disabled={zippingGroupKey !== null}
+                                                                className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-600 text-white text-[10px] font-bold active:scale-95 disabled:opacity-50 transition-all"
+                                                            >
+                                                                {zippingGroupKey === 'new' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                                                                ZIP
+                                                            </button>
                                                         </div>
                                                         {renderRows(newSales, 'NEW', 'bg-blue-100 text-blue-700')}
                                                     </div>
@@ -6555,9 +6566,20 @@ export default function Dashboard() {
                                                     const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
                                                     return (
                                                         <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
-                                                            <div className="px-2.5 py-2 bg-slate-50 flex items-center justify-between border-b border-slate-200">
-                                                                <span className="text-xs font-black text-slate-800">{label}</span>
-                                                                <span className="text-[10px] text-slate-500">{items.length} cars</span>
+                                                            <div className="px-2.5 py-2 bg-slate-50 flex items-center justify-between border-b border-slate-200 gap-2">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <span className="text-xs font-black text-slate-800 truncate">{label}</span>
+                                                                    <span className="text-[10px] text-slate-500 shrink-0">{items.length} cars</span>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); downloadGroupZip(month, label, items); }}
+                                                                    disabled={zippingGroupKey !== null}
+                                                                    className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-900 text-white text-[10px] font-bold active:scale-95 disabled:opacity-50 transition-all"
+                                                                >
+                                                                    {zippingGroupKey === month ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                                                                    ZIP
+                                                                </button>
                                                             </div>
                                                             {renderRows(items, 'DONE', 'bg-emerald-100 text-emerald-700')}
                                                         </div>
