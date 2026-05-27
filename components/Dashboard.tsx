@@ -6467,7 +6467,7 @@ export default function Dashboard() {
                                                 await new Promise<void>((resolve, reject) => {
                                                     zip(files, { level: 6 }, (err, data) => {
                                                         if (err) { reject(err); return; }
-                                                        const zipBlob = new Blob([data], { type: 'application/zip' });
+                                                        const zipBlob = new Blob([data.buffer as ArrayBuffer], { type: 'application/zip' });
                                                         const url = URL.createObjectURL(zipBlob);
                                                         const a = document.createElement('a');
                                                         a.href = url;
