@@ -572,7 +572,7 @@ const navItems: NavItem[] = [
     { id: 'SHIPPED', label: 'Shipped', icon: ArrowRight, view: 'dashboard', category: 'SHIPPED', adminOnly: true },
     { id: 'INSPECTIONS', label: 'Inspection', icon: Search, view: 'dashboard', category: 'INSPECTIONS' },
     { id: 'MECHANIC', label: 'Mechanic', icon: Wrench, view: 'mechanic' },
-    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana', allowedProfiles: ['Robert', 'Renato', 'RENAT', 'Besi'] },
+    { id: 'ANKESA_DOGANA', label: 'Ankesa Dogana', icon: Gavel, view: 'ankesa_dogana', allowedProfiles: ['Robert', 'Renato', 'RENAT', 'Besi', 'SHYQA'] },
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
@@ -5361,19 +5361,7 @@ export default function Dashboard() {
                                             </Reorder.Group>
                                         )}
 
-                                        {/* Footer Totals */}
-                                        <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                            <div className="p-3 text-right col-span-8 text-slate-600"></div>
-                                            {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
-                                            <div className="p-3 text-right font-mono financial-positive-text">€{totalSold.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
-                                            {isAdmin && <>
-                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
-                                                <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
-                                            </>}
-                                            <div className="p-3 col-span-3"></div>
-                                        </div>
+
                                     </div>
                                 </div>
                                 )}
