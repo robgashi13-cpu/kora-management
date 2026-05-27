@@ -619,6 +619,7 @@ export default function Dashboard() {
     const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
     const hasSyncedTransportPaidRef = useRef(false);
     const [showAccountantPdfOptions, setShowAccountantPdfOptions] = useState(false);
+    const [zippingGroupKey, setZippingGroupKey] = useState<string | null>(null);
     const [showInspectionForm, setShowInspectionForm] = useState(false);
     const [inspectionFormData, setInspectionFormData] = useState({ carName: '', plateNumber: '', link: '' });
     const accountantPdfOptionsRef = useRef<HTMLDivElement>(null);
@@ -6410,10 +6411,10 @@ export default function Dashboard() {
                                             };
                                             if (mode === 'active') {
                                                 // Only New sales
-                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
+                                                if (newSales.length > 0) { html += `<h2>Sales tu ardh (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                             } else {
                                                 // All cars
-                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
+                                                if (newSales.length > 0) { html += `<h2>Sales tu ardh (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                                 sortedMonths.forEach(month => {
                                                     const items = byMonth[month];
                                                     const [y, m] = month.split('-').map(Number);
@@ -6427,6 +6428,63 @@ export default function Dashboard() {
                                             const url = URL.createObjectURL(blob);
                                             const w = window.open(url, '_blank');
                                             if (w) { setTimeout(() => { w.print(); }, 600); }
+                                        };
+                                        const sanitizeFilename = (s: string) => (s || 'file').replace(/[^a-z0-9._-]+/gi, '_').slice(0, 80);
+                                        const generateInvoiceBlobForSale = async (sale: CarSale): Promise<Blob> => {
+                                            const container = document.createElement('div');
+                                            container.style.position = 'fixed';
+                                            container.style.left = '-9999px';
+                                            container.style.top = '0';
+                                            container.style.width = '1024px';
+                                            container.style.zIndex = '-1';
+                                            document.body.appendChild(container);
+                                            const root = createRoot(container);
+                                            root.render(<InvoiceDocument sale={sale} withDogane={false} showBankOnly={true} />);
+                                            await new Promise(r => setTimeout(r, 350));
+                                            const target = (container.firstElementChild as HTMLElement) || container;
+                                            const fileName = `Invoice_${sanitizeFilename(`${sale.brand}_${sale.model}_${(sale.vin || sale.id).slice(-8)}`)}.pdf`;
+                                            const { blob } = await generatePdf({ element: target, filename: fileName, singlePage: true, editableText: false });
+                                            root.unmount();
+                                            container.remove();
+                                            return blob;
+                                        };
+                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[]) => {
+                                            const eligible = items.filter(s => (s.amountPaidBank || 0) > 0);
+                                            if (eligible.length === 0) { alert('No invoices with bank-paid amount in this group.'); return; }
+                                            setZippingGroupKey(groupKey);
+                                            try {
+                                                const files: Record<string, Uint8Array> = {};
+                                                const usedNames = new Set<string>();
+                                                for (const sale of eligible) {
+                                                    const blob = await generateInvoiceBlobForSale(sale);
+                                                    const buf = new Uint8Array(await blob.arrayBuffer());
+                                                    let name = `Invoice_${sanitizeFilename(`${sale.brand}_${sale.model}_${(sale.vin || sale.id).slice(-8)}`)}.pdf`;
+                                                    let n = 2;
+                                                    while (usedNames.has(name)) { name = name.replace(/\.pdf$/, `_${n}.pdf`); n++; }
+                                                    usedNames.add(name);
+                                                    files[name] = buf;
+                                                }
+                                                await new Promise<void>((resolve, reject) => {
+                                                    zip(files, { level: 6 }, (err, data) => {
+                                                        if (err) { reject(err); return; }
+                                                        const zipBlob = new Blob([data.buffer as ArrayBuffer], { type: 'application/zip' });
+                                                        const url = URL.createObjectURL(zipBlob);
+                                                        const a = document.createElement('a');
+                                                        a.href = url;
+                                                        a.download = `Invoices_${sanitizeFilename(label)}.zip`;
+                                                        document.body.appendChild(a);
+                                                        a.click();
+                                                        a.remove();
+                                                        URL.revokeObjectURL(url);
+                                                        resolve();
+                                                    });
+                                                });
+                                            } catch (e) {
+                                                console.error('ZIP generation failed', e);
+                                                alert('Failed to generate ZIP of invoices.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
                                         };
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
@@ -6483,9 +6541,20 @@ export default function Dashboard() {
                                                 {/* Sales (New) on top — not grouped by month */}
                                                 {newSales.length > 0 && (
                                                     <div className="rounded-xl border border-blue-200 overflow-hidden">
-                                                        <div className="px-2.5 py-2 bg-blue-50 flex items-center justify-between border-b border-blue-200">
-                                                            <span className="text-xs font-black text-blue-800">🆕 Sales</span>
-                                                            <span className="text-[10px] text-blue-600">{newSales.length} cars</span>
+                                                        <div className="px-2.5 py-2 bg-blue-50 flex items-center justify-between border-b border-blue-200 gap-2">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <span className="text-xs font-black text-blue-800 truncate">🆕 Sales (tu ardh)</span>
+                                                                <span className="text-[10px] text-blue-600 shrink-0">{newSales.length} cars</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.stopPropagation(); downloadGroupZip('new', 'Sales_tu_ardh', newSales); }}
+                                                                disabled={zippingGroupKey !== null}
+                                                                className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-600 text-white text-[10px] font-bold active:scale-95 disabled:opacity-50 transition-all"
+                                                            >
+                                                                {zippingGroupKey === 'new' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                                                                ZIP
+                                                            </button>
                                                         </div>
                                                         {renderRows(newSales, 'NEW', 'bg-blue-100 text-blue-700')}
                                                     </div>
@@ -6497,9 +6566,20 @@ export default function Dashboard() {
                                                     const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
                                                     return (
                                                         <div key={month} className="rounded-xl border border-slate-200 overflow-hidden">
-                                                            <div className="px-2.5 py-2 bg-slate-50 flex items-center justify-between border-b border-slate-200">
-                                                                <span className="text-xs font-black text-slate-800">{label}</span>
-                                                                <span className="text-[10px] text-slate-500">{items.length} cars</span>
+                                                            <div className="px-2.5 py-2 bg-slate-50 flex items-center justify-between border-b border-slate-200 gap-2">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <span className="text-xs font-black text-slate-800 truncate">{label}</span>
+                                                                    <span className="text-[10px] text-slate-500 shrink-0">{items.length} cars</span>
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); downloadGroupZip(month, label, items); }}
+                                                                    disabled={zippingGroupKey !== null}
+                                                                    className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-900 text-white text-[10px] font-bold active:scale-95 disabled:opacity-50 transition-all"
+                                                                >
+                                                                    {zippingGroupKey === month ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                                                                    ZIP
+                                                                </button>
                                                             </div>
                                                             {renderRows(items, 'DONE', 'bg-emerald-100 text-emerald-700')}
                                                         </div>
