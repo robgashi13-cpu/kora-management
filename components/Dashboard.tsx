@@ -6411,10 +6411,10 @@ export default function Dashboard() {
                                             };
                                             if (mode === 'active') {
                                                 // Only New sales
-                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
+                                                if (newSales.length > 0) { html += `<h2>Sales tu ardh (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                             } else {
                                                 // All cars
-                                                if (newSales.length > 0) { html += `<h2>Sales (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
+                                                if (newSales.length > 0) { html += `<h2>Sales tu ardh (${newSales.length} cars)</h2>`; html += renderTable(newSales); }
                                                 sortedMonths.forEach(month => {
                                                     const items = byMonth[month];
                                                     const [y, m] = month.split('-').map(Number);
