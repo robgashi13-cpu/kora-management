@@ -619,6 +619,7 @@ export default function Dashboard() {
     const [balanceDueSelectedIds, setBalanceDueSelectedIds] = useState<Set<string>>(new Set());
     const hasSyncedTransportPaidRef = useRef(false);
     const [showAccountantPdfOptions, setShowAccountantPdfOptions] = useState(false);
+    const [zippingGroupKey, setZippingGroupKey] = useState<string | null>(null);
     const [showInspectionForm, setShowInspectionForm] = useState(false);
     const [inspectionFormData, setInspectionFormData] = useState({ carName: '', plateNumber: '', link: '' });
     const accountantPdfOptionsRef = useRef<HTMLDivElement>(null);
