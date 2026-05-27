@@ -6429,6 +6429,63 @@ export default function Dashboard() {
                                             const w = window.open(url, '_blank');
                                             if (w) { setTimeout(() => { w.print(); }, 600); }
                                         };
+                                        const sanitizeFilename = (s: string) => (s || 'file').replace(/[^a-z0-9._-]+/gi, '_').slice(0, 80);
+                                        const generateInvoiceBlobForSale = async (sale: CarSale): Promise<Blob> => {
+                                            const container = document.createElement('div');
+                                            container.style.position = 'fixed';
+                                            container.style.left = '-9999px';
+                                            container.style.top = '0';
+                                            container.style.width = '1024px';
+                                            container.style.zIndex = '-1';
+                                            document.body.appendChild(container);
+                                            const root = createRoot(container);
+                                            root.render(<InvoiceDocument sale={sale} withDogane={false} showBankOnly={true} />);
+                                            await new Promise(r => setTimeout(r, 350));
+                                            const target = (container.firstElementChild as HTMLElement) || container;
+                                            const fileName = `Invoice_${sanitizeFilename(`${sale.brand}_${sale.model}_${(sale.vin || sale.id).slice(-8)}`)}.pdf`;
+                                            const { blob } = await generatePdf({ element: target, filename: fileName, singlePage: true, editableText: false });
+                                            root.unmount();
+                                            container.remove();
+                                            return blob;
+                                        };
+                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[]) => {
+                                            const eligible = items.filter(s => (s.amountPaidBank || 0) > 0);
+                                            if (eligible.length === 0) { alert('No invoices with bank-paid amount in this group.'); return; }
+                                            setZippingGroupKey(groupKey);
+                                            try {
+                                                const files: Record<string, Uint8Array> = {};
+                                                const usedNames = new Set<string>();
+                                                for (const sale of eligible) {
+                                                    const blob = await generateInvoiceBlobForSale(sale);
+                                                    const buf = new Uint8Array(await blob.arrayBuffer());
+                                                    let name = `Invoice_${sanitizeFilename(`${sale.brand}_${sale.model}_${(sale.vin || sale.id).slice(-8)}`)}.pdf`;
+                                                    let n = 2;
+                                                    while (usedNames.has(name)) { name = name.replace(/\.pdf$/, `_${n}.pdf`); n++; }
+                                                    usedNames.add(name);
+                                                    files[name] = buf;
+                                                }
+                                                await new Promise<void>((resolve, reject) => {
+                                                    zip(files, { level: 6 }, (err, data) => {
+                                                        if (err) { reject(err); return; }
+                                                        const zipBlob = new Blob([data], { type: 'application/zip' });
+                                                        const url = URL.createObjectURL(zipBlob);
+                                                        const a = document.createElement('a');
+                                                        a.href = url;
+                                                        a.download = `Invoices_${sanitizeFilename(label)}.zip`;
+                                                        document.body.appendChild(a);
+                                                        a.click();
+                                                        a.remove();
+                                                        URL.revokeObjectURL(url);
+                                                        resolve();
+                                                    });
+                                                });
+                                            } catch (e) {
+                                                console.error('ZIP generation failed', e);
+                                                alert('Failed to generate ZIP of invoices.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
+                                        };
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
                                             if (toComplete.length === 0) return;
