@@ -5361,19 +5361,7 @@ export default function Dashboard() {
                                             </Reorder.Group>
                                         )}
 
-                                        {/* Footer Totals */}
-                                        <div className="bg-slate-50 font-bold border-t border-slate-200 sticky bottom-0 z-30 grid grid-cols-subgrid" style={{ gridColumn: isAdmin ? 'span 19' : 'span 16' }}>
-                                            <div className="p-3 text-right col-span-8 text-slate-600"></div>
-                                            {isAdmin && <div className="p-3 text-right font-mono text-slate-700">€{totalCost.toLocaleString()}</div>}
-                                            <div className="p-3 text-right font-mono financial-positive-text">€{totalSold.toLocaleString()}</div>
-                                            <div className="p-3 text-right font-mono text-slate-500">€{totalPaid.toLocaleString()}</div>
-                                            {isAdmin && <>
-                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalBankFee.toLocaleString()}</div>
-                                                <div className="p-3 text-right font-mono text-slate-400 text-xs">€{totalServices.toLocaleString()}</div>
-                                                <div className="p-3 text-right font-mono text-slate-900">€{totalProfit.toLocaleString()}</div>
-                                            </>}
-                                            <div className="p-3 col-span-3"></div>
-                                        </div>
+
                                     </div>
                                 </div>
                                 )}
