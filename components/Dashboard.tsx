@@ -7318,36 +7318,7 @@ export default function Dashboard() {
                     </motion.div>
                 )
             }
-            {view !== 'sale_form' && (
-                <nav className="app-mobile-nav md:hidden" aria-label="Mobile quick navigation">
-                    {(() => {
-                        const restrictedTabs = getProfileAllowedTabs(userProfile);
-                        const mobileNavItems = [
-                            { id: 'dashboard', navId: 'SALES', label: 'Dashboard', icon: Menu, targetView: 'dashboard' as const, targetCategory: 'SALES' as const },
-                            { id: 'mechanic', navId: 'MECHANIC', label: 'Mechanic', icon: Wrench, targetView: 'mechanic' as const },
-                            { id: 'inspections', navId: 'INSPECTIONS', label: 'Inspection', icon: Search, targetView: 'dashboard' as const, targetCategory: 'INSPECTIONS' as const },
-                            { id: 'invoices', navId: 'INVOICES', label: 'Invoices', icon: FileText, targetView: 'invoices' as const },
-                            { id: 'pdf', navId: 'PDF', label: 'PDF', icon: Download, targetView: 'pdf_list' as const },
-                            { id: 'balance_due', navId: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, targetView: 'balance_due' as const }
-                        ].filter(item => !restrictedTabs || restrictedTabs.has(item.navId));
-                        return mobileNavItems.map((item) => {
-                        const isActive = view === item.targetView && (!('targetCategory' in item) || activeCategory === (item as any).targetCategory);
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => { setView(item.targetView); if ('targetCategory' in item && (item as any).targetCategory) setActiveCategory((item as any).targetCategory); }}
-                                className={`mobile-nav-item transition-all duration-200 ${isActive ? 'mobile-nav-item-active scale-105' : 'opacity-70'}`}
-                                aria-current={isActive ? 'page' : undefined}
-                            >
-                                <item.icon className={`h-3.5 w-3.5 transition-transform duration-200 ${isActive ? 'scale-110' : ''}`} />
-                                <span className="truncate max-w-full">{item.label}</span>
-                            </button>
-                        );
-                    });
-                    })()}
-                </nav>
-            )}
+            {/* Mobile bottom nav removed per request */}
 
             <AnimatePresence>
                 {longPressActionSale && (
