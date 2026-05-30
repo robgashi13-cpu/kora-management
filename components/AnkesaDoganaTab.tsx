@@ -117,7 +117,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [complaints, setComplaints] = useState<Record<string, ComplaintRow>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'sale' | 'shipped' | 'autosalloni'>('all');
+  const [filter, setFilter] = useState<'all' | 'sale' | 'shipped' | 'autosalloni' | 'active'>('all');
   const [refundFor, setRefundFor] = useState<{ id: string; current: number } | null>(null);
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
