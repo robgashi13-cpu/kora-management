@@ -117,7 +117,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   const [complaints, setComplaints] = useState<Record<string, ComplaintRow>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'sale' | 'shipped' | 'autosalloni'>('all');
+  const [filter, setFilter] = useState<'all' | 'sale' | 'shipped' | 'autosalloni' | 'active'>('all');
   const [refundFor, setRefundFor] = useState<{ id: string; current: number } | null>(null);
   const [refundInput, setRefundInput] = useState('');
   const [filesFor, setFilesFor] = useState<CarSale | null>(null);
@@ -287,12 +287,15 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     const isBesi = (userProfile || '').toLowerCase() === 'besi';
     return list.filter(({ sale, bucket }) => {
       if (isBesi && bucket === 'sale') return false;
-      if (filter !== 'all' && filter !== bucket) return false;
+      if (filter === 'active') {
+        const st = complaints[sale.id]?.status || 'not_started';
+        if (st !== 'started' && st !== 'dogana' && st !== 'gjykata') return false;
+      } else if (filter !== 'all' && filter !== bucket) return false;
       if (!q) return true;
       const hay = `${sale.brand} ${sale.model} ${sale.plateNumber} ${sale.vin} ${sale.buyerName} ${sale.group || ''} ${sale.shippingName || ''}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [sales, search, filter, userProfile]);
+  }, [sales, search, filter, userProfile, complaints]);
 
   const grouped = useMemo(() => {
     const buckets: Record<'sale' | 'shipped' | 'autosalloni', typeof rows> = { sale: [], shipped: [], autosalloni: [] };
@@ -433,6 +436,46 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     );
   };
 
+  const renderActiveSection = (items: typeof rows) => {
+    const order: CustomsStatus[] = ['started', 'dogana', 'gjykata'];
+    const byStatus = new Map<CustomsStatus, typeof rows>();
+    for (const st of order) byStatus.set(st, []);
+    for (const r of items) {
+      const st = (complaints[r.sale.id]?.status || 'not_started') as CustomsStatus;
+      if (byStatus.has(st)) byStatus.get(st)!.push(r);
+    }
+    return (
+      <section className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.05)] overflow-hidden flex flex-col animate-fade-in">
+        <header className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Në Proces · Started / Dogana / Gjykata</h3>
+          <span className="text-xs text-slate-500">{items.length}</span>
+        </header>
+        {items.length === 0 ? (
+          <div className="px-4 py-6 text-center text-xs text-slate-400">No cars in Started, Dogana or Gjykata.</div>
+        ) : (
+          <div>
+            {order.map((st) => {
+              const arr = byStatus.get(st) || [];
+              if (arr.length === 0) return null;
+              const opt = STATUS_OPTIONS.find((o) => o.value === st);
+              return (
+                <div key={st} className="border-b border-slate-100 last:border-b-0">
+                  <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-50/70">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${opt?.tone || ''}`}>{opt?.label}</span>
+                    <span className="text-[10px] text-slate-400 ml-auto">{arr.length}</span>
+                  </div>
+                  <ul className="divide-y divide-slate-100">
+                    {arr.map(({ sale, bucket }) => renderCarRow(sale, bucket))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  };
+
   const renderSection = (title: string, items: typeof rows, emptyHint: string, sectionKey: string) => {
     const groups = groupRowsByGroup(items);
     return (
@@ -499,14 +542,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm overflow-x-auto">
-            {(['all', 'sale', 'shipped', 'autosalloni'] as const).map((f) => (
+            {(['all', 'sale', 'shipped', 'autosalloni', 'active'] as const).map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold capitalize transition-all whitespace-nowrap ${filter === f ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                {f === 'all' ? 'All' : f}
+                {f === 'all' ? 'All' : f === 'active' ? 'Në Proces' : f}
               </button>
             ))}
           </div>
@@ -525,6 +568,10 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       {loading ? (
         <div className="flex items-center justify-center py-12 text-slate-500 text-sm gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+        </div>
+      ) : filter === 'active' ? (
+        <div className="flex-1 min-h-0 overflow-y-auto pb-24 md:pb-32">
+          {renderActiveSection(rows)}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pb-24 md:pb-32 items-start">
