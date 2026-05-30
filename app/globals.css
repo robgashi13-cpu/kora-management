@@ -2571,3 +2571,58 @@ button, .btn, [role="button"] {
   overflow-wrap: normal;
   word-break: normal;
 }
+
+/* =========================================================
+   PDF / DOCUMENT PROTECTION — opt every PDF surface out of the
+   responsive safety layer above. Preserves exact PDF output,
+   dimensions, text placement, calculations and print fidelity.
+   ========================================================= */
+.pdf-root,
+.pdf-root *,
+.pdf-preview-scaler,
+.pdf-preview-scaler *,
+[data-pdf="true"],
+[data-pdf="true"] *,
+.contract-document,
+.contract-document *,
+.invoice-document,
+.invoice-document * {
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  max-width: none !important;
+}
+
+/* Don't force PDF buttons/inputs to full-width on mobile — keep layout intact */
+@media (max-width: 640px) {
+  .pdf-root input,
+  .pdf-root select,
+  .pdf-root textarea,
+  .pdf-root button,
+  .contract-document input,
+  .contract-document select,
+  .contract-document textarea,
+  .invoice-document input,
+  .invoice-document select,
+  .invoice-document textarea {
+    width: auto !important;
+    max-width: none !important;
+    font-size: inherit !important;
+  }
+}
+
+/* PDF grids must keep their declared column counts (do not auto-collapse) */
+@media (max-width: 768px) {
+  .pdf-root .grid,
+  .contract-document .grid,
+  .invoice-document .grid {
+    grid-template-columns: revert !important;
+  }
+}
+
+/* Iframe-rendered PDF previews keep their explicit sizes */
+iframe[title*="PDF" i],
+iframe[title*="Contract" i],
+iframe[title*="Invoice" i] {
+  max-width: 100%;
+  height: 70vh;
+}
