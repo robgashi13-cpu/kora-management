@@ -499,14 +499,14 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex items-center rounded-xl border border-slate-200 bg-white p-1 shadow-sm overflow-x-auto">
-            {(['all', 'sale', 'shipped', 'autosalloni'] as const).map((f) => (
+            {(['all', 'sale', 'shipped', 'autosalloni', 'active'] as const).map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold capitalize transition-all whitespace-nowrap ${filter === f ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
               >
-                {f === 'all' ? 'All' : f}
+                {f === 'all' ? 'All' : f === 'active' ? 'Në Proces' : f}
               </button>
             ))}
           </div>
@@ -525,6 +525,10 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       {loading ? (
         <div className="flex items-center justify-center py-12 text-slate-500 text-sm gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+        </div>
+      ) : filter === 'active' ? (
+        <div className="flex-1 min-h-0 overflow-y-auto pb-24 md:pb-32">
+          {renderActiveSection(rows)}
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pb-24 md:pb-32 items-start">
