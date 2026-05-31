@@ -1,3 +1,12 @@
+/* ============================================================================
+ * 🔒 LOCKED FILE — PDF / DOCUMENT ENGINE
+ * Restored to the pre-2026-05-30 baseline by user request.
+ * DO NOT MODIFY layout, math, calculations, formatting, fonts, sizes, or
+ * print/export behavior. UI redesigns, responsive guardrails, and styling
+ * sweeps MUST skip this file. Any change requires an explicit user request
+ * that names this file directly.
+ * ============================================================================ */
+
 'use client';
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
