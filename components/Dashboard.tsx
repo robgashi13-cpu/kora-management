@@ -3732,7 +3732,7 @@ export default function Dashboard() {
             acc.totalCost += cost;
             acc.totalPaid += paid;
             acc.totalRemaining += remaining;
-            if (remaining <= 0) {
+            if (Boolean(sale.paidDateToKorea) && remaining <= 0) {
                 acc.paidCount += 1;
             } else {
                 acc.notPaidCount += 1;
