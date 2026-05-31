@@ -6166,7 +6166,7 @@ export default function Dashboard() {
                                                     <div className="divide-y divide-slate-100 md:hidden">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
+                                                            const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                                                             return (
                                                                 <div key={`korea-mobile-${sale.id}`} className="w-full px-3 py-3 text-left">
                                                                     <button type="button" onClick={() => handleSaleInteraction(sale)} className="w-full text-left">
