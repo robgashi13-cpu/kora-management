@@ -3710,7 +3710,7 @@ export default function Dashboard() {
                 const isOnSale = sale.status !== 'Completed' && sale.status !== 'Shipped' && sale.status !== 'Cancelled' && sale.status !== 'Archived';
                 if (!isOnSale) return false;
                 const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                const isPaid = remaining <= 0;
+                const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                 if (paidKoreaPaymentFilter === 'paid' && !isPaid) return false;
                 if (paidKoreaPaymentFilter === 'not_paid' && isPaid) return false;
                 if (!term) return true;
@@ -3732,7 +3732,7 @@ export default function Dashboard() {
             acc.totalCost += cost;
             acc.totalPaid += paid;
             acc.totalRemaining += remaining;
-            if (remaining <= 0) {
+            if (Boolean(sale.paidDateToKorea) && remaining <= 0) {
                 acc.paidCount += 1;
             } else {
                 acc.notPaidCount += 1;
@@ -6129,7 +6129,7 @@ export default function Dashboard() {
                                                     <div className="divide-y divide-slate-100 hidden md:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
+                                                            const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                                                             return (
                                                                 <div
                                                                     key={`korea-${sale.id}`}
@@ -6166,7 +6166,7 @@ export default function Dashboard() {
                                                     <div className="divide-y divide-slate-100 md:hidden">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
+                                                            const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                                                             return (
                                                                 <div key={`korea-mobile-${sale.id}`} className="w-full px-3 py-3 text-left">
                                                                     <button type="button" onClick={() => handleSaleInteraction(sale)} className="w-full text-left">
