@@ -3710,7 +3710,7 @@ export default function Dashboard() {
                 const isOnSale = sale.status !== 'Completed' && sale.status !== 'Shipped' && sale.status !== 'Cancelled' && sale.status !== 'Archived';
                 if (!isOnSale) return false;
                 const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                const isPaid = remaining <= 0;
+                const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                 if (paidKoreaPaymentFilter === 'paid' && !isPaid) return false;
                 if (paidKoreaPaymentFilter === 'not_paid' && isPaid) return false;
                 if (!term) return true;
