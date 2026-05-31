@@ -6129,7 +6129,7 @@ export default function Dashboard() {
                                                     <div className="divide-y divide-slate-100 hidden md:block">
                                                         {onSaleKoreaRows.map((sale) => {
                                                             const remaining = Math.max((sale.costToBuy || 0) - (sale.amountPaidToKorea || 0), 0);
-                                                            const isPaid = remaining <= 0;
+                                                            const isPaid = Boolean(sale.paidDateToKorea) && remaining <= 0;
                                                             return (
                                                                 <div
                                                                     key={`korea-${sale.id}`}
