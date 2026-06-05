@@ -491,8 +491,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     display: flex;
                     flex-direction: row;
                     justify-content: space-between;
-                    align-items: flex-start;
+                    align-items: center;
                     gap: 18px;
+                    margin-bottom: 22px;
                 }
 
                 .invoice-root--pdf .invoice-header-right,
@@ -510,6 +511,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     border-top: 1px solid #000000;
                     border-bottom: 1px solid #000000;
                     padding: 14px 16px;
+                    margin-top: 6px;
                     margin-bottom: 16px;
                     break-inside: avoid;
                 }
