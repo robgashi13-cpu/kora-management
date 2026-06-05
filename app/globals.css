@@ -2399,12 +2399,20 @@ main[role="main"],
   padding-right: env(safe-area-inset-right);
 }
 
-/* On desktop (no bottom nav) drop the extra bottom padding */
-@media (min-width: 1025px) {
+/* On tablet/desktop (no bottom nav) drop the extra bottom padding */
+@media (min-width: 768px) {
   .app-content,
   main[role="main"],
   .scroll-container {
-    padding-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* Tighten top bar on tablet/desktop where there's no notch */
+@media (min-width: 768px) {
+  .app-topbar, header.app-topbar, header[role="banner"] {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
   }
 }
 
