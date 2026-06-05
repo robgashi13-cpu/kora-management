@@ -262,7 +262,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 }
 
                 .invoice-root--pdf {
-                    padding: 12px 14px;
+                    padding: 22px 20px 18px;
                 }
 
                 .invoice-header {
@@ -270,7 +270,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     flex-direction: column;
                     gap: 18px;
                     align-items: flex-start;
-                    margin-bottom: 16px;
+                    margin-bottom: 20px;
                     break-inside: avoid;
                 }
 
@@ -278,18 +278,22 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     display: flex;
                     align-items: center;
                     gap: 16px;
+                    min-width: 0;
                 }
 
                 .invoice-title {
                     display: flex;
                     flex-direction: column;
-                    gap: 2px;
+                    gap: 4px;
+                    min-width: 0;
                 }
 
                 .invoice-title-label {
-                    font-size: 1.05rem;
-                    font-weight: 700;
-                    letter-spacing: 0.08em;
+                    font-size: 1.35rem;
+                    font-weight: 800;
+                    letter-spacing: 0.12em;
+                    line-height: 1.15;
+                    text-transform: uppercase;
                 }
 
                 .invoice-title-meta {
