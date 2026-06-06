@@ -1576,18 +1576,40 @@ export default function Dashboard() {
     }, [sales, documentPreview]);
 
 
+    // Strip heavy base64 attachments before writing to localStorage / Capacitor Preferences.
+    // The web platform caps these stores at ~5MB; uploaded receipts/invoices easily exceed that.
+    // The full payload (including attachments) is always persisted to the cloud DB, which is the
+    // source of truth, so the local mirror only needs the lightweight fields for offline UI.
+    const stripAttachmentsForLocalMirror = (sale: CarSale): CarSale => {
+        const { bankReceipt, bankReceipts, bankInvoice, bankInvoices, depositInvoices, ...rest } = sale as any;
+        return rest as CarSale;
+    };
+
     const persistSalesLocally = async (normalizedSales: CarSale[]) => {
         const salesStorageKey = getSalesStorageKey();
-        await Preferences.set({ key: salesStorageKey, value: JSON.stringify(normalizedSales) });
-        safeSetItem(salesStorageKey, JSON.stringify(normalizedSales));
+        const lightSales = normalizedSales.map(stripAttachmentsForLocalMirror);
+        const lightPayload = JSON.stringify(lightSales);
+
+        try {
+            await Preferences.set({ key: salesStorageKey, value: lightPayload });
+        } catch (e: any) {
+            // Quota or storage failure on the local mirror must never abort the cloud save.
+            console.warn('[Storage] Preferences.set failed, continuing:', e?.message || e);
+        }
+        safeSetItem(salesStorageKey, lightPayload);
 
         if (Capacitor.isNativePlatform()) {
-            await Filesystem.writeFile({
-                path: 'sales_backup.json',
-                data: JSON.stringify(normalizedSales, null, 2),
-                directory: Directory.Documents,
-                encoding: Encoding.UTF8
-            });
+            try {
+                // On native devices the filesystem has no practical quota, so keep full payload.
+                await Filesystem.writeFile({
+                    path: 'sales_backup.json',
+                    data: JSON.stringify(normalizedSales, null, 2),
+                    directory: Directory.Documents,
+                    encoding: Encoding.UTF8
+                });
+            } catch (e: any) {
+                console.warn('[Storage] Filesystem backup failed, continuing:', e?.message || e);
+            }
         }
     };
 
