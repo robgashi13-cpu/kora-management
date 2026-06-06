@@ -25,7 +25,7 @@ export type SellerAuditEntry = {
 
 export interface Attachment {
     name: string;
-    data: string; // Base64
+    data?: string; // Base64 when stored inline; omitted for storage-backed files
     type: string; // mime type
     size: number;
     fileUrl?: string;
