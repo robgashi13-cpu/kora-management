@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
-import { rehydrateDraftSaleAttachments, resolveAttachmentUrl, sanitizeSaleDraft, uploadFileToSaleStorage } from '@/services/saleAttachmentStorage';
+import { rehydrateDraftSaleAttachments, resolveAttachmentUrl, sanitizeSaleDraft, uploadAttachmentToSaleStorage, uploadFileToSaleStorage } from '@/services/saleAttachmentStorage';
 
 interface Props {
     isOpen: boolean;
@@ -372,8 +372,19 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             soldBy: activeOption?.id || profileName
         };
         const isCreate = !existingSale;
+        const saleId = existingSale?.id || formData.id || crypto.randomUUID();
         const baseCostToBuy = Math.max(0, Number(formData.costToBuy || 0));
         const customPrice = isAutosalloniSale ? Math.max(0, Number(formData.customPriceDiscount || 0)) : 0;
+
+        const uploadCollection = async (files: Attachment[] | undefined, field: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
+            if (!files?.length) return [] as Attachment[];
+            const uploaded = await Promise.all(files.map((file) => uploadAttachmentToSaleStorage(file, saleId, field)));
+            return uploaded;
+        };
+
+        const uploadedBankReceipts = await uploadCollection(formData.bankReceipts, 'bankReceipts');
+        const uploadedBankInvoices = await uploadCollection(formData.bankInvoices, 'bankInvoices');
+        const uploadedDepositInvoices = await uploadCollection(formData.depositInvoices, 'depositInvoices');
 
         const sale: CarSale = {
             ...formData as CarSale,
@@ -382,10 +393,15 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 shippingName: '',
                 shippingDate: new Date().toISOString().split('T')[0]
             } : {}),
-            id: existingSale?.id || formData.id || crypto.randomUUID(),
+            id: saleId,
             costToBuy: isAutosalloniSale ? baseCostToBuy + customPrice : baseCostToBuy,
             baseCostToBuy: isAutosalloniSale ? baseCostToBuy : undefined,
             customPriceDiscount: customPrice,
+            bankReceipts: uploadedBankReceipts,
+            bankInvoices: uploadedBankInvoices,
+            depositInvoices: uploadedDepositInvoices,
+            bankReceipt: uploadedBankReceipts[0],
+            bankInvoice: uploadedBankInvoices[0],
             createdAt: existingSale?.createdAt || new Date().toISOString(),
         };
         try {
