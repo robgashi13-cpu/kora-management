@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
 import InvoicePriceModal from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
+import { rehydrateDraftSaleAttachments, resolveAttachmentUrl, sanitizeSaleDraft, uploadFileToSaleStorage } from '@/services/saleAttachmentStorage';
 
 interface Props {
     isOpen: boolean;
@@ -184,7 +185,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         try {
             const draft = JSON.parse(raw) as { data: Partial<CarSale>; updatedAt?: string };
             if (draft?.data) {
-                setFormData(prev => ({ ...prev, ...draft.data }));
+                setFormData(prev => rehydrateDraftSaleAttachments(prev, draft.data));
                 setDraftState({ status: 'saved', savedAt: draft.updatedAt });
             }
         } catch (error) {
@@ -205,10 +206,15 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             const savedAt = new Date().toISOString();
             const payload = {
                 updatedAt: savedAt,
-                data: formData
+                data: sanitizeSaleDraft(formData)
             };
-            window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
-            setDraftState({ status: 'saved', savedAt });
+            try {
+                window.localStorage.setItem(draftStorageKey, JSON.stringify(payload));
+                setDraftState({ status: 'saved', savedAt });
+            } catch (error) {
+                console.warn('Failed to save sale draft', error);
+                setDraftState({ status: 'idle' });
+            }
         }, 500);
 
         return () => {
@@ -257,6 +263,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
         setUploadState({ active: true, message: `Uploading ${files.length} file${files.length > 1 ? 's' : ''}...` });
         const newAttachments: Attachment[] = [];
+        const saleId = existingSale?.id || formData.id || crypto.randomUUID();
+
+        if (!formData.id) {
+            setFormData(prev => ({ ...prev, id: saleId }));
+        }
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -266,23 +277,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             }
 
             try {
-                const attachment = await new Promise<Attachment>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onerror = () => reject(new Error(`Failed to read ${file.name}.`));
-                    reader.onload = () => {
-                        if (typeof reader.result !== 'string') {
-                            reject(new Error(`Invalid file payload for ${file.name}.`));
-                            return;
-                        }
-                        resolve({
-                            name: file.name,
-                            data: reader.result,
-                            type: file.type,
-                            size: file.size
-                        });
-                    };
-                    reader.readAsDataURL(file);
-                });
+                const attachment = await uploadFileToSaleStorage(file, saleId, field);
                 newAttachments.push(attachment);
             } catch (error) {
                 console.error(error);
@@ -313,20 +308,16 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     };
 
     const viewFile = (file: Attachment) => {
-        if (!file.data) return;
+        const fileUrl = resolveAttachmentUrl(file);
+        if (!fileUrl) return;
 
         // Check if it's an image
         if (file.type.startsWith('image/')) {
-            setPreviewImage(file.data); // data is already a data URL
+            setPreviewImage(fileUrl);
         } else {
             // PDF or other - open in new tab via Blob
             try {
-                // Determine MIME type (fallback to pdf if unknown)
-                const mimeType = file.type || 'application/pdf';
-                // Data is likely "data:application/pdf;base64,....."
-                // We need to strip the prefix to get pure base64 if we use atob, OR just use fetch on the data URL.
-                // Fetching the data URL is cleaner.
-                fetch(file.data)
+                fetch(fileUrl)
                     .then(res => res.blob())
                     .then(async (blob) => {
                         const openResult = await openPdfBlob(blob);
