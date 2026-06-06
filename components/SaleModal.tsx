@@ -382,7 +382,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 shippingName: '',
                 shippingDate: new Date().toISOString().split('T')[0]
             } : {}),
-            id: existingSale?.id || crypto.randomUUID(),
+            id: existingSale?.id || formData.id || crypto.randomUUID(),
             costToBuy: isAutosalloniSale ? baseCostToBuy + customPrice : baseCostToBuy,
             baseCostToBuy: isAutosalloniSale ? baseCostToBuy : undefined,
             customPriceDiscount: customPrice,
