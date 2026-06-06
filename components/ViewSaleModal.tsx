@@ -7,6 +7,7 @@ import { CarSale, Attachment } from '@/src/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { generatePdf, openPdfBlob, waitForImages } from './pdfUtils';
+import { resolveAttachmentUrl } from '@/services/saleAttachmentStorage';
 
 interface Props {
     isOpen: boolean;
@@ -101,11 +102,12 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
     };
 
     const viewFile = (file: Attachment) => {
-        if (!file.data) return;
+        const fileUrl = resolveAttachmentUrl(file);
+        if (!fileUrl) return;
         if (file.type.startsWith('image/')) {
-            setPreviewImage(file.data);
+            setPreviewImage(fileUrl);
         } else {
-            fetch(file.data)
+            fetch(fileUrl)
                 .then(res => res.blob())
                 .then(async (blob) => {
                     const openResult = await openPdfBlob(blob);
@@ -140,8 +142,9 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
     );
 
     const handleDownloadAttachment = async (file: Attachment) => {
-        if (!file.data) return;
-        const response = await fetch(file.data);
+        const fileUrl = resolveAttachmentUrl(file);
+        if (!fileUrl) return;
+        const response = await fetch(fileUrl);
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -152,8 +155,9 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
     };
 
     const handlePrintAttachment = async (file: Attachment) => {
-        if (!file.data) return;
-        const response = await fetch(file.data);
+        const fileUrl = resolveAttachmentUrl(file);
+        if (!fileUrl) return;
+        const response = await fetch(fileUrl);
         const blob = await response.blob();
         const openResult = await openPdfBlob(blob);
         if (!openResult.opened) {
