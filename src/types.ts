@@ -28,6 +28,9 @@ export interface Attachment {
     data: string; // Base64
     type: string; // mime type
     size: number;
+    fileUrl?: string;
+    storageBucket?: string;
+    storagePath?: string;
 }
 
 export interface CarSale {
