@@ -769,7 +769,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
                                 <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
+                            <PaymentHistoryList history={existingSale?.paymentHistory} />
                         </div>
+
 
                         <div className="grid grid-cols-1 gap-4 md:gap-6">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
