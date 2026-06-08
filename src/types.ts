@@ -33,6 +33,18 @@ export interface Attachment {
     storagePath?: string;
 }
 
+export type PaymentHistoryMethod = 'Bank' | 'Cash' | 'Deposit';
+
+export interface PaymentHistoryEntry {
+    id: string;
+    method: PaymentHistoryMethod;
+    delta: number; // change amount (positive = added, negative = removed)
+    newTotal: number; // running total for this method after the change
+    changedAt: string; // ISO timestamp
+    changedBy: string; // profile label/id
+}
+
+
 export interface CarSale {
     id: string;
     brand: string;
