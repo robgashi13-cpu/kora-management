@@ -224,6 +224,8 @@ const fromRemote = (r: any): CarSale => ({
     depositInvoices: r.attachments?.depositInvoices,
     shitblerjeOverrides: r.attachments?.shitblerjeOverrides,
     sellerAudit: r.attachments?.sellerAudit,
+    paymentHistory: r.attachments?.paymentHistory,
+
     createdAt: r.created_at ?? r.attachments?.createdAt ?? new Date().toISOString(),
 });
 
