@@ -386,6 +386,41 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         const uploadedBankInvoices = await uploadCollection(formData.bankInvoices, 'bankInvoices');
         const uploadedDepositInvoices = await uploadCollection(formData.depositInvoices, 'depositInvoices');
 
+        // Build payment history entries based on differences vs existing sale
+        const prevBank = Number(existingSale?.amountPaidBank || 0);
+        const prevCash = Number(existingSale?.amountPaidCash || 0);
+        const prevDeposit = Number(existingSale?.deposit || 0);
+        const nextBank = Number(formData.amountPaidBank || 0);
+        const nextCash = Number(formData.amountPaidCash || 0);
+        const nextDeposit = Number(formData.deposit || 0);
+        const editor = (currentProfile || activeOption?.label || 'Unknown').trim() || 'Unknown';
+        const nowIso = new Date().toISOString();
+        const existingHistory: PaymentHistoryEntry[] = Array.isArray(existingSale?.paymentHistory) ? existingSale!.paymentHistory! : [];
+        const newHistoryEntries: PaymentHistoryEntry[] = [];
+        const pushDiff = (method: PaymentHistoryMethod, prev: number, next: number) => {
+            const delta = Number((next - prev).toFixed(2));
+            if (delta === 0) return;
+            newHistoryEntries.push({
+                id: crypto.randomUUID(),
+                method,
+                delta,
+                newTotal: Number(next.toFixed(2)),
+                changedAt: nowIso,
+                changedBy: editor,
+            });
+        };
+        // For new sales: record initial amounts as deposits of history (only if >0)
+        if (isCreate) {
+            if (nextBank > 0) pushDiff('Bank', 0, nextBank);
+            if (nextCash > 0) pushDiff('Cash', 0, nextCash);
+            if (nextDeposit > 0) pushDiff('Deposit', 0, nextDeposit);
+        } else {
+            pushDiff('Bank', prevBank, nextBank);
+            pushDiff('Cash', prevCash, nextCash);
+            pushDiff('Deposit', prevDeposit, nextDeposit);
+        }
+        const mergedHistory = [...existingHistory, ...newHistoryEntries];
+
         const sale: CarSale = {
             ...formData as CarSale,
             ...(!isAdmin && isCreate ? {
@@ -402,8 +437,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             depositInvoices: uploadedDepositInvoices,
             bankReceipt: uploadedBankReceipts[0],
             bankInvoice: uploadedBankInvoices[0],
+            paymentHistory: mergedHistory,
             createdAt: existingSale?.createdAt || new Date().toISOString(),
         };
+
         try {
             const result = await onSave(sale);
             if (!result.success) {
