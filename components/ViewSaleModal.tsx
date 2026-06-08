@@ -367,7 +367,9 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                                 <Field label="Deposit Date" value={formatDate(sale.depositDate)} />
                                 <Field label="Full Payment Date" value={formatDate(sale.paidDateFromClient)} />
                             </div>
+                            <PaymentHistoryView history={sale.paymentHistory} />
                         </Section>
+
 
                         {/* Attachments */}
                         <Section title="Attachments">
