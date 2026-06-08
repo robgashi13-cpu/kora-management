@@ -105,6 +105,8 @@ export interface CarSale {
     invoiceId?: string;
     shitblerjeOverrides?: ShitblerjeOverrides;
     sellerAudit?: SellerAuditEntry[];
+    paymentHistory?: PaymentHistoryEntry[];
+
     archivedAt?: string;
     archivedBy?: string;
     archivedFromStatus?: SaleStatus;
