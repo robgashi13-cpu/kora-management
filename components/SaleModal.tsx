@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
-import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus } from '@/src/types';
+import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus, PaymentHistoryEntry, PaymentHistoryMethod } from '@/src/types';
 import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
@@ -386,6 +386,41 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         const uploadedBankInvoices = await uploadCollection(formData.bankInvoices, 'bankInvoices');
         const uploadedDepositInvoices = await uploadCollection(formData.depositInvoices, 'depositInvoices');
 
+        // Build payment history entries based on differences vs existing sale
+        const prevBank = Number(existingSale?.amountPaidBank || 0);
+        const prevCash = Number(existingSale?.amountPaidCash || 0);
+        const prevDeposit = Number(existingSale?.deposit || 0);
+        const nextBank = Number(formData.amountPaidBank || 0);
+        const nextCash = Number(formData.amountPaidCash || 0);
+        const nextDeposit = Number(formData.deposit || 0);
+        const editor = (currentProfile || activeOption?.label || 'Unknown').trim() || 'Unknown';
+        const nowIso = new Date().toISOString();
+        const existingHistory: PaymentHistoryEntry[] = Array.isArray(existingSale?.paymentHistory) ? existingSale!.paymentHistory! : [];
+        const newHistoryEntries: PaymentHistoryEntry[] = [];
+        const pushDiff = (method: PaymentHistoryMethod, prev: number, next: number) => {
+            const delta = Number((next - prev).toFixed(2));
+            if (delta === 0) return;
+            newHistoryEntries.push({
+                id: crypto.randomUUID(),
+                method,
+                delta,
+                newTotal: Number(next.toFixed(2)),
+                changedAt: nowIso,
+                changedBy: editor,
+            });
+        };
+        // For new sales: record initial amounts as deposits of history (only if >0)
+        if (isCreate) {
+            if (nextBank > 0) pushDiff('Bank', 0, nextBank);
+            if (nextCash > 0) pushDiff('Cash', 0, nextCash);
+            if (nextDeposit > 0) pushDiff('Deposit', 0, nextDeposit);
+        } else {
+            pushDiff('Bank', prevBank, nextBank);
+            pushDiff('Cash', prevCash, nextCash);
+            pushDiff('Deposit', prevDeposit, nextDeposit);
+        }
+        const mergedHistory = [...existingHistory, ...newHistoryEntries];
+
         const sale: CarSale = {
             ...formData as CarSale,
             ...(!isAdmin && isCreate ? {
@@ -402,8 +437,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             depositInvoices: uploadedDepositInvoices,
             bankReceipt: uploadedBankReceipts[0],
             bankInvoice: uploadedBankInvoices[0],
+            paymentHistory: mergedHistory,
             createdAt: existingSale?.createdAt || new Date().toISOString(),
         };
+
         try {
             const result = await onSave(sale);
             if (!result.success) {
@@ -732,7 +769,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
                                 <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
+                            <PaymentHistoryList history={existingSale?.paymentHistory} />
                         </div>
+
 
                         <div className="grid grid-cols-1 gap-4 md:gap-6">
                             <Select label="Status" name="status" value={formData.status} onChange={handleChange}>
@@ -1184,3 +1223,54 @@ const TextArea = ({ label, className = "", required, ...props }: any) => (
         />
     </div>
 );
+
+const PaymentHistoryList = ({ history }: { history?: PaymentHistoryEntry[] }) => {
+    if (!history || history.length === 0) return null;
+    const sorted = [...history].sort((a, b) => (a.changedAt < b.changedAt ? 1 : -1));
+    const fmt = (iso: string) => {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return iso;
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+    const methodStyle = (m: PaymentHistoryMethod) =>
+        m === 'Bank' ? 'bg-blue-50 text-blue-700 border-blue-200'
+        : m === 'Cash' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200';
+    return (
+        <div className="mt-3 pt-4 border-t border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+                <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Payment History</h5>
+                <span className="text-[11px] text-slate-400">{sorted.length} change{sorted.length === 1 ? '' : 's'}</span>
+            </div>
+            <ul className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                {sorted.map((entry) => {
+                    const sign = entry.delta >= 0 ? '+' : '−';
+                    const abs = Math.abs(entry.delta).toLocaleString();
+                    return (
+                        <li
+                            key={entry.id}
+                            className="flex items-center justify-between gap-3 bg-white rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                        >
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase ${methodStyle(entry.method)}`}>
+                                    {entry.method}
+                                </span>
+                                <span className={`font-mono font-semibold ${entry.delta >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                    {sign}€{abs}
+                                </span>
+                                <span className="text-slate-400">→ €{entry.newTotal.toLocaleString()}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                                <span>{fmt(entry.changedAt)}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="font-medium text-slate-600 truncate max-w-[120px]">{entry.changedBy}</span>
+                            </div>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    );
+};
+
