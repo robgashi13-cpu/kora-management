@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { X, ArrowLeft, FileText, Eye, Edit, FolderOpen, MoreHorizontal, Download, Printer } from 'lucide-react';
-import { CarSale, Attachment } from '@/src/types';
+import { CarSale, Attachment, PaymentHistoryEntry, PaymentHistoryMethod } from '@/src/types';
 import { motion } from 'framer-motion';
 import InvoiceDocument from './InvoiceDocument';
 import { generatePdf, openPdfBlob, waitForImages } from './pdfUtils';
