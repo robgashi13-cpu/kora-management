@@ -600,6 +600,28 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                     text-decoration: none !important;
                     filter: none !important;
                 }
+                /* Pixel-precise alignment: monospaced digits keep numeric columns flush */
+                #invoice-content {
+                    font-variant-numeric: tabular-nums;
+                    -moz-font-feature-settings: "tnum";
+                    -webkit-font-feature-settings: "tnum";
+                    font-feature-settings: "tnum";
+                }
+                #invoice-content .invoice-summary-row,
+                #invoice-content .invoice-summary-total,
+                #invoice-content .invoice-meta-line {
+                    align-items: baseline;
+                }
+                #invoice-content .invoice-summary-row > span:last-child,
+                #invoice-content .invoice-summary-total > span:last-child,
+                #invoice-content .invoice-meta-line > span:last-child {
+                    text-align: right;
+                    white-space: nowrap;
+                }
+                #invoice-content .invoice-table th,
+                #invoice-content .invoice-table td {
+                    vertical-align: top;
+                }
             `}</style>
             </div>
         );
