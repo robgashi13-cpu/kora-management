@@ -518,8 +518,8 @@ export const generatePdf = async ({
           height: a4HeightPx,
           windowWidth: a4WidthPx,
           windowHeight: a4HeightPx,
-          letterRendering: true,
           allowTaint: false,
+          ...({ letterRendering: true } as any),
           onclone: (clonedDoc: Document) => {
             sanitizePdfCloneStyles(clonedDoc);
             normalizePdfLayout(clonedDoc);
