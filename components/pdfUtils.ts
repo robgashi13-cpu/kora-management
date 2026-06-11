@@ -249,6 +249,7 @@ export const generateImageBlobFromElement = async ({
     imageTimeout: 10000,
     width,
     height,
+    ...({ letterRendering: true } as any),
     onclone: (clonedDoc: Document) => {
       sanitizePdfCloneStyles(clonedDoc);
       normalizePdfLayout(clonedDoc);
