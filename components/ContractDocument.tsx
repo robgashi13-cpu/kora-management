@@ -614,6 +614,16 @@ export default function ContractDocument({ sale, type, documentRef, withStamp = 
                     text-decoration: none;
                     filter: none;
                 }
+                /* Pixel-precise alignment: monospaced digits keep numeric values flush */
+                .pdf-root {
+                    font-variant-numeric: tabular-nums;
+                    -moz-font-feature-settings: "tnum";
+                    -webkit-font-feature-settings: "tnum";
+                    font-feature-settings: "tnum";
+                    text-rendering: geometricPrecision;
+                }
+                .car-details .value { font-variant-numeric: tabular-nums; }
+                .car-details div { align-items: baseline; }
 
                 @media print {
                     .page-break { page-break-before: always; }
