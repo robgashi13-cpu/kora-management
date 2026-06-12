@@ -487,6 +487,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 window.localStorage.removeItem(draftStorageKey);
             }
             setDraftState({ status: 'idle' });
+            setPendingPayments([]);
             setSaveState({ saving: false, success: existingSale ? 'Saved successfully.' : 'Created successfully.', savedAt: new Date().toISOString() });
             setTimeout(() => {
                 handleRequestClose();
