@@ -42,6 +42,7 @@ export interface PaymentHistoryEntry {
     newTotal: number;
     changedAt: string;
     changedBy: string;
+    note?: string;
 }
 
 
