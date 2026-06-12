@@ -806,6 +806,12 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <DateInput label="Dep. Date" name="depositDate" value={formData.depositDate ? String(formData.depositDate).split('T')[0] : ''} onChange={handleChange} />
                                 <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
+
+                            <PendingPaymentsEditor
+                                pending={pendingPayments}
+                                onChange={setPendingPayments}
+                            />
+
                             <PaymentHistoryList history={existingSale?.paymentHistory} />
                         </div>
 
