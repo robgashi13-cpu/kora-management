@@ -172,6 +172,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         if (isOpen) return;
         hasInitializedFormRef.current = false;
         hasRestoredDraftRef.current = false;
+        setPendingPayments([]);
         if (autosaveTimerRef.current) {
             window.clearTimeout(autosaveTimerRef.current);
             autosaveTimerRef.current = null;
