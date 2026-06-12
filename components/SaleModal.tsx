@@ -392,35 +392,66 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         const prevBank = Number(existingSale?.amountPaidBank || 0);
         const prevCash = Number(existingSale?.amountPaidCash || 0);
         const prevDeposit = Number(existingSale?.deposit || 0);
-        const nextBank = Number(formData.amountPaidBank || 0);
-        const nextCash = Number(formData.amountPaidCash || 0);
-        const nextDeposit = Number(formData.deposit || 0);
+        const typedBank = Number(formData.amountPaidBank || 0);
+        const typedCash = Number(formData.amountPaidCash || 0);
+        const typedDeposit = Number(formData.deposit || 0);
+
+        // Sum pending incremental payments by method
+        const pendingByMethod: Record<PaymentHistoryMethod, { amount: number; note: string }[]> = {
+            Bank: [], Cash: [], Deposit: []
+        };
+        pendingPayments.forEach(p => {
+            const amt = Number(p.amount);
+            if (!amt || Number.isNaN(amt)) return;
+            pendingByMethod[p.method].push({ amount: amt, note: (p.note || '').trim() });
+        });
+        const sumPending = (m: PaymentHistoryMethod) => pendingByMethod[m].reduce((s, x) => s + x.amount, 0);
+
+        const nextBank = typedBank + sumPending('Bank');
+        const nextCash = typedCash + sumPending('Cash');
+        const nextDeposit = typedDeposit + sumPending('Deposit');
+
         const editor = (currentProfile || activeOption?.label || 'Unknown').trim() || 'Unknown';
         const nowIso = new Date().toISOString();
         const existingHistory: PaymentHistoryEntry[] = Array.isArray(existingSale?.paymentHistory) ? existingSale!.paymentHistory! : [];
         const newHistoryEntries: PaymentHistoryEntry[] = [];
-        const pushDiff = (method: PaymentHistoryMethod, prev: number, next: number) => {
-            const delta = Number((next - prev).toFixed(2));
-            if (delta === 0) return;
+
+        // Track running totals so each entry shows the right newTotal
+        const running: Record<PaymentHistoryMethod, number> = {
+            Bank: isCreate ? 0 : prevBank,
+            Cash: isCreate ? 0 : prevCash,
+            Deposit: isCreate ? 0 : prevDeposit,
+        };
+        const pushEntry = (method: PaymentHistoryMethod, delta: number, note?: string) => {
+            const d = Number(delta.toFixed(2));
+            if (d === 0) return;
+            running[method] = Number((running[method] + d).toFixed(2));
             newHistoryEntries.push({
                 id: crypto.randomUUID(),
                 method,
-                delta,
-                newTotal: Number(next.toFixed(2)),
+                delta: d,
+                newTotal: running[method],
                 changedAt: nowIso,
                 changedBy: editor,
+                ...(note ? { note } : {}),
             });
         };
-        // For new sales: record initial amounts as deposits of history (only if >0)
+
+        // 1) Record the typed/direct value change first (without note)
         if (isCreate) {
-            if (nextBank > 0) pushDiff('Bank', 0, nextBank);
-            if (nextCash > 0) pushDiff('Cash', 0, nextCash);
-            if (nextDeposit > 0) pushDiff('Deposit', 0, nextDeposit);
+            if (typedBank > 0) pushEntry('Bank', typedBank);
+            if (typedCash > 0) pushEntry('Cash', typedCash);
+            if (typedDeposit > 0) pushEntry('Deposit', typedDeposit);
         } else {
-            pushDiff('Bank', prevBank, nextBank);
-            pushDiff('Cash', prevCash, nextCash);
-            pushDiff('Deposit', prevDeposit, nextDeposit);
+            pushEntry('Bank', typedBank - prevBank);
+            pushEntry('Cash', typedCash - prevCash);
+            pushEntry('Deposit', typedDeposit - prevDeposit);
         }
+        // 2) Record each pending incremental payment as its own entry with note
+        (['Bank', 'Cash', 'Deposit'] as PaymentHistoryMethod[]).forEach(m => {
+            pendingByMethod[m].forEach(p => pushEntry(m, p.amount, p.note || undefined));
+        });
+
         const mergedHistory = [...existingHistory, ...newHistoryEntries];
 
         const sale: CarSale = {
@@ -431,6 +462,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 shippingDate: new Date().toISOString().split('T')[0]
             } : {}),
             id: saleId,
+            amountPaidBank: nextBank,
+            amountPaidCash: nextCash,
+            deposit: nextDeposit,
             costToBuy: isAutosalloniSale ? baseCostToBuy + customPrice : baseCostToBuy,
             baseCostToBuy: isAutosalloniSale ? baseCostToBuy : undefined,
             customPriceDiscount: customPrice,
