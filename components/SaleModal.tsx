@@ -78,6 +78,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
+    const [pendingPayments, setPendingPayments] = useState<{ id: string; method: PaymentHistoryMethod; amount: string; note: string }[]>([]);
     const hasInitializedFormRef = useRef(false);
     const hasRestoredDraftRef = useRef(false);
     const autosaveTimerRef = useRef<number | null>(null);
