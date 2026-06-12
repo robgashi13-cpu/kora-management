@@ -42,6 +42,7 @@ export interface PaymentHistoryEntry {
     newTotal: number; // running total for this method after the change
     changedAt: string; // ISO timestamp
     changedBy: string; // profile label/id
+    note?: string; // optional description provided when adding the payment
 }
 
 
