@@ -1293,22 +1293,29 @@ const PaymentHistoryList = ({ history }: { history?: PaymentHistoryEntry[] }) =>
                     return (
                         <li
                             key={entry.id}
-                            className="flex items-center justify-between gap-3 bg-white rounded-lg border border-slate-200 px-3 py-2 text-xs"
+                            className="bg-white rounded-lg border border-slate-200 px-3 py-2 text-xs"
                         >
-                            <div className="flex items-center gap-2 min-w-0">
-                                <span className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase ${methodStyle(entry.method)}`}>
-                                    {entry.method}
-                                </span>
-                                <span className={`font-mono font-semibold ${entry.delta >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
-                                    {sign}€{abs}
-                                </span>
-                                <span className="text-slate-400">→ €{entry.newTotal.toLocaleString()}</span>
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold uppercase ${methodStyle(entry.method)}`}>
+                                        {entry.method}
+                                    </span>
+                                    <span className={`font-mono font-semibold ${entry.delta >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                                        {sign}€{abs}
+                                    </span>
+                                    <span className="text-slate-400">→ €{entry.newTotal.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-slate-500 shrink-0">
+                                    <span>{fmt(entry.changedAt)}</span>
+                                    <span className="text-slate-300">•</span>
+                                    <span className="font-medium text-slate-600 truncate max-w-[120px]">{entry.changedBy}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-500 shrink-0">
-                                <span>{fmt(entry.changedAt)}</span>
-                                <span className="text-slate-300">•</span>
-                                <span className="font-medium text-slate-600 truncate max-w-[120px]">{entry.changedBy}</span>
-                            </div>
+                            {entry.note && (
+                                <div className="mt-1 text-[11px] text-slate-600 italic break-words">
+                                    “{entry.note}”
+                                </div>
+                            )}
                         </li>
                     );
                 })}
@@ -1316,4 +1323,102 @@ const PaymentHistoryList = ({ history }: { history?: PaymentHistoryEntry[] }) =>
         </div>
     );
 };
+
+type PendingPayment = { id: string; method: PaymentHistoryMethod; amount: string; note: string };
+
+const PendingPaymentsEditor = ({
+    pending,
+    onChange,
+}: {
+    pending: PendingPayment[];
+    onChange: (next: PendingPayment[]) => void;
+}) => {
+    const MAX = 3;
+    const add = () => {
+        if (pending.length >= MAX) return;
+        onChange([
+            ...pending,
+            { id: crypto.randomUUID(), method: 'Bank', amount: '', note: '' },
+        ]);
+    };
+    const update = (id: string, patch: Partial<PendingPayment>) => {
+        onChange(pending.map(p => (p.id === id ? { ...p, ...patch } : p)));
+    };
+    const remove = (id: string) => onChange(pending.filter(p => p.id !== id));
+
+    const methodChip = (m: PaymentHistoryMethod) =>
+        m === 'Bank' ? 'bg-blue-50 text-blue-700 border-blue-200'
+        : m === 'Cash' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : 'bg-amber-50 text-amber-700 border-amber-200';
+
+    return (
+        <div className="mt-2 pt-3 border-t border-dashed border-slate-300">
+            <div className="flex items-center justify-between mb-2">
+                <h5 className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                    Add Payments <span className="text-slate-400 normal-case font-normal">(with description)</span>
+                </h5>
+                <button
+                    type="button"
+                    onClick={add}
+                    disabled={pending.length >= MAX}
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    + Add Payment {pending.length > 0 ? `(${pending.length}/${MAX})` : ''}
+                </button>
+            </div>
+            {pending.length === 0 ? (
+                <p className="text-[11px] text-slate-400">
+                    Add up to {MAX} extra Bank / Cash / Deposit payments. Each one is logged with date, time and description.
+                </p>
+            ) : (
+                <ul className="space-y-2">
+                    {pending.map((p) => (
+                        <li
+                            key={p.id}
+                            className="bg-white rounded-lg border border-slate-200 p-2.5 space-y-2"
+                        >
+                            <div className="flex flex-wrap items-center gap-2">
+                                <select
+                                    value={p.method}
+                                    onChange={(e) => update(p.id, { method: e.target.value as PaymentHistoryMethod })}
+                                    className={`text-[11px] font-semibold uppercase px-2 py-1 rounded-md border ${methodChip(p.method)}`}
+                                >
+                                    <option value="Bank">Bank</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Deposit">Deposit</option>
+                                </select>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    step="any"
+                                    placeholder="Amount (€)"
+                                    value={p.amount}
+                                    onChange={(e) => update(p.id, { amount: e.target.value })}
+                                    className="flex-1 min-w-[100px] text-xs px-2 py-1.5 rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => remove(p.id)}
+                                    className="text-[11px] font-medium px-2 py-1 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50"
+                                    aria-label="Remove pending payment"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Description (optional)"
+                                value={p.note}
+                                onChange={(e) => update(p.id, { note: e.target.value })}
+                                className="w-full text-xs px-2 py-1.5 rounded-md border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-slate-300"
+                                maxLength={240}
+                            />
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
 
