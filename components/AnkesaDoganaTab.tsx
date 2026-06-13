@@ -437,7 +437,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
   };
 
   const renderActiveSection = (items: typeof rows) => {
-    const order: CustomsStatus[] = ['started', 'dogana', 'gjykata'];
+    const order: CustomsStatus[] = ['started', 'dogana', 'gjykata', 'refunded'];
     const byStatus = new Map<CustomsStatus, typeof rows>();
     for (const st of order) byStatus.set(st, []);
     for (const r of items) {
@@ -447,7 +447,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
     return (
       <section className="bg-white border border-slate-200 rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.05)] overflow-hidden flex flex-col animate-fade-in">
         <header className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Në Proces · Started / Dogana / Gjykata</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Në Proces · Started / Dogana / Gjykata / Refunded</h3>
           <span className="text-xs text-slate-500">{items.length}</span>
         </header>
         {items.length === 0 ? (
