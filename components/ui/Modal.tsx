@@ -51,7 +51,7 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
       >
-        {(title || onClose) && (
+        {title && (
           <div className="kx-modal-header">
             <div className="kx-modal-title">{title}</div>
             <button
