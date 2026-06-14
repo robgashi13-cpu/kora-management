@@ -5839,7 +5839,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className="font-bold text-slate-900 text-[12px] sm:text-[13px] leading-tight truncate tracking-tight">{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
                                                                                         </div>
                                                                                         <span className={`status-badge text-[8px] whitespace-nowrap ${
