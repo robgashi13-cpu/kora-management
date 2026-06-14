@@ -55,6 +55,7 @@ const getBankFee = (price: number) => {
 };
 const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
+const hasBankReceipt = (sale: CarSale) => (sale.bankReceipts && sale.bankReceipts.length > 0) || !!sale.bankReceipt;
 
 const ADMIN_PROFILE = 'Robert';
 const LEGACY_ADMIN_PROFILE = 'Admin';
@@ -262,7 +263,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             {/* Hidden Card View */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-slate-400 transition-colors hidden">
                 <div className="flex justify-between mb-4">
-                    <div className="font-bold text-lg text-slate-800">{s.brand} {s.model}</div>
+                <div className={`font-bold text-lg ${!hasBankReceipt(s) ? 'text-red-600' : 'text-slate-800'}`}>{s.brand} {s.model}</div>
                     <button onClick={(e) => openInvoice(s, e)} className="text-slate-900 hover:text-slate-900"><FileText className="w-5 h-5" /></button>
                 </div>
                 <div className="text-sm text-slate-500 space-y-2">
@@ -303,7 +304,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 2. Car Info */}
-            <div className="px-2 h-full flex items-center font-semibold text-slate-900 whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0">
+            <div className={`px-2 h-full flex items-center font-semibold whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0 ${!hasBankReceipt(s) ? 'text-red-600' : 'text-slate-900'}`}>
                 <button
                     type="button"
                     onPointerDown={handleRowPointerDown}
@@ -311,7 +312,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     onPointerUp={handleRowPointerEnd}
                     onPointerCancel={handleRowPointerEnd}
                     onClick={handleInfoClick}
-                    className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${isSoldRow ? 'text-slate-900' : 'hover:text-slate-700'}`}
+                    className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${!hasBankReceipt(s) ? 'text-red-600' : (isSoldRow ? 'text-slate-900' : 'hover:text-slate-700')}`}
                     title={`${s.brand} ${s.model}`}
                 >
                     {s.brand} {s.model}
@@ -4941,7 +4942,7 @@ export default function Dashboard() {
                                                     className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer items-center"
                                                     onClick={() => handleSaleInteraction(sale)}
                                                 >
-                                                    <div className="font-semibold text-slate-900 text-sm truncate">{sale.brand} {sale.model}</div>
+                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
                                                     <div className="text-sm text-slate-600 font-mono">{sale.plateNumber || '-'}</div>
                                                     <div className="truncate">
                                                         {sale.notes && sale.notes.startsWith('Link: ') ? (
