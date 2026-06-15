@@ -279,7 +279,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             {/* Hidden Card View */}
             <div className="bg-white border border-slate-200 rounded-xl p-5 relative shadow-sm hover:border-slate-400 transition-colors hidden">
                 <div className="flex justify-between mb-4">
-                <div className={`font-bold text-lg ${!hasBankReceipt(s) ? 'text-red-600' : 'text-slate-800'}`}>{s.brand} {s.model}</div>
+                <div className={`font-bold text-lg flex items-center gap-1.5 ${hasBankReceipt(s) || isPaidInCash(s) ? 'text-emerald-600' : 'text-red-600'}`}><InvoiceDot sale={s} />{s.brand} {s.model}</div>
                     <button onClick={(e) => openInvoice(s, e)} className="text-slate-900 hover:text-slate-900"><FileText className="w-5 h-5" /></button>
                 </div>
                 <div className="text-sm text-slate-500 space-y-2">
