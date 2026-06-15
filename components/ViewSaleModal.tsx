@@ -376,7 +376,7 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
                             <div data-documents-section="true" ref={documentsRef} />
                             <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
                                 <FileList files={sale.bankReceipts} label="Bank Receipts" />
-                                <FileList files={sale.bankInvoices} label="Korea Paid Invoice" />
+                                <FileList files={sale.bankInvoices} label="Bank Invoices" />
                                 {isAdmin && <FileList files={sale.depositInvoices} label="Deposit Invoices" />}
                             </div>
                         </Section>

@@ -65,45 +65,6 @@ export type Database = {
         }
         Relationships: []
       }
-      cash_deposits: {
-        Row: {
-          amount: number
-          created_at: string
-          created_by: string | null
-          deposit_date: string | null
-          depositor_name: string | null
-          id: string
-          note: string | null
-          receiver_name: string | null
-          source: string
-          source_sale_id: string | null
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          created_by?: string | null
-          deposit_date?: string | null
-          depositor_name?: string | null
-          id?: string
-          note?: string | null
-          receiver_name?: string | null
-          source?: string
-          source_sale_id?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          created_by?: string | null
-          deposit_date?: string | null
-          depositor_name?: string | null
-          id?: string
-          note?: string | null
-          receiver_name?: string | null
-          source?: string
-          source_sale_id?: string | null
-        }
-        Relationships: []
-      }
       customs_complaints: {
         Row: {
           car_id: string

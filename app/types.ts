@@ -90,7 +90,6 @@ export interface CarSale {
 
     paymentMethod: PaymentMethod;
     status: SaleStatus;
-    paidInCash?: boolean;
 
     bankReceipt?: Attachment; // Legacy
     bankReceipts?: Attachment[]; // New Multi-file
