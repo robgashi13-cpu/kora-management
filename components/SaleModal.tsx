@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2, Banknote, Sparkles } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus, PaymentHistoryEntry, PaymentHistoryMethod } from '@/src/types';
 import { InvoiceSourceContext } from './invoiceHistory';
