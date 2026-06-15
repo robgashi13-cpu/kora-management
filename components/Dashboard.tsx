@@ -4960,7 +4960,7 @@ export default function Dashboard() {
                                                     className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer items-center"
                                                     onClick={() => handleSaleInteraction(sale)}
                                                 >
-                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
+                                                    <div className={`font-semibold text-sm truncate ${hasBankReceipt(sale) || isPaidInCash(sale) ? 'text-emerald-600' : 'text-red-600'} flex items-center gap-1.5`}><InvoiceDot sale={sale} />{sale.brand} {sale.model}</div>
                                                     <div className="text-sm text-slate-600 font-mono">{sale.plateNumber || '-'}</div>
                                                     <div className="truncate">
                                                         {sale.notes && sale.notes.startsWith('Link: ') ? (
@@ -5571,7 +5571,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     {sale.status === 'Inspection' ? (
                                                                                         <>
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${hasBankReceipt(sale) || isPaidInCash(sale) ? 'text-emerald-600' : 'text-red-600'} flex items-center gap-1.5`}><InvoiceDot sale={sale} />{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
                                                                                             {sale.notes && sale.notes.startsWith('Link: ') && (
                                                                                                 <a
@@ -5589,7 +5589,7 @@ export default function Dashboard() {
                                                                                     <>
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${hasBankReceipt(sale) || isPaidInCash(sale) ? 'text-emerald-600' : 'text-red-600'} flex items-center gap-1.5`}><InvoiceDot sale={sale} />{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'} · {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
@@ -5741,7 +5741,7 @@ export default function Dashboard() {
                                                                                         )}
                                                                                         <div className="flex-1 min-w-0">
                                                                                             <div className="flex justify-between items-start">
-                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-800'}`}>{sale.brand} {sale.model}</div>
+                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${hasBankReceipt(sale) || isPaidInCash(sale) ? 'text-emerald-600' : 'text-red-600'} flex items-center gap-1.5`}><InvoiceDot sale={sale} />{sale.brand} {sale.model}</div>
                                                                                                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                                     (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
                                                                                                         sale.status === 'Inspection' ? 'text-amber-700' :
@@ -5857,7 +5857,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${hasBankReceipt(sale) || isPaidInCash(sale) ? 'text-emerald-600' : 'text-red-600'} flex items-center gap-1.5`}><InvoiceDot sale={sale} />{sale.brand} {sale.model}</div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
                                                                                         </div>
                                                                                         <span className={`status-badge text-[8px] whitespace-nowrap ${
