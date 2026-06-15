@@ -41,7 +41,6 @@ const PaymentsTab: React.FC<Props> = ({ sales, userProfile }) => {
     // singleton supabase client
 
     const load = async () => {
-        if (!supabase) { setLoading(false); return; }
         setLoading(true);
         const { data, error } = await supabase
             .from('cash_deposits')
@@ -62,7 +61,6 @@ const PaymentsTab: React.FC<Props> = ({ sales, userProfile }) => {
     }, [deposits, sales]);
 
     const addDeposit = async () => {
-        if (!supabase) return;
         const amount = Number(form.amount);
         if (!amount || isNaN(amount)) { alert('Enter a valid amount'); return; }
         setAdding(true);
@@ -82,7 +80,6 @@ const PaymentsTab: React.FC<Props> = ({ sales, userProfile }) => {
     };
 
     const removeDeposit = async (id: string) => {
-        if (!supabase) return;
         if (!confirm('Delete this deposit?')) return;
         await supabase.from('cash_deposits').delete().eq('id', id);
         load();
@@ -92,7 +89,7 @@ const PaymentsTab: React.FC<Props> = ({ sales, userProfile }) => {
         // Stub: edge function exists but Gemini call is commented out.
         setScanning(true);
         try {
-            const { data, error } = await supabase!.functions.invoke('scan-payments', { body: { sales: sales.slice(0, 5) } });
+            const { data, error } = await supabase.functions.invoke('scan-payments', { body: { sales: sales.slice(0, 5) } });
             if (error) throw error;
             alert(data?.message || 'AI scan is not active yet. The endpoint is scaffolded — enable Gemini in supabase/functions/scan-payments/index.ts when ready.');
         } catch (e: any) {
