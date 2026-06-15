@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Banknote, Sparkles, Trash2, Loader2, CalendarDays, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { CarSale } from '@/src/types';
-import { createSupabaseClient } from '@/services/supabaseService';
+import { supabase } from '@/src/integrations/supabase/client';
 
 interface CashDeposit {
     id: string;
