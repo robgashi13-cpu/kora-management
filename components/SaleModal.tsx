@@ -839,11 +839,36 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
-                            <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
-                            <FileList files={formData.bankInvoices} field="bankInvoices" label="Bank Invoices" />
+                            <div className="flex flex-col gap-2">
+                                <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
+                                {(!formData.bankReceipts || formData.bankReceipts.length === 0) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, paidInCash: !prev.paidInCash }))}
+                                        className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide border transition-all ${formData.paidInCash ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
+                                        title="Mark this sale as paid in cash (no bank receipt required). The car name turns green."
+                                    >
+                                        <Banknote className="w-3.5 h-3.5" />
+                                        {formData.paidInCash ? 'Paid in Cash ✓' : 'Mark as Paid in Cash'}
+                                    </button>
+                                )}
+                            </div>
+                            <FileList files={formData.bankInvoices} field="bankInvoices" label="Korea Paid Invoice" />
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
+                        {isAdmin && (
+                            <button
+                                type="button"
+                                disabled
+                                title="AI scan of attached receipts/invoices for amounts and names. Coming soon."
+                                className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100 text-slate-400 text-xs font-semibold cursor-not-allowed border border-dashed border-slate-300"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Scan attachments with AI (coming soon)
+                            </button>
+                        )}
                     </Section>
+
 
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
