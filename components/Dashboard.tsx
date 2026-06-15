@@ -5,6 +5,7 @@ import { Attachment, CarDocumentRecord, CarSale, ContractType, MechanicRepairRec
 import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench, Gavel, Banknote } from 'lucide-react';
 import AnkesaDoganaTab from '@/components/AnkesaDoganaTab';
 import PerPagesTab from '@/components/PerPagesTab';
+import PaymentsTab from '@/components/PaymentsTab';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 
 import { Preferences } from '@capacitor/preferences';
