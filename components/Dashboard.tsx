@@ -320,7 +320,8 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
             </div>
 
             {/* 2. Car Info */}
-            <div className={`px-2 h-full flex items-center font-semibold whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0 ${!hasBankReceipt(s) ? 'text-red-600' : 'text-slate-900'}`}>
+            <div className={`px-2 h-full flex items-center font-semibold whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100 bg-white min-w-0 gap-1.5 ${hasBankReceipt(s) || isPaidInCash(s) ? 'text-emerald-600' : 'text-red-600'}`}>
+                <InvoiceDot sale={s} />
                 <button
                     type="button"
                     onPointerDown={handleRowPointerDown}
@@ -328,12 +329,13 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     onPointerUp={handleRowPointerEnd}
                     onPointerCancel={handleRowPointerEnd}
                     onClick={handleInfoClick}
-                    className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${!hasBankReceipt(s) ? 'text-red-600' : (isSoldRow ? 'text-slate-900' : 'hover:text-slate-700')}`}
-                    title={`${s.brand} ${s.model}`}
+                    className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${hasBankReceipt(s) || isPaidInCash(s) ? 'text-emerald-600 hover:text-emerald-700' : 'text-red-600 hover:text-red-700'}`}
+                    title={`${s.brand} ${s.model}${isPaidInCash(s) ? ' • Paid in Cash' : ''}${hasBankInvoice(s) ? ' • Korea invoice ✓' : ' • No Korea invoice'}`}
                 >
                     {s.brand} {s.model}
                 </button>
             </div>
+
 
             {/* 3. Year */}
             <div className="px-2 h-full flex items-center justify-center text-slate-800 border-r border-slate-100 bg-white text-[11px] xl:text-xs font-medium">
