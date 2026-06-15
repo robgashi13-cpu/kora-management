@@ -56,6 +56,22 @@ const getBankFee = (price: number) => {
 const calculateBalance = (sale: CarSale) => (sale.soldPrice || 0) - ((sale.amountPaidCash || 0) + (sale.amountPaidBank || 0) + (sale.deposit || 0));
 const calculateProfit = (sale: CarSale) => ((sale.soldPrice || 0) - (sale.costToBuy || 0) - getBankFee(sale.soldPrice || 0) - (sale.servicesCost ?? 30.51) - (sale.includeTransport ? 350 : 0));
 const hasBankReceipt = (sale: CarSale) => (sale.bankReceipts && sale.bankReceipts.length > 0) || !!sale.bankReceipt;
+const hasBankInvoice = (sale: CarSale) => (sale.bankInvoices && sale.bankInvoices.length > 0) || !!sale.bankInvoice;
+const isPaidInCash = (sale: CarSale) => !!sale.paidInCash;
+// Returns the tailwind text color for a car name based on payment proof state.
+// Green = paid (bank receipt attached OR explicitly marked paid in cash).
+// Red   = unpaid (no proof).
+const saleNameClass = (sale: CarSale, defaultClass: string = 'text-slate-900') => {
+    if (hasBankReceipt(sale) || isPaidInCash(sale)) return 'text-emerald-600';
+    return `text-red-600 ${defaultClass.includes('text-') ? '' : defaultClass}`.trim() || 'text-red-600';
+};
+// Small status dot for "Korea Paid Invoice" presence.
+const InvoiceDot: React.FC<{ sale: CarSale; className?: string }> = ({ sale, className = '' }) => (
+    <span
+        title={hasBankInvoice(sale) ? 'Korea Paid Invoice attached' : 'Missing Korea Paid Invoice'}
+        className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${hasBankInvoice(sale) ? 'bg-emerald-500' : 'bg-red-500'} ${className}`}
+    />
+);
 
 const ADMIN_PROFILE = 'Robert';
 const LEGACY_ADMIN_PROFILE = 'Admin';
