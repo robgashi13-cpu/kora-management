@@ -599,6 +599,7 @@ const navItems: NavItem[] = [
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
     { id: 'PER_PAGES', label: 'Për Pages', icon: FileText, view: 'per_pages', allowedProfiles: ['Robert', 'SHYQA'] },
+    { id: 'PAYMENTS', label: 'Payments', icon: Banknote, view: 'payments', adminOnly: true },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
 ];
 
