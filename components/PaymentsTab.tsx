@@ -38,9 +38,7 @@ const PaymentsTab: React.FC<Props> = ({ sales, userProfile }) => {
         note: '',
     });
 
-    const supabase = useMemo(() => {
-        try { return createSupabaseClient(); } catch { return null; }
-    }, []);
+    // singleton supabase client
 
     const load = async () => {
         if (!supabase) { setLoading(false); return; }
