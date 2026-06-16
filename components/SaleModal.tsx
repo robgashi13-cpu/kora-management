@@ -857,10 +857,35 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
 
+                            <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-3 border-t border-dashed border-slate-300">
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">AI Scan Attachments</span>
+                                    <span className="text-[10px] text-slate-400">Extract amounts from bank receipts / deposit invoices into Payments below.</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {scanState.message && !scanState.error ? (
+                                        <span className="text-[10px] text-slate-500">{scanState.message}</span>
+                                    ) : null}
+                                    {scanState.error ? (
+                                        <span className="text-[10px] text-rose-600">{scanState.error}</span>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        onClick={handleScanAttachments}
+                                        disabled={scanState.active}
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase px-3 py-1.5 rounded-md border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {scanState.active ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                        {scanState.active ? 'Scanning…' : 'Scan with AI'}
+                                    </button>
+                                </div>
+                            </div>
+
                             <PendingPaymentsEditor
                                 pending={pendingPayments}
                                 onChange={setPendingPayments}
                             />
+
 
                             <PaymentHistoryList history={existingSale?.paymentHistory} />
                         </div>
