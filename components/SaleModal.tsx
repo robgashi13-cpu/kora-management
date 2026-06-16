@@ -79,6 +79,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const initialFormDataRef = useRef<Partial<CarSale> | null>(null);
     const closeRequestedRef = useRef(false);
     const [pendingPayments, setPendingPayments] = useState<{ id: string; method: PaymentHistoryMethod; amount: string; note: string }[]>([]);
+    const [scanState, setScanState] = useState<{ active: boolean; message?: string; error?: string }>({ active: false });
     const hasInitializedFormRef = useRef(false);
     const hasRestoredDraftRef = useRef(false);
     const autosaveTimerRef = useRef<number | null>(null);
@@ -309,28 +310,77 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }));
     };
 
+    const handleScanAttachments = async () => {
+        const collected: { name: string; type: string; url?: string; data?: string; category: 'bankReceipts' | 'bankInvoices' | 'depositInvoices' }[] = [];
+        const push = (att: Attachment | undefined, category: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
+            if (!att) return;
+            const url = resolveAttachmentUrl(att);
+            if (!url && !att.data) return;
+            collected.push({
+                name: att.name,
+                type: att.type || 'application/octet-stream',
+                url: url && !url.startsWith('data:') ? url : undefined,
+                data: url && url.startsWith('data:') ? url : att.data,
+                category,
+            });
+        };
+        (formData.bankReceipts || []).forEach(f => push(f, 'bankReceipts'));
+        (formData.bankInvoices || []).forEach(f => push(f, 'bankInvoices'));
+        (formData.depositInvoices || []).forEach(f => push(f, 'depositInvoices'));
+
+        if (collected.length === 0) {
+            setScanState({ active: false, error: 'Attach at least one bank receipt, invoice, or deposit invoice first.' });
+            window.setTimeout(() => setScanState({ active: false }), 3000);
+            return;
+        }
+
+        setScanState({ active: true, message: `Scanning ${collected.length} file${collected.length > 1 ? 's' : ''}…` });
+        try {
+            const { cloudClient } = await import('@/services/cloudAuth');
+            const { data, error } = await cloudClient.functions.invoke('scan-payments', {
+                body: { files: collected },
+            });
+            if (error) throw error;
+            const payments = (data?.payments || []) as Array<{ method: 'Bank' | 'Cash' | 'Deposit'; amount: number; date?: string; note?: string; sourceFile: string }>;
+            if (payments.length === 0) {
+                setScanState({ active: false, error: 'No payment entries detected in the attachments.' });
+                window.setTimeout(() => setScanState({ active: false }), 3500);
+                return;
+            }
+            setPendingPayments(prev => {
+                const additions = payments.slice(0, 10).map(p => ({
+                    id: crypto.randomUUID(),
+                    method: p.method,
+                    amount: String(p.amount),
+                    note: [p.note, p.date ? `(${p.date})` : '', `· ${p.sourceFile}`].filter(Boolean).join(' '),
+                }));
+                return [...prev, ...additions];
+            });
+            const errs: string[] = data?.errors || [];
+            setScanState({ active: false, message: `Added ${payments.length} payment${payments.length > 1 ? 's' : ''}${errs.length ? ` · ${errs.length} file error${errs.length > 1 ? 's' : ''}` : ''}.` });
+            window.setTimeout(() => setScanState({ active: false }), 4000);
+        } catch (e: any) {
+            console.error('scan-payments failed', e);
+            setScanState({ active: false, error: e?.message || 'Scan failed.' });
+            window.setTimeout(() => setScanState({ active: false }), 4000);
+        }
+    };
+
     const viewFile = (file: Attachment) => {
         const fileUrl = resolveAttachmentUrl(file);
-        if (!fileUrl) return;
-
-        // Check if it's an image
-        if (file.type.startsWith('image/')) {
+        if (!fileUrl) {
+            alert('This file is no longer available.');
+            return;
+        }
+        if (file.type?.startsWith('image/')) {
             setPreviewImage(fileUrl);
-        } else {
-            // PDF or other - open in new tab via Blob
-            try {
-                fetch(fileUrl)
-                    .then(res => res.blob())
-                    .then(async (blob) => {
-                        const openResult = await openPdfBlob(blob);
-                        if (!openResult.opened) {
-                            alert('Popup blocked. The PDF opened in this tab so you can save or share it.');
-                        }
-                    });
-            } catch (e) {
-                console.error("Error viewing file", e);
-                alert("Could not open file preview.");
-            }
+            return;
+        }
+        // Open PDF / other file directly — works both in preview and on the deployed
+        // static site (avoids CORS issues that broke fetch→blob in production).
+        const win = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        if (!win) {
+            window.location.href = fileUrl;
         }
     };
 
@@ -807,10 +857,35 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                                 <DateInput label="Full Payment Date" name="paidDateFromClient" value={formData.paidDateFromClient ? String(formData.paidDateFromClient).split('T')[0] : ''} onChange={handleChange} />
                             </div>
 
+                            <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-3 border-t border-dashed border-slate-300">
+                                <div className="flex flex-col">
+                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">AI Scan Attachments</span>
+                                    <span className="text-[10px] text-slate-400">Extract amounts from bank receipts / deposit invoices into Payments below.</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {scanState.message && !scanState.error ? (
+                                        <span className="text-[10px] text-slate-500">{scanState.message}</span>
+                                    ) : null}
+                                    {scanState.error ? (
+                                        <span className="text-[10px] text-rose-600">{scanState.error}</span>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        onClick={handleScanAttachments}
+                                        disabled={scanState.active}
+                                        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase px-3 py-1.5 rounded-md border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {scanState.active ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                        {scanState.active ? 'Scanning…' : 'Scan with AI'}
+                                    </button>
+                                </div>
+                            </div>
+
                             <PendingPaymentsEditor
                                 pending={pendingPayments}
                                 onChange={setPendingPayments}
                             />
+
 
                             <PaymentHistoryList history={existingSale?.paymentHistory} />
                         </div>

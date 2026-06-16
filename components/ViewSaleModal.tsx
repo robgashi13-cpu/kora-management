@@ -103,19 +103,16 @@ export default function ViewSaleModal({ isOpen, sale, onClose, isAdmin = false, 
 
     const viewFile = (file: Attachment) => {
         const fileUrl = resolveAttachmentUrl(file);
-        if (!fileUrl) return;
-        if (file.type.startsWith('image/')) {
-            setPreviewImage(fileUrl);
-        } else {
-            fetch(fileUrl)
-                .then(res => res.blob())
-                .then(async (blob) => {
-                    const openResult = await openPdfBlob(blob);
-                    if (!openResult.opened) {
-                        alert('Popup blocked. The PDF opened in this tab.');
-                    }
-                });
+        if (!fileUrl) {
+            alert('This file is no longer available.');
+            return;
         }
+        if (file.type?.startsWith('image/')) {
+            setPreviewImage(fileUrl);
+            return;
+        }
+        const win = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        if (!win) window.location.href = fileUrl;
     };
 
     const formatDate = (dateStr: string | null | undefined) => {
