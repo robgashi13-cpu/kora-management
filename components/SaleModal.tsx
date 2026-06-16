@@ -311,26 +311,19 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
 
     const viewFile = (file: Attachment) => {
         const fileUrl = resolveAttachmentUrl(file);
-        if (!fileUrl) return;
-
-        // Check if it's an image
-        if (file.type.startsWith('image/')) {
+        if (!fileUrl) {
+            alert('This file is no longer available.');
+            return;
+        }
+        if (file.type?.startsWith('image/')) {
             setPreviewImage(fileUrl);
-        } else {
-            // PDF or other - open in new tab via Blob
-            try {
-                fetch(fileUrl)
-                    .then(res => res.blob())
-                    .then(async (blob) => {
-                        const openResult = await openPdfBlob(blob);
-                        if (!openResult.opened) {
-                            alert('Popup blocked. The PDF opened in this tab so you can save or share it.');
-                        }
-                    });
-            } catch (e) {
-                console.error("Error viewing file", e);
-                alert("Could not open file preview.");
-            }
+            return;
+        }
+        // Open PDF / other file directly — works both in preview and on the deployed
+        // static site (avoids CORS issues that broke fetch→blob in production).
+        const win = window.open(fileUrl, '_blank', 'noopener,noreferrer');
+        if (!win) {
+            window.location.href = fileUrl;
         }
     };
 
