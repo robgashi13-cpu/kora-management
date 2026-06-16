@@ -310,6 +310,62 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         }));
     };
 
+    const handleScanAttachments = async () => {
+        const collected: { name: string; type: string; url?: string; data?: string; category: 'bankReceipts' | 'bankInvoices' | 'depositInvoices' }[] = [];
+        const push = (att: Attachment | undefined, category: 'bankReceipts' | 'bankInvoices' | 'depositInvoices') => {
+            if (!att) return;
+            const url = resolveAttachmentUrl(att);
+            if (!url && !att.data) return;
+            collected.push({
+                name: att.name,
+                type: att.type || 'application/octet-stream',
+                url: url && !url.startsWith('data:') ? url : undefined,
+                data: url && url.startsWith('data:') ? url : att.data,
+                category,
+            });
+        };
+        (formData.bankReceipts || []).forEach(f => push(f, 'bankReceipts'));
+        (formData.bankInvoices || []).forEach(f => push(f, 'bankInvoices'));
+        (formData.depositInvoices || []).forEach(f => push(f, 'depositInvoices'));
+
+        if (collected.length === 0) {
+            setScanState({ active: false, error: 'Attach at least one bank receipt, invoice, or deposit invoice first.' });
+            window.setTimeout(() => setScanState({ active: false }), 3000);
+            return;
+        }
+
+        setScanState({ active: true, message: `Scanning ${collected.length} file${collected.length > 1 ? 's' : ''}…` });
+        try {
+            const { cloudClient } = await import('@/services/cloudAuth');
+            const { data, error } = await cloudClient.functions.invoke('scan-payments', {
+                body: { files: collected },
+            });
+            if (error) throw error;
+            const payments = (data?.payments || []) as Array<{ method: 'Bank' | 'Cash' | 'Deposit'; amount: number; date?: string; note?: string; sourceFile: string }>;
+            if (payments.length === 0) {
+                setScanState({ active: false, error: 'No payment entries detected in the attachments.' });
+                window.setTimeout(() => setScanState({ active: false }), 3500);
+                return;
+            }
+            setPendingPayments(prev => {
+                const additions = payments.slice(0, 10).map(p => ({
+                    id: crypto.randomUUID(),
+                    method: p.method,
+                    amount: String(p.amount),
+                    note: [p.note, p.date ? `(${p.date})` : '', `· ${p.sourceFile}`].filter(Boolean).join(' '),
+                }));
+                return [...prev, ...additions];
+            });
+            const errs: string[] = data?.errors || [];
+            setScanState({ active: false, message: `Added ${payments.length} payment${payments.length > 1 ? 's' : ''}${errs.length ? ` · ${errs.length} file error${errs.length > 1 ? 's' : ''}` : ''}.` });
+            window.setTimeout(() => setScanState({ active: false }), 4000);
+        } catch (e: any) {
+            console.error('scan-payments failed', e);
+            setScanState({ active: false, error: e?.message || 'Scan failed.' });
+            window.setTimeout(() => setScanState({ active: false }), 4000);
+        }
+    };
+
     const viewFile = (file: Attachment) => {
         const fileUrl = resolveAttachmentUrl(file);
         if (!fileUrl) {
