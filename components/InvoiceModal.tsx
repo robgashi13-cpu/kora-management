@@ -285,18 +285,20 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             style={{ maxWidth: '210mm' }}
                         >
                             <div
-                                key={sourceKey}
                                 ref={previewDocRef}
                                 contentEditable
                                 suppressContentEditableWarning
                                 spellCheck={false}
                                 onBlur={() => buildPdfPreview()}
                                 className="invoice-editable-preview"
-                                style={{ outline: 'none', cursor: 'text', minHeight: 200 }}
+                                style={{ outline: 'none', cursor: 'text', minHeight: 400 }}
                                 title="Click any text or amount to edit. Changes are saved into the PDF when you click outside."
-                                dangerouslySetInnerHTML={{ __html: editableHtml }}
                             />
-                        </div>
+                            {!editableHtml && (
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm pointer-events-none">
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Preparing editable preview…
+                                </div>
+                            )}
                     </div>
                     {isGeneratingPreview && (
                         <div className="absolute top-2 right-4 text-xs text-slate-500 flex items-center gap-1 bg-white/80 px-2 py-1 rounded shadow">
