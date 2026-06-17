@@ -35,6 +35,8 @@ interface EditablePreviewModalProps {
   taxAmount?: number;
   priceSource?: InvoicePriceSource;
   priceValue?: number;
+  customTax?: number;
+  hideTvshLabel?: boolean;
   templates?: PdfTemplateMap;
   onInvoiceCreated?: () => void;
 }
@@ -50,6 +52,8 @@ export default function EditablePreviewModal({
   taxAmount,
   priceSource,
   priceValue,
+  customTax,
+  hideTvshLabel = false,
   templates,
   onInvoiceCreated
 }: EditablePreviewModalProps) {
@@ -539,6 +543,8 @@ export default function EditablePreviewModal({
                 withStamp={withStamp}
                 showBankOnly={showBankOnly}
                 taxAmount={taxAmount}
+                customTax={customTax}
+                hideTvshLabel={hideTvshLabel}
                 priceSource={priceSource}
                 priceValue={priceValue}
                 isPreInvoice={isPreInvoice}

@@ -70,6 +70,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showInvoicePriceModal, setShowInvoicePriceModal] = useState(false);
     const [priceModalTarget, setPriceModalTarget] = useState<'invoice' | 'shitblerje'>('invoice');
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
+    const [invoiceCustomTax, setInvoiceCustomTax] = useState<number | undefined>(undefined);
+    const [invoiceHideTvshLabel, setInvoiceHideTvshLabel] = useState<boolean>(false);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
@@ -1069,8 +1071,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         <InvoicePriceModal
             isOpen={showInvoicePriceModal}
             sale={formData}
-            onSelect={(source) => {
+            onSelect={(source, opts) => {
                 setInvoicePriceSource(source);
+                setInvoiceCustomTax(opts?.customTax);
+                setInvoiceHideTvshLabel(!!opts?.hideTvshLabel);
                 setShowInvoicePriceModal(false);
                 if (priceModalTarget === 'shitblerje') {
                     const price = resolveInvoicePriceValue(formData as CarSale, source);
@@ -1196,6 +1200,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         withDogane={invoiceWithDogane}
                         taxAmount={invoiceTaxAmount}
                         priceSource={invoicePriceSource || 'sold'}
+                        customTax={invoiceCustomTax}
+                        hideTvshLabel={invoiceHideTvshLabel}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
                         onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
@@ -1237,6 +1243,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     withDogane={invoiceWithDogane}
                     taxAmount={invoiceTaxAmount}
                     priceSource={invoicePriceSource || 'sold'}
+                    customTax={invoiceCustomTax}
+                    hideTvshLabel={invoiceHideTvshLabel}
                     onSaveToSale={handlePreviewSaveToSale}
                     templates={pdfTemplates}
                     onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
