@@ -35,6 +35,8 @@ interface EditablePreviewModalProps {
   taxAmount?: number;
   priceSource?: InvoicePriceSource;
   priceValue?: number;
+  customTax?: number;
+  hideTvshLabel?: boolean;
   templates?: PdfTemplateMap;
   onInvoiceCreated?: () => void;
 }
