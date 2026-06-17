@@ -71,7 +71,9 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const soldPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
         const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
         const defaultServicesValue = 169.49;
-        const defaultTaxValue = 30.51;
+        const defaultTaxValue = typeof customTax === 'number' && Number.isFinite(customTax) && customTax >= 0
+            ? customTax
+            : 30.51;
         const defaultFeesTotal = defaultServicesValue + defaultTaxValue;
         const subtotalValue = withDogane
             ? soldPriceValue
@@ -80,7 +82,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             ? normalizeNonNegative(toSafeNumber(taxAmount))
             : defaultTaxValue;
         const totalValue = withDogane ? subtotalValue + taxValue : soldPriceValue;
-        const taxLabel = withDogane ? 'Doganë' : 'Tax (TVSH 18%)';
+        const taxLabel = withDogane ? 'Doganë' : (hideTvshLabel ? 'Tax' : 'Tax (TVSH 18%)');
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const vehicleDisplayName = [displaySale.brand, displaySale.model].filter(Boolean).join(' ') || '—';
