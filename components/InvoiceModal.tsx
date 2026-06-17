@@ -35,9 +35,10 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [withStamp, setWithStamp] = useState(false);
     const [editableTax, setEditableTax] = useState<number | undefined>(taxAmount);
     const printRef = useRef<HTMLDivElement>(null);
-    const previewWrapRef = useRef<HTMLDivElement>(null);
     const previewDocRef = useRef<HTMLDivElement>(null);
-    const [taxOverlay, setTaxOverlay] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+    const [editableHtml, setEditableHtml] = useState<string>('');
+    // Key from props that should force-refresh editable HTML when underlying data changes
+    const sourceKey = `${sale.id || sale.vin || ''}|${withDogane}|${withStamp}|${editableTax ?? ''}|${priceSource ?? ''}|${priceValue ?? ''}|${template?.id ?? ''}`;
 
     useEffect(() => { setEditableTax(taxAmount); }, [taxAmount, isOpen]);
 
