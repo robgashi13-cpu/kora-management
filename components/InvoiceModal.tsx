@@ -299,6 +299,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" /> Preparing editable preview…
                                 </div>
                             )}
+                        </div>
                     </div>
                     {isGeneratingPreview && (
                         <div className="absolute top-2 right-4 text-xs text-slate-500 flex items-center gap-1 bg-white/80 px-2 py-1 rounded shadow">
