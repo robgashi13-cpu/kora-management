@@ -116,16 +116,14 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         };
     }, []);
 
-    // When the React-rendered source changes, imperatively copy its HTML into the
-    // contentEditable preview. Doing this via ref (not dangerouslySetInnerHTML) keeps
-    // React from re-mounting the editable subtree and lets the browser handle edits.
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) { setEditableHtml(''); return; }
         const t = setTimeout(() => {
             const src = printRef.current;
             const dst = previewDocRef.current;
             if (src && dst) {
                 dst.innerHTML = src.innerHTML;
+                setEditableHtml(src.innerHTML);
             }
         }, 80);
         return () => clearTimeout(t);
