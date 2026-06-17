@@ -1071,8 +1071,10 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
         <InvoicePriceModal
             isOpen={showInvoicePriceModal}
             sale={formData}
-            onSelect={(source) => {
+            onSelect={(source, opts) => {
                 setInvoicePriceSource(source);
+                setInvoiceCustomTax(opts?.customTax);
+                setInvoiceHideTvshLabel(!!opts?.hideTvshLabel);
                 setShowInvoicePriceModal(false);
                 if (priceModalTarget === 'shitblerje') {
                     const price = resolveInvoicePriceValue(formData as CarSale, source);
