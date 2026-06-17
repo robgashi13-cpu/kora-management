@@ -24,6 +24,8 @@ export interface InvoiceDocumentProps {
     taxAmount?: number;
     priceSource?: InvoicePriceSource;
     priceValue?: number;
+    customTax?: number;
+    hideTvshLabel?: boolean;
     template?: PdfTemplateEntry;
     isPreInvoice?: boolean;
     renderField?: (
