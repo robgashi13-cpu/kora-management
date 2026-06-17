@@ -50,6 +50,12 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const buildPdfPreview = useCallback(async () => {
         const element = printRef.current;
         if (!element) return null;
+        // Sync any free-text edits made in the visible preview into the PDF source element
+        const liveDoc = previewDocRef.current?.querySelector('#invoice-content');
+        const pdfDoc = element;
+        if (liveDoc && pdfDoc) {
+            try { pdfDoc.innerHTML = (liveDoc as HTMLElement).innerHTML; } catch {}
+        }
         setIsGeneratingPreview(true);
         try {
             const filename = `Invoice_${sale.vin || 'unnamed'}.pdf`;
