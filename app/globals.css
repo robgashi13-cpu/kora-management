@@ -2762,3 +2762,28 @@ html, body {
   color: var(--kx-text);
   flex-shrink: 0;
 }
+
+/* Editable invoice preview — visual cues for click-to-edit */
+.invoice-editable-preview * { caret-color: #0ea5e9; }
+.invoice-editable-preview .invoice-summary-row,
+.invoice-editable-preview .invoice-summary-total,
+.invoice-editable-preview .invoice-meta-line,
+.invoice-editable-preview td,
+.invoice-editable-preview th {
+  transition: background-color 120ms ease, outline-color 120ms ease;
+  border-radius: 4px;
+}
+.invoice-editable-preview .invoice-summary-row:hover,
+.invoice-editable-preview .invoice-summary-total:hover,
+.invoice-editable-preview .invoice-meta-line:hover,
+.invoice-editable-preview td:hover,
+.invoice-editable-preview th:hover {
+  background-color: rgba(254, 240, 138, 0.35);
+  outline: 1px dashed rgba(202, 138, 4, 0.55);
+  outline-offset: 1px;
+}
+.invoice-editable-preview *:focus {
+  background-color: rgba(254, 240, 138, 0.55) !important;
+  outline: 1px solid #ca8a04 !important;
+  outline-offset: 1px;
+}
