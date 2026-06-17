@@ -109,6 +109,40 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         };
     }, []);
 
+    // Position editable Doganë input over the matching summary row in the live HTML preview
+    useLayoutEffect(() => {
+        if (!isOpen || !withDogane) { setTaxOverlay(null); return; }
+        const measure = () => {
+            const wrap = previewWrapRef.current;
+            const doc = previewDocRef.current;
+            if (!wrap || !doc) return;
+            const rows = doc.querySelectorAll('.invoice-summary-row');
+            let amountSpan: HTMLElement | null = null;
+            rows.forEach((r) => {
+                const el = r as HTMLElement;
+                if (el.textContent && el.textContent.includes('Doganë')) {
+                    const spans = el.querySelectorAll('span');
+                    if (spans.length >= 2) amountSpan = spans[spans.length - 1] as HTMLElement;
+                }
+            });
+            if (!amountSpan) { setTaxOverlay(null); return; }
+            const wrapRect = wrap.getBoundingClientRect();
+            const cellRect = (amountSpan as HTMLElement).getBoundingClientRect();
+            setTaxOverlay({
+                top: cellRect.top - wrapRect.top + wrap.scrollTop,
+                left: cellRect.left - wrapRect.left + wrap.scrollLeft - 4,
+                width: Math.max(cellRect.width + 8, 90),
+                height: cellRect.height + 4,
+            });
+        };
+        measure();
+        const ro = new ResizeObserver(measure);
+        if (previewWrapRef.current) ro.observe(previewWrapRef.current);
+        if (previewDocRef.current) ro.observe(previewDocRef.current);
+        window.addEventListener('resize', measure);
+        return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+    }, [isOpen, withDogane, editableTax, withStamp, priceSource, priceValue, sale]);
+
     const handlePrint = async () => {
         const blob = pdfBlob ?? await buildPdfPreview();
         if (!blob) return;
