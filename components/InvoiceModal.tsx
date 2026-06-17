@@ -50,6 +50,12 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const buildPdfPreview = useCallback(async () => {
         const element = printRef.current;
         if (!element) return null;
+        // Sync any free-text edits made in the visible preview into the PDF source element
+        const liveDoc = previewDocRef.current?.querySelector('#invoice-content');
+        const pdfDoc = element;
+        if (liveDoc && pdfDoc) {
+            try { pdfDoc.innerHTML = (liveDoc as HTMLElement).innerHTML; } catch {}
+        }
         setIsGeneratingPreview(true);
         try {
             const filename = `Invoice_${sale.vin || 'unnamed'}.pdf`;
@@ -297,7 +303,15 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             className="bg-white w-full rounded-xl shadow-2xl overflow-auto relative"
                             style={{ maxWidth: '210mm' }}
                         >
-                            <div ref={previewDocRef}>
+                            <div
+                                ref={previewDocRef}
+                                contentEditable
+                                suppressContentEditableWarning
+                                spellCheck={false}
+                                onBlur={() => buildPdfPreview()}
+                                style={{ outline: 'none' }}
+                                title="Click any text to edit. Changes are saved into the PDF when you click outside."
+                            >
                                 <InvoiceDocument
                                     template={template}
                                     sale={sale}
