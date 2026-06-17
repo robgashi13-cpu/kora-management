@@ -543,6 +543,8 @@ export default function EditablePreviewModal({
                 withStamp={withStamp}
                 showBankOnly={showBankOnly}
                 taxAmount={taxAmount}
+                customTax={customTax}
+                hideTvshLabel={hideTvshLabel}
                 priceSource={priceSource}
                 priceValue={priceValue}
                 isPreInvoice={isPreInvoice}
