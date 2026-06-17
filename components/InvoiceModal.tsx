@@ -116,15 +116,18 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         };
     }, []);
 
-    // When the React-rendered source changes, refresh the editable HTML snapshot.
-    // The visible preview is rendered from this static HTML so React doesn't clobber user edits.
+    // When the React-rendered source changes, imperatively copy its HTML into the
+    // contentEditable preview. Doing this via ref (not dangerouslySetInnerHTML) keeps
+    // React from re-mounting the editable subtree and lets the browser handle edits.
     useEffect(() => {
         if (!isOpen) return;
-        // Wait a tick for the hidden React render to commit
         const t = setTimeout(() => {
             const src = printRef.current;
-            if (src) setEditableHtml(src.outerHTML);
-        }, 50);
+            const dst = previewDocRef.current;
+            if (src && dst) {
+                dst.innerHTML = src.innerHTML;
+            }
+        }, 80);
         return () => clearTimeout(t);
     }, [isOpen, sourceKey]);
 
