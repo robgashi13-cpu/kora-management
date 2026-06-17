@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/src/types';
 import { motion } from 'framer-motion';
@@ -35,9 +35,10 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [withStamp, setWithStamp] = useState(false);
     const [editableTax, setEditableTax] = useState<number | undefined>(taxAmount);
     const printRef = useRef<HTMLDivElement>(null);
-    const previewWrapRef = useRef<HTMLDivElement>(null);
     const previewDocRef = useRef<HTMLDivElement>(null);
-    const [taxOverlay, setTaxOverlay] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+    const [editableHtml, setEditableHtml] = useState<string>('');
+    // Key from props that should force-refresh editable HTML when underlying data changes
+    const sourceKey = `${sale.id || sale.vin || ''}|${withDogane}|${withStamp}|${editableTax ?? ''}|${priceSource ?? ''}|${priceValue ?? ''}|${template?.id ?? ''}`;
 
     useEffect(() => { setEditableTax(taxAmount); }, [taxAmount, isOpen]);
 
@@ -115,39 +116,17 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         };
     }, []);
 
-    // Position editable Doganë input over the matching summary row in the live HTML preview
-    useLayoutEffect(() => {
-        if (!isOpen || !withDogane) { setTaxOverlay(null); return; }
-        const measure = () => {
-            const wrap = previewWrapRef.current;
-            const doc = previewDocRef.current;
-            if (!wrap || !doc) return;
-            const rows = doc.querySelectorAll('.invoice-summary-row');
-            let amountSpan: HTMLElement | null = null;
-            rows.forEach((r) => {
-                const el = r as HTMLElement;
-                if (el.textContent && el.textContent.includes('Doganë')) {
-                    const spans = el.querySelectorAll('span');
-                    if (spans.length >= 2) amountSpan = spans[spans.length - 1] as HTMLElement;
-                }
-            });
-            if (!amountSpan) { setTaxOverlay(null); return; }
-            const wrapRect = wrap.getBoundingClientRect();
-            const cellRect = (amountSpan as HTMLElement).getBoundingClientRect();
-            setTaxOverlay({
-                top: cellRect.top - wrapRect.top + wrap.scrollTop,
-                left: cellRect.left - wrapRect.left + wrap.scrollLeft - 4,
-                width: Math.max(cellRect.width + 8, 90),
-                height: cellRect.height + 4,
-            });
-        };
-        measure();
-        const ro = new ResizeObserver(measure);
-        if (previewWrapRef.current) ro.observe(previewWrapRef.current);
-        if (previewDocRef.current) ro.observe(previewDocRef.current);
-        window.addEventListener('resize', measure);
-        return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
-    }, [isOpen, withDogane, editableTax, withStamp, priceSource, priceValue, sale]);
+    // When the React-rendered source changes, refresh the editable HTML snapshot.
+    // The visible preview is rendered from this static HTML so React doesn't clobber user edits.
+    useEffect(() => {
+        if (!isOpen) return;
+        // Wait a tick for the hidden React render to commit
+        const t = setTimeout(() => {
+            const src = printRef.current;
+            if (src) setEditableHtml(src.outerHTML);
+        }, 50);
+        return () => clearTimeout(t);
+    }, [isOpen, sourceKey]);
 
     const handlePrint = async () => {
         const blob = pdfBlob ?? await buildPdfPreview();
@@ -299,50 +278,21 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 <div className="flex-1 overflow-auto scroll-container print:overflow-visible relative">
                     <div className="flex justify-center bg-slate-100 p-4 md:p-8">
                         <div
-                            ref={previewWrapRef}
                             className="bg-white w-full rounded-xl shadow-2xl overflow-auto relative"
                             style={{ maxWidth: '210mm' }}
                         >
                             <div
+                                key={sourceKey}
                                 ref={previewDocRef}
                                 contentEditable
                                 suppressContentEditableWarning
                                 spellCheck={false}
                                 onBlur={() => buildPdfPreview()}
                                 className="invoice-editable-preview"
-                                style={{ outline: 'none', cursor: 'text' }}
+                                style={{ outline: 'none', cursor: 'text', minHeight: 200 }}
                                 title="Click any text or amount to edit. Changes are saved into the PDF when you click outside."
-                            >
-                                <InvoiceDocument
-                                    template={template}
-                                    sale={sale}
-                                    withDogane={withDogane}
-                                    withStamp={withStamp}
-                                    taxAmount={editableTax}
-                                    priceSource={priceSource}
-                                    priceValue={priceValue}
-                                />
-                            </div>
-                            {withDogane && taxOverlay && (
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={editableTax ?? ''}
-                                    onChange={(e) => setEditableTax(e.target.value === '' ? undefined : Number(e.target.value))}
-                                    className="absolute z-10 bg-yellow-50 border border-yellow-400 rounded text-right font-bold outline-none focus:border-yellow-600 focus:ring-2 focus:ring-yellow-300"
-                                    style={{
-                                        top: taxOverlay.top,
-                                        left: taxOverlay.left,
-                                        width: taxOverlay.width,
-                                        height: taxOverlay.height,
-                                        fontSize: '0.9rem',
-                                        padding: '0 4px',
-                                        color: '#000',
-                                    }}
-                                    aria-label="Edit Doganë tax"
-                                />
-                            )}
+                                dangerouslySetInnerHTML={{ __html: editableHtml }}
+                            />
                         </div>
                     </div>
                     {isGeneratingPreview && (
