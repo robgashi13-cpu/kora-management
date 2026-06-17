@@ -116,15 +116,16 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
         };
     }, []);
 
-    // When the React-rendered source changes, refresh the editable HTML snapshot.
-    // The visible preview is rendered from this static HTML so React doesn't clobber user edits.
     useEffect(() => {
-        if (!isOpen) return;
-        // Wait a tick for the hidden React render to commit
+        if (!isOpen) { setEditableHtml(''); return; }
         const t = setTimeout(() => {
             const src = printRef.current;
-            if (src) setEditableHtml(src.outerHTML);
-        }, 50);
+            const dst = previewDocRef.current;
+            if (src && dst) {
+                dst.innerHTML = src.innerHTML;
+                setEditableHtml(src.innerHTML);
+            }
+        }, 80);
         return () => clearTimeout(t);
     }, [isOpen, sourceKey]);
 
@@ -282,17 +283,20 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             style={{ maxWidth: '210mm' }}
                         >
                             <div
-                                key={sourceKey}
                                 ref={previewDocRef}
                                 contentEditable
                                 suppressContentEditableWarning
                                 spellCheck={false}
                                 onBlur={() => buildPdfPreview()}
                                 className="invoice-editable-preview"
-                                style={{ outline: 'none', cursor: 'text', minHeight: 200 }}
+                                style={{ outline: 'none', cursor: 'text', minHeight: 400 }}
                                 title="Click any text or amount to edit. Changes are saved into the PDF when you click outside."
-                                dangerouslySetInnerHTML={{ __html: editableHtml }}
                             />
+                            {!editableHtml && (
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm pointer-events-none">
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Preparing editable preview…
+                                </div>
+                            )}
                         </div>
                     </div>
                     {isGeneratingPreview && (
