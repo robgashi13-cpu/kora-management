@@ -9,7 +9,7 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { X, Printer, Download, Loader2, ArrowLeft } from 'lucide-react';
 import { CarSale } from '@/src/types';
 import { motion } from 'framer-motion';
@@ -35,6 +35,9 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
     const [withStamp, setWithStamp] = useState(false);
     const [editableTax, setEditableTax] = useState<number | undefined>(taxAmount);
     const printRef = useRef<HTMLDivElement>(null);
+    const previewWrapRef = useRef<HTMLDivElement>(null);
+    const previewDocRef = useRef<HTMLDivElement>(null);
+    const [taxOverlay, setTaxOverlay] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
     useEffect(() => { setEditableTax(taxAmount); }, [taxAmount, isOpen]);
 
@@ -105,6 +108,40 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             });
         };
     }, []);
+
+    // Position editable Doganë input over the matching summary row in the live HTML preview
+    useLayoutEffect(() => {
+        if (!isOpen || !withDogane) { setTaxOverlay(null); return; }
+        const measure = () => {
+            const wrap = previewWrapRef.current;
+            const doc = previewDocRef.current;
+            if (!wrap || !doc) return;
+            const rows = doc.querySelectorAll('.invoice-summary-row');
+            let amountSpan: HTMLElement | null = null;
+            rows.forEach((r) => {
+                const el = r as HTMLElement;
+                if (el.textContent && el.textContent.includes('Doganë')) {
+                    const spans = el.querySelectorAll('span');
+                    if (spans.length >= 2) amountSpan = spans[spans.length - 1] as HTMLElement;
+                }
+            });
+            if (!amountSpan) { setTaxOverlay(null); return; }
+            const wrapRect = wrap.getBoundingClientRect();
+            const cellRect = (amountSpan as HTMLElement).getBoundingClientRect();
+            setTaxOverlay({
+                top: cellRect.top - wrapRect.top + wrap.scrollTop,
+                left: cellRect.left - wrapRect.left + wrap.scrollLeft - 4,
+                width: Math.max(cellRect.width + 8, 90),
+                height: cellRect.height + 4,
+            });
+        };
+        measure();
+        const ro = new ResizeObserver(measure);
+        if (previewWrapRef.current) ro.observe(previewWrapRef.current);
+        if (previewDocRef.current) ro.observe(previewDocRef.current);
+        window.addEventListener('resize', measure);
+        return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
+    }, [isOpen, withDogane, editableTax, withStamp, priceSource, priceValue, sale]);
 
     const handlePrint = async () => {
         const blob = pdfBlob ?? await buildPdfPreview();
@@ -255,28 +292,53 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 {/* Invoice Content Area */}
                 <div className="flex-1 overflow-auto scroll-container print:overflow-visible relative">
                     <div className="flex justify-center bg-slate-100 p-4 md:p-8">
-                        <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden">
-                            {isGeneratingPreview ? (
-                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm gap-2">
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Generating preview...
-                                </div>
-                            ) : pdfUrl ? (
-                                <iframe
-                                    title="Invoice PDF Preview"
-                                    src={pdfUrl}
-                                    className="w-full h-[70vh] border-0"
+                        <div
+                            ref={previewWrapRef}
+                            className="bg-white w-full rounded-xl shadow-2xl overflow-auto relative"
+                            style={{ maxWidth: '210mm' }}
+                        >
+                            <div ref={previewDocRef}>
+                                <InvoiceDocument
+                                    template={template}
+                                    sale={sale}
+                                    withDogane={withDogane}
+                                    withStamp={withStamp}
+                                    taxAmount={editableTax}
+                                    priceSource={priceSource}
+                                    priceValue={priceValue}
                                 />
-                            ) : (
-                                <div className="flex items-center justify-center h-[70vh] text-slate-500 text-sm">
-                                    Preview unavailable.
-                                </div>
+                            </div>
+                            {withDogane && taxOverlay && (
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={editableTax ?? ''}
+                                    onChange={(e) => setEditableTax(e.target.value === '' ? undefined : Number(e.target.value))}
+                                    className="absolute z-10 bg-yellow-50 border border-yellow-400 rounded text-right font-bold outline-none focus:border-yellow-600 focus:ring-2 focus:ring-yellow-300"
+                                    style={{
+                                        top: taxOverlay.top,
+                                        left: taxOverlay.left,
+                                        width: taxOverlay.width,
+                                        height: taxOverlay.height,
+                                        fontSize: '0.9rem',
+                                        padding: '0 4px',
+                                        color: '#000',
+                                    }}
+                                    aria-label="Edit Doganë tax"
+                                />
                             )}
                         </div>
                     </div>
+                    {isGeneratingPreview && (
+                        <div className="absolute top-2 right-4 text-xs text-slate-500 flex items-center gap-1 bg-white/80 px-2 py-1 rounded shadow">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Updating PDF…
+                        </div>
+                    )}
+                    {/* Hidden offscreen render dedicated to PDF generation */}
                     <div className="fixed left-0 top-0 -z-10 opacity-0 pointer-events-none" aria-hidden="true">
                         <InvoiceDocument
-                        template={template}
+                            template={template}
                             sale={sale}
                             withDogane={withDogane}
                             withStamp={withStamp}
