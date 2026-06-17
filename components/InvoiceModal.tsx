@@ -33,7 +33,10 @@ interface Props {
 export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false, taxAmount, priceSource, priceValue, template, onInvoiceCreated }: Props) {
     const [isDownloading, setIsDownloading] = useState(false);
     const [withStamp, setWithStamp] = useState(false);
+    const [editableTax, setEditableTax] = useState<number | undefined>(taxAmount);
     const printRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => { setEditableTax(taxAmount); }, [taxAmount, isOpen]);
 
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -92,7 +95,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
             buildPdfPreview();
         }, 150);
         return () => clearTimeout(timer);
-    }, [isOpen, withStamp, taxAmount, priceSource, priceValue, buildPdfPreview]);
+    }, [isOpen, withStamp, editableTax, priceSource, priceValue, buildPdfPreview]);
 
     useEffect(() => {
         return () => {
@@ -192,6 +195,19 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                         <h2 className="text-lg font-bold text-gray-800">Invoice Review</h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        {withDogane && (
+                            <label className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-slate-200 bg-white text-[11px] font-semibold text-slate-700">
+                                <span>Doganë €</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={editableTax ?? ''}
+                                    onChange={(e) => setEditableTax(e.target.value === '' ? undefined : Number(e.target.value))}
+                                    className="w-20 h-6 px-1.5 text-[11px] text-right border border-slate-200 rounded outline-none focus:border-slate-400"
+                                />
+                            </label>
+                        )}
                         <button
                             type="button"
                             onClick={() => setWithStamp(prev => !prev)}
@@ -264,7 +280,7 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                             sale={sale}
                             withDogane={withDogane}
                             withStamp={withStamp}
-                            taxAmount={taxAmount}
+                            taxAmount={editableTax}
                             priceSource={priceSource}
                             priceValue={priceValue}
                             ref={printRef}
