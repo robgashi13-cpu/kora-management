@@ -278,50 +278,21 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                 <div className="flex-1 overflow-auto scroll-container print:overflow-visible relative">
                     <div className="flex justify-center bg-slate-100 p-4 md:p-8">
                         <div
-                            ref={previewWrapRef}
                             className="bg-white w-full rounded-xl shadow-2xl overflow-auto relative"
                             style={{ maxWidth: '210mm' }}
                         >
                             <div
+                                key={sourceKey}
                                 ref={previewDocRef}
                                 contentEditable
                                 suppressContentEditableWarning
                                 spellCheck={false}
                                 onBlur={() => buildPdfPreview()}
                                 className="invoice-editable-preview"
-                                style={{ outline: 'none', cursor: 'text' }}
+                                style={{ outline: 'none', cursor: 'text', minHeight: 200 }}
                                 title="Click any text or amount to edit. Changes are saved into the PDF when you click outside."
-                            >
-                                <InvoiceDocument
-                                    template={template}
-                                    sale={sale}
-                                    withDogane={withDogane}
-                                    withStamp={withStamp}
-                                    taxAmount={editableTax}
-                                    priceSource={priceSource}
-                                    priceValue={priceValue}
-                                />
-                            </div>
-                            {withDogane && taxOverlay && (
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={editableTax ?? ''}
-                                    onChange={(e) => setEditableTax(e.target.value === '' ? undefined : Number(e.target.value))}
-                                    className="absolute z-10 bg-yellow-50 border border-yellow-400 rounded text-right font-bold outline-none focus:border-yellow-600 focus:ring-2 focus:ring-yellow-300"
-                                    style={{
-                                        top: taxOverlay.top,
-                                        left: taxOverlay.left,
-                                        width: taxOverlay.width,
-                                        height: taxOverlay.height,
-                                        fontSize: '0.9rem',
-                                        padding: '0 4px',
-                                        color: '#000',
-                                    }}
-                                    aria-label="Edit Doganë tax"
-                                />
-                            )}
+                                dangerouslySetInnerHTML={{ __html: editableHtml }}
+                            />
                         </div>
                     </div>
                     {isGeneratingPreview && (
