@@ -309,8 +309,9 @@ export default function InvoiceModal({ isOpen, onClose, sale, withDogane = false
                                 suppressContentEditableWarning
                                 spellCheck={false}
                                 onBlur={() => buildPdfPreview()}
-                                style={{ outline: 'none' }}
-                                title="Click any text to edit. Changes are saved into the PDF when you click outside."
+                                className="invoice-editable-preview"
+                                style={{ outline: 'none', cursor: 'text' }}
+                                title="Click any text or amount to edit. Changes are saved into the PDF when you click outside."
                             >
                                 <InvoiceDocument
                                     template={template}
