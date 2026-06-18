@@ -22,6 +22,7 @@ interface InvoicePriceModalProps {
   isOpen: boolean;
   sale: Partial<CarSale> | null;
   availableSales?: CarSale[];
+  isAdmin?: boolean;
   onSelect: (source: InvoicePriceSource, options: InvoicePriceOptions) => void;
   onCancel: () => void;
 }
@@ -32,13 +33,14 @@ const MAX_EXTRAS = 4;
 const formatCurrency = (value: number) =>
   `€${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function InvoicePriceModal({ isOpen, sale, availableSales = [], onSelect, onCancel }: InvoicePriceModalProps) {
+export default function InvoicePriceModal({ isOpen, sale, availableSales = [], isAdmin = false, onSelect, onCancel }: InvoicePriceModalProps) {
   const [customTax, setCustomTax] = useState<number>(DEFAULT_TAX);
   const [hideTvshLabel, setHideTvshLabel] = useState<boolean>(false);
   const [extraIds, setExtraIds] = useState<string[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [query, setQuery] = useState('');
   const [extraCharges, setExtraCharges] = useState<InvoiceExtraCharge[]>([]);
+  const [activeTab, setActiveTab] = useState<'standard' | 'advanced'>('standard');
 
   useEffect(() => {
     if (isOpen) {
@@ -48,6 +50,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
       setShowPicker(false);
       setQuery('');
       setExtraCharges([]);
+      setActiveTab('standard');
     }
   }, [isOpen]);
 
@@ -79,11 +82,15 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
 
   const chargesTotal = sanitizedCharges.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
 
+  const chargesEnabled = isAdmin && activeTab === 'advanced';
+  const effectiveCharges = chargesEnabled ? sanitizedCharges : [];
+  const effectiveChargesTotal = chargesEnabled ? chargesTotal : 0;
+
   const buildOptions = (source: InvoicePriceSource): InvoicePriceOptions => ({
     customTax: Number.isFinite(customTax) ? customTax : DEFAULT_TAX,
     hideTvshLabel,
     extraSales,
-    extraCharges: sanitizedCharges,
+    extraCharges: effectiveCharges,
   });
 
   const previewPrice = (source: InvoicePriceSource) => {
@@ -91,7 +98,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
     const extras = extraSales.reduce((acc, s) => acc + resolveInvoicePriceValue(s, source), 0);
     return base + extras;
   };
-  const previewTotal = (source: InvoicePriceSource) => previewPrice(source) + chargesTotal;
+  const previewTotal = (source: InvoicePriceSource) => previewPrice(source) + effectiveChargesTotal;
 
   const soldPrice = resolveInvoicePriceValue(sale, 'sold');
   const bankPrice = resolveInvoicePriceValue(sale, 'paid_bank');
@@ -115,6 +122,24 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
             <X className="w-5 h-5" />
           </button>
         </div>
+        {isAdmin && (
+          <div className="flex gap-1 px-4 pt-3 border-b border-slate-100">
+            <button
+              type="button"
+              onClick={() => setActiveTab('standard')}
+              className={`px-3 py-2 text-xs font-semibold rounded-t-md transition ${activeTab === 'standard' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Standard
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('advanced')}
+              className={`px-3 py-2 text-xs font-semibold rounded-t-md transition ${activeTab === 'advanced' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Advanced charges
+            </button>
+          </div>
+        )}
         <div className="p-4 space-y-3">
           <button
             onClick={() => onSelect('sold', buildOptions('sold'))}
@@ -127,7 +152,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
                 Base {formatCurrency(soldPrice)} + {extraSales.length} extra
               </div>
             )}
-            {chargesTotal !== 0 && (
+            {chargesEnabled && chargesTotal !== 0 && (
               <div className="text-[11px] text-slate-500 mt-0.5">
                 + {formatCurrency(chargesTotal)} charges → Total {formatCurrency(previewTotal('sold'))}
               </div>
@@ -147,7 +172,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
                 Base {formatCurrency(bankPrice)} + {extraSales.length} extra
               </div>
             )}
-            {chargesTotal !== 0 && (
+            {chargesEnabled && chargesTotal !== 0 && (
               <div className="text-[11px] text-slate-500 mt-0.5">
                 + {formatCurrency(chargesTotal)} charges → Total {formatCurrency(previewTotal('paid_bank'))}
               </div>
@@ -249,7 +274,8 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
             )}
           </div>
 
-          {/* Additional charges (Akciza, TVSH, Doganë, custom) */}
+          {/* Additional charges (Akciza, TVSH, Doganë, custom) — Admin Advanced tab only */}
+          {chargesEnabled && (
           <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Additional charges</div>
@@ -305,6 +331,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
               </div>
             )}
           </div>
+          )}
 
           {/* Tax customization */}
           <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">

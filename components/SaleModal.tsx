@@ -1098,6 +1098,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
             isOpen={showInvoicePriceModal}
             sale={formData}
             availableSales={existingSales}
+            isAdmin={isAdmin}
             onSelect={(source, opts) => {
                 setInvoicePriceSource(source);
                 setInvoiceCustomTax(opts?.customTax);
