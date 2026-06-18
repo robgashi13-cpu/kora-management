@@ -152,7 +152,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
                 Base {formatCurrency(soldPrice)} + {extraSales.length} extra
               </div>
             )}
-            {chargesTotal !== 0 && (
+            {chargesEnabled && chargesTotal !== 0 && (
               <div className="text-[11px] text-slate-500 mt-0.5">
                 + {formatCurrency(chargesTotal)} charges → Total {formatCurrency(previewTotal('sold'))}
               </div>
