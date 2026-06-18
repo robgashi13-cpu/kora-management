@@ -91,7 +91,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const taxValue = withDogane
             ? normalizeNonNegative(toSafeNumber(taxAmount))
             : defaultTaxValue;
-        const totalValue = withDogane ? subtotalValue + taxValue : soldPriceValue;
+        const sanitizedExtraCharges = (extraCharges || [])
+            .map(c => ({ id: c.id, label: String(c.label || '').trim(), amount: toSafeNumber(c.amount) }))
+            .filter(c => c.label.length > 0 || c.amount !== 0);
+        const extraChargesTotal = sanitizedExtraCharges.reduce((acc, c) => acc + c.amount, 0);
+        const totalValue = (withDogane ? subtotalValue + taxValue : soldPriceValue) + extraChargesTotal;
         const taxLabel = withDogane ? 'Doganë' : (hideTvshLabel ? 'Tax' : 'Tax (TVSH 18%)');
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
