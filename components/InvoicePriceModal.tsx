@@ -331,6 +331,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
               </div>
             )}
           </div>
+          )}
 
           {/* Tax customization */}
           <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
