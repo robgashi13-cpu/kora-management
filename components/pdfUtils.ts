@@ -469,6 +469,31 @@ const trimCanvasBottomWhitespace = (canvas: HTMLCanvasElement, paddingPx = 12): 
   return trimmedCanvas;
 };
 
+const emitPdfGenerated = (blob: Blob, filename: string, element: HTMLElement) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const docType =
+      element.matches('[data-invoice-document]') || element.matches('#invoice-content') || element.matches('.invoice-root')
+        ? (filename.toLowerCase().includes('pre-invoice') || filename.toLowerCase().includes('preinvoice') ? 'PRE_INVOICE' : 'INVOICE')
+        : element.matches('[data-contract-document][data-contract-type="deposit"]')
+        ? 'CONTRACT_DEPOSIT'
+        : element.matches('[data-contract-document][data-contract-type="full_marreveshje"]')
+        ? 'CONTRACT_MARREVESHJE'
+        : element.matches('[data-contract-document][data-contract-type="full_shitblerje"]')
+        ? 'CONTRACT_SHITBLERJE'
+        : element.matches('[data-contract-document]')
+        ? 'CONTRACT'
+        : 'PDF';
+    const saleId = element.getAttribute('data-sale-id') || element.closest('[data-sale-id]')?.getAttribute('data-sale-id') || null;
+    window.dispatchEvent(new CustomEvent('pdf-generated', {
+      detail: { blob, filename, docType, saleId, size: blob.size, generatedAt: new Date().toISOString() }
+    }));
+  } catch (e) {
+    // best-effort, never break PDF generation
+    console.warn('pdf-generated dispatch failed', e);
+  }
+};
+
 export const generatePdf = async ({
   element,
   filename,
@@ -563,6 +588,7 @@ export const generatePdf = async ({
         });
       }
       const blob = pdf.output('blob');
+      emitPdfGenerated(blob, filename, element);
       return { pdf, blob, filename };
     }
 
@@ -660,6 +686,7 @@ export const generatePdf = async ({
     }
 
     const blob = pdf.output('blob');
+    emitPdfGenerated(blob, filename, element);
     return { pdf, blob, filename };
   }
 
@@ -738,6 +765,7 @@ export const generatePdf = async ({
     });
   }
   const blob = pdf.output('blob');
+  emitPdfGenerated(blob, filename, element);
   return { pdf, blob, filename };
 };
 

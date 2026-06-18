@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useTransition, useCallback, useDeferredValue } from 'react';
 import { Attachment, CarDocumentRecord, CarSale, ContractType, MechanicRepairRecord, SaleStatus, ShitblerjeOverrides, TransportPaymentStatus } from '@/src/types';
-import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench, Gavel } from 'lucide-react';
+import { Plus, Search, FileText, RefreshCw, Trash2, Copy, ArrowRight, CheckSquare, Square, X, Clipboard, GripVertical, Eye, EyeOff, LogOut, ChevronDown, ChevronUp, ArrowUpDown, Edit, FolderPlus, Archive, Download, Loader2, ArrowRightLeft, Menu, Settings, Check, History, Sun, Moon, MoreHorizontal, Truck, CircleDollarSign, Wrench, Gavel, ScrollText, ExternalLink } from 'lucide-react';
 import AnkesaDoganaTab from '@/components/AnkesaDoganaTab';
 import PerPagesTab from '@/components/PerPagesTab';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
@@ -578,6 +578,7 @@ const navItems: NavItem[] = [
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
+    { id: 'PDF_LOGS', label: 'PDF Logs', icon: ScrollText, view: 'pdf_logs', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
     { id: 'PER_PAGES', label: 'Për Pages', icon: FileText, view: 'per_pages', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
@@ -834,19 +835,25 @@ export default function Dashboard() {
     const [selectedMechanicRecordId, setSelectedMechanicRecordId] = useState<string | null>(null);
     const [editingMechanicRecordId, setEditingMechanicRecordId] = useState<string | null>(null);
 
+    const isPdfLogsViewer = userProfile === ADMIN_PROFILE || (userProfile || '').toUpperCase() === 'SHYQA';
+
     useEffect(() => {
         if (isAdmin) return;
         if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due' || view === 'pdf_templates') {
             setView('dashboard');
         }
+        if (view === 'pdf_logs' && !isPdfLogsViewer) {
+            setView('dashboard');
+        }
         if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
             setActiveCategory('SALES');
         }
-    }, [isAdmin, view, activeCategory]);
+    }, [isAdmin, view, activeCategory, isPdfLogsViewer]);
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
         if (view === 'record') return 'RECORD';
+        if (view === 'pdf_logs') return 'PDF_LOGS';
         if (view === 'invoices') return 'INVOICES';
         if (view === 'mechanic') return 'MECHANIC';
         if (view === 'ankesa_dogana') return 'ANKESA_DOGANA';
@@ -899,6 +906,10 @@ export default function Dashboard() {
     const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
     const [isLoadingAudit, setIsLoadingAudit] = useState(false);
     const [auditPage, setAuditPage] = useState(0);
+    const [pdfLogs, setPdfLogs] = useState<Array<any>>([]);
+    const [isLoadingPdfLogs, setIsLoadingPdfLogs] = useState(false);
+    const [pdfLogsPage, setPdfLogsPage] = useState(0);
+    const [openingPdfLogId, setOpeningPdfLogId] = useState<string | null>(null);
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -3048,6 +3059,94 @@ export default function Dashboard() {
         return () => window.clearInterval(interval);
     }, [auditPage, isRecordAdmin, view, supabaseUrl, supabaseKey]);
 
+    // Reset PDF logs page when entering view
+    useEffect(() => {
+        if (view === 'pdf_logs') setPdfLogsPage(0);
+    }, [view]);
+
+    // Load PDF logs (audit_logs filtered to entity_type=pdf)
+    useEffect(() => {
+        if (!isPdfLogsViewer || view !== 'pdf_logs' || !supabaseUrl || !supabaseKey) return;
+        const loadPdfLogs = async () => {
+            setIsLoadingPdfLogs(true);
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const from = pdfLogsPage * 200;
+                const to = from + 199;
+                const { data, error } = await client
+                    .from('audit_logs')
+                    .select('*')
+                    .eq('entity_type', 'pdf')
+                    .order('created_at', { ascending: false })
+                    .range(from, to);
+                if (error) { console.error('PDF logs load failed', error); return; }
+                setPdfLogs(data || []);
+            } finally {
+                setIsLoadingPdfLogs(false);
+            }
+        };
+        loadPdfLogs();
+        const interval = window.setInterval(() => { void loadPdfLogs(); }, 10000);
+        return () => window.clearInterval(interval);
+    }, [pdfLogsPage, isPdfLogsViewer, view, supabaseUrl, supabaseKey]);
+
+    // Global listener: every PDF generated anywhere in the app → upload + log
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey || !userProfile) return;
+        const handler = async (e: Event) => {
+            const detail = (e as CustomEvent).detail || {};
+            const { blob, filename, docType, saleId, size, generatedAt } = detail as {
+                blob: Blob; filename: string; docType: string; saleId?: string | null; size: number; generatedAt: string;
+            };
+            if (!blob || !filename) return;
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const now = new Date(generatedAt || Date.now());
+                const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const safeName = filename.replace(/[^a-zA-Z0-9._-]+/g, '_');
+                const storagePath = `${ym}/${now.getTime()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+                const upload = await client.storage.from('pdf-logs').upload(storagePath, blob, {
+                    contentType: 'application/pdf', upsert: false,
+                });
+                const storedPath = upload.error ? null : storagePath;
+                if (upload.error) console.warn('PDF upload failed', upload.error);
+                // Try to enrich with sale info
+                let saleInfo: Record<string, unknown> | null = null;
+                if (saleId) {
+                    const s = salesRef.current.find(x => x.id === saleId);
+                    if (s) saleInfo = { brand: s.brand, model: s.model, vin: s.vin, plate: s.plateNumber, buyer: s.buyerName };
+                }
+                await logAuditEvent({
+                    actionType: 'DOWNLOAD',
+                    entityType: 'pdf',
+                    entityId: filename,
+                    afterData: { filename, docType, saleId: saleId || null, size, sale: saleInfo },
+                    pageContext: 'pdf_generation',
+                    metadata: { storage_bucket: 'pdf-logs', storage_path: storedPath, doc_type: docType, sale_id: saleId || null, file_size: size, generated_at: generatedAt },
+                });
+            } catch (err) {
+                console.warn('PDF log write failed', err);
+            }
+        };
+        window.addEventListener('pdf-generated', handler as EventListener);
+        return () => window.removeEventListener('pdf-generated', handler as EventListener);
+    }, [supabaseUrl, supabaseKey, userProfile, logAuditEvent]);
+
+    const openPdfLog = useCallback(async (log: any) => {
+        const path = log?.metadata?.storage_path;
+        if (!path || !supabaseUrl || !supabaseKey) { alert('Stored PDF not available for this entry.'); return; }
+        setOpeningPdfLogId(log.id);
+        try {
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+            const { data, error } = await client.storage.from('pdf-logs').createSignedUrl(path, 3600);
+            if (error || !data?.signedUrl) { alert('Could not open PDF: ' + (error?.message || 'unknown error')); return; }
+            window.open(data.signedUrl, '_blank', 'noopener');
+        } finally {
+            setOpeningPdfLogId(null);
+        }
+    }, [supabaseUrl, supabaseKey]);
+
+
     useEffect(() => {
         if (!viewSaleModalItem) return;
         void logAuditEvent({
@@ -4687,7 +4786,7 @@ export default function Dashboard() {
                                 <Menu className="w-6 h-6" />
                             </button>
                             <h2 className={`text-sm sm:text-base lg:text-lg font-bold flex items-center gap-2 truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : view === 'ankesa_dogana' ? 'Ankesa Dogana' : view === 'per_pages' ? 'Për Pages' : activeCategory}
+                                {view === 'settings' ? 'Settings' : view === 'invoices' ? 'Invoices' : view === 'pdf_list' ? 'PDF' : view === 'pdf_logs' ? 'PDF Logs' : view === 'transport' ? 'Transporti' : view === 'balance_due' ? 'Balance Due' : view === 'pdf_templates' ? 'PDF Templates' : view === 'mechanic' ? 'Mechanic' : view === 'ankesa_dogana' ? 'Ankesa Dogana' : view === 'per_pages' ? 'Për Pages' : activeCategory}
                                 <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${theme === 'dark' ? 'text-slate-300 bg-white/5 border-white/15' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
                                     {view === 'mechanic'
                                         ? (mechanicSubTab === 'records' ? mechanicRecords.length : carDocuments.length)
@@ -5988,6 +6087,77 @@ export default function Dashboard() {
                                                 <button onClick={() => setAuditPage((prev) => Math.max(0, prev - 1))} disabled={auditPage === 0 || isLoadingAudit} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Previous</button>
                                                 <span className="text-xs text-slate-500">Page {auditPage + 1}</span>
                                                 <button onClick={() => setAuditPage((prev) => prev + 1)} disabled={isLoadingAudit || auditLogs.length < 200} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Next</button>
+                                            </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )
+                            ) : view === 'pdf_logs' ? (
+                                !isPdfLogsViewer ? (
+                                    <div className="w-full max-w-xl mx-auto bg-white p-6 rounded-2xl border border-slate-100">
+                                        <h2 className="text-xl font-bold text-slate-900">Access denied</h2>
+                                        <p className="text-slate-500 mt-2">PDF Logs is restricted to Admin and SHYQA.</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
+                                        <div className="flex items-baseline justify-between mb-3">
+                                            <div>
+                                                <h2 className="text-2xl font-black text-slate-900">PDF Logs</h2>
+                                                <p className="text-xs text-slate-500 mt-0.5">Every PDF generated in the app. Click an entry to re-open it.</p>
+                                            </div>
+                                            <span className="text-xs text-slate-400">{pdfLogs.length} on this page</span>
+                                        </div>
+                                        {isLoadingPdfLogs ? (
+                                            <p className="text-slate-500">Loading PDF logs...</p>
+                                        ) : pdfLogs.length === 0 ? (
+                                            <p className="text-slate-500">No PDFs have been generated yet.</p>
+                                        ) : (
+                                            <>
+                                            <div className="space-y-2">
+                                                {pdfLogs.map((log) => {
+                                                    const meta = (log.metadata || {}) as any;
+                                                    const after = (log.after_data || {}) as any;
+                                                    const docType = String(meta.doc_type || after.docType || 'PDF');
+                                                    const filename = String(after.filename || log.entity_id || '');
+                                                    const sale = after.sale || null;
+                                                    const hasFile = Boolean(meta.storage_path);
+                                                    const sizeKb = Number(after.size || meta.file_size || 0) / 1024;
+                                                    return (
+                                                        <div key={log.id} className="border border-slate-200 rounded-xl p-3 bg-white hover:bg-slate-50 transition">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold">{docType.replace(/_/g, ' ')}</div>
+                                                                    <div className="text-sm font-semibold text-slate-900 truncate">{filename}</div>
+                                                                    <div className="text-xs text-slate-500 mt-0.5">
+                                                                        Generated by <span className="font-semibold text-slate-700">{log.actor_profile_name || log.actor_profile_id || 'Unknown'}</span> · {new Date(log.created_at).toLocaleString()}
+                                                                    </div>
+                                                                    {sale && (
+                                                                        <div className="text-xs text-slate-500 mt-0.5 truncate">
+                                                                            {[sale.brand, sale.model].filter(Boolean).join(' ')}{sale.vin ? ` · VIN ${sale.vin}` : ''}{sale.plate ? ` · ${sale.plate}` : ''}{sale.buyer ? ` · ${sale.buyer}` : ''}
+                                                                        </div>
+                                                                    )}
+                                                                    {sizeKb > 0 && (
+                                                                        <div className="text-[10px] text-slate-400 mt-0.5">{sizeKb < 1024 ? `${sizeKb.toFixed(0)} KB` : `${(sizeKb / 1024).toFixed(2)} MB`}</div>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => openPdfLog(log)}
+                                                                    disabled={!hasFile || openingPdfLogId === log.id}
+                                                                    className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                    title={hasFile ? 'Open the stored PDF' : 'PDF file not available for this entry'}
+                                                                >
+                                                                    {openingPdfLogId === log.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+                                                                    Open
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-end gap-2">
+                                                <button onClick={() => setPdfLogsPage((p) => Math.max(0, p - 1))} disabled={pdfLogsPage === 0 || isLoadingPdfLogs} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Previous</button>
+                                                <span className="text-xs text-slate-500">Page {pdfLogsPage + 1}</span>
+                                                <button onClick={() => setPdfLogsPage((p) => p + 1)} disabled={isLoadingPdfLogs || pdfLogs.length < 200} className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-50">Next</button>
                                             </div>
                                             </>
                                         )}
