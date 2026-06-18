@@ -1079,6 +1079,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 setInvoiceCustomTax(opts?.customTax);
                 setInvoiceHideTvshLabel(!!opts?.hideTvshLabel);
                 setInvoiceExtraSales(opts?.extraSales || []);
+                setInvoiceExtraCharges(opts?.extraCharges || []);
                 setShowInvoicePriceModal(false);
                 if (priceModalTarget === 'shitblerje') {
                     const price = resolveInvoicePriceValue(formData as CarSale, source);
