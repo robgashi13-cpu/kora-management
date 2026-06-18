@@ -768,7 +768,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         )}
 
                     </Section>
-                    </div>
 
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
@@ -790,7 +789,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         )}
                     </Section>
-                    </div>
 
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
@@ -921,7 +919,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </span>
                         </div>
                     </Section>
-                    </div>
 
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
@@ -930,7 +927,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
-                    </div>
 
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
@@ -957,7 +953,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </button>
                         </div>
                     </Section>
-                    </div>
 
                     {(saveState.error || saveState.success) && (
                         <div
