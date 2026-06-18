@@ -43,7 +43,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, extraSales, renderField, template, isPreInvoice = false }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, extraSales, extraCharges, renderField, template, isPreInvoice = false }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,
