@@ -85,15 +85,22 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             ? customTax
             : 30.51;
         const defaultFeesTotal = defaultServicesValue + defaultTaxValue;
-        const subtotalValue = soldPriceValue;
-        const taxValue = withDogane
-            ? normalizeNonNegative(toSafeNumber(taxAmount))
-            : defaultTaxValue;
         const sanitizedExtraCharges = (extraCharges || [])
             .map(c => ({ id: c.id, label: String(c.label || '').trim(), amount: toSafeNumber(c.amount) }))
             .filter(c => c.label.length > 0 || c.amount !== 0);
         const extraChargesTotal = sanitizedExtraCharges.reduce((acc, c) => acc + c.amount, 0);
-        const totalValue = subtotalValue + (withDogane ? taxValue : defaultServicesValue + taxValue) + extraChargesTotal;
+        const isAdvancedMode = sanitizedExtraCharges.length > 0;
+        const taxValue = withDogane
+            ? normalizeNonNegative(toSafeNumber(taxAmount))
+            : defaultTaxValue;
+        // Standard mode: services + tax are included within the car price (old behavior)
+        // Advanced mode: car price stays as-is; services, tax, and extra charges add on top
+        const subtotalValue = isAdvancedMode
+            ? soldPriceValue
+            : normalizeNonNegative(soldPriceValue - (withDogane ? taxValue : defaultFeesTotal));
+        const totalValue = isAdvancedMode
+            ? subtotalValue + (withDogane ? taxValue : defaultServicesValue + taxValue) + extraChargesTotal
+            : soldPriceValue;
         const taxLabel = withDogane ? 'Doganë' : (hideTvshLabel ? 'Tax' : 'Tax (TVSH 18%)');
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
