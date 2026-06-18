@@ -964,7 +964,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'documents' ? '' : 'hidden'}>
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
                             <TextArea
