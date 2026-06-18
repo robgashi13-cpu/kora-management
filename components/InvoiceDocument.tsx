@@ -228,6 +228,18 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </tr>
                             );
                         })}
+                        {sanitizedExtraCharges.map((c) => (
+                            <tr key={c.id}>
+                                <td style={{ padding: '12px 0' }}>
+                                    <div style={{ color: '#000000', fontWeight: 700 }}>
+                                        {c.label || 'Service'}
+                                    </div>
+                                </td>
+                                <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
+                                    {formatCurrency(c.amount)}
+                                </td>
+                            </tr>
+                        ))}
                         {!withDogane && (
                             <tr>
                                 <td style={{ padding: '10px 0' }}>
