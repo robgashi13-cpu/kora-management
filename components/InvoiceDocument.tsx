@@ -27,6 +27,7 @@ export interface InvoiceDocumentProps {
     customTax?: number;
     hideTvshLabel?: boolean;
     extraSales?: CarSale[];
+    extraCharges?: { id: string; label: string; amount: number }[];
     template?: PdfTemplateEntry;
     isPreInvoice?: boolean;
     renderField?: (
