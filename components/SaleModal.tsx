@@ -77,6 +77,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
+    const [activeTab, setActiveTab] = useState<'vehicle' | 'buyer' | 'financials' | 'attachments' | 'documents'>('vehicle');
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string; savedAt?: string }>({ saving: false });
     const [uploadState, setUploadState] = useState<{ active: boolean; message?: string }>({ active: false });
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
