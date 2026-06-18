@@ -38,6 +38,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
   const [extraIds, setExtraIds] = useState<string[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [query, setQuery] = useState('');
+  const [extraCharges, setExtraCharges] = useState<InvoiceExtraCharge[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +47,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
       setExtraIds([]);
       setShowPicker(false);
       setQuery('');
+      setExtraCharges([]);
     }
   }, [isOpen]);
 
