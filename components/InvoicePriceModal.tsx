@@ -73,16 +73,23 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
 
   if (!isOpen || !sale) return null;
 
+  const sanitizedCharges = extraCharges
+    .map(c => ({ ...c, label: (c.label || '').trim(), amount: Number(c.amount) || 0 }))
+    .filter(c => c.label.length > 0 || c.amount !== 0);
+
+  const chargesTotal = sanitizedCharges.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
+
   const buildOptions = (source: InvoicePriceSource): InvoicePriceOptions => ({
     customTax: Number.isFinite(customTax) ? customTax : DEFAULT_TAX,
     hideTvshLabel,
     extraSales,
+    extraCharges: sanitizedCharges,
   });
 
   const previewTotal = (source: InvoicePriceSource) => {
     const base = resolveInvoicePriceValue(sale, source);
     const extras = extraSales.reduce((acc, s) => acc + resolveInvoicePriceValue(s, source), 0);
-    return base + extras;
+    return base + extras + chargesTotal;
   };
 
   const soldPrice = resolveInvoicePriceValue(sale, 'sold');
