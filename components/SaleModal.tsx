@@ -7,7 +7,7 @@ import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus, 
 import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
-import InvoicePriceModal from './InvoicePriceModal';
+import InvoicePriceModal, { InvoiceExtraCharge } from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 import { rehydrateDraftSaleAttachments, resolveAttachmentUrl, sanitizeSaleDraft, uploadAttachmentToSaleStorage, uploadFileToSaleStorage } from '@/services/saleAttachmentStorage';
 
@@ -73,6 +73,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [invoiceCustomTax, setInvoiceCustomTax] = useState<number | undefined>(undefined);
     const [invoiceHideTvshLabel, setInvoiceHideTvshLabel] = useState<boolean>(false);
     const [invoiceExtraSales, setInvoiceExtraSales] = useState<CarSale[]>([]);
+    const [invoiceExtraCharges, setInvoiceExtraCharges] = useState<InvoiceExtraCharge[]>([]);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
@@ -1078,6 +1079,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 setInvoiceCustomTax(opts?.customTax);
                 setInvoiceHideTvshLabel(!!opts?.hideTvshLabel);
                 setInvoiceExtraSales(opts?.extraSales || []);
+                setInvoiceExtraCharges(opts?.extraCharges || []);
                 setShowInvoicePriceModal(false);
                 if (priceModalTarget === 'shitblerje') {
                     const price = resolveInvoicePriceValue(formData as CarSale, source);
@@ -1206,6 +1208,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         customTax={invoiceCustomTax}
                         hideTvshLabel={invoiceHideTvshLabel}
                         extraSales={invoiceExtraSales}
+                        extraCharges={invoiceExtraCharges}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
                         onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
@@ -1250,6 +1253,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     customTax={invoiceCustomTax}
                     hideTvshLabel={invoiceHideTvshLabel}
                     extraSales={invoiceExtraSales}
+                    extraCharges={invoiceExtraCharges}
                     onSaveToSale={handlePreviewSaveToSale}
                     templates={pdfTemplates}
                     onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}

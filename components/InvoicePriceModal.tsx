@@ -5,10 +5,17 @@ import { X, Plus, Search } from 'lucide-react';
 import { CarSale } from '@/src/types';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
+export interface InvoiceExtraCharge {
+  id: string;
+  label: string;
+  amount: number;
+}
+
 export interface InvoicePriceOptions {
   customTax?: number;
   hideTvshLabel?: boolean;
   extraSales?: CarSale[];
+  extraCharges?: InvoiceExtraCharge[];
 }
 
 interface InvoicePriceModalProps {
@@ -31,6 +38,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
   const [extraIds, setExtraIds] = useState<string[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [query, setQuery] = useState('');
+  const [extraCharges, setExtraCharges] = useState<InvoiceExtraCharge[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,6 +47,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
       setExtraIds([]);
       setShowPicker(false);
       setQuery('');
+      setExtraCharges([]);
     }
   }, [isOpen]);
 
@@ -64,16 +73,23 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
 
   if (!isOpen || !sale) return null;
 
+  const sanitizedCharges = extraCharges
+    .map(c => ({ ...c, label: (c.label || '').trim(), amount: Number(c.amount) || 0 }))
+    .filter(c => c.label.length > 0 || c.amount !== 0);
+
+  const chargesTotal = sanitizedCharges.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
+
   const buildOptions = (source: InvoicePriceSource): InvoicePriceOptions => ({
     customTax: Number.isFinite(customTax) ? customTax : DEFAULT_TAX,
     hideTvshLabel,
     extraSales,
+    extraCharges: sanitizedCharges,
   });
 
   const previewTotal = (source: InvoicePriceSource) => {
     const base = resolveInvoicePriceValue(sale, source);
     const extras = extraSales.reduce((acc, s) => acc + resolveInvoicePriceValue(s, source), 0);
-    return base + extras;
+    return base + extras + chargesTotal;
   };
 
   const soldPrice = resolveInvoicePriceValue(sale, 'sold');
@@ -218,6 +234,63 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
                 <div className="text-[10px] text-slate-400">
                   Up to {MAX_EXTRAS} extra sales. All sales use the price source you pick above.
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Additional charges (Akciza, TVSH, Doganë, custom) */}
+          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Additional charges</div>
+              <button
+                type="button"
+                onClick={() => setExtraCharges(prev => [...prev, { id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, label: '', amount: 0 }])}
+                className="flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add charge
+              </button>
+            </div>
+            {extraCharges.length === 0 && (
+              <div className="text-[11px] text-slate-400">
+                Add lines like Akciza, TVSH, Doganë, or any custom service. They're added to the total.
+              </div>
+            )}
+            {extraCharges.length > 0 && (
+              <div className="space-y-1.5">
+                {extraCharges.map((c, idx) => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={c.label}
+                      onChange={(e) => setExtraCharges(prev => prev.map((p, i) => i === idx ? { ...p, label: e.target.value } : p))}
+                      placeholder="Description (e.g. Akciza)"
+                      className="flex-1 h-8 px-2 text-xs border border-slate-200 rounded-md bg-white outline-none focus:border-slate-400"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={Number.isFinite(c.amount) ? c.amount : ''}
+                      onChange={(e) => setExtraCharges(prev => prev.map((p, i) => i === idx ? { ...p, amount: e.target.value === '' ? 0 : Number(e.target.value) } : p))}
+                      placeholder="0.00"
+                      className="w-24 h-8 px-2 text-xs text-right border border-slate-200 rounded-md bg-white outline-none focus:border-slate-400 tabular-nums"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExtraCharges(prev => prev.filter((_, i) => i !== idx))}
+                      className="p-1 rounded hover:bg-slate-100 text-slate-500"
+                      aria-label="Remove charge"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+                {chargesTotal !== 0 && (
+                  <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
+                    <span>Charges total</span>
+                    <span className="font-semibold text-slate-700 tabular-nums">{formatCurrency(chargesTotal)}</span>
+                  </div>
+                )}
               </div>
             )}
           </div>

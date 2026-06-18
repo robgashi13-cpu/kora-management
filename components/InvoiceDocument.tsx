@@ -27,6 +27,7 @@ export interface InvoiceDocumentProps {
     customTax?: number;
     hideTvshLabel?: boolean;
     extraSales?: CarSale[];
+    extraCharges?: { id: string; label: string; amount: number }[];
     template?: PdfTemplateEntry;
     isPreInvoice?: boolean;
     renderField?: (
@@ -42,7 +43,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, extraSales, renderField, template, isPreInvoice = false }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, extraSales, extraCharges, renderField, template, isPreInvoice = false }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,
@@ -90,7 +91,11 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const taxValue = withDogane
             ? normalizeNonNegative(toSafeNumber(taxAmount))
             : defaultTaxValue;
-        const totalValue = withDogane ? subtotalValue + taxValue : soldPriceValue;
+        const sanitizedExtraCharges = (extraCharges || [])
+            .map(c => ({ id: c.id, label: String(c.label || '').trim(), amount: toSafeNumber(c.amount) }))
+            .filter(c => c.label.length > 0 || c.amount !== 0);
+        const extraChargesTotal = sanitizedExtraCharges.reduce((acc, c) => acc + c.amount, 0);
+        const totalValue = (withDogane ? subtotalValue + taxValue : soldPriceValue) + extraChargesTotal;
         const taxLabel = withDogane ? 'Doganë' : (hideTvshLabel ? 'Tax' : 'Tax (TVSH 18%)');
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -223,6 +228,18 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </tr>
                             );
                         })}
+                        {sanitizedExtraCharges.map((c) => (
+                            <tr key={c.id}>
+                                <td style={{ padding: '12px 0' }}>
+                                    <div style={{ color: '#000000', fontWeight: 700 }}>
+                                        {c.label || 'Service'}
+                                    </div>
+                                </td>
+                                <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
+                                    {formatCurrency(c.amount)}
+                                </td>
+                            </tr>
+                        ))}
                         {!withDogane && (
                             <tr>
                                 <td style={{ padding: '10px 0' }}>
@@ -256,6 +273,12 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             <span>{taxLabel}</span>
                             <span>{formatCurrency(taxValue)}</span>
                         </div>
+                        {sanitizedExtraCharges.map((c) => (
+                            <div key={`sum-${c.id}`} className="invoice-summary-row">
+                                <span>{c.label || 'Service'}</span>
+                                <span>{formatCurrency(c.amount)}</span>
+                            </div>
+                        ))}
                         <div className="invoice-summary-total">
                             <span>Total</span>
                             <span>{formatCurrency(totalValue)}</span>
