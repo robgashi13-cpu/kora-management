@@ -735,7 +735,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                     className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 pb-32 sm:pb-28 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-32 sm:pb-28 gap-4 md:gap-5'} flex flex-col`}
                 >
-                    <div className={activeTab === 'vehicle' ? '' : 'hidden'}>
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
@@ -771,7 +770,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
                     </div>
 
-                    <div className={activeTab === 'buyer' ? '' : 'hidden'}>
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
@@ -794,7 +792,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
                     </div>
 
-                    <div className={activeTab === 'financials' ? '' : 'hidden'}>
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
                             {isAdmin && (
@@ -926,7 +923,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
                     </div>
 
-                    <div className={activeTab === 'attachments' ? '' : 'hidden'}>
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
@@ -936,7 +932,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     </Section>
                     </div>
 
-                    <div className={activeTab === 'documents' ? '' : 'hidden'}>
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
                             <TextArea
