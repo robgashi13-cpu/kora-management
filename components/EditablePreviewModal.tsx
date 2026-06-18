@@ -57,6 +57,7 @@ export default function EditablePreviewModal({
   customTax,
   hideTvshLabel = false,
   extraSales,
+  extraCharges,
   templates,
   onInvoiceCreated
 }: EditablePreviewModalProps) {
