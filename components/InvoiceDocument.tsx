@@ -205,7 +205,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </div>
                             </td>
                             <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
-                                {formatCurrency(mainPriceValue)}
+                                {formatCurrency(isAdvancedMode || extraLineItems.length > 0 ? mainPriceValue : subtotalValue)}
                             </td>
                         </tr>
                         {extraLineItems.map((item, idx) => {
