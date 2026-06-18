@@ -69,7 +69,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const normalizeNonNegative = (value: number) => (value >= 0 ? value : 0);
 
         const resolvedPriceValue = resolveInvoicePriceValue(displaySale, priceSource, priceValue);
-        const soldPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
+        const mainPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
+        const extraDisplaySales = (extraSales || []).map(s => applyShitblerjeOverrides(s));
+        const extraLineItems = extraDisplaySales.map(s => ({
+            sale: s,
+            price: normalizeNonNegative(toSafeNumber(resolveInvoicePriceValue(s, priceSource))),
+        }));
+        const extrasTotal = extraLineItems.reduce((acc, item) => acc + item.price, 0);
+        const combinedPriceValue = mainPriceValue + extrasTotal;
+        const soldPriceValue = combinedPriceValue;
         const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
         const defaultServicesValue = 169.49;
         const defaultTaxValue = typeof customTax === 'number' && Number.isFinite(customTax) && customTax >= 0
@@ -88,6 +96,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const vehicleDisplayName = [displaySale.brand, displaySale.model].filter(Boolean).join(' ') || '—';
         const invoiceDescription = String(displaySale.invoiceDescription || '').trim();
+        const hasExtras = extraLineItems.length > 0;
 
         return (
             <div
