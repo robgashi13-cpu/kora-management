@@ -550,6 +550,7 @@ export default function EditablePreviewModal({
                 customTax={customTax}
                 hideTvshLabel={hideTvshLabel}
                 extraSales={extraSales}
+                extraCharges={extraCharges}
                 priceSource={priceSource}
                 priceValue={priceValue}
                 isPreInvoice={isPreInvoice}
