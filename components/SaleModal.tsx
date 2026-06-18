@@ -992,25 +992,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </button>
                         </div>
                     </Section>
+                    </div>
 
-                    {/* Footer Actions */}
-                    <div className="-mt-4 text-xs font-medium text-slate-500">
-                        {draftState.status === 'saving' && 'Saving draft...'}
-                        {draftState.status === 'saved' && `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
-                        <button type="button" onClick={handleRequestClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
-                        <button
-                            type="submit"
-                            disabled={saveState.saving}
-                            className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto"
-                        >
-                            {saveState.saving ? (<span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Saving…</span>) : existingSale ? 'Update Sale' : 'Create Sale'}
-                        </button>
-                    </div>
                     {(saveState.error || saveState.success) && (
                         <div
-                            className={`mt-4 rounded-xl border px-4 py-3 text-sm font-semibold ${saveState.error
+                            className={`rounded-xl border px-4 py-3 text-sm font-semibold ${saveState.error
                                 ? 'border-red-200 bg-red-50 text-red-600'
                                 : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 }`}
@@ -1020,8 +1006,43 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     )}
                 </form>
             </div>
+
+            {/* Sticky bottom action bar */}
+            <div className="sticky bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex flex-col leading-tight">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Balance Due</span>
+                            <span className={`text-base sm:text-lg font-mono font-bold ${computedBalanceDue > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                €{computedBalanceDue.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="hidden sm:flex flex-col leading-tight pl-3 border-l border-slate-200">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sold Price</span>
+                            <span className="text-sm font-mono font-semibold text-slate-700">€{Number(formData.soldPrice || 0).toLocaleString()}</span>
+                        </div>
+                        {draftState.status !== 'idle' && (
+                            <span className="hidden md:inline text-[11px] text-slate-400 pl-3 border-l border-slate-200">
+                                {draftState.status === 'saving' ? 'Saving draft…' : `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" onClick={handleRequestClose} className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-slate-600 hover:bg-slate-100 font-semibold transition-colors">Cancel</button>
+                        <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); (document.querySelector('form') as HTMLFormElement | null)?.requestSubmit(); }}
+                            disabled={saveState.saving}
+                            className="px-4 sm:px-6 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all"
+                        >
+                            {saveState.saving ? (<span className="inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</span>) : existingSale ? 'Update' : 'Create'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </motion.div>
     );
+
 
     const previewOverlay = previewImage && (
         <div className="fixed inset-0 z-[60] bg-slate-900/70 flex items-center justify-center p-4" onClick={closePreview}>
