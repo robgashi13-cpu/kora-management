@@ -1208,6 +1208,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         customTax={invoiceCustomTax}
                         hideTvshLabel={invoiceHideTvshLabel}
                         extraSales={invoiceExtraSales}
+                        extraCharges={invoiceExtraCharges}
                         onSaveToSale={handlePreviewSaveToSale}
                         templates={pdfTemplates}
                         onInvoiceCreated={() => onInvoiceCreated?.(formData as CarSale, existingSale ? 'edit_sale' : 'add_sale')}
