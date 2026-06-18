@@ -22,6 +22,7 @@ interface InvoicePriceModalProps {
   isOpen: boolean;
   sale: Partial<CarSale> | null;
   availableSales?: CarSale[];
+  isAdmin?: boolean;
   onSelect: (source: InvoicePriceSource, options: InvoicePriceOptions) => void;
   onCancel: () => void;
 }
