@@ -28,7 +28,7 @@ import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
-import AiAssistant from './AiAssistant';
+// AiAssistant import removed — chat bubble disabled
 
 const safeSetItem = (key: string, value: string) => {
     try {
