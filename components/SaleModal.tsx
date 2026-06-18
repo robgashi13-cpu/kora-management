@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Paperclip, FileText, ChevronDown, ArrowLeft, Eye, AlertTriangle, Loader2, Car, User, Wallet, Paperclip as FileIcon, FileSignature } from 'lucide-react';
 import ViewSaleModal from './ViewSaleModal';
 import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus, PaymentHistoryEntry, PaymentHistoryMethod } from '@/src/types';
 import { InvoiceSourceContext } from './invoiceHistory';
@@ -77,6 +77,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
+    const [activeTab, setActiveTab] = useState<'vehicle' | 'buyer' | 'financials' | 'attachments' | 'documents'>('vehicle');
     const [saveState, setSaveState] = useState<{ saving: boolean; error?: string; success?: string; savedAt?: string }>({ saving: false });
     const [uploadState, setUploadState] = useState<{ active: boolean; message?: string }>({ active: false });
     const [draftState, setDraftState] = useState<{ status: 'idle' | 'saving' | 'saved'; savedAt?: string }>({ status: 'idle' });
@@ -723,14 +724,48 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 </div>
             )}
 
+            {/* Sticky tab navigation */}
+            {(() => {
+                const tabs: { id: typeof activeTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+                    { id: 'vehicle', label: 'Vehicle', icon: Car },
+                    { id: 'buyer', label: 'Buyer', icon: User },
+                    { id: 'financials', label: 'Financials', icon: Wallet },
+                    { id: 'attachments', label: 'Files', icon: FileIcon },
+                    { id: 'documents', label: 'Documents', icon: FileSignature },
+                ];
+                return (
+                    <div className="sticky top-0 z-20 bg-white border-b border-slate-200">
+                        <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar px-2 sm:px-4">
+                            {tabs.map(t => {
+                                const Icon = t.icon;
+                                const active = activeTab === t.id;
+                                return (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(t.id)}
+                                        className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${active ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                        {t.label}
+                                        {active && <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-slate-900 rounded-full" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
+
             <div
-                className="flex-1 overflow-y-auto no-scrollbar flex flex-col pt-2 min-h-0 scroll-container"
+                className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 scroll-container"
             >
                 <form
                     onSubmit={handleSubmit}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-2 sm:py-3 lg:py-4 pb-4 lg:pb-6 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-6 lg:pb-8 gap-4 md:gap-5'} flex flex-col`}
+                    className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 pb-32 sm:pb-28 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-32 sm:pb-28 gap-4 md:gap-5'} flex flex-col`}
                 >
+                    <div className={activeTab === 'vehicle' ? '' : 'hidden'}>
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
@@ -764,7 +799,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         )}
 
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'buyer' ? '' : 'hidden'}>
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
@@ -785,7 +822,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         )}
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'financials' ? '' : 'hidden'}>
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
                             {isAdmin && (
@@ -915,7 +954,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </span>
                         </div>
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'attachments' ? '' : 'hidden'}>
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
@@ -923,7 +964,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'documents' ? '' : 'hidden'}>
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
                             <TextArea
@@ -949,25 +992,11 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </button>
                         </div>
                     </Section>
+                    </div>
 
-                    {/* Footer Actions */}
-                    <div className="-mt-4 text-xs font-medium text-slate-500">
-                        {draftState.status === 'saving' && 'Saving draft...'}
-                        {draftState.status === 'saved' && `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
-                    </div>
-                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 mt-auto">
-                        <button type="button" onClick={handleRequestClose} className="px-5 py-3 rounded-xl text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 font-bold transition-all">Cancel</button>
-                        <button
-                            type="submit"
-                            disabled={saveState.saving}
-                            className="px-8 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-sm font-bold shadow-sm active:scale-95 transition-all w-full md:w-auto"
-                        >
-                            {saveState.saving ? (<span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Saving…</span>) : existingSale ? 'Update Sale' : 'Create Sale'}
-                        </button>
-                    </div>
                     {(saveState.error || saveState.success) && (
                         <div
-                            className={`mt-4 rounded-xl border px-4 py-3 text-sm font-semibold ${saveState.error
+                            className={`rounded-xl border px-4 py-3 text-sm font-semibold ${saveState.error
                                 ? 'border-red-200 bg-red-50 text-red-600'
                                 : 'border-emerald-200 bg-emerald-50 text-emerald-700'
                                 }`}
@@ -977,8 +1006,43 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     )}
                 </form>
             </div>
+
+            {/* Sticky bottom action bar */}
+            <div className="sticky bottom-0 left-0 right-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+                <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex flex-col leading-tight">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Balance Due</span>
+                            <span className={`text-base sm:text-lg font-mono font-bold ${computedBalanceDue > 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                €{computedBalanceDue.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="hidden sm:flex flex-col leading-tight pl-3 border-l border-slate-200">
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Sold Price</span>
+                            <span className="text-sm font-mono font-semibold text-slate-700">€{Number(formData.soldPrice || 0).toLocaleString()}</span>
+                        </div>
+                        {draftState.status !== 'idle' && (
+                            <span className="hidden md:inline text-[11px] text-slate-400 pl-3 border-l border-slate-200">
+                                {draftState.status === 'saving' ? 'Saving draft…' : `Draft saved${draftState.savedAt ? ` • ${new Date(draftState.savedAt).toLocaleTimeString()}` : ''}`}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" onClick={handleRequestClose} className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm text-slate-600 hover:bg-slate-100 font-semibold transition-colors">Cancel</button>
+                        <button
+                            type="button"
+                            onClick={(e) => { e.preventDefault(); (document.querySelector('form') as HTMLFormElement | null)?.requestSubmit(); }}
+                            disabled={saveState.saving}
+                            className="px-4 sm:px-6 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs sm:text-sm font-bold shadow-sm active:scale-95 transition-all"
+                        >
+                            {saveState.saving ? (<span className="inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</span>) : existingSale ? 'Update' : 'Create'}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </motion.div>
     );
+
 
     const previewOverlay = previewImage && (
         <div className="fixed inset-0 z-[60] bg-slate-900/70 flex items-center justify-center p-4" onClick={closePreview}>
