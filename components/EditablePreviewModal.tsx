@@ -38,6 +38,7 @@ interface EditablePreviewModalProps {
   customTax?: number;
   hideTvshLabel?: boolean;
   extraSales?: CarSale[];
+  extraCharges?: { id: string; label: string; amount: number }[];
   templates?: PdfTemplateMap;
   onInvoiceCreated?: () => void;
 }
