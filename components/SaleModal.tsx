@@ -72,6 +72,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
     const [showTaxPrompt, setShowTaxPrompt] = useState(false);
     const [invoiceCustomTax, setInvoiceCustomTax] = useState<number | undefined>(undefined);
     const [invoiceHideTvshLabel, setInvoiceHideTvshLabel] = useState<boolean>(false);
+    const [invoiceExtraSales, setInvoiceExtraSales] = useState<CarSale[]>([]);
     const [taxInputValue, setTaxInputValue] = useState('');
     const [taxInputError, setTaxInputError] = useState<string | null>(null);
     const [showViewSale, setShowViewSale] = useState(false);
