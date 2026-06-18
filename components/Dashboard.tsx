@@ -835,19 +835,25 @@ export default function Dashboard() {
     const [selectedMechanicRecordId, setSelectedMechanicRecordId] = useState<string | null>(null);
     const [editingMechanicRecordId, setEditingMechanicRecordId] = useState<string | null>(null);
 
+    const isPdfLogsViewer = userProfile === ADMIN_PROFILE || (userProfile || '').toUpperCase() === 'SHYQA';
+
     useEffect(() => {
         if (isAdmin) return;
         if (view === 'record' || view === 'settings' || view === 'transport' || view === 'balance_due' || view === 'pdf_templates') {
             setView('dashboard');
         }
+        if (view === 'pdf_logs' && !isPdfLogsViewer) {
+            setView('dashboard');
+        }
         if (activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON') {
             setActiveCategory('SALES');
         }
-    }, [isAdmin, view, activeCategory]);
+    }, [isAdmin, view, activeCategory, isPdfLogsViewer]);
 
     const currentNavId = useMemo(() => {
         if (view === 'settings') return 'SETTINGS';
         if (view === 'record') return 'RECORD';
+        if (view === 'pdf_logs') return 'PDF_LOGS';
         if (view === 'invoices') return 'INVOICES';
         if (view === 'mechanic') return 'MECHANIC';
         if (view === 'ankesa_dogana') return 'ANKESA_DOGANA';
