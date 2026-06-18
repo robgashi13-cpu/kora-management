@@ -195,9 +195,34 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </div>
                             </td>
                             <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
-                                {formatCurrency(subtotalValue)}
+                                {hasExtras
+                                    ? formatCurrency(mainPriceValue)
+                                    : formatCurrency(subtotalValue)}
                             </td>
                         </tr>
+                        {extraLineItems.map((item, idx) => {
+                            const s = item.sale;
+                            const name = [s.brand, s.model].filter(Boolean).join(' ') || '—';
+                            return (
+                                <tr key={s.id || `extra-${idx}`}>
+                                    <td style={{ padding: '14px 0' }}>
+                                        <div style={{ color: '#000000', fontWeight: 700 }}>{name}</div>
+                                        <div className="invoice-subline">
+                                            <span>VIN: <span className="font-mono break-all">{s.vin || ''}</span></span>
+                                            <span>Year: {s.year ?? '—'}</span>
+                                            <span>Color: {s.color || ''}</span>
+                                            <span>Plate: {s.plateNumber || '—'}</span>
+                                        </div>
+                                        <div className="invoice-subline">
+                                            Mileage: {Number(s.km || 0).toLocaleString()} km
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
+                                        {formatCurrency(item.price)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                         {!withDogane && (
                             <tr>
                                 <td style={{ padding: '10px 0' }}>
