@@ -799,7 +799,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         )}
 
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'buyer' ? '' : 'hidden'}>
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
