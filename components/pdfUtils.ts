@@ -765,6 +765,7 @@ export const generatePdf = async ({
     });
   }
   const blob = pdf.output('blob');
+  emitPdfGenerated(blob, filename, element);
   return { pdf, blob, filename };
 };
 
