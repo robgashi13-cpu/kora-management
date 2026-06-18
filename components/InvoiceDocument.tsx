@@ -26,6 +26,7 @@ export interface InvoiceDocumentProps {
     priceValue?: number;
     customTax?: number;
     hideTvshLabel?: boolean;
+    extraSales?: CarSale[];
     template?: PdfTemplateEntry;
     isPreInvoice?: boolean;
     renderField?: (
@@ -41,7 +42,7 @@ type FieldRenderOptions = {
 };
 
 const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, renderField, template, isPreInvoice = false }, ref) => {
+    ({ sale, withDogane = false, withStamp = false, showBankOnly = false, taxAmount, priceSource, priceValue, customTax, hideTvshLabel = false, extraSales, renderField, template, isPreInvoice = false }, ref) => {
         const displaySale = applyShitblerjeOverrides(sale);
         const renderText = <K extends keyof CarSale>(
             fieldKey: K,
@@ -68,7 +69,15 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         const normalizeNonNegative = (value: number) => (value >= 0 ? value : 0);
 
         const resolvedPriceValue = resolveInvoicePriceValue(displaySale, priceSource, priceValue);
-        const soldPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
+        const mainPriceValue = normalizeNonNegative(toSafeNumber(resolvedPriceValue));
+        const extraDisplaySales = (extraSales || []).map(s => applyShitblerjeOverrides(s));
+        const extraLineItems = extraDisplaySales.map(s => ({
+            sale: s,
+            price: normalizeNonNegative(toSafeNumber(resolveInvoicePriceValue(s, priceSource))),
+        }));
+        const extrasTotal = extraLineItems.reduce((acc, item) => acc + item.price, 0);
+        const combinedPriceValue = mainPriceValue + extrasTotal;
+        const soldPriceValue = combinedPriceValue;
         const referenceId = 'BH' + (displaySale.vin || displaySale.id || '').toString().slice(-6).toUpperCase() || 'N/A';
         const defaultServicesValue = 169.49;
         const defaultTaxValue = typeof customTax === 'number' && Number.isFinite(customTax) && customTax >= 0
@@ -87,6 +96,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         const vehicleDisplayName = [displaySale.brand, displaySale.model].filter(Boolean).join(' ') || '—';
         const invoiceDescription = String(displaySale.invoiceDescription || '').trim();
+        const hasExtras = extraLineItems.length > 0;
 
         return (
             <div
@@ -185,9 +195,34 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                                 </div>
                             </td>
                             <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
-                                {formatCurrency(subtotalValue)}
+                                {hasExtras
+                                    ? formatCurrency(mainPriceValue)
+                                    : formatCurrency(subtotalValue)}
                             </td>
                         </tr>
+                        {extraLineItems.map((item, idx) => {
+                            const s = item.sale;
+                            const name = [s.brand, s.model].filter(Boolean).join(' ') || '—';
+                            return (
+                                <tr key={s.id || `extra-${idx}`}>
+                                    <td style={{ padding: '14px 0' }}>
+                                        <div style={{ color: '#000000', fontWeight: 700 }}>{name}</div>
+                                        <div className="invoice-subline">
+                                            <span>VIN: <span className="font-mono break-all">{s.vin || ''}</span></span>
+                                            <span>Year: {s.year ?? '—'}</span>
+                                            <span>Color: {s.color || ''}</span>
+                                            <span>Plate: {s.plateNumber || '—'}</span>
+                                        </div>
+                                        <div className="invoice-subline">
+                                            Mileage: {Number(s.km || 0).toLocaleString()} km
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '14px 0', textAlign: 'right', fontWeight: 700, color: '#000000' }}>
+                                        {formatCurrency(item.price)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                         {!withDogane && (
                             <tr>
                                 <td style={{ padding: '10px 0' }}>
