@@ -7640,7 +7640,7 @@ export default function Dashboard() {
                     <Plus className="w-5 h-5 mx-auto" />
                 </button>
             )}
-            {isAdmin && <AiAssistant />}
+            {/* AI chat bubble removed per request */}
             {/* Inspection Quick-Add Form */}
             <AnimatePresence>
                 {showInspectionForm && (

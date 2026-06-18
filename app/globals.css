@@ -2787,3 +2787,336 @@ html, body {
   outline: 1px solid #ca8a04 !important;
   outline-offset: 1px;
 }
+
+/* ============================================================
+   NEOBANK 2026 — Full layout redesign (cosmetic-only)
+   Applied via cascading overrides. No structural/logic changes.
+   ============================================================ */
+:root {
+  --nb-bg: 220 30% 98%;
+  --nb-surface: 0 0% 100%;
+  --nb-surface-2: 220 24% 97%;
+  --nb-border: 220 16% 91%;
+  --nb-border-strong: 220 14% 84%;
+  --nb-ink: 222 24% 8%;
+  --nb-ink-muted: 220 9% 42%;
+  --nb-ink-subtle: 220 9% 60%;
+  --nb-accent: 222 24% 8%;
+  --nb-glow: 220 90% 56%;
+  --nb-radius: 18px;
+  --nb-radius-lg: 22px;
+  --nb-shadow-1: 0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 2px rgba(17,24,39,0.04), 0 8px 24px -12px rgba(17,24,39,0.10);
+  --nb-shadow-2: 0 1px 0 rgba(255,255,255,0.95) inset, 0 2px 6px rgba(17,24,39,0.05), 0 20px 50px -20px rgba(17,24,39,0.18);
+  --nb-shadow-pop: 0 1px 0 rgba(255,255,255,0.95) inset, 0 6px 14px -4px rgba(17,24,39,0.08), 0 36px 70px -24px rgba(17,24,39,0.24);
+  --nb-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --nb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Ambient mesh background — extremely subtle, GPU-cheap */
+html {
+  background-image:
+    radial-gradient(1200px 700px at 8% -10%, hsl(220 90% 96% / 0.55), transparent 60%),
+    radial-gradient(900px 600px at 100% 10%, hsl(280 80% 96% / 0.45), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%, hsl(180 70% 95% / 0.35), transparent 60%),
+    linear-gradient(180deg, hsl(var(--nb-bg)), hsl(var(--nb-bg))) !important;
+  background-attachment: fixed;
+}
+
+body { font-feature-settings: "ss01","cv11","tnum","lnum","calt"; letter-spacing: -0.005em; }
+
+/* Topbar — refined glass with subtle hairline */
+.app-topbar, header.app-topbar, header[role="banner"] {
+  background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62)) !important;
+  -webkit-backdrop-filter: saturate(180%) blur(28px);
+  backdrop-filter: saturate(180%) blur(28px);
+  border-bottom: 1px solid rgba(17,24,39,0.06) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 6px 24px -12px rgba(17,24,39,0.08) !important;
+}
+
+/* Sidebar nav — modern fintech pill rail */
+.sidebar-nav-item {
+  position: relative;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+  font-weight: 500;
+  color: hsl(var(--nb-ink-muted)) !important;
+  transition:
+    background-color 240ms var(--nb-ease),
+    color 240ms var(--nb-ease),
+    transform 320ms var(--nb-spring),
+    box-shadow 320ms var(--nb-ease) !important;
+}
+.sidebar-nav-item::before {
+  content: "";
+  position: absolute; left: 6px; top: 50%; height: 0; width: 3px;
+  border-radius: 999px; background: hsl(var(--nb-ink));
+  transform: translateY(-50%);
+  transition: height 280ms var(--nb-spring), opacity 220ms var(--nb-ease);
+  opacity: 0;
+}
+.sidebar-nav-item:hover {
+  background: linear-gradient(180deg, rgba(17,24,39,0.04), rgba(17,24,39,0.02)) !important;
+  color: hsl(var(--nb-ink)) !important;
+  transform: translateX(2px) !important;
+}
+.sidebar-nav-item:hover::before { height: 16px; opacity: 0.35; }
+.sidebar-nav-item[data-active="true"], .sidebar-nav-item.active {
+  background: linear-gradient(180deg, #111418, #05070a) !important;
+  color: #fff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.14) inset,
+    0 -1px 0 rgba(0,0,0,0.5) inset,
+    0 10px 24px -10px rgba(0,0,0,0.45),
+    0 24px 50px -24px rgba(0,0,0,0.35) !important;
+}
+.sidebar-nav-item[data-active="true"]::before { height: 22px; opacity: 1; background: #fff; }
+
+/* Generic nav-item upgrade */
+.nav-item { border-radius: 14px !important; transition: all 260ms var(--nb-ease); }
+.nav-item:hover { background: rgba(17,24,39,0.04) !important; transform: translateY(-1px); }
+.nav-item-active {
+  background: linear-gradient(180deg, #111418, #05070a) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 24px -10px rgba(0,0,0,0.4) !important;
+}
+
+/* Cards — neobank surface */
+.premium-card, .kx-card, [class*="rounded-2xl"][class*="bg-white"], [class*="rounded-xl"][class*="bg-white"] {
+  border-radius: var(--nb-radius) !important;
+  border: 1px solid hsl(var(--nb-border)) !important;
+  background: linear-gradient(180deg, #ffffff, hsl(var(--nb-surface-2))) !important;
+  box-shadow: var(--nb-shadow-1) !important;
+  transition: transform 380ms var(--nb-spring), box-shadow 380ms var(--nb-ease), border-color 240ms var(--nb-ease) !important;
+}
+.premium-card:hover, .kx-card:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--nb-border-strong)) !important;
+  box-shadow: var(--nb-shadow-pop) !important;
+}
+
+/* Stat cards — neobank "balance card" energy */
+.kx-stat {
+  position: relative; overflow: hidden;
+  border-radius: var(--nb-radius-lg) !important;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(99,102,241,0.07), transparent 55%),
+    radial-gradient(120% 120% at 0% 100%, rgba(16,185,129,0.05), transparent 55%),
+    linear-gradient(180deg, #ffffff, #fafbff) !important;
+  border: 1px solid hsl(var(--nb-border)) !important;
+  box-shadow: var(--nb-shadow-1) !important;
+  transition: transform 420ms var(--nb-spring), box-shadow 420ms var(--nb-ease) !important;
+}
+.kx-stat::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.5) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 900ms var(--nb-ease);
+}
+.kx-stat:hover { transform: translateY(-4px); box-shadow: var(--nb-shadow-pop) !important; }
+.kx-stat:hover::after { transform: translateX(120%); }
+.kx-stat-icon {
+  border-radius: 14px !important;
+  background: linear-gradient(180deg, #0f172a, #020617) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px -8px rgba(2,6,23,0.6), 0 1px 0 rgba(255,255,255,0.12) inset !important;
+}
+
+/* Tabs / pills — frosted segmented */
+[role="tab"], .tab, .tab-button {
+  border-radius: 999px !important;
+  padding: 8px 14px !important;
+  font-weight: 600 !important;
+  transition: all 280ms var(--nb-spring) !important;
+}
+[role="tab"]:hover, .tab:hover, .tab-button:hover {
+  background: rgba(17,24,39,0.05) !important;
+}
+[role="tab"][aria-selected="true"], .tab.active, .tab-button.active {
+  background: linear-gradient(180deg, #111418, #05070a) !important;
+  color: #fff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.14) inset,
+    0 10px 22px -10px rgba(0,0,0,0.4) !important;
+  transform: translateY(-1px);
+}
+
+/* Buttons — physical, springy */
+.kx-btn, button.kx-btn-primary, .kx-btn-primary {
+  border-radius: 12px !important;
+  transition: transform 260ms var(--nb-spring), box-shadow 260ms var(--nb-ease), background-color 220ms var(--nb-ease) !important;
+}
+.kx-btn:hover { transform: translateY(-1px); }
+.kx-btn:active { transform: translateY(0) scale(0.98); }
+.kx-btn-primary {
+  background: linear-gradient(180deg, #1a1f27, #05070a) !important;
+  color: #fff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.16) inset,
+    0 -1px 0 rgba(0,0,0,0.5) inset,
+    0 10px 22px -10px rgba(0,0,0,0.5) !important;
+}
+.kx-btn-primary:hover {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 -1px 0 rgba(0,0,0,0.6) inset,
+    0 16px 32px -12px rgba(0,0,0,0.55) !important;
+}
+
+/* Inputs — softer fintech feel */
+.kx-input, .kx-select, .kx-textarea, input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  border-radius: 12px !important;
+  border: 1px solid hsl(var(--nb-border)) !important;
+  background: #fff !important;
+  transition: border-color 200ms var(--nb-ease), box-shadow 220ms var(--nb-ease), background-color 200ms var(--nb-ease) !important;
+}
+.kx-input:focus, .kx-select:focus, .kx-textarea:focus,
+input:focus:not([type="checkbox"]):not([type="radio"]), select:focus, textarea:focus {
+  border-color: hsl(var(--nb-ink)) !important;
+  box-shadow: 0 0 0 4px rgba(17,24,39,0.08) !important;
+  outline: none !important;
+}
+
+/* Tables — quieter rows, smooth highlight */
+table { border-collapse: separate; border-spacing: 0; }
+table thead th {
+  background: linear-gradient(180deg, hsl(var(--nb-surface-2)), #fff) !important;
+  border-bottom: 1px solid hsl(var(--nb-border)) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  color: hsl(var(--nb-ink-subtle)) !important;
+}
+table tbody tr {
+  transition: background-color 220ms var(--nb-ease), transform 220ms var(--nb-ease);
+}
+table tbody tr:hover {
+  background-color: hsl(220 30% 98%) !important;
+}
+
+/* Modals — neobank sheet */
+.kx-modal {
+  border-radius: 20px !important;
+  border: 1px solid hsl(var(--nb-border)) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.9) inset,
+    0 30px 80px -20px rgba(17,24,39,0.35) !important;
+  animation: nbModalIn 380ms var(--nb-spring) both;
+}
+.kx-modal-overlay {
+  background: rgba(15,23,42,0.32) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: nbOverlayIn 220ms var(--nb-ease) both;
+}
+@keyframes nbModalIn { from { opacity: 0; transform: translateY(16px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes nbOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Mobile nav — frosted dock */
+.app-mobile-nav {
+  background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.92)) !important;
+  border-top: 1px solid rgba(17,24,39,0.06) !important;
+  box-shadow: 0 -12px 36px -12px rgba(17,24,39,0.12) !important;
+}
+.mobile-nav-item {
+  border-radius: 12px !important;
+  transition: transform 260ms var(--nb-spring), background-color 200ms var(--nb-ease), color 200ms var(--nb-ease) !important;
+}
+.mobile-nav-item:hover { background: rgba(17,24,39,0.04); }
+.mobile-nav-item-active {
+  background: linear-gradient(180deg, #111418, #05070a) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px -8px rgba(0,0,0,0.5) !important;
+}
+
+/* Badges — subtle frosted chips */
+.badge, .chip {
+  border-radius: 999px !important;
+  padding: 3px 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(6px);
+}
+
+/* Page mount + section reveal */
+@keyframes nbRise {
+  0% { opacity: 0; transform: translateY(10px); filter: blur(6px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+main, .app-content, [role="main"] {
+  animation: nbRise 520ms var(--nb-ease) both !important;
+}
+.app-content > * { animation: nbRise 600ms var(--nb-ease) both; }
+.app-content > *:nth-child(1) { animation-delay: 20ms; }
+.app-content > *:nth-child(2) { animation-delay: 70ms; }
+.app-content > *:nth-child(3) { animation-delay: 120ms; }
+.app-content > *:nth-child(4) { animation-delay: 170ms; }
+.app-content > *:nth-child(5) { animation-delay: 220ms; }
+
+/* Scrollbars — slim fintech */
+.app-content::-webkit-scrollbar,
+.scroll-container::-webkit-scrollbar { width: 10px; height: 10px; }
+.app-content::-webkit-scrollbar-thumb,
+.scroll-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #cbd5e1, #94a3b8);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.app-content::-webkit-scrollbar-track,
+.scroll-container::-webkit-scrollbar-track { background: transparent; }
+
+/* Focus ring — neobank blue micro-glow */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px hsl(var(--nb-glow) / 0.30) !important;
+  border-radius: 12px;
+}
+
+/* Selection */
+::selection { background: hsl(var(--nb-glow) / 0.18); color: hsl(var(--nb-ink)); }
+
+/* FAB — pearl with halo */
+.fab {
+  background: radial-gradient(120% 120% at 30% 20%, #2a2f38, #03060a 70%) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.14) inset,
+    0 -2px 0 rgba(0,0,0,0.55) inset,
+    0 18px 36px -12px rgba(0,0,0,0.55),
+    0 0 0 0 hsl(var(--nb-glow) / 0.0) !important;
+  transition: transform 340ms var(--nb-spring), box-shadow 340ms var(--nb-ease) !important;
+}
+.fab:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 -2px 0 rgba(0,0,0,0.6) inset,
+    0 24px 50px -14px rgba(0,0,0,0.55),
+    0 0 0 8px hsl(var(--nb-glow) / 0.10) !important;
+}
+
+/* Section titles — refined display */
+.kx-section-title {
+  font-family: var(--font-display), 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+/* PDF safety — never apply neobank treatments inside PDFs */
+.pdf-root, .pdf-root *, .pdf-root::before, .pdf-root::after {
+  animation: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.pdf-root .kx-stat, .pdf-root .premium-card, .pdf-root .kx-card {
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
