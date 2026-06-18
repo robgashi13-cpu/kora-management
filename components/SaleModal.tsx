@@ -954,7 +954,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </span>
                         </div>
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'attachments' ? '' : 'hidden'}>
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
