@@ -289,7 +289,7 @@ export default function AnkesaDoganaTab({ sales, userProfile }: Props) {
       if (isBesi && bucket === 'sale') return false;
       if (filter === 'active') {
         const st = complaints[sale.id]?.status || 'not_started';
-        if (st !== 'started' && st !== 'dogana' && st !== 'gjykata') return false;
+        if (st === 'not_started' || st === 'nuk_ka_rritje') return false;
       } else if (filter !== 'all' && filter !== bucket) return false;
       if (!q) return true;
       const hay = `${sale.brand} ${sale.model} ${sale.plateNumber} ${sale.vin} ${sale.buyerName} ${sale.group || ''} ${sale.shippingName || ''}`.toLowerCase();
