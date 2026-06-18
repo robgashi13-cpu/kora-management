@@ -122,6 +122,24 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
             <X className="w-5 h-5" />
           </button>
         </div>
+        {isAdmin && (
+          <div className="flex gap-1 px-4 pt-3 border-b border-slate-100">
+            <button
+              type="button"
+              onClick={() => setActiveTab('standard')}
+              className={`px-3 py-2 text-xs font-semibold rounded-t-md transition ${activeTab === 'standard' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Standard
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('advanced')}
+              className={`px-3 py-2 text-xs font-semibold rounded-t-md transition ${activeTab === 'advanced' ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              Advanced charges
+            </button>
+          </div>
+        )}
         <div className="p-4 space-y-3">
           <button
             onClick={() => onSelect('sold', buildOptions('sold'))}
