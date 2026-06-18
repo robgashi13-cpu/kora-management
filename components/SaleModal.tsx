@@ -724,38 +724,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 </div>
             )}
 
-            {/* Sticky tab navigation */}
-            {(() => {
-                const tabs: { id: typeof activeTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-                    { id: 'vehicle', label: 'Vehicle', icon: Car },
-                    { id: 'buyer', label: 'Buyer', icon: User },
-                    { id: 'financials', label: 'Financials', icon: Wallet },
-                    { id: 'attachments', label: 'Files', icon: FileIcon },
-                    { id: 'documents', label: 'Documents', icon: FileSignature },
-                ];
-                return (
-                    <div className="sticky top-0 z-20 bg-white border-b border-slate-200">
-                        <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar px-2 sm:px-4">
-                            {tabs.map(t => {
-                                const Icon = t.icon;
-                                const active = activeTab === t.id;
-                                return (
-                                    <button
-                                        key={t.id}
-                                        type="button"
-                                        onClick={() => setActiveTab(t.id)}
-                                        className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${active ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        {t.label}
-                                        {active && <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-slate-900 rounded-full" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            })()}
+            {/* Single-page layout (no tabs) */}
+
 
             <div
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 scroll-container"
@@ -765,7 +735,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                     onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                     className={`${inline ? 'px-3 sm:px-4 lg:px-5 py-3 sm:py-4 pb-32 sm:pb-28 gap-3 md:gap-4' : 'px-3 sm:px-5 lg:px-6 py-3 sm:py-4 lg:py-5 pb-32 sm:pb-28 gap-4 md:gap-5'} flex flex-col`}
                 >
-                    <div className={activeTab === 'vehicle' ? '' : 'hidden'}>
                     <Section title="Vehicle Details" description="Core vehicle information for this sale.">
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
                             <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} required />
@@ -799,9 +768,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                         )}
 
                     </Section>
-                    </div>
 
-                    <div className={activeTab === 'buyer' ? '' : 'hidden'}>
                     <Section title="Buyer & Logistics" description="Who is purchasing the vehicle and shipping details.">
                         <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'xl:grid-cols-3' : ''} gap-4 md:gap-6`}>
                             <Input label="Buyer Name" name="buyerName" value={formData.buyerName} onChange={handleChange} required />
@@ -822,9 +789,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         )}
                     </Section>
-                    </div>
 
-                    <div className={activeTab === 'financials' ? '' : 'hidden'}>
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
                             {isAdmin && (
@@ -954,9 +919,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </span>
                         </div>
                     </Section>
-                    </div>
 
-                    <div className={activeTab === 'attachments' ? '' : 'hidden'}>
                     <Section title="Attachments" description="Attach receipts and invoices for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 md:gap-5`}>
                             <FileList files={formData.bankReceipts} field="bankReceipts" label="Bank Receipts" />
@@ -964,9 +927,7 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             {isAdmin && <FileList files={formData.depositInvoices} field="depositInvoices" label="Deposit Invoices" />}
                         </div>
                     </Section>
-                    </div>
 
-                    <div className={activeTab === 'documents' ? '' : 'hidden'}>
                     <Section title="Documents" description="Generate contracts and invoices from this sale.">
                         <div className="grid grid-cols-1 gap-4">
                             <TextArea
@@ -992,7 +953,6 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </button>
                         </div>
                     </Section>
-                    </div>
 
                     {(saveState.error || saveState.success) && (
                         <div
