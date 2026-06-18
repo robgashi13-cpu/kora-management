@@ -3059,6 +3059,94 @@ export default function Dashboard() {
         return () => window.clearInterval(interval);
     }, [auditPage, isRecordAdmin, view, supabaseUrl, supabaseKey]);
 
+    // Reset PDF logs page when entering view
+    useEffect(() => {
+        if (view === 'pdf_logs') setPdfLogsPage(0);
+    }, [view]);
+
+    // Load PDF logs (audit_logs filtered to entity_type=pdf)
+    useEffect(() => {
+        if (!isPdfLogsViewer || view !== 'pdf_logs' || !supabaseUrl || !supabaseKey) return;
+        const loadPdfLogs = async () => {
+            setIsLoadingPdfLogs(true);
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const from = pdfLogsPage * 200;
+                const to = from + 199;
+                const { data, error } = await client
+                    .from('audit_logs')
+                    .select('*')
+                    .eq('entity_type', 'pdf')
+                    .order('created_at', { ascending: false })
+                    .range(from, to);
+                if (error) { console.error('PDF logs load failed', error); return; }
+                setPdfLogs(data || []);
+            } finally {
+                setIsLoadingPdfLogs(false);
+            }
+        };
+        loadPdfLogs();
+        const interval = window.setInterval(() => { void loadPdfLogs(); }, 10000);
+        return () => window.clearInterval(interval);
+    }, [pdfLogsPage, isPdfLogsViewer, view, supabaseUrl, supabaseKey]);
+
+    // Global listener: every PDF generated anywhere in the app → upload + log
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey || !userProfile) return;
+        const handler = async (e: Event) => {
+            const detail = (e as CustomEvent).detail || {};
+            const { blob, filename, docType, saleId, size, generatedAt } = detail as {
+                blob: Blob; filename: string; docType: string; saleId?: string | null; size: number; generatedAt: string;
+            };
+            if (!blob || !filename) return;
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const now = new Date(generatedAt || Date.now());
+                const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const safeName = filename.replace(/[^a-zA-Z0-9._-]+/g, '_');
+                const storagePath = `${ym}/${now.getTime()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+                const upload = await client.storage.from('pdf-logs').upload(storagePath, blob, {
+                    contentType: 'application/pdf', upsert: false,
+                });
+                const storedPath = upload.error ? null : storagePath;
+                if (upload.error) console.warn('PDF upload failed', upload.error);
+                // Try to enrich with sale info
+                let saleInfo: Record<string, unknown> | null = null;
+                if (saleId) {
+                    const s = salesRef.current.find(x => x.id === saleId);
+                    if (s) saleInfo = { brand: s.brand, model: s.model, vin: s.vin, plate: s.plateNumber, buyer: s.buyerName };
+                }
+                await logAuditEvent({
+                    actionType: 'DOWNLOAD',
+                    entityType: 'pdf',
+                    entityId: filename,
+                    afterData: { filename, docType, saleId: saleId || null, size, sale: saleInfo },
+                    pageContext: 'pdf_generation',
+                    metadata: { storage_bucket: 'pdf-logs', storage_path: storedPath, doc_type: docType, sale_id: saleId || null, file_size: size, generated_at: generatedAt },
+                });
+            } catch (err) {
+                console.warn('PDF log write failed', err);
+            }
+        };
+        window.addEventListener('pdf-generated', handler as EventListener);
+        return () => window.removeEventListener('pdf-generated', handler as EventListener);
+    }, [supabaseUrl, supabaseKey, userProfile, logAuditEvent]);
+
+    const openPdfLog = useCallback(async (log: any) => {
+        const path = log?.metadata?.storage_path;
+        if (!path || !supabaseUrl || !supabaseKey) { alert('Stored PDF not available for this entry.'); return; }
+        setOpeningPdfLogId(log.id);
+        try {
+            const client = createSupabaseClient(supabaseUrl, supabaseKey);
+            const { data, error } = await client.storage.from('pdf-logs').createSignedUrl(path, 3600);
+            if (error || !data?.signedUrl) { alert('Could not open PDF: ' + (error?.message || 'unknown error')); return; }
+            window.open(data.signedUrl, '_blank', 'noopener');
+        } finally {
+            setOpeningPdfLogId(null);
+        }
+    }, [supabaseUrl, supabaseKey]);
+
+
     useEffect(() => {
         if (!viewSaleModalItem) return;
         void logAuditEvent({
