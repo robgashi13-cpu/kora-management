@@ -121,10 +121,15 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
             className="w-full text-left border border-slate-200 rounded-xl p-4 hover:border-slate-400 hover:shadow-sm transition"
           >
             <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Sold price</div>
-            <div className="text-lg font-bold text-slate-900">{formatCurrency(previewTotal('sold'))}</div>
+            <div className="text-lg font-bold text-slate-900">{formatCurrency(previewPrice('sold'))}</div>
             {extraSales.length > 0 && (
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Base {formatCurrency(soldPrice)} + {extraSales.length} extra
+              </div>
+            )}
+            {chargesTotal !== 0 && (
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                + {formatCurrency(chargesTotal)} charges → Total {formatCurrency(previewTotal('sold'))}
               </div>
             )}
             {soldMissing && extraSales.length === 0 && (
@@ -136,10 +141,15 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
             className="w-full text-left border border-slate-200 rounded-xl p-4 hover:border-slate-400 hover:shadow-sm transition"
           >
             <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold">Paid in bank price</div>
-            <div className="text-lg font-bold text-slate-900">{formatCurrency(previewTotal('paid_bank'))}</div>
+            <div className="text-lg font-bold text-slate-900">{formatCurrency(previewPrice('paid_bank'))}</div>
             {extraSales.length > 0 && (
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Base {formatCurrency(bankPrice)} + {extraSales.length} extra
+              </div>
+            )}
+            {chargesTotal !== 0 && (
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                + {formatCurrency(chargesTotal)} charges → Total {formatCurrency(previewTotal('paid_bank'))}
               </div>
             )}
             {bankMissing && extraSales.length === 0 && (
