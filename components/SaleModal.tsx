@@ -724,38 +724,8 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                 </div>
             )}
 
-            {/* Sticky tab navigation */}
-            {(() => {
-                const tabs: { id: typeof activeTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-                    { id: 'vehicle', label: 'Vehicle', icon: Car },
-                    { id: 'buyer', label: 'Buyer', icon: User },
-                    { id: 'financials', label: 'Financials', icon: Wallet },
-                    { id: 'attachments', label: 'Files', icon: FileIcon },
-                    { id: 'documents', label: 'Documents', icon: FileSignature },
-                ];
-                return (
-                    <div className="sticky top-0 z-20 bg-white border-b border-slate-200">
-                        <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar px-2 sm:px-4">
-                            {tabs.map(t => {
-                                const Icon = t.icon;
-                                const active = activeTab === t.id;
-                                return (
-                                    <button
-                                        key={t.id}
-                                        type="button"
-                                        onClick={() => setActiveTab(t.id)}
-                                        className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${active ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        {t.label}
-                                        {active && <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-slate-900 rounded-full" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            })()}
+            {/* Single-page layout (no tabs) */}
+
 
             <div
                 className="flex-1 overflow-y-auto no-scrollbar flex flex-col min-h-0 scroll-container"
