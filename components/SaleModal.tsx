@@ -822,7 +822,9 @@ export default function SaleModal({ isOpen, onClose, onSave, existingSale, inlin
                             </div>
                         )}
                     </Section>
+                    </div>
 
+                    <div className={activeTab === 'financials' ? '' : 'hidden'}>
                     <Section title="Financials" description="Costs, payments, and status for this sale.">
                         <div className={`grid grid-cols-1 ${isAdmin ? 'md:grid-cols-2 xl:grid-cols-3' : 'md:grid-cols-1'} gap-4 md:gap-6`}>
                             {isAdmin && (
