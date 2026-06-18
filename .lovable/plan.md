@@ -1,66 +1,50 @@
-## Goal
+## PDF Generation Log Tab
 
-Borrow Profit Navigator's **structure** (sidebar shell, card shapes, stat-card pattern, spacing rhythm, hover/transition feel) and apply it across the KORAUTO app, but keep the palette strictly **black & white** (white surfaces, black text, gray borders). No dark mode, no gradients, no color accents — matches your existing Core memory.
+Add a new "PDF Logs" tab in the main navigation, visible only to **Robert (Admin)** and **SHYQA**. Every PDF generated anywhere in the app is recorded with who generated it, when, and what — and clicking an entry re-opens the exact PDF that was produced.
 
-Profit Navigator uses TanStack Router; KORAUTO is Next.js with a single monolithic `Dashboard.tsx` that switches `view` state. I will NOT swap routers — I will recreate the look using your existing structure.
+### 1. Database (Lovable Cloud)
+Reuse existing `audit_logs` table (already populated by `logAuditEvent`). Add a new Storage bucket:
+- Bucket: `pdf-logs` (private)
+- Purpose: store every generated PDF blob
+- Path scheme: `{yyyy-mm}/{timestamp}-{filename}.pdf`
 
----
+### 2. PDF engine hook (minimal additive)
+`components/pdfUtils.ts` — add one block at the very end of `generatePdf`, right before returning the result, that fires:
+```ts
+window.dispatchEvent(new CustomEvent('pdf-generated', {
+  detail: { blob, filename, elementId, source: <single inferred string> }
+}));
+```
+No rendering or engine code is touched.
 
-## Phase 1 — Global design tokens & primitives
+### 3. Global listener (Dashboard)
+In `Dashboard.tsx` add a `useEffect` that listens for `pdf-generated`. On each event:
+- Upload blob to `pdf-logs` bucket
+- Call existing `logAuditEvent({ actionType: 'PREVIEW', entityType: 'pdf', entityId: filename, metadata: { storage_path, sale_id?, doc_type, file_size, generated_at } })`
 
-**Files:** `app/globals.css`, `tailwind.config.ts` (if exists), new `components/ui/GlassCard.tsx`, new `components/ui/StatCard.tsx`
+### 4. Nav tab
+Add to `navItems`:
+```
+{ id: 'PDF_LOGS', label: 'PDF Logs', icon: ScrollText, view: 'pdf_logs', allowedProfiles: ['Robert', 'SHYQA'] }
+```
+Gate via existing `allowedProfiles` mechanism.
 
-- Define a strict monochrome token set:
-  - `--bg`: `#ffffff` · `--surface`: `#ffffff` · `--surface-2`: `#fafafa`
-  - `--text`: `#0a0a0a` · `--text-muted`: `#6b7280`
-  - `--border`: `#e5e7eb` · `--border-strong`: `#d1d5db`
-  - `--ring`: `#0a0a0a` (focus)
-  - Radii: `--radius-md: 12px`, `--radius-lg: 16px`, `--radius-2xl: 20px`
-  - Shadows: `--shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06)`
-- Port PN's animations recolored to mono: `fade-up`, `shimmer` (gray), `liquid-hover` (lift + border darken, no glow).
-- Build `Card` / `StatCard` primitives (white bg, 1px border, 16px radius, soft shadow, hover lift).
+### 5. PDF Logs view
+New `view === 'pdf_logs'` block reusing the same audit data fetch logic, filtered to `entity_type='pdf'`. Each row shows:
+- Date/time
+- Profile (e.g. "Robert" / "SHYQA")
+- Document type & filename
+- Linked sale (brand · model · VIN) if `sale_id` present
+- **Open** button → fetches a signed URL from `pdf-logs` storage and opens in a new tab
 
-## Phase 2 — App shell (sidebar + header)
+Pagination identical to existing Records view (200/page).
 
-**Files:** new `components/AppShell.tsx`, edit `components/Dashboard.tsx` to render through it.
+### 6. Access control
+- `allowedProfiles: ['Robert', 'SHYQA']` gates the nav tab
+- The view body double-checks `userProfile` is one of those two and shows an Access Denied panel otherwise
+- Storage bucket is private; signed URLs generated on demand (~1h expiry)
 
-- Replace top tab bar with a **collapsible left sidebar** (icon + label), mirroring PN's `app-sidebar.tsx` layout but in white/black.
-- Sticky 56px top header: sidebar trigger on the left, page title, profile menu on the right.
-- Keep mobile single-row tab bar (Core memory: mobile nav density) — sidebar is desktop-only, mobile keeps current bottom nav.
-- Wire existing `view` state into sidebar menu items; preserves all routing logic and Core "no internal page reloads" rule.
-
-## Phase 3 — Tab-by-tab polish pass
-
-For each main tab (Car Sold, Shipped, Autosallon, Inspections, Mechanic, Balance, Per Pages, Libri, Ankesa Dogana, Settings, Records):
-
-- Headers: consistent 24px page title + 12px muted subtitle.
-- Section cards wrapped in new `Card` primitive (uniform radius, padding, border).
-- Tables: uniform 40px row height, sticky headers, divider color, hover row, empty state component.
-- Buttons: 3 sizes (sm 32px / md 40px / lg 48px), 3 variants (primary=black, secondary=white+border, ghost). Focus rings.
-- Inputs: 40px height (matches Core compact-modal rule), uniform border + focus state.
-- Modals: standardized header/body/footer, consistent padding (20px), close affordance, escape behavior.
-
-## Phase 4 — Detail polish
-
-- Replace ad-hoc `bg-slate-*` and `text-slate-*` with semantic tokens (only neutral grays remain).
-- Standardize spacing scale (4/8/12/16/20/24/32).
-- Lucide icon size unified at 16px in dense rows, 18px in headers.
-- Loading skeletons use mono shimmer.
-
----
-
-## Out of scope (will not touch)
-
-- 🔒 PDF engine (Invoice/Contract Document/Modal, pdfUtils, EditablePreviewModal, PDF CSS).
-- Business logic, calculations, RLS, edge functions, sync strategy.
-- Mobile bottom nav structure (Core memory).
-- Root container overflow rules (Core memory).
-- Adding any color other than B&W + neutral gray.
-
----
-
-## Delivery model
-
-Because this touches the whole app, I'll ship in the 4 phases above, **one phase per turn**, and you preview between each. That way if Phase 2's sidebar feels wrong we fix it before Phase 3 rewrites every tab against it.
-
-Phase 1 first — confirm and I start there.
+### Files touched
+- `components/pdfUtils.ts` — 1 additive block (event dispatch only)
+- `components/Dashboard.tsx` — nav entry, listener effect, fetch + render of new view
+- Supabase migration — create `pdf-logs` storage bucket + storage policies
