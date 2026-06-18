@@ -578,6 +578,7 @@ const navItems: NavItem[] = [
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
+    { id: 'PDF_LOGS', label: 'PDF Logs', icon: ScrollText, view: 'pdf_logs', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
     { id: 'PER_PAGES', label: 'Për Pages', icon: FileText, view: 'per_pages', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'SETTINGS', label: 'Settings', icon: Settings, view: 'settings', adminOnly: true },
