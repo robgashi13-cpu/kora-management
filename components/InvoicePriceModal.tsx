@@ -86,11 +86,12 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
     extraCharges: sanitizedCharges,
   });
 
-  const previewTotal = (source: InvoicePriceSource) => {
+  const previewPrice = (source: InvoicePriceSource) => {
     const base = resolveInvoicePriceValue(sale, source);
     const extras = extraSales.reduce((acc, s) => acc + resolveInvoicePriceValue(s, source), 0);
-    return base + extras + chargesTotal;
+    return base + extras;
   };
+  const previewTotal = (source: InvoicePriceSource) => previewPrice(source) + chargesTotal;
 
   const soldPrice = resolveInvoicePriceValue(sale, 'sold');
   const bankPrice = resolveInvoicePriceValue(sale, 'paid_bank');
