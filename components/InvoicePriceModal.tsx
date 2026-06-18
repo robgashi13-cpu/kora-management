@@ -33,13 +33,14 @@ const MAX_EXTRAS = 4;
 const formatCurrency = (value: number) =>
   `€${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function InvoicePriceModal({ isOpen, sale, availableSales = [], onSelect, onCancel }: InvoicePriceModalProps) {
+export default function InvoicePriceModal({ isOpen, sale, availableSales = [], isAdmin = false, onSelect, onCancel }: InvoicePriceModalProps) {
   const [customTax, setCustomTax] = useState<number>(DEFAULT_TAX);
   const [hideTvshLabel, setHideTvshLabel] = useState<boolean>(false);
   const [extraIds, setExtraIds] = useState<string[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [query, setQuery] = useState('');
   const [extraCharges, setExtraCharges] = useState<InvoiceExtraCharge[]>([]);
+  const [activeTab, setActiveTab] = useState<'standard' | 'advanced'>('standard');
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +50,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], o
       setShowPicker(false);
       setQuery('');
       setExtraCharges([]);
+      setActiveTab('standard');
     }
   }, [isOpen]);
 
