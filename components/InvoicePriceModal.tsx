@@ -274,7 +274,8 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
             )}
           </div>
 
-          {/* Additional charges (Akciza, TVSH, Doganë, custom) */}
+          {/* Additional charges (Akciza, TVSH, Doganë, custom) — Admin Advanced tab only */}
+          {chargesEnabled && (
           <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Additional charges</div>
