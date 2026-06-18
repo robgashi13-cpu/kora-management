@@ -82,11 +82,15 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
 
   const chargesTotal = sanitizedCharges.reduce((acc, c) => acc + (Number(c.amount) || 0), 0);
 
+  const chargesEnabled = isAdmin && activeTab === 'advanced';
+  const effectiveCharges = chargesEnabled ? sanitizedCharges : [];
+  const effectiveChargesTotal = chargesEnabled ? chargesTotal : 0;
+
   const buildOptions = (source: InvoicePriceSource): InvoicePriceOptions => ({
     customTax: Number.isFinite(customTax) ? customTax : DEFAULT_TAX,
     hideTvshLabel,
     extraSales,
-    extraCharges: sanitizedCharges,
+    extraCharges: effectiveCharges,
   });
 
   const previewPrice = (source: InvoicePriceSource) => {
@@ -94,7 +98,7 @@ export default function InvoicePriceModal({ isOpen, sale, availableSales = [], i
     const extras = extraSales.reduce((acc, s) => acc + resolveInvoicePriceValue(s, source), 0);
     return base + extras;
   };
-  const previewTotal = (source: InvoicePriceSource) => previewPrice(source) + chargesTotal;
+  const previewTotal = (source: InvoicePriceSource) => previewPrice(source) + effectiveChargesTotal;
 
   const soldPrice = resolveInvoicePriceValue(sale, 'sold');
   const bankPrice = resolveInvoicePriceValue(sale, 'paid_bank');
