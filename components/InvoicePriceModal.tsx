@@ -5,10 +5,17 @@ import { X, Plus, Search } from 'lucide-react';
 import { CarSale } from '@/src/types';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 
+export interface InvoiceExtraCharge {
+  id: string;
+  label: string;
+  amount: number;
+}
+
 export interface InvoicePriceOptions {
   customTax?: number;
   hideTvshLabel?: boolean;
   extraSales?: CarSale[];
+  extraCharges?: InvoiceExtraCharge[];
 }
 
 interface InvoicePriceModalProps {
