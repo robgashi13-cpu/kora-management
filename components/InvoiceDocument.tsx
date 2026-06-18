@@ -85,9 +85,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             ? customTax
             : 30.51;
         const defaultFeesTotal = defaultServicesValue + defaultTaxValue;
-        const subtotalValue = withDogane
-            ? soldPriceValue
-            : normalizeNonNegative(soldPriceValue - defaultFeesTotal);
+        const subtotalValue = soldPriceValue;
         const taxValue = withDogane
             ? normalizeNonNegative(toSafeNumber(taxAmount))
             : defaultTaxValue;
@@ -95,7 +93,7 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             .map(c => ({ id: c.id, label: String(c.label || '').trim(), amount: toSafeNumber(c.amount) }))
             .filter(c => c.label.length > 0 || c.amount !== 0);
         const extraChargesTotal = sanitizedExtraCharges.reduce((acc, c) => acc + c.amount, 0);
-        const totalValue = (withDogane ? subtotalValue + taxValue : soldPriceValue) + extraChargesTotal;
+        const totalValue = subtotalValue + (withDogane ? taxValue : defaultServicesValue + taxValue) + extraChargesTotal;
         const taxLabel = withDogane ? 'Doganë' : (hideTvshLabel ? 'Tax' : 'Tax (TVSH 18%)');
         const formatCurrency = (amount: number) =>
             `€${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
