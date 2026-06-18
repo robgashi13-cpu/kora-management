@@ -906,6 +906,10 @@ export default function Dashboard() {
     const [auditLogs, setAuditLogs] = useState<Array<any>>([]);
     const [isLoadingAudit, setIsLoadingAudit] = useState(false);
     const [auditPage, setAuditPage] = useState(0);
+    const [pdfLogs, setPdfLogs] = useState<Array<any>>([]);
+    const [isLoadingPdfLogs, setIsLoadingPdfLogs] = useState(false);
+    const [pdfLogsPage, setPdfLogsPage] = useState(0);
+    const [openingPdfLogId, setOpeningPdfLogId] = useState<string | null>(null);
     const [lastResizeAudit, setLastResizeAudit] = useState<{ columnKey: string; oldWidth: number; newWidth: number } | null>(null);
     const [showGroupMenu, setShowGroupMenu] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
