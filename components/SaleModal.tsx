@@ -7,7 +7,7 @@ import { CarSale, SaleStatus, Attachment, ContractType, TransportPaymentStatus, 
 import { InvoiceSourceContext } from './invoiceHistory';
 import { motion } from 'framer-motion';
 import { openPdfBlob } from './pdfUtils';
-import InvoicePriceModal from './InvoicePriceModal';
+import InvoicePriceModal, { InvoiceExtraCharge } from './InvoicePriceModal';
 import { InvoicePriceSource, resolveInvoicePriceValue } from './invoicePricing';
 import { rehydrateDraftSaleAttachments, resolveAttachmentUrl, sanitizeSaleDraft, uploadAttachmentToSaleStorage, uploadFileToSaleStorage } from '@/services/saleAttachmentStorage';
 
