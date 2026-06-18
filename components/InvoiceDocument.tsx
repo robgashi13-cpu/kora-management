@@ -273,6 +273,12 @@ const InvoiceDocument = React.forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                             <span>{taxLabel}</span>
                             <span>{formatCurrency(taxValue)}</span>
                         </div>
+                        {sanitizedExtraCharges.map((c) => (
+                            <div key={`sum-${c.id}`} className="invoice-summary-row">
+                                <span>{c.label || 'Service'}</span>
+                                <span>{formatCurrency(c.amount)}</span>
+                            </div>
+                        ))}
                         <div className="invoice-summary-total">
                             <span>Total</span>
                             <span>{formatCurrency(totalValue)}</span>
