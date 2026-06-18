@@ -79,7 +79,7 @@ const ALLOWED_PROFILE_SET = new Set(ALLOWED_PROFILES.map(profile => normalizePro
 // Profiles with restricted tab access (profile name → allowed nav item IDs)
 // If a profile is NOT in this map, they get full access (subject to adminOnly checks)
 const RESTRICTED_PROFILE_TABS: Record<string, Set<string>> = {
-    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC', 'PER_PAGES', 'ANKESA_DOGANA']),
+    'shyqa': new Set(['INVOICES', 'PDF', 'MECHANIC', 'PER_PAGES', 'ANKESA_DOGANA', 'PDF_LOGS']),
     'kr': new Set(['MECHANIC', 'INSPECTIONS']),
     'besi': new Set(['ANKESA_DOGANA']),
 };
@@ -4280,7 +4280,7 @@ export default function Dashboard() {
             });
             const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES', 'MECHANIC', 'ANKESA_DOGANA'].includes(item.id));
-            const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD'].includes(item.id));
+            const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD', 'PDF_LOGS'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
             const secondaryNavItems = restrictedTabs ? [] : navItems.filter((item) => item.id === 'SETTINGS');
             const combinedNavItems = [
