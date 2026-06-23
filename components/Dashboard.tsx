@@ -28,6 +28,7 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
+import CurrentCashTab from '@/components/CurrentCashTab';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 // AiAssistant import removed — chat bubble disabled
@@ -616,7 +617,7 @@ export default function Dashboard() {
     const [balanceDueSearch, setBalanceDueSearch] = useState('');
     const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
     const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
-    const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea'>('client_due');
+    const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea' | 'current_cash'>('client_due');
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
@@ -6171,15 +6172,20 @@ export default function Dashboard() {
                                     <p className="text-xs text-slate-500 mb-3">
                                         {balanceDueSubTab === 'client_due'
                                             ? 'Aggregated for sold and shipped cars with no double-counting in grand total.'
-                                            : 'Shows only cars currently on sale and whether supplier (Korea) is paid.'}
+                                            : balanceDueSubTab === 'paid_korea'
+                                                ? 'Shows only cars currently on sale and whether supplier (Korea) is paid.'
+                                                : 'Cash collected from clients minus cash already deposited to the bank.'}
                                     </p>
 
-                                    <div className="mb-3 grid w-full grid-cols-2 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
-                                        <button type="button" onClick={() => setBalanceDueSubTab('client_due')} className={`px-3 py-2 text-xs font-semibold text-center ${balanceDueSubTab === 'client_due' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Client Balance</button>
-                                        <button type="button" onClick={() => setBalanceDueSubTab('paid_korea')} className={`px-3 py-2 text-xs font-semibold text-center ${balanceDueSubTab === 'paid_korea' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>PAID KOREA</button>
+                                    <div className="mb-3 grid w-full grid-cols-3 rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto">
+                                        <button type="button" onClick={() => setBalanceDueSubTab('client_due')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${balanceDueSubTab === 'client_due' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Client Balance</button>
+                                        <button type="button" onClick={() => setBalanceDueSubTab('paid_korea')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${balanceDueSubTab === 'paid_korea' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>PAID KOREA</button>
+                                        <button type="button" onClick={() => setBalanceDueSubTab('current_cash')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${balanceDueSubTab === 'current_cash' ? 'bg-amber-600 text-white' : 'bg-white text-amber-700'}`}>Current Cash</button>
                                     </div>
 
-                                    {balanceDueSubTab === 'client_due' ? (
+                                    {balanceDueSubTab === 'current_cash' ? (
+                                        <CurrentCashTab sales={sales} supabaseUrl={supabaseUrl} supabaseKey={supabaseKey} />
+                                    ) : balanceDueSubTab === 'client_due' ? (
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
                                                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"><div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Grand Total</div><div className="text-xl font-black text-slate-900">€{grandBalanceTotal.toLocaleString()}</div><div className="text-xs text-slate-500">{balanceDueSales.length} cars</div></div>
