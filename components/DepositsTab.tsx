@@ -371,7 +371,18 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                                 <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
                                     <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                                     <div className="min-w-0">
-                                        <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
+                                        {kind === 'bank' && r.car_name ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
+                                                className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
+                                                title="View payment history for this car"
+                                            >
+                                                {r.car_name}
+                                            </button>
+                                        ) : (
+                                            <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
+                                        )}
                                     </div>
                                     <div className="text-slate-600 truncate">{note || '—'}</div>
                                     <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
