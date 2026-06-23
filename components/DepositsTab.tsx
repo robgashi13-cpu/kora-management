@@ -501,5 +501,3 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
 };
 
 export default DepositsTab;
-
-export default DepositsTab;
