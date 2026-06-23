@@ -6576,9 +6576,9 @@ export default function Dashboard() {
                                             supabaseKey={supabaseKey}
                                             userProfile={userProfile || ''}
                                         />
-                                    ) : invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' ? (
+                                    ) : invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' || invoicesSubTab === 'customs_payments' ? (
                                         <DepositsTab
-                                            kind={invoicesSubTab === 'cash_deposit' ? 'cash' : 'bank'}
+                                            kind={invoicesSubTab === 'cash_deposit' ? 'cash' : invoicesSubTab === 'bank_deposit' ? 'bank' : 'customs'}
                                             sales={sales.filter(s => s.status !== 'Archived')}
                                             supabaseUrl={supabaseUrl}
                                             supabaseKey={supabaseKey}
