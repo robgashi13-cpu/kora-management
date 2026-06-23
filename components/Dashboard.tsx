@@ -6564,7 +6564,15 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {invoicesSubTab === 'accountant' ? (() => {
+                                    {invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' ? (
+                                        <DepositsTab
+                                            kind={invoicesSubTab === 'cash_deposit' ? 'cash' : 'bank'}
+                                            sales={sales.filter(s => s.status !== 'Archived')}
+                                            supabaseUrl={supabaseUrl}
+                                            supabaseKey={supabaseKey}
+                                            userProfile={userProfile || ''}
+                                        />
+                                    ) : invoicesSubTab === 'accountant' ? (() => {
                                         // Sales (New) on top, rest grouped by month
                                         const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled' && s.status !== 'Archived');
                                         const newSales = allSalesForAccountant.filter(s => s.status === 'New');
