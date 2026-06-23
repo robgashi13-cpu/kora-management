@@ -6678,57 +6678,82 @@ export default function Dashboard() {
                                         };
                                         const downloadAllInvoicesMergedPdf = async () => {
                                             setShowAccountantPdfOptions(false);
-                                            const items = allSalesForAccountant;
-                                            if (items.length === 0) { alert('No cars to download.'); return; }
+                                            if (allSalesForAccountant.length === 0) { alert('No cars to download.'); return; }
                                             setZippingGroupKey('all-cars-merged');
                                             try {
-                                                const html2canvas = (await import('html2canvas')).default;
                                                 const { jsPDF } = await import('jspdf');
-                                                const A4_W = 210;
-                                                const A4_H = 297;
-                                                const a4WidthPx = Math.round((210 / 25.4) * 96);
-                                                const a4HeightPx = Math.round((297 / 25.4) * 96);
-                                                const mergedDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true, precision: 16 });
-                                                let firstPage = true;
-                                                for (const sale of items) {
-                                                    const container = document.createElement('div');
-                                                    container.style.position = 'fixed';
-                                                    container.style.left = '-9999px';
-                                                    container.style.top = '0';
-                                                    container.style.width = '1024px';
-                                                    container.style.zIndex = '-1';
-                                                    document.body.appendChild(container);
-                                                    const root = createRoot(container);
-                                                    root.render(<InvoiceDocument sale={sale} withDogane={false} showBankOnly={true} />);
-                                                    await new Promise(r => setTimeout(r, 350));
-                                                    const target = (container.firstElementChild as HTMLElement) || container;
-                                                    try {
-                                                        const canvas = await html2canvas(target, {
-                                                            scale: 2,
-                                                            useCORS: true,
-                                                            logging: false,
-                                                            backgroundColor: '#ffffff',
-                                                            imageTimeout: 10000,
-                                                            width: a4WidthPx,
-                                                            height: a4HeightPx,
-                                                            windowWidth: a4WidthPx,
-                                                            windowHeight: a4HeightPx,
-                                                            allowTaint: false,
-                                                        });
-                                                        const imgData = canvas.toDataURL('image/jpeg', 0.92);
-                                                        if (!firstPage) mergedDoc.addPage('a4', 'portrait');
-                                                        firstPage = false;
-                                                        mergedDoc.addImage(imgData, 'JPEG', 0, 0, A4_W, A4_H, undefined, 'FAST');
-                                                    } finally {
-                                                        root.unmount();
-                                                        container.remove();
-                                                    }
+                                                const autoTableMod: any = await import('jspdf-autotable');
+                                                const autoTable = autoTableMod.default || autoTableMod;
+                                                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+                                                const pageW = doc.internal.pageSize.getWidth();
+                                                const margin = 12;
+
+                                                doc.setFont('helvetica', 'bold');
+                                                doc.setFontSize(16);
+                                                doc.setTextColor(15, 23, 42);
+                                                doc.text('Libri i Shitblerjes', margin, 16);
+                                                doc.setFont('helvetica', 'normal');
+                                                doc.setFontSize(9);
+                                                doc.setTextColor(100, 116, 139);
+                                                doc.text(`Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} — All Cars (${allSalesForAccountant.length})`, margin, 22);
+
+                                                let cursorY = 28;
+                                                const renderSection = (title: string, items: CarSale[]) => {
+                                                    if (items.length === 0) return;
+                                                    const body = items.map(s => [
+                                                        `${s.brand} ${s.model} ${s.year || ''}`.trim(),
+                                                        (s.vin || '-').slice(-8),
+                                                        s.plateNumber || '-',
+                                                        (s.costToBuy || 0).toLocaleString(),
+                                                        (s.soldPrice || 0).toLocaleString(),
+                                                        s.buyerName || '-',
+                                                        s.shippingDate ? new Date(s.shippingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+                                                    ]);
+                                                    autoTable(doc, {
+                                                        startY: cursorY,
+                                                        head: [[`${title} (${items.length})`, '', '', '', '', '', '']],
+                                                        margin: { left: margin, right: margin },
+                                                        theme: 'plain',
+                                                        styles: { fontSize: 9, cellPadding: 1.5 },
+                                                        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 10, halign: 'left' },
+                                                    });
+                                                    cursorY = (doc as any).lastAutoTable.finalY + 1;
+                                                    autoTable(doc, {
+                                                        startY: cursorY,
+                                                        head: [['Car', 'VIN', 'Plate', 'Bought €', 'Sold €', 'Buyer', 'Date']],
+                                                        body,
+                                                        margin: { left: margin, right: margin },
+                                                        styles: { fontSize: 8.5, cellPadding: 1.8, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.1 },
+                                                        headStyles: { fillColor: [248, 250, 252], textColor: [100, 116, 139], fontStyle: 'bold', fontSize: 8, halign: 'left' },
+                                                        columnStyles: {
+                                                            3: { halign: 'right' },
+                                                            4: { halign: 'right' },
+                                                            1: { font: 'courier', fontSize: 8 },
+                                                        },
+                                                        alternateRowStyles: { fillColor: [250, 251, 253] },
+                                                    });
+                                                    cursorY = (doc as any).lastAutoTable.finalY + 5;
+                                                };
+
+                                                renderSection('Sales tu ardh', newSales);
+                                                sortedMonths.forEach(month => {
+                                                    const items = byMonth[month];
+                                                    const [y, m] = month.split('-').map(Number);
+                                                    const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                                                    renderSection(label, items);
+                                                });
+
+                                                // page numbers
+                                                const total = doc.getNumberOfPages();
+                                                for (let i = 1; i <= total; i++) {
+                                                    doc.setPage(i);
+                                                    doc.setFontSize(8);
+                                                    doc.setTextColor(148, 163, 184);
+                                                    doc.text(`Page ${i} / ${total}`, pageW - margin, doc.internal.pageSize.getHeight() - 6, { align: 'right' });
                                                 }
-                                                if (typeof mergedDoc.viewerPreferences === 'function') {
-                                                    mergedDoc.viewerPreferences({ PrintScaling: 'None', PickTrayByPDFSize: true });
-                                                }
-                                                const mergedBlob = mergedDoc.output('blob');
-                                                const url = URL.createObjectURL(mergedBlob);
+
+                                                const blob = doc.output('blob');
+                                                const url = URL.createObjectURL(blob);
                                                 const a = document.createElement('a');
                                                 a.href = url;
                                                 a.download = `Libri_i_Shitblerjes_All_Cars.pdf`;
@@ -6738,11 +6763,12 @@ export default function Dashboard() {
                                                 setTimeout(() => URL.revokeObjectURL(url), 2000);
                                             } catch (e) {
                                                 console.error('Merged PDF generation failed', e);
-                                                alert('Failed to generate merged PDF.');
+                                                alert('Failed to generate PDF.');
                                             } finally {
                                                 setZippingGroupKey(null);
                                             }
                                         };
+
 
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
