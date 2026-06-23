@@ -6184,7 +6184,7 @@ export default function Dashboard() {
                                     </div>
 
                                     {balanceDueSubTab === 'current_cash' ? (
-                                        <CurrentCashTab sales={sales} supabaseUrl={supabaseUrl} supabaseKey={supabaseKey} />
+                                        <CurrentCashTab supabaseUrl={supabaseUrl} supabaseKey={supabaseKey} userProfile={userProfile || ''} />
                                     ) : balanceDueSubTab === 'client_due' ? (
                                         <>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 mb-3">
