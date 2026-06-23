@@ -6683,7 +6683,6 @@ export default function Dashboard() {
                                             setZippingGroupKey('all-cars-merged');
                                             try {
                                                 const mergedPdf = await PDFDocument.create();
-                                                const copiedDocRefs: number[] = [];
                                                 for (const sale of items) {
                                                     const blob = await generateInvoiceBlobForSale(sale);
                                                     const bytes = new Uint8Array(await blob.arrayBuffer());
