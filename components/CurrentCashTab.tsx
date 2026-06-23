@@ -38,8 +38,9 @@ const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile
                 .limit(50);
             if (error) throw error;
             const rows = (data || []) as CompanyCashRow[];
+            const total = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
             const latest = rows[0];
-            setSavedAmount(latest ? Number(latest.amount || 0) : null);
+            setSavedAmount(total);
             setSavedAt(latest?.created_at || null);
             setSavedBy(latest?.updated_by || null);
             setHistory(rows.map((row) => ({
