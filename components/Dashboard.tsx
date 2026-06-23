@@ -6690,11 +6690,9 @@ export default function Dashboard() {
                                                     const pdf = await PDFDocument.load(bytes);
                                                     const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
                                                     pages.forEach((page) => mergedPdf.addPage(page));
-                                                    copiedDocRefs.push(pages.length);
-                                                    pdf.isFlattened;
                                                 }
                                                 const mergedBytes = await mergedPdf.save();
-                                                const mergedBlob = new Blob([mergedBytes], { type: 'application/pdf' });
+                                                const mergedBlob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
                                                 const url = URL.createObjectURL(mergedBlob);
                                                 const a = document.createElement('a');
                                                 a.href = url;
