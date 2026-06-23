@@ -6629,9 +6629,10 @@ export default function Dashboard() {
                                             container.remove();
                                             return blob;
                                         };
-                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[]) => {
-                                            const eligible = items.filter(s => (s.amountPaidBank || 0) > 0);
-                                            if (eligible.length === 0) { alert('No invoices with bank-paid amount in this group.'); return; }
+                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[], opts?: { bankOnly?: boolean }) => {
+                                            const bankOnly = opts?.bankOnly ?? true;
+                                            const eligible = bankOnly ? items.filter(s => (s.amountPaidBank || 0) > 0) : items;
+                                            if (eligible.length === 0) { alert(bankOnly ? 'No invoices with bank-paid amount in this group.' : 'No cars to download.'); return; }
                                             setZippingGroupKey(groupKey);
                                             try {
                                                 const files: Record<string, Uint8Array> = {};
@@ -6667,6 +6668,14 @@ export default function Dashboard() {
                                                 setZippingGroupKey(null);
                                             }
                                         };
+                                        const downloadAllInvoicesZip = async (mode: 'all' | 'active') => {
+                                            setShowAccountantPdfOptions(false);
+                                            const items = mode === 'active' ? newSales : allSalesForAccountant;
+                                            const label = mode === 'active' ? 'Sales_tu_ardh' : 'Libri_i_Shitblerjes_All';
+                                            const key = mode === 'active' ? 'all-new' : 'all-cars';
+                                            await downloadGroupZip(key, label, items, { bankOnly: false });
+                                        };
+
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
                                             if (toComplete.length === 0) return;
