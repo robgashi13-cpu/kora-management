@@ -170,13 +170,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                         <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
                     </label>
                     <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 lg:col-span-2">
-                        For Car
-                        <select value={form.carId} onChange={e => setForm(f => ({ ...f, carId: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white">
-                            <option value="">— Unlinked —</option>
-                            {carOptions.map(s => (
-                                <option key={s.id} value={s.id}>{carLabel(s)} {s.buyerName ? `• ${s.buyerName}` : ''}</option>
-                            ))}
-                        </select>
+                        Car Name
+                        <input value={form.carName} onChange={e => setForm(f => ({ ...f, carName: e.target.value }))} placeholder="e.g. BMW X5 2020" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
                     </label>
                     <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                         Amount (€)
