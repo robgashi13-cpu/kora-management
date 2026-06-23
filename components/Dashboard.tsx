@@ -6572,7 +6572,14 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' ? (
+                                    {invoicesSubTab === 'payments_korea' ? (
+                                        <PaymentsKoreaTab
+                                            sales={sales.filter(s => s.status !== 'Archived')}
+                                            supabaseUrl={supabaseUrl}
+                                            supabaseKey={supabaseKey}
+                                            userProfile={userProfile || ''}
+                                        />
+                                    ) : invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' ? (
                                         <DepositsTab
                                             kind={invoicesSubTab === 'cash_deposit' ? 'cash' : 'bank'}
                                             sales={sales.filter(s => s.status !== 'Archived')}
