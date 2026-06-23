@@ -883,7 +883,7 @@ export default function Dashboard() {
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
-    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant'>('create');
+    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant' | 'cash_deposit' | 'bank_deposit'>('create');
     const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
     const [invoiceHistoryMonthFilter, setInvoiceHistoryMonthFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
