@@ -110,7 +110,7 @@ const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile
 
                 {/* Manual entry */}
                 <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600 mb-2">Set new amount</div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-600 mb-2">Add entry (sums into total)</div>
                     <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr_auto] gap-2">
                         <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                             Amount (€)
