@@ -101,58 +101,71 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         return labels.join(' | ');
     }, [selectedCars, sales]);
 
+    const carLabelById = (id: string) => {
+        const s = sales.find(x => x.id === id);
+        return s ? `${s.brand} ${s.model} ${s.year || ''}`.trim() : id;
+    };
+
+    const commitBankInserts = async (entries: { carId: string | null; carName: string | null; amount: number }[]) => {
+        if (!client) throw new Error('Backend not ready.');
+        const rows = entries.map(e => ({
+            id: crypto.randomUUID(),
+            amount: e.amount,
+            date: form.date,
+            description: form.note || (e.carName ? `Deposit for ${e.carName}` : 'Bank deposit'),
+            category: 'deposit',
+            car_name: e.carName,
+            source_sale_id: e.carId,
+            last_edited_by: userProfile || null,
+        }));
+        const { error } = await client.from('bank_transactions').insert(rows);
+        if (error) throw error;
+    };
+
     const handleSave = async () => {
         if (!client) { setError('Backend not ready.'); return; }
         const amt = parseFloat(form.amount);
         if (!Number.isFinite(amt) || amt <= 0) { setError('Enter a valid amount.'); return; }
         if (!form.date) { setError('Pick a date.'); return; }
+
+        // Bank + 2+ cars => open allocation step
+        if (kind === 'bank' && selectedCars.size >= 2) {
+            const ids = Array.from(selectedCars);
+            const equal = (amt / ids.length).toFixed(2);
+            const init: Record<string, string> = {};
+            ids.forEach(id => { init[id] = equal; });
+            setAllocations(init);
+            setShowAllocation(true);
+            return;
+        }
+
         setSaving(true); setError('');
         try {
             const id = crypto.randomUUID();
             if (kind === 'cash') {
                 const row = {
-                    id,
-                    amount: amt,
-                    deposit_date: form.date,
-                    car_name: form.carName || null,
-                    note: form.note || null,
-                    depositor_name: form.depositor || null,
-                    receiver_name: userProfile || null,
-                    source: 'manual',
-                    created_by: userProfile || null,
+                    id, amount: amt, deposit_date: form.date,
+                    car_name: form.carName || null, note: form.note || null,
+                    depositor_name: form.depositor || null, receiver_name: userProfile || null,
+                    source: 'manual', created_by: userProfile || null,
                 };
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
             } else if (kind === 'customs') {
                 const row = {
-                    id,
-                    amount: amt,
-                    payment_date: form.date,
-                    car_name: form.carName || null,
-                    note: form.note || null,
-                    depositor_name: form.depositor || null,
-                    receiver_name: userProfile || null,
-                    source: 'manual',
-                    created_by: userProfile || null,
+                    id, amount: amt, payment_date: form.date,
+                    car_name: form.carName || null, note: form.note || null,
+                    depositor_name: form.depositor || null, receiver_name: userProfile || null,
+                    source: 'manual', created_by: userProfile || null,
                 };
                 const { error } = await client.from('customs_payments').insert(row);
                 if (error) throw error;
             } else {
-                const carName = selectedCarsLabel || form.carName || null;
-                const descBase = form.note || (carName ? `Deposit for ${carName}` : 'Bank deposit');
-                const row = {
-                    id,
-                    amount: amt,
-                    date: form.date,
-                    description: descBase,
-                    category: 'deposit',
-                    car_name: carName,
-                    last_edited_by: userProfile || null,
-                };
-                const { error } = await client.from('bank_transactions').insert(row);
-                if (error) throw error;
+                // Bank with 0 or 1 car
+                const onlyId = selectedCars.size === 1 ? Array.from(selectedCars)[0] : null;
+                const carName = onlyId ? carLabelById(onlyId) : (form.carName || null);
+                await commitBankInserts([{ carId: onlyId, carName, amount: amt }]);
             }
-            // Keep the date for easier consecutive entry
             setForm(f => ({ date: f.date, carName: '', amount: '', note: '', depositor: '' }));
             setSelectedCars(new Set());
             setCarSearch('');
@@ -163,6 +176,40 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
             setSaving(false);
         }
     };
+
+    const confirmAllocation = async () => {
+        const amt = parseFloat(form.amount);
+        const ids = Array.from(selectedCars);
+        const parsed = ids.map(id => ({ id, val: parseFloat(allocations[id] || '0') }));
+        if (parsed.some(p => !Number.isFinite(p.val) || p.val < 0)) {
+            setError('All allocations must be valid numbers ≥ 0.');
+            return;
+        }
+        const sum = parsed.reduce((a, p) => a + p.val, 0);
+        if (Math.abs(sum - amt) > 0.01) {
+            setError(`Allocations sum to € ${sum.toFixed(2)} but total is € ${amt.toFixed(2)}.`);
+            return;
+        }
+        setSaving(true); setError('');
+        try {
+            await commitBankInserts(parsed.filter(p => p.val > 0).map(p => ({
+                carId: p.id,
+                carName: carLabelById(p.id),
+                amount: p.val,
+            })));
+            setShowAllocation(false);
+            setForm(f => ({ date: f.date, carName: '', amount: '', note: '', depositor: '' }));
+            setSelectedCars(new Set());
+            setAllocations({});
+            setCarSearch('');
+            await loadRows();
+        } catch (e: any) {
+            setError(e?.message || 'Failed to save.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
 
     const handleDelete = async (id: string) => {
         if (!client) return;
