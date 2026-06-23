@@ -6676,6 +6676,40 @@ export default function Dashboard() {
                                             const key = mode === 'active' ? 'all-new' : 'all-cars';
                                             await downloadGroupZip(key, label, items, { bankOnly: false });
                                         };
+                                        const downloadAllInvoicesMergedPdf = async () => {
+                                            setShowAccountantPdfOptions(false);
+                                            const items = allSalesForAccountant;
+                                            if (items.length === 0) { alert('No cars to download.'); return; }
+                                            setZippingGroupKey('all-cars-merged');
+                                            try {
+                                                const mergedPdf = await PDFDocument.create();
+                                                const copiedDocRefs: number[] = [];
+                                                for (const sale of items) {
+                                                    const blob = await generateInvoiceBlobForSale(sale);
+                                                    const bytes = new Uint8Array(await blob.arrayBuffer());
+                                                    const pdf = await PDFDocument.load(bytes);
+                                                    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                                                    pages.forEach((page) => mergedPdf.addPage(page));
+                                                    copiedDocRefs.push(pages.length);
+                                                    pdf.isFlattened;
+                                                }
+                                                const mergedBytes = await mergedPdf.save();
+                                                const mergedBlob = new Blob([mergedBytes], { type: 'application/pdf' });
+                                                const url = URL.createObjectURL(mergedBlob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `Libri_i_Shitblerjes_All_Cars.pdf`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                a.remove();
+                                                URL.revokeObjectURL(url);
+                                            } catch (e) {
+                                                console.error('Merged PDF generation failed', e);
+                                                alert('Failed to generate merged PDF.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
+                                        };
 
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
