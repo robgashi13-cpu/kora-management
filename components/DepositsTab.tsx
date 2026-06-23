@@ -221,15 +221,13 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {filteredRows.map(r => {
-                            const sale = r.source_sale_id ? carById.get(r.source_sale_id) : undefined;
                             const dateVal = (r as any)[dateField] || r.created_at;
                             const note = kind === 'cash' ? (r.note || r.depositor_name || '') : (r.description || '');
                             return (
                                 <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
                                     <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                                     <div className="min-w-0">
-                                        <div className="font-bold text-slate-900 truncate">{carLabel(sale)}</div>
-                                        {sale?.buyerName && <div className="text-[10px] text-slate-500 truncate">Buyer: {sale.buyerName}</div>}
+                                        <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
                                     </div>
                                     <div className="text-slate-600 truncate">{note || '—'}</div>
                                     <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
