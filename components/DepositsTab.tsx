@@ -44,6 +44,9 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [search, setSearch] = useState('');
     const [carSearch, setCarSearch] = useState('');
     const [selectedCars, setSelectedCars] = useState<Set<string>>(new Set());
+    const [allocations, setAllocations] = useState<Record<string, string>>({});
+    const [showAllocation, setShowAllocation] = useState(false);
+    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string } | null>(null);
 
     const client = useMemo(() => {
         if (!supabaseUrl || !supabaseKey) return null;
