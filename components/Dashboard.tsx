@@ -6504,12 +6504,14 @@ export default function Dashboard() {
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
                                                 <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                                 {(isAdmin || isFullSalesViewer(userProfile)) && (
                                                     <button type="button" onClick={() => setInvoicesSubTab('accountant')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'accountant' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Libri i Shitblerjes</button>
                                                 )}
+                                                <button type="button" onClick={() => setInvoicesSubTab('cash_deposit')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'cash_deposit' ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700'}`}>Cash Deposit</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('bank_deposit')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'bank_deposit' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700'}`}>Bank Deposit</button>
                                             </div>
                                         </div>
                                         {view === 'invoices' && invoicesSubTab === 'create' && (
