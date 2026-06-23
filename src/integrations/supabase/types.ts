@@ -176,6 +176,48 @@ export type Database = {
         }
         Relationships: []
       }
+      customs_payments: {
+        Row: {
+          amount: number
+          car_name: string | null
+          created_at: string
+          created_by: string | null
+          depositor_name: string | null
+          id: string
+          note: string | null
+          payment_date: string | null
+          receiver_name: string | null
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          car_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          depositor_name?: string | null
+          id?: string
+          note?: string | null
+          payment_date?: string | null
+          receiver_name?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          car_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          depositor_name?: string | null
+          id?: string
+          note?: string | null
+          payment_date?: string | null
+          receiver_name?: string | null
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       korea_payments: {
         Row: {
           car_ids: Json

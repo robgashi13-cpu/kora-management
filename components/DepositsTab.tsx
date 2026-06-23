@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Trash2, Wallet, Landmark, Search, Check } from 'lucide-react';
+import { Loader2, Plus, Trash2, Wallet, Landmark, Search, Check, ShieldCheck } from 'lucide-react';
 import { createSupabaseClient } from '@/services/supabaseService';
 import { CarSale } from '@/src/types';
 
-type Kind = 'cash' | 'bank';
+type Kind = 'cash' | 'bank' | 'customs';
 
 type DepositRow = {
     id: string;
@@ -50,8 +50,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         try { return createSupabaseClient(supabaseUrl, supabaseKey); } catch { return null; }
     }, [supabaseUrl, supabaseKey]);
 
-    const tableName = kind === 'cash' ? 'cash_deposits' : 'bank_transactions';
-    const dateField = kind === 'cash' ? 'deposit_date' : 'date';
+    const tableName = kind === 'cash' ? 'cash_deposits' : kind === 'bank' ? 'bank_transactions' : 'customs_payments';
+    const dateField = kind === 'cash' ? 'deposit_date' : kind === 'bank' ? 'date' : 'payment_date';
 
     const loadRows = async () => {
         if (!client) return;
@@ -120,6 +120,20 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 };
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
+            } else if (kind === 'customs') {
+                const row = {
+                    id,
+                    amount: amt,
+                    payment_date: form.date,
+                    car_name: form.carName || null,
+                    note: form.note || null,
+                    depositor_name: form.depositor || null,
+                    receiver_name: userProfile || null,
+                    source: 'manual',
+                    created_by: userProfile || null,
+                };
+                const { error } = await client.from('customs_payments').insert(row);
+                if (error) throw error;
             } else {
                 const carName = selectedCarsLabel || form.carName || null;
                 const descBase = form.note || (carName ? `Deposit for ${carName}` : 'Bank deposit');
@@ -175,14 +189,18 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
 
     const accent = kind === 'cash'
         ? { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: <Wallet className="w-4 h-4" />, btn: 'bg-emerald-600 hover:bg-emerald-700', selBg: 'bg-emerald-50', selBtn: 'bg-emerald-600 border-emerald-600' }
+        : kind === 'customs'
+        ? { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: <ShieldCheck className="w-4 h-4" />, btn: 'bg-amber-600 hover:bg-amber-700', selBg: 'bg-amber-50', selBtn: 'bg-amber-600 border-amber-600' }
         : { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: <Landmark className="w-4 h-4" />, btn: 'bg-blue-600 hover:bg-blue-700', selBg: 'bg-blue-50', selBtn: 'bg-blue-600 border-blue-600' };
+
+    const headingLabel = kind === 'cash' ? 'Cash Deposit' : kind === 'customs' ? 'Pagesa Dogane' : 'Bank Deposit';
 
     return (
         <div className="space-y-3">
             {/* Add form */}
             <div className={`rounded-2xl border ${accent.border} ${accent.bg} p-3`}>
                 <div className={`flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] ${accent.text} mb-2`}>
-                    {accent.icon} Add {kind === 'cash' ? 'Cash' : 'Bank'} Deposit
+                    {accent.icon} Add {headingLabel}
                 </div>
 
                 {kind === 'bank' ? (
