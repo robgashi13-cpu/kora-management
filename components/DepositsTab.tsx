@@ -10,6 +10,7 @@ type DepositRow = {
     amount: number;
     deposit_date: string | null;
     source_sale_id: string | null;
+    car_name: string | null;
     note: string | null;
     depositor_name?: string | null;
     receiver_name?: string | null;
