@@ -146,6 +146,39 @@ export type Database = {
         }
         Relationships: []
       }
+      korea_payments: {
+        Row: {
+          car_ids: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          payment_date: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          car_ids?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_date?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          car_ids?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_date?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mechanic_records: {
         Row: {
           brand: string | null
