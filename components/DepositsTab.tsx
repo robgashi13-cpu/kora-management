@@ -93,7 +93,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                     id,
                     amount: amt,
                     deposit_date: form.date,
-                    source_sale_id: form.carId || null,
+                    car_name: form.carName || null,
                     note: form.note || null,
                     depositor_name: form.depositor || null,
                     receiver_name: userProfile || null,
@@ -103,21 +103,20 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
             } else {
-                const sale = form.carId ? carById.get(form.carId) : undefined;
-                const descBase = form.note || (sale ? `Deposit for ${carLabel(sale)}` : 'Bank deposit');
+                const descBase = form.note || (form.carName ? `Deposit for ${form.carName}` : 'Bank deposit');
                 const row = {
                     id,
                     amount: amt,
                     date: form.date,
                     description: descBase,
                     category: 'deposit',
-                    source_sale_id: form.carId || null,
+                    car_name: form.carName || null,
                     last_edited_by: userProfile || null,
                 };
                 const { error } = await client.from('bank_transactions').insert(row);
                 if (error) throw error;
             }
-            setForm({ date: todayISO(), carId: '', amount: '', note: '', depositor: '' });
+            setForm({ date: todayISO(), carName: '', amount: '', note: '', depositor: '' });
             await loadRows();
         } catch (e: any) {
             setError(e?.message || 'Failed to save.');
