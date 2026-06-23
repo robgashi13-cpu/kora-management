@@ -6682,16 +6682,52 @@ export default function Dashboard() {
                                             if (items.length === 0) { alert('No cars to download.'); return; }
                                             setZippingGroupKey('all-cars-merged');
                                             try {
-                                                const mergedPdf = await PDFDocument.create();
+                                                const html2canvas = (await import('html2canvas')).default;
+                                                const { jsPDF } = await import('jspdf');
+                                                const A4_W = 210;
+                                                const A4_H = 297;
+                                                const a4WidthPx = Math.round((210 / 25.4) * 96);
+                                                const a4HeightPx = Math.round((297 / 25.4) * 96);
+                                                const mergedDoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true, precision: 16 });
+                                                let firstPage = true;
                                                 for (const sale of items) {
-                                                    const blob = await generateInvoiceBlobForSale(sale);
-                                                    const bytes = new Uint8Array(await blob.arrayBuffer());
-                                                    const pdf = await PDFDocument.load(bytes);
-                                                    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-                                                    pages.forEach((page) => mergedPdf.addPage(page));
+                                                    const container = document.createElement('div');
+                                                    container.style.position = 'fixed';
+                                                    container.style.left = '-9999px';
+                                                    container.style.top = '0';
+                                                    container.style.width = '1024px';
+                                                    container.style.zIndex = '-1';
+                                                    document.body.appendChild(container);
+                                                    const root = createRoot(container);
+                                                    root.render(<InvoiceDocument sale={sale} withDogane={false} showBankOnly={true} />);
+                                                    await new Promise(r => setTimeout(r, 350));
+                                                    const target = (container.firstElementChild as HTMLElement) || container;
+                                                    try {
+                                                        const canvas = await html2canvas(target, {
+                                                            scale: 2,
+                                                            useCORS: true,
+                                                            logging: false,
+                                                            backgroundColor: '#ffffff',
+                                                            imageTimeout: 10000,
+                                                            width: a4WidthPx,
+                                                            height: a4HeightPx,
+                                                            windowWidth: a4WidthPx,
+                                                            windowHeight: a4HeightPx,
+                                                            allowTaint: false,
+                                                        });
+                                                        const imgData = canvas.toDataURL('image/jpeg', 0.92);
+                                                        if (!firstPage) mergedDoc.addPage('a4', 'portrait');
+                                                        firstPage = false;
+                                                        mergedDoc.addImage(imgData, 'JPEG', 0, 0, A4_W, A4_H, undefined, 'FAST');
+                                                    } finally {
+                                                        root.unmount();
+                                                        container.remove();
+                                                    }
                                                 }
-                                                const mergedBytes = await mergedPdf.save();
-                                                const mergedBlob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
+                                                if (typeof mergedDoc.viewerPreferences === 'function') {
+                                                    mergedDoc.viewerPreferences({ PrintScaling: 'None', PickTrayByPDFSize: true });
+                                                }
+                                                const mergedBlob = mergedDoc.output('blob');
                                                 const url = URL.createObjectURL(mergedBlob);
                                                 const a = document.createElement('a');
                                                 a.href = url;
@@ -6699,7 +6735,7 @@ export default function Dashboard() {
                                                 document.body.appendChild(a);
                                                 a.click();
                                                 a.remove();
-                                                URL.revokeObjectURL(url);
+                                                setTimeout(() => URL.revokeObjectURL(url), 2000);
                                             } catch (e) {
                                                 console.error('Merged PDF generation failed', e);
                                                 alert('Failed to generate merged PDF.');
