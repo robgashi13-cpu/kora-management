@@ -50,8 +50,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         try { return createSupabaseClient(supabaseUrl, supabaseKey); } catch { return null; }
     }, [supabaseUrl, supabaseKey]);
 
-    const tableName = kind === 'cash' ? 'cash_deposits' : 'bank_transactions';
-    const dateField = kind === 'cash' ? 'deposit_date' : 'date';
+    const tableName = kind === 'cash' ? 'cash_deposits' : kind === 'bank' ? 'bank_transactions' : 'customs_payments';
+    const dateField = kind === 'cash' ? 'deposit_date' : kind === 'bank' ? 'date' : 'payment_date';
 
     const loadRows = async () => {
         if (!client) return;
