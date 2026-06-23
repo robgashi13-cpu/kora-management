@@ -120,6 +120,20 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 };
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
+            } else if (kind === 'customs') {
+                const row = {
+                    id,
+                    amount: amt,
+                    payment_date: form.date,
+                    car_name: form.carName || null,
+                    note: form.note || null,
+                    depositor_name: form.depositor || null,
+                    receiver_name: userProfile || null,
+                    source: 'manual',
+                    created_by: userProfile || null,
+                };
+                const { error } = await client.from('customs_payments').insert(row);
+                if (error) throw error;
             } else {
                 const carName = selectedCarsLabel || form.carName || null;
                 const descBase = form.note || (carName ? `Deposit for ${carName}` : 'Bank deposit');
