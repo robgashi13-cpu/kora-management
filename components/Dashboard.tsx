@@ -2413,21 +2413,18 @@ export default function Dashboard() {
     useEffect(() => {
         const initSettings = async () => {
             const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://tbjihsqkbmjiblpxzojo.supabase.co";
-            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWIiOiJ0YmppaHNxa2JtamlibHB4em9qbyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY1NTI0Njk0LCJleHAiOjIwODExMDA2OTR9.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE";
+            const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InRiamloc3FrYm1qaWJscHh6b2pvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU1MjQ2OTQsImV4cCI6MjA4MTEwMDY5NH0.JHus2d1aZ252FvhlT4nVAsPPJediXq-c8uhI-3wpGdE";
 
             try {
                 // Ensure Supabase URL/Key exist
                 let { value: url } = await Preferences.get({ key: 'supabase_url' });
                 let { value: keyName } = await Preferences.get({ key: 'supabase_key' });
 
-                if (!url) { url = SUPABASE_URL; await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL }); }
-                if (!keyName) { keyName = SUPABASE_KEY; await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY }); }
-
-                setSupabaseUrl(url);
-                setSupabaseKey(keyName);
-
                 if (url !== SUPABASE_URL) await Preferences.set({ key: 'supabase_url', value: SUPABASE_URL });
                 if (keyName !== SUPABASE_KEY) await Preferences.set({ key: 'supabase_key', value: SUPABASE_KEY });
+
+                setSupabaseUrl(SUPABASE_URL);
+                setSupabaseKey(SUPABASE_KEY);
 
                 const { value: apiKeyVal } = await Preferences.get({ key: 'openai_api_key' });
                 if (apiKeyVal) setApiKey(apiKeyVal);
