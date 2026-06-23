@@ -44,6 +44,7 @@ export type Database = {
           description: string | null
           id: string
           last_edited_by: string | null
+          source_sale_id: string | null
         }
         Insert: {
           amount?: number | null
@@ -53,6 +54,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_edited_by?: string | null
+          source_sale_id?: string | null
         }
         Update: {
           amount?: number | null
@@ -62,6 +64,7 @@ export type Database = {
           description?: string | null
           id?: string
           last_edited_by?: string | null
+          source_sale_id?: string | null
         }
         Relationships: []
       }
