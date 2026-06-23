@@ -141,15 +141,13 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         const q = search.trim().toLowerCase();
         if (!q) return rows;
         return rows.filter(r => {
-            const sale = r.source_sale_id ? carById.get(r.source_sale_id) : undefined;
             const blob = [
-                r.note, r.description, r.depositor_name, r.receiver_name,
-                sale?.brand, sale?.model, sale?.vin, sale?.plateNumber, sale?.buyerName,
+                r.note, r.description, r.depositor_name, r.receiver_name, r.car_name,
                 String(r.amount || ''),
             ].join(' ').toLowerCase();
             return blob.includes(q);
         });
-    }, [rows, search, carById]);
+    }, [rows, search]);
 
     const totalAmount = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.amount || 0), 0), [filteredRows]);
 
