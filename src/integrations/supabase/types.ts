@@ -38,6 +38,7 @@ export type Database = {
       bank_transactions: {
         Row: {
           amount: number | null
+          car_name: string | null
           category: string | null
           created_at: string
           date: string | null
@@ -48,6 +49,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          car_name?: string | null
           category?: string | null
           created_at?: string
           date?: string | null
@@ -58,6 +60,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          car_name?: string | null
           category?: string | null
           created_at?: string
           date?: string | null
@@ -71,6 +74,7 @@ export type Database = {
       cash_deposits: {
         Row: {
           amount: number
+          car_name: string | null
           created_at: string
           created_by: string | null
           deposit_date: string | null
@@ -83,6 +87,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          car_name?: string | null
           created_at?: string
           created_by?: string | null
           deposit_date?: string | null
@@ -95,6 +100,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          car_name?: string | null
           created_at?: string
           created_by?: string | null
           deposit_date?: string | null
