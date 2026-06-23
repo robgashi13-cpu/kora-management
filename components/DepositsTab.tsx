@@ -36,7 +36,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [error, setError] = useState<string>('');
     const [form, setForm] = useState({
         date: todayISO(),
-        carId: '',
+        carName: '',
         amount: '',
         note: '',
         depositor: '',
