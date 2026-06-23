@@ -12,6 +12,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { createRoot } from 'react-dom/client';
+import { PDFDocument } from 'pdf-lib';
 import { zip } from 'fflate';
 import SaleModal from './SaleModal';
 import EditShitblerjeModal from './EditShitblerjeModal';
@@ -6675,6 +6676,37 @@ export default function Dashboard() {
                                             const key = mode === 'active' ? 'all-new' : 'all-cars';
                                             await downloadGroupZip(key, label, items, { bankOnly: false });
                                         };
+                                        const downloadAllInvoicesMergedPdf = async () => {
+                                            setShowAccountantPdfOptions(false);
+                                            const items = allSalesForAccountant;
+                                            if (items.length === 0) { alert('No cars to download.'); return; }
+                                            setZippingGroupKey('all-cars-merged');
+                                            try {
+                                                const mergedPdf = await PDFDocument.create();
+                                                for (const sale of items) {
+                                                    const blob = await generateInvoiceBlobForSale(sale);
+                                                    const bytes = new Uint8Array(await blob.arrayBuffer());
+                                                    const pdf = await PDFDocument.load(bytes);
+                                                    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                                                    pages.forEach((page) => mergedPdf.addPage(page));
+                                                }
+                                                const mergedBytes = await mergedPdf.save();
+                                                const mergedBlob = new Blob([mergedBytes as unknown as BlobPart], { type: 'application/pdf' });
+                                                const url = URL.createObjectURL(mergedBlob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `Libri_i_Shitblerjes_All_Cars.pdf`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                a.remove();
+                                                URL.revokeObjectURL(url);
+                                            } catch (e) {
+                                                console.error('Merged PDF generation failed', e);
+                                                alert('Failed to generate merged PDF.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
+                                        };
 
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
@@ -6725,7 +6757,10 @@ export default function Dashboard() {
                                                                         <Download className="w-3 h-3 text-blue-500" /> Only New (Report)
                                                                     </button>
                                                                     <div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 border-y border-slate-100">Individual Invoice PDFs (ZIP)</div>
-                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesMergedPdf()} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                                                        {zippingGroupKey === 'all-cars-merged' ? <Loader2 className="w-3 h-3 animate-spin text-indigo-600" /> : <Download className="w-3 h-3 text-indigo-600" />} All Cars (One PDF)
+                                                                    </button>
+                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100 disabled:opacity-50">
                                                                         {zippingGroupKey === 'all-cars' ? <Loader2 className="w-3 h-3 animate-spin text-emerald-600" /> : <Download className="w-3 h-3 text-emerald-600" />} All Cars (PDFs ZIP)
                                                                     </button>
                                                                     <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100 disabled:opacity-50">
