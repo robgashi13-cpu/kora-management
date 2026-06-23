@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Trash2, Wallet, Landmark, Search, Check } from 'lucide-react';
+import { Loader2, Plus, Trash2, Wallet, Landmark, Search, Check, ShieldCheck } from 'lucide-react';
 import { createSupabaseClient } from '@/services/supabaseService';
 import { CarSale } from '@/src/types';
 
-type Kind = 'cash' | 'bank';
+type Kind = 'cash' | 'bank' | 'customs';
 
 type DepositRow = {
     id: string;
