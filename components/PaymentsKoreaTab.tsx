@@ -38,10 +38,7 @@ const PaymentsKoreaTab: React.FC<Props> = ({ sales, supabaseUrl, supabaseKey, us
         try { return createSupabaseClient(supabaseUrl, supabaseKey); } catch { return null; }
     }, [supabaseUrl, supabaseKey]);
 
-    const eligibleCars = useMemo(
-        () => sales.filter(s => s.status === 'Shipped' || s.status === 'Autosallon'),
-        [sales]
-    );
+    const eligibleCars = useMemo(() => sales, [sales]);
 
     const filteredCars = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -155,14 +152,14 @@ const PaymentsKoreaTab: React.FC<Props> = ({ sales, supabaseUrl, supabaseKey, us
                 <div className="rounded-xl border border-slate-200 bg-white p-2">
                     <div className="flex items-center gap-2 mb-2">
                         <Search className="w-3.5 h-3.5 text-slate-400" />
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search Shipped / Autosallon cars…" className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-900 bg-white" />
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search all cars…" className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-900 bg-white" />
                         <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md px-2 py-1 whitespace-nowrap">
                             {selected.size} selected
                         </span>
                     </div>
                     <div className="max-h-64 overflow-auto divide-y divide-slate-100 rounded-lg border border-slate-100">
                         {filteredCars.length === 0 ? (
-                            <div className="text-center text-slate-400 py-6 text-xs">No Shipped / Autosallon cars.</div>
+                            <div className="text-center text-slate-400 py-6 text-xs">No cars found.</div>
                         ) : filteredCars.map(s => {
                             const checked = selected.has(s.id);
                             return (
