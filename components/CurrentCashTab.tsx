@@ -74,7 +74,7 @@ const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile
             });
             if (error) throw error;
             const nextHistory = [entry, ...history].slice(0, 50);
-            setSavedAmount(n); setSavedAt(now); setSavedBy(userProfile || null);
+            setSavedAmount((savedAmount || 0) + n); setSavedAt(now); setSavedBy(userProfile || null);
             setHistory(nextHistory);
             setAmount(''); setNote('');
         } catch (e: any) {
