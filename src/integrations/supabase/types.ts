@@ -113,6 +113,30 @@ export type Database = {
         }
         Relationships: []
       }
+      company_cash_logs: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       customs_complaints: {
         Row: {
           car_id: string

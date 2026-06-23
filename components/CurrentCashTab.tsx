@@ -9,8 +9,7 @@ interface Props {
 }
 
 type HistoryEntry = { amount: number; updated_at: string; updated_by: string | null; note?: string | null };
-
-const CONFIG_KEY = 'current_cash_available';
+type CompanyCashRow = { id: string; amount: number; note: string | null; updated_by: string | null; created_at: string };
 
 const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile }) => {
     const [amount, setAmount] = useState<string>('');
@@ -32,13 +31,23 @@ const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile
         if (!client) return;
         setLoading(true); setError('');
         try {
-            const { data, error } = await client.from('app_config').select('*').eq('key', CONFIG_KEY).maybeSingle();
+            const { data, error } = await client
+                .from('company_cash_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
             if (error) throw error;
-            const value = (data?.value as any) || {};
-            setSavedAmount(typeof value.amount === 'number' ? value.amount : null);
-            setSavedAt(data?.updated_at || null);
-            setSavedBy(data?.updated_by || null);
-            setHistory(Array.isArray(value.history) ? value.history.slice(0, 25) : []);
+            const rows = (data || []) as CompanyCashRow[];
+            const latest = rows[0];
+            setSavedAmount(latest ? Number(latest.amount || 0) : null);
+            setSavedAt(latest?.created_at || null);
+            setSavedBy(latest?.updated_by || null);
+            setHistory(rows.map((row) => ({
+                amount: Number(row.amount || 0),
+                updated_at: row.created_at,
+                updated_by: row.updated_by,
+                note: row.note,
+            })).slice(0, 25));
         } catch (e: any) {
             setError(e?.message || 'Failed to load.');
         } finally {
@@ -56,10 +65,14 @@ const CurrentCashTab: React.FC<Props> = ({ supabaseUrl, supabaseKey, userProfile
         try {
             const now = new Date().toISOString();
             const entry: HistoryEntry = { amount: n, updated_at: now, updated_by: userProfile || null, note: note || null };
-            const nextHistory = [entry, ...history].slice(0, 50);
-            const payload = { key: CONFIG_KEY, value: { amount: n, history: nextHistory } as any, updated_by: userProfile || null, updated_at: now };
-            const { error } = await client.from('app_config').upsert(payload, { onConflict: 'key' });
+            const { error } = await client.from('company_cash_logs').insert({
+                amount: n,
+                note: note || null,
+                updated_by: userProfile || null,
+                created_at: now,
+            });
             if (error) throw error;
+            const nextHistory = [entry, ...history].slice(0, 50);
             setSavedAmount(n); setSavedAt(now); setSavedBy(userProfile || null);
             setHistory(nextHistory);
             setAmount(''); setNote('');
