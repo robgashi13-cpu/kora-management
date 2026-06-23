@@ -30,6 +30,7 @@
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.12.1",
     "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "jszip": "^3.10.1",
     "lovable-tagger": "^1.1.13",
     "lucide-react": "^0.556.0",
