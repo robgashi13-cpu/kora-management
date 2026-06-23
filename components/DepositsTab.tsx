@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Trash2, Wallet, Landmark } from 'lucide-react';
+import { Loader2, Plus, Trash2, Wallet, Landmark, Search, Check } from 'lucide-react';
 import { createSupabaseClient } from '@/services/supabaseService';
 import { CarSale } from '@/src/types';
 
@@ -42,6 +42,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         depositor: '',
     });
     const [search, setSearch] = useState('');
+    const [carSearch, setCarSearch] = useState('');
+    const [selectedCars, setSelectedCars] = useState<Set<string>>(new Set());
 
     const client = useMemo(() => {
         if (!supabaseUrl || !supabaseKey) return null;
@@ -67,18 +69,34 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
 
     useEffect(() => { loadRows(); /* eslint-disable-next-line */ }, [client, kind]);
 
-    const carById = useMemo(() => {
-        const m = new Map<string, CarSale>();
-        sales.forEach(s => m.set(s.id, s));
-        return m;
-    }, [sales]);
-
     const carLabel = (s?: CarSale) => s ? `${s.brand} ${s.model} ${s.year || ''} • ${(s.vin || '').slice(-8) || s.plateNumber || 'no vin'}`.trim() : '— Unlinked —';
 
-    const carOptions = useMemo(() => {
+    const filteredCars = useMemo(() => {
+        const q = carSearch.trim().toLowerCase();
         const sorted = [...sales].sort((a, b) => `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`));
-        return sorted;
-    }, [sales]);
+        if (!q) return sorted;
+        return sorted.filter(s => {
+            const blob = `${s.brand} ${s.model} ${s.year || ''} ${s.vin || ''} ${s.plateNumber || ''} ${s.buyerName || ''}`.toLowerCase();
+            return blob.includes(q);
+        });
+    }, [sales, carSearch]);
+
+    const toggleCar = (id: string) => {
+        setSelectedCars(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    };
+
+    const selectedCarsLabel = useMemo(() => {
+        const labels: string[] = [];
+        selectedCars.forEach(id => {
+            const s = sales.find(x => x.id === id);
+            if (s) labels.push(`${s.brand} ${s.model} ${s.year || ''}`.trim());
+        });
+        return labels.join(' | ');
+    }, [selectedCars, sales]);
 
     const handleSave = async () => {
         if (!client) { setError('Backend not ready.'); return; }
@@ -103,20 +121,24 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
             } else {
-                const descBase = form.note || (form.carName ? `Deposit for ${form.carName}` : 'Bank deposit');
+                const carName = selectedCarsLabel || form.carName || null;
+                const descBase = form.note || (carName ? `Deposit for ${carName}` : 'Bank deposit');
                 const row = {
                     id,
                     amount: amt,
                     date: form.date,
                     description: descBase,
                     category: 'deposit',
-                    car_name: form.carName || null,
+                    car_name: carName,
                     last_edited_by: userProfile || null,
                 };
                 const { error } = await client.from('bank_transactions').insert(row);
                 if (error) throw error;
             }
-            setForm({ date: todayISO(), carName: '', amount: '', note: '', depositor: '' });
+            // Keep the date for easier consecutive entry
+            setForm(f => ({ date: f.date, carName: '', amount: '', note: '', depositor: '' }));
+            setSelectedCars(new Set());
+            setCarSearch('');
             await loadRows();
         } catch (e: any) {
             setError(e?.message || 'Failed to save.');
@@ -152,8 +174,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const totalAmount = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.amount || 0), 0), [filteredRows]);
 
     const accent = kind === 'cash'
-        ? { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: <Wallet className="w-4 h-4" />, btn: 'bg-emerald-600 hover:bg-emerald-700' }
-        : { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: <Landmark className="w-4 h-4" />, btn: 'bg-blue-600 hover:bg-blue-700' };
+        ? { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: <Wallet className="w-4 h-4" />, btn: 'bg-emerald-600 hover:bg-emerald-700', selBg: 'bg-emerald-50', selBtn: 'bg-emerald-600 border-emerald-600' }
+        : { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: <Landmark className="w-4 h-4" />, btn: 'bg-blue-600 hover:bg-blue-700', selBg: 'bg-blue-50', selBtn: 'bg-blue-600 border-blue-600' };
 
     return (
         <div className="space-y-3">
@@ -162,30 +184,86 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 <div className={`flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] ${accent.text} mb-2`}>
                     {accent.icon} Add {kind === 'cash' ? 'Cash' : 'Bank'} Deposit
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-                    <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-                        Date
-                        <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 lg:col-span-2">
-                        Car Name
-                        <input value={form.carName} onChange={e => setForm(f => ({ ...f, carName: e.target.value }))} placeholder="e.g. BMW X5 2020" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-                        Amount (€)
-                        <input type="number" inputMode="decimal" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
-                        {kind === 'cash' ? 'Depositor' : 'Note'}
-                        <input value={kind === 'cash' ? form.depositor : form.note} onChange={e => setForm(f => kind === 'cash' ? ({ ...f, depositor: e.target.value }) : ({ ...f, note: e.target.value }))} placeholder={kind === 'cash' ? 'Name (optional)' : 'Reference / memo'} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
-                    </label>
-                </div>
-                {kind === 'cash' && (
-                    <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 mt-2">
-                        Note
-                        <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Optional note" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
-                    </label>
+
+                {kind === 'bank' ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Date
+                                <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Amount (€)
+                                <input type="number" inputMode="decimal" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Note (optional)
+                                <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Reference / memo" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-200 bg-white p-2">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Search className="w-3.5 h-3.5 text-slate-400" />
+                                <input value={carSearch} onChange={e => setCarSearch(e.target.value)} placeholder="Search all cars…" className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-900 bg-white" />
+                                <span className={`text-[10px] font-bold ${accent.text} ${accent.bg} border ${accent.border} rounded-md px-2 py-1 whitespace-nowrap`}>
+                                    {selectedCars.size} selected
+                                </span>
+                            </div>
+                            <div className="max-h-64 overflow-auto divide-y divide-slate-100 rounded-lg border border-slate-100">
+                                {filteredCars.length === 0 ? (
+                                    <div className="text-center text-slate-400 py-6 text-xs">No cars found.</div>
+                                ) : filteredCars.map(s => {
+                                    const checked = selectedCars.has(s.id);
+                                    return (
+                                        <button
+                                            key={s.id}
+                                            type="button"
+                                            onClick={() => toggleCar(s.id)}
+                                            className={`w-full flex items-center gap-2 px-2.5 py-2 text-left text-xs transition-colors ${checked ? accent.selBg : 'hover:bg-slate-50'}`}
+                                        >
+                                            <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${checked ? `${accent.selBtn} text-white` : 'border-slate-300 bg-white'}`}>
+                                                {checked && <Check className="w-3 h-3" />}
+                                            </span>
+                                            <span className="flex-1 min-w-0">
+                                                <span className="block font-bold text-slate-900 truncate">{carLabel(s)}</span>
+                                                <span className="block text-[10px] text-slate-500 truncate">
+                                                    {s.status}{s.buyerName ? ` • ${s.buyerName}` : ''}
+                                                </span>
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Date
+                                <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 lg:col-span-2">
+                                Car Name
+                                <input value={form.carName} onChange={e => setForm(f => ({ ...f, carName: e.target.value }))} placeholder="e.g. BMW X5 2020" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Amount (€)
+                                <input type="number" inputMode="decimal" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                            <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+                                Depositor
+                                <input value={form.depositor} onChange={e => setForm(f => ({ ...f, depositor: e.target.value }))} placeholder="Name (optional)" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                            </label>
+                        </div>
+                        <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 mt-2">
+                            Note
+                            <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Optional note" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
+                        </label>
+                    </>
                 )}
+
                 {error && <div className="text-[11px] font-semibold text-red-600 mt-2">{error}</div>}
                 <div className="flex items-center justify-end mt-3">
                     <button type="button" disabled={saving} onClick={handleSave} className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-white text-xs font-bold ${accent.btn} disabled:opacity-50 transition-all`}>
