@@ -617,7 +617,7 @@ export default function Dashboard() {
     const [balanceDueSearch, setBalanceDueSearch] = useState('');
     const [balanceDueStatusFilter, setBalanceDueStatusFilter] = useState<'all' | 'shipped' | 'sold'>('all');
     const [balanceDueSort, setBalanceDueSort] = useState<'desc' | 'asc'>('desc');
-    const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea'>('client_due');
+    const [balanceDueSubTab, setBalanceDueSubTab] = useState<'client_due' | 'paid_korea' | 'current_cash'>('client_due');
     const [paidKoreaSearch, setPaidKoreaSearch] = useState('');
     const [paidKoreaPaymentFilter, setPaidKoreaPaymentFilter] = useState<'all' | 'paid' | 'not_paid'>('all');
     const [paidKoreaSort, setPaidKoreaSort] = useState<'desc' | 'asc'>('desc');
