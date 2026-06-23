@@ -27,6 +27,7 @@ import { generatePdf } from './pdfUtils';
 import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
+import DepositsTab from '@/components/DepositsTab';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 // AiAssistant import removed — chat bubble disabled
