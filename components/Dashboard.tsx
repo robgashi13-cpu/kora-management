@@ -29,6 +29,7 @@ import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
 import CurrentCashTab from '@/components/CurrentCashTab';
+import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
 import { createInvoiceHistoryEntry, formatInvoiceMonthLabel, groupInvoiceHistoryByMonth, InvoiceHistoryEntry, InvoiceSourceContext } from './invoiceHistory';
 // AiAssistant import removed — chat bubble disabled
