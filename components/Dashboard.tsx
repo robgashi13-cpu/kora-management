@@ -6768,6 +6768,123 @@ export default function Dashboard() {
                                                 setZippingGroupKey(null);
                                             }
                                         };
+                                        const downloadFullDetailsPdf = async () => {
+                                            setShowAccountantPdfOptions(false);
+                                            if (allSalesForAccountant.length === 0) { alert('No cars to download.'); return; }
+                                            setZippingGroupKey('all-cars-full');
+                                            try {
+                                                const { jsPDF } = await import('jspdf');
+                                                const autoTableMod: any = await import('jspdf-autotable');
+                                                const autoTable = autoTableMod.default || autoTableMod;
+                                                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+                                                const pageW = doc.internal.pageSize.getWidth();
+                                                const margin = 10;
+
+                                                doc.setFont('helvetica', 'bold');
+                                                doc.setFontSize(16);
+                                                doc.setTextColor(15, 23, 42);
+                                                doc.text('Libri i Shitblerjes — Full Financial Report', margin, 14);
+                                                doc.setFont('helvetica', 'normal');
+                                                doc.setFontSize(9);
+                                                doc.setTextColor(100, 116, 139);
+                                                doc.text(`Generated ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} — All Cars (${allSalesForAccountant.length})`, margin, 20);
+
+                                                let cursorY = 26;
+                                                let grandCost = 0, grandClient = 0, grandKorea = 0;
+
+                                                const renderSection = (title: string, items: CarSale[]) => {
+                                                    if (items.length === 0) return;
+                                                    let secCost = 0, secClient = 0, secKorea = 0;
+                                                    const body = items.map(s => {
+                                                        const cost = Number(s.costToBuy || 0);
+                                                        const client = Number(s.amountPaidCash || 0) + Number(s.amountPaidBank || 0) + Number(s.deposit || 0);
+                                                        const korea = Number(s.amountPaidToKorea || 0);
+                                                        secCost += cost; secClient += client; secKorea += korea;
+                                                        return [
+                                                            `${s.brand} ${s.model} ${s.year || ''}`.trim(),
+                                                            (s.vin || '-').slice(-8),
+                                                            s.plateNumber || '-',
+                                                            s.buyerName || '-',
+                                                            cost.toLocaleString(),
+                                                            client.toLocaleString(),
+                                                            korea.toLocaleString(),
+                                                            s.shippingDate ? new Date(s.shippingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+                                                        ];
+                                                    });
+                                                    grandCost += secCost; grandClient += secClient; grandKorea += secKorea;
+                                                    autoTable(doc, {
+                                                        startY: cursorY,
+                                                        head: [[`${title} (${items.length})`, '', '', '', '', '', '', '']],
+                                                        margin: { left: margin, right: margin },
+                                                        theme: 'plain',
+                                                        styles: { fontSize: 9, cellPadding: 1.5 },
+                                                        headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 10, halign: 'left' },
+                                                    });
+                                                    cursorY = (doc as any).lastAutoTable.finalY + 1;
+                                                    autoTable(doc, {
+                                                        startY: cursorY,
+                                                        head: [['Car', 'VIN', 'Plate', 'Buyer', 'Cost to Buy €', 'Paid by Client €', 'Paid in Korea €', 'Date']],
+                                                        body,
+                                                        foot: [['', '', '', 'TOTAL', secCost.toLocaleString(), secClient.toLocaleString(), secKorea.toLocaleString(), '']],
+                                                        margin: { left: margin, right: margin },
+                                                        styles: { fontSize: 8.5, cellPadding: 1.8, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.1 },
+                                                        headStyles: { fillColor: [248, 250, 252], textColor: [100, 116, 139], fontStyle: 'bold', fontSize: 8, halign: 'left' },
+                                                        footStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 9 },
+                                                        columnStyles: {
+                                                            1: { font: 'courier', fontSize: 8 },
+                                                            4: { halign: 'right' },
+                                                            5: { halign: 'right' },
+                                                            6: { halign: 'right' },
+                                                        },
+                                                        alternateRowStyles: { fillColor: [250, 251, 253] },
+                                                    });
+                                                    cursorY = (doc as any).lastAutoTable.finalY + 5;
+                                                };
+
+                                                renderSection('Sales tu ardh', newSales);
+                                                sortedMonths.forEach(month => {
+                                                    const items = byMonth[month];
+                                                    const [y, m] = month.split('-').map(Number);
+                                                    const label = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                                                    renderSection(label, items);
+                                                });
+
+                                                // grand totals
+                                                autoTable(doc, {
+                                                    startY: cursorY,
+                                                    head: [['GRAND TOTAL', 'Cost to Buy €', 'Paid by Client €', 'Paid in Korea €']],
+                                                    body: [[`${allSalesForAccountant.length} cars`, grandCost.toLocaleString(), grandClient.toLocaleString(), grandKorea.toLocaleString()]],
+                                                    margin: { left: margin, right: margin },
+                                                    styles: { fontSize: 10, cellPadding: 2.5, fontStyle: 'bold' },
+                                                    headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' },
+                                                    bodyStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42] },
+                                                    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+                                                });
+
+                                                const total = doc.getNumberOfPages();
+                                                for (let i = 1; i <= total; i++) {
+                                                    doc.setPage(i);
+                                                    doc.setFontSize(8);
+                                                    doc.setTextColor(148, 163, 184);
+                                                    doc.text(`Page ${i} / ${total}`, pageW - margin, doc.internal.pageSize.getHeight() - 6, { align: 'right' });
+                                                }
+
+                                                const blob = doc.output('blob');
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `Libri_i_Shitblerjes_Full_Financial.pdf`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                a.remove();
+                                                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                                            } catch (e) {
+                                                console.error('Full details PDF generation failed', e);
+                                                alert('Failed to generate PDF.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
+                                        };
 
 
                                         const handleMarkAllDone = () => {
