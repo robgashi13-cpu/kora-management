@@ -44,6 +44,9 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [search, setSearch] = useState('');
     const [carSearch, setCarSearch] = useState('');
     const [selectedCars, setSelectedCars] = useState<Set<string>>(new Set());
+    const [allocations, setAllocations] = useState<Record<string, string>>({});
+    const [showAllocation, setShowAllocation] = useState(false);
+    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string } | null>(null);
 
     const client = useMemo(() => {
         if (!supabaseUrl || !supabaseKey) return null;
@@ -98,58 +101,71 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         return labels.join(' | ');
     }, [selectedCars, sales]);
 
+    const carLabelById = (id: string) => {
+        const s = sales.find(x => x.id === id);
+        return s ? `${s.brand} ${s.model} ${s.year || ''}`.trim() : id;
+    };
+
+    const commitBankInserts = async (entries: { carId: string | null; carName: string | null; amount: number }[]) => {
+        if (!client) throw new Error('Backend not ready.');
+        const rows = entries.map(e => ({
+            id: crypto.randomUUID(),
+            amount: e.amount,
+            date: form.date,
+            description: form.note || (e.carName ? `Deposit for ${e.carName}` : 'Bank deposit'),
+            category: 'deposit',
+            car_name: e.carName,
+            source_sale_id: e.carId,
+            last_edited_by: userProfile || null,
+        }));
+        const { error } = await client.from('bank_transactions').insert(rows);
+        if (error) throw error;
+    };
+
     const handleSave = async () => {
         if (!client) { setError('Backend not ready.'); return; }
         const amt = parseFloat(form.amount);
         if (!Number.isFinite(amt) || amt <= 0) { setError('Enter a valid amount.'); return; }
         if (!form.date) { setError('Pick a date.'); return; }
+
+        // Bank + 2+ cars => open allocation step
+        if (kind === 'bank' && selectedCars.size >= 2) {
+            const ids = Array.from(selectedCars);
+            const equal = (amt / ids.length).toFixed(2);
+            const init: Record<string, string> = {};
+            ids.forEach(id => { init[id] = equal; });
+            setAllocations(init);
+            setShowAllocation(true);
+            return;
+        }
+
         setSaving(true); setError('');
         try {
             const id = crypto.randomUUID();
             if (kind === 'cash') {
                 const row = {
-                    id,
-                    amount: amt,
-                    deposit_date: form.date,
-                    car_name: form.carName || null,
-                    note: form.note || null,
-                    depositor_name: form.depositor || null,
-                    receiver_name: userProfile || null,
-                    source: 'manual',
-                    created_by: userProfile || null,
+                    id, amount: amt, deposit_date: form.date,
+                    car_name: form.carName || null, note: form.note || null,
+                    depositor_name: form.depositor || null, receiver_name: userProfile || null,
+                    source: 'manual', created_by: userProfile || null,
                 };
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
             } else if (kind === 'customs') {
                 const row = {
-                    id,
-                    amount: amt,
-                    payment_date: form.date,
-                    car_name: form.carName || null,
-                    note: form.note || null,
-                    depositor_name: form.depositor || null,
-                    receiver_name: userProfile || null,
-                    source: 'manual',
-                    created_by: userProfile || null,
+                    id, amount: amt, payment_date: form.date,
+                    car_name: form.carName || null, note: form.note || null,
+                    depositor_name: form.depositor || null, receiver_name: userProfile || null,
+                    source: 'manual', created_by: userProfile || null,
                 };
                 const { error } = await client.from('customs_payments').insert(row);
                 if (error) throw error;
             } else {
-                const carName = selectedCarsLabel || form.carName || null;
-                const descBase = form.note || (carName ? `Deposit for ${carName}` : 'Bank deposit');
-                const row = {
-                    id,
-                    amount: amt,
-                    date: form.date,
-                    description: descBase,
-                    category: 'deposit',
-                    car_name: carName,
-                    last_edited_by: userProfile || null,
-                };
-                const { error } = await client.from('bank_transactions').insert(row);
-                if (error) throw error;
+                // Bank with 0 or 1 car
+                const onlyId = selectedCars.size === 1 ? Array.from(selectedCars)[0] : null;
+                const carName = onlyId ? carLabelById(onlyId) : (form.carName || null);
+                await commitBankInserts([{ carId: onlyId, carName, amount: amt }]);
             }
-            // Keep the date for easier consecutive entry
             setForm(f => ({ date: f.date, carName: '', amount: '', note: '', depositor: '' }));
             setSelectedCars(new Set());
             setCarSearch('');
@@ -160,6 +176,40 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
             setSaving(false);
         }
     };
+
+    const confirmAllocation = async () => {
+        const amt = parseFloat(form.amount);
+        const ids = Array.from(selectedCars);
+        const parsed = ids.map(id => ({ id, val: parseFloat(allocations[id] || '0') }));
+        if (parsed.some(p => !Number.isFinite(p.val) || p.val < 0)) {
+            setError('All allocations must be valid numbers ≥ 0.');
+            return;
+        }
+        const sum = parsed.reduce((a, p) => a + p.val, 0);
+        if (Math.abs(sum - amt) > 0.01) {
+            setError(`Allocations sum to € ${sum.toFixed(2)} but total is € ${amt.toFixed(2)}.`);
+            return;
+        }
+        setSaving(true); setError('');
+        try {
+            await commitBankInserts(parsed.filter(p => p.val > 0).map(p => ({
+                carId: p.id,
+                carName: carLabelById(p.id),
+                amount: p.val,
+            })));
+            setShowAllocation(false);
+            setForm(f => ({ date: f.date, carName: '', amount: '', note: '', depositor: '' }));
+            setSelectedCars(new Set());
+            setAllocations({});
+            setCarSearch('');
+            await loadRows();
+        } catch (e: any) {
+            setError(e?.message || 'Failed to save.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
 
     const handleDelete = async (id: string) => {
         if (!client) return;
@@ -321,7 +371,18 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                                 <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
                                     <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                                     <div className="min-w-0">
-                                        <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
+                                        {kind === 'bank' && r.car_name ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
+                                                className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
+                                                title="View payment history for this car"
+                                            >
+                                                {r.car_name}
+                                            </button>
+                                        ) : (
+                                            <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
+                                        )}
                                     </div>
                                     <div className="text-slate-600 truncate">{note || '—'}</div>
                                     <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
@@ -336,6 +397,105 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                     </div>
                 )}
             </div>
+
+            {/* Allocation Modal (Bank, multi-car) */}
+            {showAllocation && (() => {
+                const ids = Array.from(selectedCars);
+                const totalAmt = parseFloat(form.amount) || 0;
+                const allocSum = ids.reduce((a, id) => a + (parseFloat(allocations[id] || '0') || 0), 0);
+                const diff = totalAmt - allocSum;
+                return (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => !saving && setShowAllocation(false)}>
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-4" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="text-sm font-black uppercase tracking-wider text-blue-700">Allocate Bank Deposit</div>
+                                <div className="text-xs font-bold text-slate-700">Total: € {totalAmt.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mb-3">Enter how much of the total goes to each car. Sum must equal € {totalAmt.toFixed(2)}.</div>
+                            <div className="space-y-2 max-h-80 overflow-auto">
+                                {ids.map(id => (
+                                    <div key={id} className="flex items-center gap-2">
+                                        <div className="flex-1 text-xs font-semibold text-slate-800 truncate">{carLabelById(id)}</div>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-xs text-slate-500">€</span>
+                                            <input
+                                                type="number" inputMode="decimal" step="0.01"
+                                                value={allocations[id] || ''}
+                                                onChange={e => setAllocations(a => ({ ...a, [id]: e.target.value }))}
+                                                className="w-28 rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-900 bg-white text-right"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className={`mt-3 text-[11px] font-bold ${Math.abs(diff) < 0.01 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                Allocated: € {allocSum.toFixed(2)} • Remaining: € {diff.toFixed(2)}
+                            </div>
+                            {error && <div className="text-[11px] font-semibold text-red-600 mt-2">{error}</div>}
+                            <div className="flex items-center justify-end gap-2 mt-4">
+                                <button type="button" disabled={saving} onClick={() => { setShowAllocation(false); setError(''); }} className="px-3 py-2 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200">Cancel</button>
+                                <button type="button" disabled={saving} onClick={confirmAllocation} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-white text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                    Confirm & Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Car Payment History Modal (Bank) */}
+            {historyCar && (() => {
+                const carRows = rows.filter(r =>
+                    (historyCar.id && r.source_sale_id === historyCar.id) ||
+                    (r.car_name && historyCar.name && r.car_name.toLowerCase() === historyCar.name.toLowerCase())
+                ).sort((a, b) => {
+                    const da = ((a as any)[dateField] || a.created_at || '');
+                    const db = ((b as any)[dateField] || b.created_at || '');
+                    return db.localeCompare(da);
+                });
+                const carTotal = carRows.reduce((s, r) => s + Number(r.amount || 0), 0);
+                return (
+                    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setHistoryCar(null)}>
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-4" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-wider text-blue-700">Payment History</div>
+                                    <div className="text-sm font-bold text-slate-900 truncate">{historyCar.name}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] uppercase text-slate-500 font-bold">Total Paid</div>
+                                    <div className="text-base font-black text-blue-700">€ {carTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                </div>
+                            </div>
+                            <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                <div className="grid grid-cols-[110px_1fr_120px] gap-2 px-3 py-2 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                    <div>Date</div><div>Note</div><div className="text-right">Amount (€)</div>
+                                </div>
+                                {carRows.length === 0 ? (
+                                    <div className="text-center text-slate-400 py-8 text-xs">No payments for this car yet.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100 max-h-80 overflow-auto">
+                                        {carRows.map(r => {
+                                            const dv = (r as any)[dateField] || r.created_at;
+                                            return (
+                                                <div key={r.id} className="grid grid-cols-[110px_1fr_120px] gap-2 px-3 py-2 text-xs items-center">
+                                                    <div className="text-slate-700 font-semibold">{dv ? new Date(dv).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                                                    <div className="text-slate-600 truncate">{r.description || r.note || '—'}</div>
+                                                    <div className="text-right font-black text-blue-700">€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex justify-end mt-3">
+                                <button type="button" onClick={() => setHistoryCar(null)} className="px-3 py-2 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };
