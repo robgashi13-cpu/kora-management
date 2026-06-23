@@ -10,6 +10,7 @@ type DepositRow = {
     amount: number;
     deposit_date: string | null;
     source_sale_id: string | null;
+    car_name: string | null;
     note: string | null;
     depositor_name?: string | null;
     receiver_name?: string | null;
@@ -35,7 +36,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [error, setError] = useState<string>('');
     const [form, setForm] = useState({
         date: todayISO(),
-        carId: '',
+        carName: '',
         amount: '',
         note: '',
         depositor: '',
@@ -92,7 +93,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                     id,
                     amount: amt,
                     deposit_date: form.date,
-                    source_sale_id: form.carId || null,
+                    car_name: form.carName || null,
                     note: form.note || null,
                     depositor_name: form.depositor || null,
                     receiver_name: userProfile || null,
@@ -102,21 +103,20 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const { error } = await client.from('cash_deposits').insert(row);
                 if (error) throw error;
             } else {
-                const sale = form.carId ? carById.get(form.carId) : undefined;
-                const descBase = form.note || (sale ? `Deposit for ${carLabel(sale)}` : 'Bank deposit');
+                const descBase = form.note || (form.carName ? `Deposit for ${form.carName}` : 'Bank deposit');
                 const row = {
                     id,
                     amount: amt,
                     date: form.date,
                     description: descBase,
                     category: 'deposit',
-                    source_sale_id: form.carId || null,
+                    car_name: form.carName || null,
                     last_edited_by: userProfile || null,
                 };
                 const { error } = await client.from('bank_transactions').insert(row);
                 if (error) throw error;
             }
-            setForm({ date: todayISO(), carId: '', amount: '', note: '', depositor: '' });
+            setForm({ date: todayISO(), carName: '', amount: '', note: '', depositor: '' });
             await loadRows();
         } catch (e: any) {
             setError(e?.message || 'Failed to save.');
@@ -141,15 +141,13 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         const q = search.trim().toLowerCase();
         if (!q) return rows;
         return rows.filter(r => {
-            const sale = r.source_sale_id ? carById.get(r.source_sale_id) : undefined;
             const blob = [
-                r.note, r.description, r.depositor_name, r.receiver_name,
-                sale?.brand, sale?.model, sale?.vin, sale?.plateNumber, sale?.buyerName,
+                r.note, r.description, r.depositor_name, r.receiver_name, r.car_name,
                 String(r.amount || ''),
             ].join(' ').toLowerCase();
             return blob.includes(q);
         });
-    }, [rows, search, carById]);
+    }, [rows, search]);
 
     const totalAmount = useMemo(() => filteredRows.reduce((sum, r) => sum + Number(r.amount || 0), 0), [filteredRows]);
 
@@ -170,13 +168,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                         <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
                     </label>
                     <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600 lg:col-span-2">
-                        For Car
-                        <select value={form.carId} onChange={e => setForm(f => ({ ...f, carId: e.target.value }))} className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white">
-                            <option value="">— Unlinked —</option>
-                            {carOptions.map(s => (
-                                <option key={s.id} value={s.id}>{carLabel(s)} {s.buyerName ? `• ${s.buyerName}` : ''}</option>
-                            ))}
-                        </select>
+                        Car Name
+                        <input value={form.carName} onChange={e => setForm(f => ({ ...f, carName: e.target.value }))} placeholder="e.g. BMW X5 2020" className="rounded-lg border border-slate-200 px-2.5 py-2 text-xs text-slate-900 bg-white" />
                     </label>
                     <label className="flex flex-col gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
                         Amount (€)
@@ -226,15 +219,13 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 ) : (
                     <div className="divide-y divide-slate-100">
                         {filteredRows.map(r => {
-                            const sale = r.source_sale_id ? carById.get(r.source_sale_id) : undefined;
                             const dateVal = (r as any)[dateField] || r.created_at;
                             const note = kind === 'cash' ? (r.note || r.depositor_name || '') : (r.description || '');
                             return (
                                 <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
                                     <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
                                     <div className="min-w-0">
-                                        <div className="font-bold text-slate-900 truncate">{carLabel(sale)}</div>
-                                        {sale?.buyerName && <div className="text-[10px] text-slate-500 truncate">Buyer: {sale.buyerName}</div>}
+                                        <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
                                     </div>
                                     <div className="text-slate-600 truncate">{note || '—'}</div>
                                     <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
