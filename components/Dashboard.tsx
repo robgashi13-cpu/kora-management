@@ -12,6 +12,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { createRoot } from 'react-dom/client';
+import { PDFDocument } from 'pdf-lib';
 import { zip } from 'fflate';
 import SaleModal from './SaleModal';
 import EditShitblerjeModal from './EditShitblerjeModal';
