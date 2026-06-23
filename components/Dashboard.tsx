@@ -6629,9 +6629,10 @@ export default function Dashboard() {
                                             container.remove();
                                             return blob;
                                         };
-                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[]) => {
-                                            const eligible = items.filter(s => (s.amountPaidBank || 0) > 0);
-                                            if (eligible.length === 0) { alert('No invoices with bank-paid amount in this group.'); return; }
+                                        const downloadGroupZip = async (groupKey: string, label: string, items: CarSale[], opts?: { bankOnly?: boolean }) => {
+                                            const bankOnly = opts?.bankOnly ?? true;
+                                            const eligible = bankOnly ? items.filter(s => (s.amountPaidBank || 0) > 0) : items;
+                                            if (eligible.length === 0) { alert(bankOnly ? 'No invoices with bank-paid amount in this group.' : 'No cars to download.'); return; }
                                             setZippingGroupKey(groupKey);
                                             try {
                                                 const files: Record<string, Uint8Array> = {};
@@ -6667,6 +6668,14 @@ export default function Dashboard() {
                                                 setZippingGroupKey(null);
                                             }
                                         };
+                                        const downloadAllInvoicesZip = async (mode: 'all' | 'active') => {
+                                            setShowAccountantPdfOptions(false);
+                                            const items = mode === 'active' ? newSales : allSalesForAccountant;
+                                            const label = mode === 'active' ? 'Sales_tu_ardh' : 'Libri_i_Shitblerjes_All';
+                                            const key = mode === 'active' ? 'all-new' : 'all-cars';
+                                            await downloadGroupZip(key, label, items, { bankOnly: false });
+                                        };
+
                                         const handleMarkAllDone = () => {
                                             const toComplete = allSalesForAccountant.filter(s => s.status !== 'New' && s.status !== 'Completed');
                                             if (toComplete.length === 0) return;
@@ -6707,15 +6716,24 @@ export default function Dashboard() {
                                                                 <Download className="w-3 h-3" /> Download PDF <ChevronDown className={`w-3 h-3 transition-transform ${showAccountantPdfOptions ? 'rotate-180' : ''}`} />
                                                             </button>
                                                             {showAccountantPdfOptions && (
-                                                                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[180px]">
+                                                                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden min-w-[240px]">
+                                                                    <div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 border-b border-slate-100">Summary Report</div>
                                                                     <button type="button" onClick={() => generateAccountantPdf('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
-                                                                        <Download className="w-3 h-3 text-slate-500" /> All Cars
+                                                                        <Download className="w-3 h-3 text-slate-500" /> All Cars (Report)
                                                                     </button>
                                                                     <button type="button" onClick={() => generateAccountantPdf('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100">
-                                                                        <Download className="w-3 h-3 text-blue-500" /> Only New (Sale)
+                                                                        <Download className="w-3 h-3 text-blue-500" /> Only New (Report)
+                                                                    </button>
+                                                                    <div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 border-y border-slate-100">Individual Invoice PDFs (ZIP)</div>
+                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('all')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                                                        {zippingGroupKey === 'all-cars' ? <Loader2 className="w-3 h-3 animate-spin text-emerald-600" /> : <Download className="w-3 h-3 text-emerald-600" />} All Cars (PDFs ZIP)
+                                                                    </button>
+                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100 disabled:opacity-50">
+                                                                        {zippingGroupKey === 'all-new' ? <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> : <Download className="w-3 h-3 text-blue-600" />} Only New (PDFs ZIP)
                                                                     </button>
                                                                 </div>
                                                             )}
+
                                                         </div>
                                                     </div>
                                                 </div>
