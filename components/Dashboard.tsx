@@ -4203,16 +4203,24 @@ export default function Dashboard() {
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
     const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON';
     const dotSummary = React.useMemo(() => {
-        let green = 0, blue = 0, none = 0;
+        let greenTotal = 0, blueTotal = 0, noDotTotal = 0;
         filteredSales.forEach(s => {
+            const vin = (s.vin || '').trim().toLowerCase();
             const k = isKoreaPaid(s);
             const b = isBankPaid(s);
-            if (k) green++;
-            if (b) blue++;
-            if (!k && !b) none++;
+            if (k) {
+                greenTotal += (vin ? koreaAmountByVin.get(vin) : 0) || koreaAmountByVin.get(`id:${s.id}`) || 0;
+            }
+            if (b) {
+                const items = (vin ? bankPaidByVin.get(vin) : undefined) || bankPaidByVin.get(`id:${s.id}`) || [];
+                blueTotal += items.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+            }
+            if (!k && !b) {
+                noDotTotal += s.costToBuy || 0;
+            }
         });
-        return { green, blue, none };
-    }, [filteredSales, isKoreaPaid, isBankPaid]);
+        return { greenTotal, blueTotal, noDotTotal };
+    }, [filteredSales, isKoreaPaid, isBankPaid, koreaAmountByVin, bankPaidByVin]);
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
