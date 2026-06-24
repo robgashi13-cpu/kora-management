@@ -5516,10 +5516,10 @@ export default function Dashboard() {
                                                         openInvoice={openInvoice}
                                                         onInlineUpdate={handleInlineUpdate}
                                                         onClick={() => {
-                                                            koreaPaid={isKoreaPaid(s)}
                                                             handleSaleInteraction(s);
                                                         }}
                                                         onDelete={handleDeleteSingle}
+                                                        koreaPaid={isKoreaPaid(s)}
                                                         theme={theme}
                                                     />
                                                 ))}
