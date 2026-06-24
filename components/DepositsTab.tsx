@@ -410,7 +410,10 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                                                             {kind === 'bank' && r.car_name ? (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
+                                                                    onClick={() => {
+                                                                        const linked = r.source_sale_id ? sales.find(s => s.id === r.source_sale_id) : null;
+                                                                        setHistoryCar({ id: r.source_sale_id || null, name: r.car_name!, vin: (linked?.vin || '').trim() || null });
+                                                                    }}
                                                                     className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
                                                                     title="View payment history for this car"
                                                                 >
