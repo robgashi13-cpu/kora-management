@@ -494,13 +494,22 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const targetVin = (historyCar.vin || '').trim().toLowerCase();
                 const vinBySaleId = new Map<string, string>();
                 sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
+                const norm = (v: any) => String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                const stripYear = (v: string) => v.replace(/\s*\b(19|20)\d{2}\b\s*$/, '').trim();
+                const targetLabelFull = norm(historyCar.name);
+                const targetLabelNoYear = stripYear(targetLabelFull);
                 const carRows = rows.filter(r => {
+                    // 1) Exact sale id match
+                    if (historyCar.id && r.source_sale_id === historyCar.id) return true;
+                    // 2) VIN match via linked sale
                     if (targetVin) {
                         const rowVin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
-                        return rowVin === targetVin;
+                        if (rowVin === targetVin) return true;
                     }
-                    // No VIN on the selected car — fall back to exact sale id match only (never name).
-                    return !!(historyCar.id && r.source_sale_id === historyCar.id);
+                    // 3) Fallback: match by car_name (brand+model+year, or without year)
+                    const rowLabel = norm((r as any).car_name);
+                    if (rowLabel && (rowLabel === targetLabelFull || stripYear(rowLabel) === targetLabelNoYear)) return true;
+                    return false;
                 }).sort((a, b) => {
                     const da = ((a as any)[dateField] || a.created_at || '');
                     const db = ((b as any)[dateField] || b.created_at || '');
