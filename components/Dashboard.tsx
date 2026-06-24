@@ -5342,6 +5342,7 @@ export default function Dashboard() {
                                                                             }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
+                                                                            koreaPaid={isKoreaPaid(s)}
                                                                             theme={theme}
                                                                         />
                                                                     ))}
@@ -5395,6 +5396,7 @@ export default function Dashboard() {
                                                                             handleSaleInteraction(s);
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
+                                                                        koreaPaid={isKoreaPaid(s)}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
                                                                         theme={theme}
                                                                     />
@@ -5472,6 +5474,7 @@ export default function Dashboard() {
                                                                                     onClick={() => {
                                                                                         handleSaleInteraction(s);
                                                                                     }}
+                                                                                    koreaPaid={isKoreaPaid(s)}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
                                                                                     theme={theme}
@@ -5513,6 +5516,7 @@ export default function Dashboard() {
                                                         openInvoice={openInvoice}
                                                         onInlineUpdate={handleInlineUpdate}
                                                         onClick={() => {
+                                                            koreaPaid={isKoreaPaid(s)}
                                                             handleSaleInteraction(s);
                                                         }}
                                                         onDelete={handleDeleteSingle}
