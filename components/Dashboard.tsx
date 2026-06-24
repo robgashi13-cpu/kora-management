@@ -1654,6 +1654,11 @@ export default function Dashboard() {
         }
         setUserProfile(normalizedProfile);
         persistUserProfile(normalizedProfile);
+        setShowProfileMenu(false);
+        performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
+        setShowPasswordModal(false);
+        setPasswordInput('');
+        setPendingProfile('');
     };
 
     // 🔒 Maintenance lock: kick non-admins that are already logged in
@@ -1668,14 +1673,6 @@ export default function Dashboard() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile]);
-
-    const _noop_after_maintenance = () => {
-        setShowProfileMenu(false);
-        performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
-        setShowPasswordModal(false);
-        setPasswordInput('');
-        setPendingProfile('');
-    };
 
 
 
