@@ -491,10 +491,17 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
 
             {/* Car Payment History Modal (Bank) */}
             {historyCar && (() => {
-                const carRows = rows.filter(r =>
-                    (historyCar.id && r.source_sale_id === historyCar.id) ||
-                    (r.car_name && historyCar.name && r.car_name.toLowerCase() === historyCar.name.toLowerCase())
-                ).sort((a, b) => {
+                const targetVin = (historyCar.vin || '').trim().toLowerCase();
+                const vinBySaleId = new Map<string, string>();
+                sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
+                const carRows = rows.filter(r => {
+                    if (targetVin) {
+                        const rowVin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
+                        return rowVin === targetVin;
+                    }
+                    // No VIN on the selected car — fall back to exact sale id match only (never name).
+                    return !!(historyCar.id && r.source_sale_id === historyCar.id);
+                }).sort((a, b) => {
                     const da = ((a as any)[dateField] || a.created_at || '');
                     const db = ((b as any)[dateField] || b.created_at || '');
                     return db.localeCompare(da);
