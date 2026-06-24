@@ -1654,6 +1654,22 @@ export default function Dashboard() {
         }
         setUserProfile(normalizedProfile);
         persistUserProfile(normalizedProfile);
+    };
+
+    // 🔒 Maintenance lock: kick non-admins that are already logged in
+    useEffect(() => {
+        const MAINTENANCE_UNTIL = new Date('2026-06-25T09:40:00Z').getTime();
+        if (Date.now() >= MAINTENANCE_UNTIL) return;
+        if (userProfile && userProfile !== ADMIN_PROFILE) {
+            const hoursLeft = Math.ceil((MAINTENANCE_UNTIL - Date.now()) / 3_600_000);
+            alert(`🔧 System is under maintenance. Access is restricted to Admin only for the next ~${hoursLeft}h.`);
+            setUserProfile('');
+            persistUserProfile(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userProfile]);
+
+    const _noop_after_maintenance = () => {
         setShowProfileMenu(false);
         performAutoSync(supabaseUrl, supabaseKey, normalizedProfile);
         setShowPasswordModal(false);
