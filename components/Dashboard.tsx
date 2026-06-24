@@ -218,7 +218,7 @@ function PdfDropdownMenu({ sale, openPdfDocument }: { sale: CarSale; openPdfDocu
     );
 }
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme, koreaPaid }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
