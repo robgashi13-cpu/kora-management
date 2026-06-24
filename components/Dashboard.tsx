@@ -2624,7 +2624,7 @@ export default function Dashboard() {
                     try {
                         const parsed = JSON.parse(persistedUiState) as {
                             view?: string;
-                            activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON';
+                            activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'AUTOSALLON_LIST';
                             searchTerm?: string;
                             sortBy?: string;
                             sortDir?: 'asc' | 'desc';
