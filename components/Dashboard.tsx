@@ -30,6 +30,7 @@ import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, 
 import DepositsTab from '@/components/DepositsTab';
 import MissingCashTab from '@/components/MissingCashTab';
 import AutosalloniListView from '@/components/AutosalloniListView';
+import ExpenseTrackerTab from '@/components/ExpenseTrackerTab';
 
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
