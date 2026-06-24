@@ -583,6 +583,7 @@ const navItems: NavItem[] = [
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
+    { id: 'AUTOSALLON_LIST', label: 'Lista Komplete', icon: Clipboard, view: 'dashboard', category: 'AUTOSALLON_LIST', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
     { id: 'PDF_LOGS', label: 'PDF Logs', icon: ScrollText, view: 'pdf_logs', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
