@@ -220,7 +220,7 @@ function PdfDropdownMenu({ sale, openPdfDocument }: { sale: CarSale; openPdfDocu
     );
 }
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme, koreaPaid, bankPaid, onBankClick }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme, koreaPaid, bankPaid, onBankClick, onKoreaClick }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
@@ -323,7 +323,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${!hasBankReceipt(s) ? 'text-red-600' : (isSoldRow ? 'text-slate-900' : 'hover:text-slate-700')}`}
                     title={`${s.brand} ${s.model}`}
                 >
-                    {koreaPaid && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 mr-1.5 align-middle" />}{bankPaid && <span role="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onBankClick && onBankClick(s); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 mr-1.5 align-middle cursor-pointer hover:scale-110 transition-transform" />}{s.brand} {s.model}
+                    {koreaPaid && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onKoreaClick && onKoreaClick(s); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 mr-1.5 align-middle cursor-pointer hover:scale-110 transition-transform" />}{bankPaid && <span role="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onBankClick && onBankClick(s); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 mr-1.5 align-middle cursor-pointer hover:scale-110 transition-transform" />}{s.brand} {s.model}
                 </button>
             </div>
 
@@ -926,6 +926,7 @@ export default function Dashboard() {
         return false;
     }, [bankPaidByVin]);
     const [bankHistorySale, setBankHistorySale] = useState<{ vin: string; name: string } | null>(null);
+    const [koreaHistorySale, setKoreaHistorySale] = useState<{ vin: string; name: string; saleId?: string } | null>(null);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -5242,7 +5243,7 @@ export default function Dashboard() {
                                                     className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer items-center"
                                                     onClick={() => handleSaleInteraction(sale)}
                                                 >
-                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                     <div className="text-sm text-slate-600 font-mono">{sale.plateNumber || '-'}</div>
                                                     <div className="truncate">
                                                         {sale.notes && sale.notes.startsWith('Link: ') ? (
@@ -5504,8 +5505,8 @@ export default function Dashboard() {
                                                                             }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
-                                                                            koreaPaid={isKoreaPaid(s)}
-                                                                            bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                                koreaPaid={isKoreaPaid(s)}
+                                                                                bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })} onKoreaClick={(sale: any) => setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id })}
                                                                             theme={theme}
                                                                         />
                                                                     ))}
@@ -5560,7 +5561,7 @@ export default function Dashboard() {
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
                                                                         koreaPaid={isKoreaPaid(s)}
-                                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })} onKoreaClick={(sale: any) => setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id })}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
                                                                         theme={theme}
                                                                     />
@@ -5639,7 +5640,7 @@ export default function Dashboard() {
                                                                                         handleSaleInteraction(s);
                                                                                     }}
                                                                                     koreaPaid={isKoreaPaid(s)}
-                                                                                    bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                                    bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })} onKoreaClick={(sale: any) => setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id })}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
                                                                                     theme={theme}
@@ -5685,7 +5686,7 @@ export default function Dashboard() {
                                                         }}
                                                         onDelete={handleDeleteSingle}
                                                         koreaPaid={isKoreaPaid(s)}
-                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })} onKoreaClick={(sale: any) => setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id })}
                                                         theme={theme}
                                                     />
                                                 ))}
@@ -5870,7 +5871,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     {sale.status === 'Inspection' ? (
                                                                                         <>
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
                                                                                             {sale.notes && sale.notes.startsWith('Link: ') && (
                                                                                                 <a
@@ -5888,7 +5889,7 @@ export default function Dashboard() {
                                                                                     <>
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'} · {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
@@ -6040,7 +6041,7 @@ export default function Dashboard() {
                                                                                         )}
                                                                                         <div className="flex-1 min-w-0">
                                                                                             <div className="flex justify-between items-start">
-                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-800'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-800'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                                     (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
                                                                                                         sale.status === 'Inspection' ? 'text-amber-700' :
@@ -6156,7 +6157,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
                                                                                         </div>
                                                                                         <span className={`status-badge text-[8px] whitespace-nowrap ${
@@ -6506,7 +6507,7 @@ export default function Dashboard() {
                                                                             {isSelected && <Check className="w-3 h-3" />}
                                                                         </div>
                                                                         <div className="min-w-0">
-                                                                            <p className="text-sm font-semibold overflow-wrap-anywhere"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewSaleModalItem(sale); }}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 align-middle mr-1.5" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 align-middle mr-1.5 cursor-pointer hover:scale-110 transition-transform" />}{sale.brand} {sale.model}</button></p>
+                                                                            <p className="text-sm font-semibold overflow-wrap-anywhere"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewSaleModalItem(sale); }}>{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 align-middle mr-1.5 cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 align-middle mr-1.5 cursor-pointer hover:scale-110 transition-transform" />}{sale.brand} {sale.model}</button></p>
                                                                             <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
                                                                         </div>
                                                                     </div>
@@ -6563,7 +6564,7 @@ export default function Dashboard() {
                                                                     onClick={() => handleSaleInteraction(sale)}
                                                                     className="grid w-full cursor-pointer grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                                                                 >
-                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                     <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                     <div className="text-right font-semibold text-slate-700">€{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                     <div className="text-right font-semibold text-emerald-700">€{(sale.amountPaidToKorea || 0).toLocaleString()}</div>
@@ -6674,7 +6675,7 @@ export default function Dashboard() {
                                                             return (
                                                             <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_110px_160px_160px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm items-center">
                                                                 <div>
-                                                                    <div className="font-semibold text-slate-900"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
+                                                                    <div className="font-semibold text-slate-900"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span role="button" title="Korea payments — click to view" onClick={(e) => { e.stopPropagation(); setKoreaHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}`, saleId: sale.id }); }} className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}{isBankPaid(sale) && <button type="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` }); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 align-middle cursor-pointer hover:scale-110 transition-transform" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                     <div className="text-[11px] text-slate-500">Sold €{(sale.soldPrice || 0).toLocaleString()} · Cost €{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                 </div>
                                                                 <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
@@ -7812,6 +7813,50 @@ export default function Dashboard() {
                             </div>
                             <div className="flex justify-end mt-3">
                                 <button type="button" onClick={() => setBankHistorySale(null)} className="px-3 py-2 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {koreaHistorySale && (() => {
+                const list = koreaItemsByVin.get(koreaHistorySale.vin) || (koreaHistorySale.saleId ? koreaItemsByVin.get(`id:${koreaHistorySale.saleId}`) : undefined) || [];
+                const total = list.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+                return (
+                    <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setKoreaHistorySale(null)}>
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-4" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Korea Payments</div>
+                                    <div className="text-sm font-bold text-slate-900 truncate">{koreaHistorySale.name}</div>
+                                    <div className="text-[10px] font-mono text-slate-500 mt-0.5">VIN: {koreaHistorySale.vin.toUpperCase()}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-[10px] uppercase text-slate-500 font-bold">Total Paid</div>
+                                    <div className="text-base font-black text-emerald-700">€ {total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                </div>
+                            </div>
+                            <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                <div className="grid grid-cols-[110px_1fr_90px_100px] gap-2 px-3 py-2 bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                                    <div>Date</div><div>Note</div><div className="text-right">Total</div><div className="text-right">Share</div>
+                                </div>
+                                {list.length === 0 ? (
+                                    <div className="text-center text-slate-400 py-8 text-xs">No Korea payments for this car yet.</div>
+                                ) : (
+                                    <div className="divide-y divide-slate-100 max-h-80 overflow-auto">
+                                        {list.map((r, idx) => (
+                                            <div key={idx} className="grid grid-cols-[110px_1fr_90px_100px] gap-2 px-3 py-2 text-xs items-center">
+                                                <div className="text-slate-700 font-semibold">{r.date ? new Date(r.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                                                <div className="text-slate-600 truncate">{r.carCount > 1 ? `${r.carCount} cars split` : 'Single car'}</div>
+                                                <div className="text-right font-bold text-slate-700">€ {Number(r.totalAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                                <div className="text-right font-black text-emerald-700">€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex justify-end mt-3">
+                                <button type="button" onClick={() => setKoreaHistorySale(null)} className="px-3 py-2 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200">Close</button>
                             </div>
                         </div>
                     </div>
