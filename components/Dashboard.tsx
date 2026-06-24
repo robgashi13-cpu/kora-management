@@ -6706,7 +6706,9 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {invoicesSubTab === 'payments_korea' ? (
+                                    {invoicesSubTab === 'expenses' ? (
+                                        <ExpenseTrackerTab supabaseUrl={supabaseUrl} supabaseKey={supabaseKey} />
+                                    ) : invoicesSubTab === 'payments_korea' ? (
                                         <PaymentsKoreaTab
                                             sales={sales.filter(s => s.status !== 'Archived')}
                                             supabaseUrl={supabaseUrl}
