@@ -29,6 +29,7 @@ import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
 import MissingCashTab from '@/components/MissingCashTab';
+import AutosalloniListView from '@/components/AutosalloniListView';
 
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
