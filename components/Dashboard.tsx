@@ -1638,12 +1638,18 @@ export default function Dashboard() {
                 const vinBySaleId = new Map<string, string>();
                 sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
                 const next = new Map<string, BankPayItem[]>();
+                const pushTo = (key: string, item: BankPayItem) => {
+                    const arr = next.get(key) || [];
+                    arr.push(item);
+                    next.set(key, arr);
+                };
                 (data || []).forEach((r: any) => {
-                    const vin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
-                    if (!vin) return;
-                    const arr = next.get(vin) || [];
-                    arr.push({ id: r.id, date: r.date || r.created_at || null, amount: Number(r.amount || 0), description: r.description || null });
-                    next.set(vin, arr);
+                    if (!r.source_sale_id) return;
+                    const item: BankPayItem = { id: r.id, date: r.date || r.created_at || null, amount: Number(r.amount || 0), description: r.description || null };
+                    const vin = vinBySaleId.get(r.source_sale_id) || '';
+                    // Key by sale id as a stable fallback, and by VIN so any sale sharing that VIN gets the dot
+                    pushTo(`id:${r.source_sale_id}`, item);
+                    if (vin) pushTo(vin, item);
                 });
                 // Sort each list by date desc
                 next.forEach(list => list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))));
