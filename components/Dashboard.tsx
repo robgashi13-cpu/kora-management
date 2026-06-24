@@ -5140,6 +5140,7 @@ export default function Dashboard() {
                                     sales={sales}
                                     koreaAmountByVin={koreaAmountByVin}
                                     bankPaidByVin={bankPaidByVin}
+                                    koreaRegisteredSaleIds={koreaRegisteredSaleIds}
                                     onOpenSale={(sale) => setViewSaleModalItem(sale)}
                                     onOpenKorea={() => setView('invoices')}
                                     onOpenBank={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
