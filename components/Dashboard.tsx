@@ -28,6 +28,8 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
+import MissingCashTab from '@/components/MissingCashTab';
+
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
