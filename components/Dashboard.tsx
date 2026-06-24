@@ -1595,11 +1595,13 @@ export default function Dashboard() {
                 const vinPresence = new Set<string>();
                 const vinAmount = new Map<string, number>();
                 const vinItems = new Map<string, KoreaPayItem[]>();
+                const regIds = new Set<string>();
                 (data || []).forEach((r: any) => {
                     const list: string[] = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
                     const amt = Number(r.total_amount || 0);
                     const share = list.length > 0 ? amt / list.length : 0;
                     list.forEach((id: string) => {
+                        regIds.add(id);
                         const sale = sales.find(x => x.id === id);
                         const vin = (sale?.vin || '').trim().toLowerCase();
                         const key = vin || `id:${id}`;
@@ -1614,6 +1616,7 @@ export default function Dashboard() {
                     setKoreaPaidVins(vinPresence);
                     setKoreaAmountByVin(vinAmount);
                     setKoreaItemsByVin(vinItems);
+                    setKoreaRegisteredSaleIds(regIds);
                 }
             } catch { /* ignore */ }
         };
