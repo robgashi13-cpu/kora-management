@@ -910,6 +910,13 @@ export default function Dashboard() {
         if (s.id && koreaPaidVins.has(`id:${s.id}`)) return true;
         return false;
     }, [koreaPaidVins]);
+    type BankPayItem = { id: string; date: string | null; amount: number; description: string | null };
+    const [bankPaidByVin, setBankPaidByVin] = useState<Map<string, BankPayItem[]>>(new Map());
+    const isBankPaid = React.useCallback((s: { vin?: string }) => {
+        const v = (s.vin || '').trim().toLowerCase();
+        return !!v && bankPaidByVin.has(v);
+    }, [bankPaidByVin]);
+    const [bankHistorySale, setBankHistorySale] = useState<{ vin: string; name: string } | null>(null);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
