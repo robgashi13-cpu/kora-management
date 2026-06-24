@@ -903,6 +903,13 @@ export default function Dashboard() {
     const [syncError, setSyncError] = useState<string>('');
     const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateMap>(sanitizePdfTemplateMap(defaultPdfTemplates()));
     const [isSavingPdfTemplates, setIsSavingPdfTemplates] = useState(false);
+    const [koreaPaidVins, setKoreaPaidVins] = useState<Set<string>>(new Set());
+    const isKoreaPaid = React.useCallback((s: { vin?: string; id?: string }) => {
+        const v = (s.vin || '').trim().toLowerCase();
+        if (v && koreaPaidVins.has(v)) return true;
+        if (s.id && koreaPaidVins.has(`id:${s.id}`)) return true;
+        return false;
+    }, [koreaPaidVins]);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
