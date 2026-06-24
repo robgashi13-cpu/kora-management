@@ -912,7 +912,10 @@ export default function Dashboard() {
         return false;
     }, [koreaPaidVins]);
     type BankPayItem = { id: string; date: string | null; amount: number; description: string | null };
+    type KoreaPayItem = { date: string | null; amount: number; totalAmount: number; carCount: number };
     const [bankPaidByVin, setBankPaidByVin] = useState<Map<string, BankPayItem[]>>(new Map());
+    const [koreaAmountByVin, setKoreaAmountByVin] = useState<Map<string, number>>(new Map());
+    const [koreaItemsByVin, setKoreaItemsByVin] = useState<Map<string, KoreaPayItem[]>>(new Map());
     const isBankPaid = React.useCallback((s: { vin?: string }) => {
         const v = (s.vin || '').trim().toLowerCase();
         return !!v && bankPaidByVin.has(v);
