@@ -919,9 +919,11 @@ export default function Dashboard() {
     const [koreaAmountByVin, setKoreaAmountByVin] = useState<Map<string, number>>(new Map());
     const [koreaRegisteredSaleIds, setKoreaRegisteredSaleIds] = useState<Set<string>>(new Set());
     const [koreaItemsByVin, setKoreaItemsByVin] = useState<Map<string, KoreaPayItem[]>>(new Map());
-    const isBankPaid = React.useCallback((s: { vin?: string }) => {
+    const isBankPaid = React.useCallback((s: { id?: string; vin?: string }) => {
         const v = (s.vin || '').trim().toLowerCase();
-        return !!v && bankPaidByVin.has(v);
+        if (v && bankPaidByVin.has(v)) return true;
+        if (s.id && bankPaidByVin.has(`id:${s.id}`)) return true;
+        return false;
     }, [bankPaidByVin]);
     const [bankHistorySale, setBankHistorySale] = useState<{ vin: string; name: string } | null>(null);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
