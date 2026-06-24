@@ -36,7 +36,8 @@ const AutosalloniListView: React.FC<Props> = ({ sales, koreaAmountByVin, bankPai
         filtered.forEach(s => {
             const vin = (s.vin || '').trim().toLowerCase();
             const green = vin ? (koreaAmountByVin.get(vin) || 0) : (koreaAmountByVin.get(`id:${s.id}`) || 0);
-            const blue = vin ? ((bankPaidByVin.get(vin) || []).reduce((a, r) => a + Number(r.amount || 0), 0)) : 0;
+            const bankItems = (vin ? bankPaidByVin.get(vin) : undefined) || bankPaidByVin.get(`id:${s.id}`) || [];
+            const blue = bankItems.reduce((a, r) => a + Number(r.amount || 0), 0);
             const sold = Number(s.soldPrice || 0);
             const row: Row = { sale: s, vin, green, blue, sold, balance: sold - (green + blue) };
             const isKoreaRegistered = koreaRegisteredSaleIds?.has(s.id) || false;
