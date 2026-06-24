@@ -1570,6 +1570,36 @@ export default function Dashboard() {
         };
     }, [supabaseUrl, supabaseKey]);
 
+    // Load cars that have been paid via Payments Korea (match by VIN)
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey) return;
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data, error } = await client.from('korea_payments').select('car_ids');
+                if (error || cancelled) return;
+                const ids = new Set<string>();
+                (data || []).forEach((r: any) => {
+                    const list = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
+                    list.forEach((id: string) => ids.add(id));
+                });
+                const next = new Set<string>();
+                ids.forEach(id => {
+                    const sale = sales.find(x => x.id === id);
+                    const vin = (sale?.vin || '').trim().toLowerCase();
+                    if (vin) next.add(vin); else next.add(`id:${id}`);
+                });
+                if (!cancelled) setKoreaPaidVins(next);
+            } catch { /* ignore */ }
+        };
+        load();
+        const interval = setInterval(load, 30000);
+        return () => { cancelled = true; clearInterval(interval); };
+    }, [supabaseUrl, supabaseKey, sales]);
+
+
+
 
     const handlePasswordSubmit = async () => {
         const result = await authenticateProfile(pendingProfile, passwordInput);
