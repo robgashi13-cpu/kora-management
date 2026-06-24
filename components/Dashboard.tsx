@@ -6652,6 +6652,7 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('payments_korea')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'payments_korea' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-700'}`}>Payments Korea</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('customs_payments')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'customs_payments' ? 'bg-amber-600 text-white' : 'bg-white text-amber-700'}`}>Pagesat e Doganes</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('missing_cash')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'missing_cash' ? 'bg-rose-600 text-white' : 'bg-white text-rose-700'}`}>Missing Cash</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('expenses')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'expenses' ? 'bg-fuchsia-600 text-white' : 'bg-white text-fuchsia-700'}`}>Expenses</button>
                                             </div>
 
                                         </div>
