@@ -6198,18 +6198,12 @@ export default function Dashboard() {
                                             </>
                                         )}
                                         {(activeCategory === 'SALES' || activeCategory === 'SHIPPED') && (
-                                            <div className="grid grid-cols-3 gap-px bg-slate-200 border-t border-slate-200 text-[11px] shrink-0">
-                                                <div className="bg-emerald-50 px-3 py-2 flex items-center justify-between">
-                                                    <span className="font-bold text-emerald-800 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200" />Green</span>
-                                                    <span className="font-black text-emerald-700">{dotSummary.green}</span>
-                                                </div>
-                                                <div className="bg-blue-50 px-3 py-2 flex items-center justify-between">
-                                                    <span className="font-bold text-blue-800 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200" />Blue</span>
-                                                    <span className="font-black text-blue-700">{dotSummary.blue}</span>
-                                                </div>
-                                                <div className="bg-slate-50 px-3 py-2 flex items-center justify-between">
-                                                    <span className="font-bold text-slate-700 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full border border-slate-300 bg-white" />No dots</span>
-                                                    <span className="font-black text-slate-900">{dotSummary.none}</span>
+                                            <div className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-[11px] flex flex-col gap-1 shrink-0">
+                                                <div className="font-semibold text-slate-600 text-[10px] uppercase tracking-wider">Dot totals</div>
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <span className="flex items-center gap-1.5 font-bold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" />Green: €{dotSummary.greenTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                    <span className="flex items-center gap-1.5 font-bold text-blue-700"><span className="w-2 h-2 rounded-full bg-blue-500" />Blue: €{dotSummary.blueTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                                    <span className="flex items-center gap-1.5 font-bold text-slate-700"><span className="w-2 h-2 rounded-full border border-slate-300 bg-white" />No dot: €{dotSummary.noDotTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                                 </div>
                                             </div>
                                         )}
