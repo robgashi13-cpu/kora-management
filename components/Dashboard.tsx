@@ -218,7 +218,7 @@ function PdfDropdownMenu({ sale, openPdfDocument }: { sale: CarSale; openPdfDocu
     );
 }
 
-const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme }: any) {
+const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, toggleSelection, isSelected, userProfile, canViewPrices, onClick, onDelete, onInlineUpdate, onRemoveFromGroup, theme, koreaPaid }: any) {
     const controls = useDragControls();
     const isAdmin = userProfile === ADMIN_PROFILE;
     const canEdit = isAdmin || s.soldBy === userProfile;
@@ -321,7 +321,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${!hasBankReceipt(s) ? 'text-red-600' : (isSoldRow ? 'text-slate-900' : 'hover:text-slate-700')}`}
                     title={`${s.brand} ${s.model}`}
                 >
-                    {s.brand} {s.model}
+                    {koreaPaid && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 mr-1.5 align-middle" />}{s.brand} {s.model}
                 </button>
             </div>
 
@@ -5342,6 +5342,7 @@ export default function Dashboard() {
                                                                             }}
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
+                                                                            koreaPaid={isKoreaPaid(s)}
                                                                             theme={theme}
                                                                         />
                                                                     ))}
@@ -5395,6 +5396,7 @@ export default function Dashboard() {
                                                                             handleSaleInteraction(s);
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
+                                                                        koreaPaid={isKoreaPaid(s)}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
                                                                         theme={theme}
                                                                     />
@@ -5472,6 +5474,7 @@ export default function Dashboard() {
                                                                                     onClick={() => {
                                                                                         handleSaleInteraction(s);
                                                                                     }}
+                                                                                    koreaPaid={isKoreaPaid(s)}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
                                                                                     theme={theme}
@@ -5516,6 +5519,7 @@ export default function Dashboard() {
                                                             handleSaleInteraction(s);
                                                         }}
                                                         onDelete={handleDeleteSingle}
+                                                        koreaPaid={isKoreaPaid(s)}
                                                         theme={theme}
                                                     />
                                                 ))}
