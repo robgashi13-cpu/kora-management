@@ -6108,7 +6108,7 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                            </> ) : view === 'custom_dashboard' ? (
+                            </>)) : view === 'custom_dashboard' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     {!activeCustomDashboard ? (
                                         <div className="text-center py-16">
