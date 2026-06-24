@@ -1644,6 +1644,14 @@ export default function Dashboard() {
         }
 
         const normalizedProfile = normalizeProfileName(pendingProfile);
+        // 🔒 Maintenance lock — admins only for 24h from activation
+        const MAINTENANCE_UNTIL = new Date('2026-06-25T09:40:00Z').getTime();
+        if (Date.now() < MAINTENANCE_UNTIL && normalizedProfile !== ADMIN_PROFILE) {
+            const hoursLeft = Math.ceil((MAINTENANCE_UNTIL - Date.now()) / 3_600_000);
+            alert(`🔧 System is under maintenance. Access is restricted to Admin only for the next ~${hoursLeft}h. Please try again later.`);
+            setPasswordInput('');
+            return;
+        }
         setUserProfile(normalizedProfile);
         persistUserProfile(normalizedProfile);
         setShowProfileMenu(false);
