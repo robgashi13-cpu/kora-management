@@ -1678,7 +1678,24 @@ export default function Dashboard() {
                         const noYear = label.replace(/\s*\b(19|20)\d{2}\b\s*$/, '').trim();
                         matched = salesByLabel.get(noYear);
                     }
-                    (matched || []).forEach(s => {
+                    if (!matched || matched.length === 0) return;
+                    // Disambiguate by buyer name appearing in the description
+                    if (matched.length > 1) {
+                        const desc = norm(r.description);
+                        const byBuyer = matched.filter(s => {
+                            const bn = norm((s as any).buyerName);
+                            if (!bn || !desc) return false;
+                            // Match if any whole word of buyer name appears in description
+                            return bn.split(' ').filter(w => w.length >= 3).some(w => desc.includes(w));
+                        });
+                        if (byBuyer.length === 1) {
+                            matched = byBuyer;
+                        } else {
+                            // Still ambiguous — skip to avoid mixing cars with same brand/model/year
+                            return;
+                        }
+                    }
+                    matched.forEach(s => {
                         pushTo(`id:${s.id}`, item);
                         const v = vinBySaleId.get(s.id);
                         if (v) pushTo(v, item);

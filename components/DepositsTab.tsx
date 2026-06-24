@@ -46,7 +46,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [selectedCars, setSelectedCars] = useState<Set<string>>(new Set());
     const [allocations, setAllocations] = useState<Record<string, string>>({});
     const [showAllocation, setShowAllocation] = useState(false);
-    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string; vin: string | null } | null>(null);
+    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string; vin: string | null; buyerHint: string | null } | null>(null);
 
     const client = useMemo(() => {
         if (!supabaseUrl || !supabaseKey) return null;
@@ -412,7 +412,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                                                                     type="button"
                                                                     onClick={() => {
                                                                         const linked = r.source_sale_id ? sales.find(s => s.id === r.source_sale_id) : null;
-                                                                        setHistoryCar({ id: r.source_sale_id || null, name: r.car_name!, vin: (linked?.vin || '').trim() || null });
+                                                                        setHistoryCar({ id: r.source_sale_id || null, name: r.car_name!, vin: (linked?.vin || '').trim() || null, buyerHint: (linked?.buyerName || r.description || '').toString() || null });
                                                                     }}
                                                                     className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
                                                                     title="View payment history for this car"
@@ -498,6 +498,8 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const stripYear = (v: string) => v.replace(/\s*\b(19|20)\d{2}\b\s*$/, '').trim();
                 const targetLabelFull = norm(historyCar.name);
                 const targetLabelNoYear = stripYear(targetLabelFull);
+                const hint = norm(historyCar.buyerHint);
+                const hintWords = hint.split(' ').filter(w => w.length >= 3);
                 const carRows = rows.filter(r => {
                     // 1) Exact sale id match — strongest
                     if (historyCar.id && r.source_sale_id === historyCar.id) return true;
@@ -509,7 +511,14 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                     // 3) Name fallback ONLY when the row has no source_sale_id at all
                     if (!r.source_sale_id) {
                         const rowLabel = norm((r as any).car_name);
-                        if (rowLabel && (rowLabel === targetLabelFull || stripYear(rowLabel) === targetLabelNoYear)) return true;
+                        const labelMatches = !!rowLabel && (rowLabel === targetLabelFull || stripYear(rowLabel) === targetLabelNoYear);
+                        if (!labelMatches) return false;
+                        // If a buyer hint exists, require the description to mention it (whole-word, normalized)
+                        if (hintWords.length > 0) {
+                            const desc = norm((r as any).description);
+                            return hintWords.some(w => desc.includes(w));
+                        }
+                        return true;
                     }
                     return false;
                 }).sort((a, b) => {
