@@ -926,6 +926,7 @@ export default function Dashboard() {
         return false;
     }, [bankPaidByVin]);
     const [bankHistorySale, setBankHistorySale] = useState<{ vin: string; name: string } | null>(null);
+    const [koreaHistorySale, setKoreaHistorySale] = useState<{ vin: string; name: string } | null>(null);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
