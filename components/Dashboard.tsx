@@ -926,17 +926,6 @@ export default function Dashboard() {
         return false;
     }, [bankPaidByVin]);
     const [bankHistorySale, setBankHistorySale] = useState<{ vin: string; name: string } | null>(null);
-    const dotSummary = React.useMemo(() => {
-        let green = 0, blue = 0, none = 0;
-        filteredSales.forEach(s => {
-            const k = isKoreaPaid(s);
-            const b = isBankPaid(s);
-            if (k) green++;
-            if (b) blue++;
-            if (!k && !b) none++;
-        });
-        return { green, blue, none };
-    }, [filteredSales, isKoreaPaid, isBankPaid]);
     const [profileAvatars, setProfileAvatars] = useState<Record<string, string>>({});
     const [showMoveMenu, setShowMoveMenu] = useState(false);
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
