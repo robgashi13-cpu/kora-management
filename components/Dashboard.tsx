@@ -29,6 +29,7 @@ import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
 import MissingCashTab from '@/components/MissingCashTab';
+import AutosalloniListView from '@/components/AutosalloniListView';
 
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
@@ -583,6 +584,7 @@ const navItems: NavItem[] = [
     { id: 'BALANCE_DUE', label: 'Balance Due', icon: CircleDollarSign, view: 'balance_due', adminOnly: true },
     { id: 'TRANSPORTI', label: 'Transporti', icon: Truck, view: 'transport', adminOnly: true },
     { id: 'AUTOSALLON', label: 'Autosalloni', icon: RefreshCw, view: 'dashboard', category: 'AUTOSALLON', adminOnly: true },
+    { id: 'AUTOSALLON_LIST', label: 'Lista Komplete', icon: Clipboard, view: 'dashboard', category: 'AUTOSALLON_LIST', adminOnly: true },
     { id: 'RECORD', label: 'Records', icon: History, view: 'record', adminOnly: true },
     { id: 'PDF_LOGS', label: 'PDF Logs', icon: ScrollText, view: 'pdf_logs', allowedProfiles: ['Robert', 'SHYQA'] },
     { id: 'PDF', label: 'PDF', icon: FileText, view: 'pdf_list' },
@@ -820,7 +822,7 @@ export default function Dashboard() {
         }
     }, [isAdmin, sortBy]);
 
-    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON'>('SALES');
+    const [activeCategory, setActiveCategory] = useState<SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'AUTOSALLON_LIST'>('SALES');
     // mechanicRecords state moved above its useEffect
     const [showMechanicForm, setShowMechanicForm] = useState(false);
     const [showCarDocumentsForm, setShowCarDocumentsForm] = useState(false);
@@ -911,7 +913,10 @@ export default function Dashboard() {
         return false;
     }, [koreaPaidVins]);
     type BankPayItem = { id: string; date: string | null; amount: number; description: string | null };
+    type KoreaPayItem = { date: string | null; amount: number; totalAmount: number; carCount: number };
     const [bankPaidByVin, setBankPaidByVin] = useState<Map<string, BankPayItem[]>>(new Map());
+    const [koreaAmountByVin, setKoreaAmountByVin] = useState<Map<string, number>>(new Map());
+    const [koreaItemsByVin, setKoreaItemsByVin] = useState<Map<string, KoreaPayItem[]>>(new Map());
     const isBankPaid = React.useCallback((s: { vin?: string }) => {
         const v = (s.vin || '').trim().toLowerCase();
         return !!v && bankPaidByVin.has(v);
@@ -1584,20 +1589,31 @@ export default function Dashboard() {
         const load = async () => {
             try {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data, error } = await client.from('korea_payments').select('car_ids');
+                const { data, error } = await client.from('korea_payments').select('car_ids,total_amount,payment_date');
                 if (error || cancelled) return;
-                const ids = new Set<string>();
+                const vinPresence = new Set<string>();
+                const vinAmount = new Map<string, number>();
+                const vinItems = new Map<string, KoreaPayItem[]>();
                 (data || []).forEach((r: any) => {
-                    const list = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
-                    list.forEach((id: string) => ids.add(id));
+                    const list: string[] = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
+                    const amt = Number(r.total_amount || 0);
+                    const share = list.length > 0 ? amt / list.length : 0;
+                    list.forEach((id: string) => {
+                        const sale = sales.find(x => x.id === id);
+                        const vin = (sale?.vin || '').trim().toLowerCase();
+                        const key = vin || `id:${id}`;
+                        vinPresence.add(key);
+                        vinAmount.set(key, (vinAmount.get(key) || 0) + share);
+                        const arr = vinItems.get(key) || [];
+                        arr.push({ date: r.payment_date || null, amount: share, totalAmount: amt, carCount: list.length });
+                        vinItems.set(key, arr);
+                    });
                 });
-                const next = new Set<string>();
-                ids.forEach(id => {
-                    const sale = sales.find(x => x.id === id);
-                    const vin = (sale?.vin || '').trim().toLowerCase();
-                    if (vin) next.add(vin); else next.add(`id:${id}`);
-                });
-                if (!cancelled) setKoreaPaidVins(next);
+                if (!cancelled) {
+                    setKoreaPaidVins(vinPresence);
+                    setKoreaAmountByVin(vinAmount);
+                    setKoreaItemsByVin(vinItems);
+                }
             } catch { /* ignore */ }
         };
         load();
@@ -1644,6 +1660,14 @@ export default function Dashboard() {
         }
 
         const normalizedProfile = normalizeProfileName(pendingProfile);
+        // 🔒 Maintenance lock — admins only for 24h from activation
+        const MAINTENANCE_UNTIL = new Date('2026-06-25T09:40:00Z').getTime();
+        if (Date.now() < MAINTENANCE_UNTIL && normalizedProfile !== ADMIN_PROFILE) {
+            const hoursLeft = Math.ceil((MAINTENANCE_UNTIL - Date.now()) / 3_600_000);
+            alert(`🔧 System is under maintenance. Access is restricted to Admin only for the next ~${hoursLeft}h. Please try again later.`);
+            setPasswordInput('');
+            return;
+        }
         setUserProfile(normalizedProfile);
         persistUserProfile(normalizedProfile);
         setShowProfileMenu(false);
@@ -1652,6 +1676,19 @@ export default function Dashboard() {
         setPasswordInput('');
         setPendingProfile('');
     };
+
+    // 🔒 Maintenance lock: kick non-admins that are already logged in
+    useEffect(() => {
+        const MAINTENANCE_UNTIL = new Date('2026-06-25T09:40:00Z').getTime();
+        if (Date.now() >= MAINTENANCE_UNTIL) return;
+        if (userProfile && userProfile !== ADMIN_PROFILE) {
+            const hoursLeft = Math.ceil((MAINTENANCE_UNTIL - Date.now()) / 3_600_000);
+            alert(`🔧 System is under maintenance. Access is restricted to Admin only for the next ~${hoursLeft}h.`);
+            setUserProfile('');
+            persistUserProfile(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userProfile]);
 
 
 
@@ -2602,7 +2639,7 @@ export default function Dashboard() {
                     try {
                         const parsed = JSON.parse(persistedUiState) as {
                             view?: string;
-                            activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON';
+                            activeCategory?: SaleStatus | 'SALES' | 'INVOICES' | 'SHIPPED' | 'INSPECTIONS' | 'AUTOSALLON' | 'AUTOSALLON_LIST';
                             searchTerm?: string;
                             sortBy?: string;
                             sortDir?: 'asc' | 'desc';
@@ -4352,7 +4389,7 @@ export default function Dashboard() {
                 if (restrictedTabs && !restrictedTabs.has(item.id)) return false;
                 return true;
             });
-            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
+            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON', 'AUTOSALLON_LIST'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES', 'MECHANIC', 'ANKESA_DOGANA'].includes(item.id));
             const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD', 'PDF_LOGS'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
@@ -5093,7 +5130,16 @@ export default function Dashboard() {
                                         </div>
                                     )}
                                 </div>
-                            ) : view === 'dashboard' ? (<>
+                            ) : view === 'dashboard' ? (activeCategory === 'AUTOSALLON_LIST' ? (
+                                <AutosalloniListView
+                                    sales={sales}
+                                    koreaAmountByVin={koreaAmountByVin}
+                                    bankPaidByVin={bankPaidByVin}
+                                    onOpenSale={(sale) => setViewSaleModalItem(sale)}
+                                    onOpenKorea={() => setView('invoices')}
+                                    onOpenBank={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                />
+                            ) : (<>
                                 {/* Inspection tab: simplified list */}
                                 {activeCategory === 'INSPECTIONS' ? (
                                     <div
@@ -6062,7 +6108,7 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                            </> ) : view === 'custom_dashboard' ? (
+                            </>)) : view === 'custom_dashboard' ? (
                                 <div className="flex-1 overflow-auto scroll-container p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-5 md:pb-5 bg-white rounded-none md:rounded-2xl border-y border-slate-100 md:border shadow-sm mx-0 my-2">
                                     {!activeCustomDashboard ? (
                                         <div className="text-center py-16">
