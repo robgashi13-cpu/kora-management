@@ -5080,7 +5080,7 @@ export default function Dashboard() {
                                                     className="grid grid-cols-[1fr_200px_1fr] gap-4 px-5 py-3 hover:bg-slate-50 transition-colors cursor-pointer items-center"
                                                     onClick={() => handleSaleInteraction(sale)}
                                                 >
-                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                    <div className={`font-semibold text-sm truncate ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                     <div className="text-sm text-slate-600 font-mono">{sale.plateNumber || '-'}</div>
                                                     <div className="truncate">
                                                         {sale.notes && sale.notes.startsWith('Link: ') ? (
@@ -5691,7 +5691,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     {sale.status === 'Inspection' ? (
                                                                                         <>
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[10px] text-slate-500 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'}</div>
                                                                                             {sale.notes && sale.notes.startsWith('Link: ') && (
                                                                                                 <a
@@ -5709,7 +5709,7 @@ export default function Dashboard() {
                                                                                     <>
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-[-0.01em] ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate mt-0.5 font-medium">{sale.plateNumber || 'No plate'} · {sale.vin || 'No VIN'}</div>
                                                                                         </div>
                                                                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700 bg-emerald-50' :
@@ -5861,7 +5861,7 @@ export default function Dashboard() {
                                                                                         )}
                                                                                         <div className="flex-1 min-w-0">
                                                                                             <div className="flex justify-between items-start">
-                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-800'}`}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                                                <div className={`font-bold text-[13px] truncate pr-2 ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-800'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded whitespace-nowrap ${sale.status === 'Completed' ? 'text-emerald-700' :
                                                                                                     (sale.status === 'New' || sale.status === 'In Progress' || sale.status === 'Autosallon') ? 'text-slate-700' :
                                                                                                         sale.status === 'Inspection' ? 'text-amber-700' :
@@ -5977,7 +5977,7 @@ export default function Dashboard() {
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex justify-between items-start gap-2">
                                                                                         <div className="min-w-0">
-                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                                            <div className={`font-bold text-[12px] sm:text-[13px] leading-tight truncate tracking-tight ${!hasBankReceipt(sale) ? 'text-red-600' : 'text-slate-900'}`}><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                                             <div className="text-[9px] sm:text-[10px] text-slate-400 truncate font-medium mt-0.5">{sale.plateNumber || 'No plate'} · {sale.year} · {(sale.km || 0).toLocaleString()} km</div>
                                                                                         </div>
                                                                                         <span className={`status-badge text-[8px] whitespace-nowrap ${
@@ -6317,7 +6317,7 @@ export default function Dashboard() {
                                                                             {isSelected && <Check className="w-3 h-3" />}
                                                                         </div>
                                                                         <div className="min-w-0">
-                                                                            <p className="text-sm font-semibold overflow-wrap-anywhere"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewSaleModalItem(sale); }}>{sale.brand} {sale.model}</button></p>
+                                                                            <p className="text-sm font-semibold overflow-wrap-anywhere"><button type="button" className="hover:underline text-blue-700 hover:text-blue-900 transition-colors text-left" onClick={(e) => { e.stopPropagation(); setViewSaleModalItem(sale); }}>{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 align-middle mr-1.5" />}{sale.brand} {sale.model}</button></p>
                                                                             <p className="text-[11px] text-slate-500 mt-0.5 overflow-wrap-anywhere">VIN {sale.vin || '-'} · Stock {sale.plateNumber || '-'}</p>
                                                                         </div>
                                                                     </div>
@@ -6374,7 +6374,7 @@ export default function Dashboard() {
                                                                     onClick={() => handleSaleInteraction(sale)}
                                                                     className="grid w-full cursor-pointer grid-cols-[1.1fr_1fr_90px_90px_120px_130px_130px_150px] gap-2 px-3 sm:px-4 py-2.5 text-left text-xs sm:text-sm hover:bg-slate-50 transition-colors"
                                                                 >
-                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                    <div className="font-semibold text-slate-900 truncate underline-offset-2 hover:underline"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                     <div className="font-mono text-slate-600 truncate">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
                                                                     <div className="text-right font-semibold text-slate-700">€{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                     <div className="text-right font-semibold text-emerald-700">€{(sale.amountPaidToKorea || 0).toLocaleString()}</div>
@@ -6485,7 +6485,7 @@ export default function Dashboard() {
                                                             return (
                                                             <div key={sale.id} data-list-row="true" className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr_110px_160px_160px] gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm items-center">
                                                                 <div>
-                                                                    <div className="font-semibold text-slate-900">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 align-middle" />}{sale.brand} {sale.model}</div>
+                                                                    <div className="font-semibold text-slate-900"><div className="flex items-center gap-1.5">{isKoreaPaid(sale) && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle" />}<span className="truncate">{sale.brand} {sale.model}</span></div></div>
                                                                     <div className="text-[11px] text-slate-500">Sold €{(sale.soldPrice || 0).toLocaleString()} · Cost €{(sale.costToBuy || 0).toLocaleString()}</div>
                                                                 </div>
                                                                 <div className="font-mono text-slate-600">{sale.plateNumber || '-'} / {(sale.vin || '-').slice(-8)}</div>
