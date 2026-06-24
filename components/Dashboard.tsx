@@ -1585,20 +1585,31 @@ export default function Dashboard() {
         const load = async () => {
             try {
                 const client = createSupabaseClient(supabaseUrl, supabaseKey);
-                const { data, error } = await client.from('korea_payments').select('car_ids');
+                const { data, error } = await client.from('korea_payments').select('car_ids,total_amount,payment_date');
                 if (error || cancelled) return;
-                const ids = new Set<string>();
+                const vinPresence = new Set<string>();
+                const vinAmount = new Map<string, number>();
+                const vinItems = new Map<string, KoreaPayItem[]>();
                 (data || []).forEach((r: any) => {
-                    const list = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
-                    list.forEach((id: string) => ids.add(id));
+                    const list: string[] = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
+                    const amt = Number(r.total_amount || 0);
+                    const share = list.length > 0 ? amt / list.length : 0;
+                    list.forEach((id: string) => {
+                        const sale = sales.find(x => x.id === id);
+                        const vin = (sale?.vin || '').trim().toLowerCase();
+                        const key = vin || `id:${id}`;
+                        vinPresence.add(key);
+                        vinAmount.set(key, (vinAmount.get(key) || 0) + share);
+                        const arr = vinItems.get(key) || [];
+                        arr.push({ date: r.payment_date || null, amount: share, totalAmount: amt, carCount: list.length });
+                        vinItems.set(key, arr);
+                    });
                 });
-                const next = new Set<string>();
-                ids.forEach(id => {
-                    const sale = sales.find(x => x.id === id);
-                    const vin = (sale?.vin || '').trim().toLowerCase();
-                    if (vin) next.add(vin); else next.add(`id:${id}`);
-                });
-                if (!cancelled) setKoreaPaidVins(next);
+                if (!cancelled) {
+                    setKoreaPaidVins(vinPresence);
+                    setKoreaAmountByVin(vinAmount);
+                    setKoreaItemsByVin(vinItems);
+                }
             } catch { /* ignore */ }
         };
         load();
