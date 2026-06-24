@@ -5130,7 +5130,16 @@ export default function Dashboard() {
                                         </div>
                                     )}
                                 </div>
-                            ) : view === 'dashboard' ? (<>
+                            ) : view === 'dashboard' ? (activeCategory === 'AUTOSALLON_LIST' ? (
+                                <AutosalloniListView
+                                    sales={sales}
+                                    koreaAmountByVin={koreaAmountByVin}
+                                    bankPaidByVin={bankPaidByVin}
+                                    onOpenSale={(sale) => setViewSaleModalItem(sale)}
+                                    onOpenKorea={() => setView('invoices')}
+                                    onOpenBank={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                />
+                            ) : (<>
                                 {/* Inspection tab: simplified list */}
                                 {activeCategory === 'INSPECTIONS' ? (
                                     <div
