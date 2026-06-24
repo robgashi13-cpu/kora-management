@@ -179,6 +179,7 @@ const PaymentsKoreaTab: React.FC<Props> = ({ sales, supabaseUrl, supabaseKey, us
                             <div className="text-center text-slate-400 py-6 text-xs">No cars found.</div>
                         ) : filteredCars.map(s => {
                             const checked = selected.has(s.id);
+                            const paid = isCarPaid(s);
                             return (
                                 <button
                                     key={s.id}
@@ -189,10 +190,13 @@ const PaymentsKoreaTab: React.FC<Props> = ({ sales, supabaseUrl, supabaseKey, us
                                     <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${checked ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 bg-white'}`}>
                                         {checked && <Check className="w-3 h-3" />}
                                     </span>
+                                    {paid && (
+                                        <span title="Paid to Korea" className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 flex-shrink-0" />
+                                    )}
                                     <span className="flex-1 min-w-0">
                                         <span className="block font-bold text-slate-900 truncate">{carLabel(s)}</span>
                                         <span className="block text-[10px] text-slate-500 truncate">
-                                            {s.status}{s.buyerName ? ` • ${s.buyerName}` : ''}
+                                            {s.status}{s.buyerName ? ` • ${s.buyerName}` : ''}{paid ? ' • Paid Korea' : ''}
                                         </span>
                                     </span>
                                 </button>
