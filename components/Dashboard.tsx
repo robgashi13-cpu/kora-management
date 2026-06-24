@@ -5378,7 +5378,7 @@ export default function Dashboard() {
                                                                             onDelete={handleDeleteSingle}
                                                                             onRemoveFromGroup={handleRemoveFromGroup}
                                                                             koreaPaid={isKoreaPaid(s)}
-                                                                            bankPaid={isBankPaid(s)} onBankClick={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                            bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
                                                                             theme={theme}
                                                                         />
                                                                     ))}
@@ -5433,7 +5433,7 @@ export default function Dashboard() {
                                                                         }}
                                                                         onDelete={handleDeleteSingle}
                                                                         koreaPaid={isKoreaPaid(s)}
-                                                                        bankPaid={isBankPaid(s)} onBankClick={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
                                                                         onRemoveFromGroup={handleRemoveFromGroup}
                                                                         theme={theme}
                                                                     />
@@ -5512,7 +5512,7 @@ export default function Dashboard() {
                                                                                         handleSaleInteraction(s);
                                                                                     }}
                                                                                     koreaPaid={isKoreaPaid(s)}
-                                                                                    bankPaid={isBankPaid(s)} onBankClick={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                                                    bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
                                                                                     onDelete={handleDeleteSingle}
                                                                                     onRemoveFromGroup={handleRemoveFromGroup}
                                                                                     theme={theme}
@@ -5558,7 +5558,7 @@ export default function Dashboard() {
                                                         }}
                                                         onDelete={handleDeleteSingle}
                                                         koreaPaid={isKoreaPaid(s)}
-                                                        bankPaid={isBankPaid(s)} onBankClick={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
+                                                        bankPaid={isBankPaid(s)} onBankClick={(sale: any) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
                                                         theme={theme}
                                                     />
                                                 ))}
