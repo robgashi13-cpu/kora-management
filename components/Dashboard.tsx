@@ -1605,6 +1605,34 @@ export default function Dashboard() {
         return () => { cancelled = true; clearInterval(interval); };
     }, [supabaseUrl, supabaseKey, sales]);
 
+    // Load bank deposit payments and bucket by VIN via sale.id
+    useEffect(() => {
+        if (!supabaseUrl || !supabaseKey) return;
+        let cancelled = false;
+        const load = async () => {
+            try {
+                const client = createSupabaseClient(supabaseUrl, supabaseKey);
+                const { data, error } = await client.from('bank_transactions').select('id,date,description,amount,source_sale_id,car_name,created_at');
+                if (error || cancelled) return;
+                const vinBySaleId = new Map<string, string>();
+                sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
+                const next = new Map<string, BankPayItem[]>();
+                (data || []).forEach((r: any) => {
+                    const vin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
+                    if (!vin) return;
+                    const arr = next.get(vin) || [];
+                    arr.push({ id: r.id, date: r.date || r.created_at || null, amount: Number(r.amount || 0), description: r.description || null });
+                    next.set(vin, arr);
+                });
+                // Sort each list by date desc
+                next.forEach(list => list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))));
+                if (!cancelled) setBankPaidByVin(next);
+            } catch { /* ignore */ }
+        };
+        load();
+        const interval = setInterval(load, 30000);
+        return () => { cancelled = true; clearInterval(interval); };
+    }, [supabaseUrl, supabaseKey, sales]);
 
 
 
