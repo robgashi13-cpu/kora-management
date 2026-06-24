@@ -30,6 +30,7 @@ import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, 
 import DepositsTab from '@/components/DepositsTab';
 import MissingCashTab from '@/components/MissingCashTab';
 import AutosalloniListView from '@/components/AutosalloniListView';
+import ExpenseTrackerTab from '@/components/ExpenseTrackerTab';
 
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
@@ -890,7 +891,7 @@ export default function Dashboard() {
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
-    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant' | 'cash_deposit' | 'bank_deposit' | 'payments_korea' | 'customs_payments' | 'missing_cash'>('create');
+    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant' | 'cash_deposit' | 'bank_deposit' | 'payments_korea' | 'customs_payments' | 'missing_cash' | 'expenses'>('create');
     const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
     const [invoiceHistoryMonthFilter, setInvoiceHistoryMonthFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -916,6 +917,7 @@ export default function Dashboard() {
     type KoreaPayItem = { date: string | null; amount: number; totalAmount: number; carCount: number };
     const [bankPaidByVin, setBankPaidByVin] = useState<Map<string, BankPayItem[]>>(new Map());
     const [koreaAmountByVin, setKoreaAmountByVin] = useState<Map<string, number>>(new Map());
+    const [koreaRegisteredSaleIds, setKoreaRegisteredSaleIds] = useState<Set<string>>(new Set());
     const [koreaItemsByVin, setKoreaItemsByVin] = useState<Map<string, KoreaPayItem[]>>(new Map());
     const isBankPaid = React.useCallback((s: { vin?: string }) => {
         const v = (s.vin || '').trim().toLowerCase();
@@ -1594,11 +1596,13 @@ export default function Dashboard() {
                 const vinPresence = new Set<string>();
                 const vinAmount = new Map<string, number>();
                 const vinItems = new Map<string, KoreaPayItem[]>();
+                const regIds = new Set<string>();
                 (data || []).forEach((r: any) => {
                     const list: string[] = Array.isArray(r.car_ids) ? r.car_ids : (r.car_ids ? (() => { try { return JSON.parse(r.car_ids); } catch { return []; } })() : []);
                     const amt = Number(r.total_amount || 0);
                     const share = list.length > 0 ? amt / list.length : 0;
                     list.forEach((id: string) => {
+                        regIds.add(id);
                         const sale = sales.find(x => x.id === id);
                         const vin = (sale?.vin || '').trim().toLowerCase();
                         const key = vin || `id:${id}`;
@@ -1613,6 +1617,7 @@ export default function Dashboard() {
                     setKoreaPaidVins(vinPresence);
                     setKoreaAmountByVin(vinAmount);
                     setKoreaItemsByVin(vinItems);
+                    setKoreaRegisteredSaleIds(regIds);
                 }
             } catch { /* ignore */ }
         };
@@ -5135,6 +5140,7 @@ export default function Dashboard() {
                                     sales={sales}
                                     koreaAmountByVin={koreaAmountByVin}
                                     bankPaidByVin={bankPaidByVin}
+                                    koreaRegisteredSaleIds={koreaRegisteredSaleIds}
                                     onOpenSale={(sale) => setViewSaleModalItem(sale)}
                                     onOpenKorea={() => setView('invoices')}
                                     onOpenBank={(sale) => setBankHistorySale({ vin: (sale.vin || '').trim().toLowerCase(), name: `${sale.brand} ${sale.model}` })}
@@ -6635,7 +6641,7 @@ export default function Dashboard() {
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-2 sm:grid-cols-8' : 'grid-cols-2 sm:grid-cols-7'}`}>
+                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-2 sm:grid-cols-9' : 'grid-cols-2 sm:grid-cols-8'}`}>
                                                 <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                                 {(isAdmin || isFullSalesViewer(userProfile)) && (
@@ -6646,6 +6652,7 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('payments_korea')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'payments_korea' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-700'}`}>Payments Korea</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('customs_payments')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'customs_payments' ? 'bg-amber-600 text-white' : 'bg-white text-amber-700'}`}>Pagesat e Doganes</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('missing_cash')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'missing_cash' ? 'bg-rose-600 text-white' : 'bg-white text-rose-700'}`}>Missing Cash</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('expenses')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'expenses' ? 'bg-fuchsia-600 text-white' : 'bg-white text-fuchsia-700'}`}>Expenses</button>
                                             </div>
 
                                         </div>
@@ -6699,7 +6706,9 @@ export default function Dashboard() {
                                         )}
                                     </div>
 
-                                    {invoicesSubTab === 'payments_korea' ? (
+                                    {invoicesSubTab === 'expenses' ? (
+                                        <ExpenseTrackerTab supabaseUrl={supabaseUrl} supabaseKey={supabaseKey} />
+                                    ) : invoicesSubTab === 'payments_korea' ? (
                                         <PaymentsKoreaTab
                                             sales={sales.filter(s => s.status !== 'Archived')}
                                             supabaseUrl={supabaseUrl}

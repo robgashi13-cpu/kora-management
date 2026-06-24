@@ -6,6 +6,7 @@ type Props = {
     sales: CarSale[];
     koreaAmountByVin: Map<string, number>;
     bankPaidByVin: Map<string, { id: string; date: string | null; amount: number; description: string | null }[]>;
+    koreaRegisteredSaleIds?: Set<string>;
     onOpenSale: (sale: CarSale) => void;
     onOpenKorea: (sale: CarSale) => void;
     onOpenBank: (sale: CarSale) => void;
@@ -22,7 +23,7 @@ type Row = {
     balance: number;
 };
 
-const AutosalloniListView: React.FC<Props> = ({ sales, koreaAmountByVin, bankPaidByVin, onOpenSale, onOpenKorea, onOpenBank }) => {
+const AutosalloniListView: React.FC<Props> = ({ sales, koreaAmountByVin, bankPaidByVin, koreaRegisteredSaleIds, onOpenSale, onOpenKorea, onOpenBank }) => {
     const [search, setSearch] = useState('');
 
     const { registered, others, totalsReg, totalsOther } = useMemo(() => {
@@ -34,11 +35,12 @@ const AutosalloniListView: React.FC<Props> = ({ sales, koreaAmountByVin, bankPai
         const oth: Row[] = [];
         filtered.forEach(s => {
             const vin = (s.vin || '').trim().toLowerCase();
-            const green = vin ? (koreaAmountByVin.get(vin) || 0) : 0;
+            const green = vin ? (koreaAmountByVin.get(vin) || 0) : (koreaAmountByVin.get(`id:${s.id}`) || 0);
             const blue = vin ? ((bankPaidByVin.get(vin) || []).reduce((a, r) => a + Number(r.amount || 0), 0)) : 0;
             const sold = Number(s.soldPrice || 0);
             const row: Row = { sale: s, vin, green, blue, sold, balance: sold - (green + blue) };
-            if (green > 0 || blue > 0) reg.push(row); else oth.push(row);
+            const isKoreaRegistered = koreaRegisteredSaleIds?.has(s.id) || false;
+            if (green > 0 || blue > 0 || isKoreaRegistered) reg.push(row); else oth.push(row);
         });
 
         const sum = (arr: Row[]) => arr.reduce((acc, r) => ({
