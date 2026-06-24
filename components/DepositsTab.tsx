@@ -90,6 +90,15 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
             if (next.has(id)) next.delete(id); else next.add(id);
             return next;
         });
+        // VIN multi-match notification: when a car is added, check if its VIN matches >1 sale
+        const picked = sales.find(s => s.id === id);
+        const vin = (picked?.vin || '').trim();
+        if (vin) {
+            const sameVin = sales.filter(s => (s.vin || '').trim() === vin);
+            if (sameVin.length > 1) {
+                setError(`⚠ VIN ${vin} is on ${sameVin.length} cars: ${sameVin.map(s => `${s.brand} ${s.model}`).join(', ')}. Verify before saving.`);
+            }
+        }
     };
 
     const selectedCarsLabel = useMemo(() => {
@@ -100,6 +109,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         });
         return labels.join(' | ');
     }, [selectedCars, sales]);
+
 
     const carLabelById = (id: string) => {
         const s = sales.find(x => x.id === id);
