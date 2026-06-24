@@ -321,7 +321,7 @@ const SortableSaleItem = React.memo(function SortableSaleItem({ s, openInvoice, 
                     className={`inline-flex items-center min-w-0 max-w-full truncate whitespace-nowrap text-left leading-tight transition-colors text-[11px] xl:text-xs ${!hasBankReceipt(s) ? 'text-red-600' : (isSoldRow ? 'text-slate-900' : 'hover:text-slate-700')}`}
                     title={`${s.brand} ${s.model}`}
                 >
-                    {koreaPaid && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 mr-1.5 align-middle" />}{s.brand} {s.model}
+                    {koreaPaid && <span title="Paid Korea" className="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 mr-1.5 align-middle" />}{bankPaid && <span role="button" title="Bank deposit payments — click to view" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onBankClick && onBankClick(s); }} className="inline-block w-2 h-2 rounded-full bg-blue-500 ring-2 ring-blue-200 shrink-0 mr-1.5 align-middle cursor-pointer hover:scale-110 transition-transform" />}{s.brand} {s.model}
                 </button>
             </div>
 
