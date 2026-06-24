@@ -46,7 +46,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
     const [selectedCars, setSelectedCars] = useState<Set<string>>(new Set());
     const [allocations, setAllocations] = useState<Record<string, string>>({});
     const [showAllocation, setShowAllocation] = useState(false);
-    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string } | null>(null);
+    const [historyCar, setHistoryCar] = useState<{ id: string | null; name: string; vin: string | null } | null>(null);
 
     const client = useMemo(() => {
         if (!supabaseUrl || !supabaseKey) return null;
@@ -410,7 +410,10 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                                                             {kind === 'bank' && r.car_name ? (
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
+                                                                    onClick={() => {
+                                                                        const linked = r.source_sale_id ? sales.find(s => s.id === r.source_sale_id) : null;
+                                                                        setHistoryCar({ id: r.source_sale_id || null, name: r.car_name!, vin: (linked?.vin || '').trim() || null });
+                                                                    }}
                                                                     className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
                                                                     title="View payment history for this car"
                                                                 >
@@ -488,10 +491,17 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
 
             {/* Car Payment History Modal (Bank) */}
             {historyCar && (() => {
-                const carRows = rows.filter(r =>
-                    (historyCar.id && r.source_sale_id === historyCar.id) ||
-                    (r.car_name && historyCar.name && r.car_name.toLowerCase() === historyCar.name.toLowerCase())
-                ).sort((a, b) => {
+                const targetVin = (historyCar.vin || '').trim().toLowerCase();
+                const vinBySaleId = new Map<string, string>();
+                sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
+                const carRows = rows.filter(r => {
+                    if (targetVin) {
+                        const rowVin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
+                        return rowVin === targetVin;
+                    }
+                    // No VIN on the selected car — fall back to exact sale id match only (never name).
+                    return !!(historyCar.id && r.source_sale_id === historyCar.id);
+                }).sort((a, b) => {
                     const da = ((a as any)[dateField] || a.created_at || '');
                     const db = ((b as any)[dateField] || b.created_at || '');
                     return db.localeCompare(da);
