@@ -5694,7 +5694,7 @@ export default function Dashboard() {
 
                                     </div>
                                     {(activeCategory === 'SALES' || activeCategory === 'SHIPPED') && (
-                                        <div className="border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] md:text-xs flex flex-wrap items-center justify-between gap-2 sticky bottom-0 z-10">
+                                        <div className="border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] md:text-xs flex flex-wrap items-center justify-between gap-2 sticky bottom-0 z-10 min-w-full">
                                             <div className="flex items-center gap-4 flex-wrap">
                                                 <span className="font-semibold text-slate-600">Dot totals:</span>
                                                 <span className="flex items-center gap-1.5 font-bold text-emerald-700"><span className="w-2 h-2 rounded-full bg-emerald-500" />Green: €{dotSummary.greenTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
