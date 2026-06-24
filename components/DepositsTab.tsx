@@ -90,6 +90,15 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
             if (next.has(id)) next.delete(id); else next.add(id);
             return next;
         });
+        // VIN multi-match notification: when a car is added, check if its VIN matches >1 sale
+        const picked = sales.find(s => s.id === id);
+        const vin = (picked?.vin || '').trim();
+        if (vin) {
+            const sameVin = sales.filter(s => (s.vin || '').trim() === vin);
+            if (sameVin.length > 1) {
+                setError(`⚠ VIN ${vin} is on ${sameVin.length} cars: ${sameVin.map(s => `${s.brand} ${s.model}`).join(', ')}. Verify before saving.`);
+            }
+        }
     };
 
     const selectedCarsLabel = useMemo(() => {
@@ -100,6 +109,7 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
         });
         return labels.join(' | ');
     }, [selectedCars, sales]);
+
 
     const carLabelById = (id: string) => {
         const s = sales.find(x => x.id === id);
@@ -362,41 +372,73 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                     <div className="text-center text-slate-500 py-10 text-xs flex items-center justify-center gap-2"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…</div>
                 ) : filteredRows.length === 0 ? (
                     <div className="text-center text-slate-400 py-12 text-xs">No deposits yet.</div>
-                ) : (
-                    <div className="divide-y divide-slate-100">
-                        {filteredRows.map(r => {
-                            const dateVal = (r as any)[dateField] || r.created_at;
-                            const note = kind === 'cash' ? (r.note || r.depositor_name || '') : (r.description || '');
-                            return (
-                                <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
-                                    <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
-                                    <div className="min-w-0">
-                                        {kind === 'bank' && r.car_name ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
-                                                className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
-                                                title="View payment history for this car"
-                                            >
-                                                {r.car_name}
-                                            </button>
-                                        ) : (
-                                            <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
-                                        )}
+                ) : (() => {
+                    // Group entries by 6-month bucket (H1 Jan–Jun, H2 Jul–Dec)
+                    const groups = new Map<string, DepositRow[]>();
+                    filteredRows.forEach(r => {
+                        const dateVal = (r as any)[dateField] || r.created_at;
+                        const d = dateVal ? new Date(dateVal) : null;
+                        let key = 'Undated';
+                        if (d && !isNaN(d.getTime())) {
+                            const y = d.getFullYear();
+                            const half = d.getMonth() < 6 ? 'H1 (Jan–Jun)' : 'H2 (Jul–Dec)';
+                            key = `${y} • ${half}`;
+                        }
+                        if (!groups.has(key)) groups.set(key, []);
+                        groups.get(key)!.push(r);
+                    });
+                    const sortedKeys = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+                    return (
+                        <div>
+                            {sortedKeys.map(key => {
+                                const grp = groups.get(key)!;
+                                const grpTotal = grp.reduce((s, r) => s + Number(r.amount || 0), 0);
+                                return (
+                                    <div key={key}>
+                                        <div className={`flex items-center justify-between px-3 py-1.5 ${accent.bg} border-y ${accent.border} text-[10px] font-black uppercase tracking-[0.14em] ${accent.text}`}>
+                                            <span>{key} • {grp.length} entries</span>
+                                            <span>€ {grpTotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="divide-y divide-slate-100">
+                                            {grp.map(r => {
+                                                const dateVal = (r as any)[dateField] || r.created_at;
+                                                const note = kind === 'cash' ? (r.note || r.depositor_name || '') : (r.description || '');
+                                                return (
+                                                    <div key={r.id} className="grid grid-cols-1 md:grid-cols-[110px_1.4fr_1fr_120px_60px] gap-2 md:gap-3 px-3 py-2.5 text-xs items-center">
+                                                        <div className="text-slate-700 font-semibold">{dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                                                        <div className="min-w-0">
+                                                            {kind === 'bank' && r.car_name ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setHistoryCar({ id: r.source_sale_id || null, name: r.car_name! })}
+                                                                    className="font-bold text-blue-700 hover:text-blue-900 hover:underline truncate text-left w-full"
+                                                                    title="View payment history for this car"
+                                                                >
+                                                                    {r.car_name}
+                                                                </button>
+                                                            ) : (
+                                                                <div className="font-bold text-slate-900 truncate">{r.car_name || '—'}</div>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-slate-600 truncate">{note || '—'}</div>
+                                                        <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                                        <div className="flex md:justify-end">
+                                                            <button type="button" onClick={() => handleDelete(r.id)} className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
-                                    <div className="text-slate-600 truncate">{note || '—'}</div>
-                                    <div className={`text-right font-black ${accent.text}`}>€ {Number(r.amount || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-                                    <div className="flex md:justify-end">
-                                        <button type="button" onClick={() => handleDelete(r.id)} className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Delete">
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </div>
+
 
             {/* Allocation Modal (Bank, multi-car) */}
             {showAllocation && (() => {

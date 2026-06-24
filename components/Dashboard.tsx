@@ -28,6 +28,8 @@ import { useResizableColumns } from './useResizableColumns';
 import { processImportedData } from '@/services/openaiService';
 import { createSupabaseClient, reassignProfileAndDelete, syncSalesWithSupabase, syncTransactionsWithSupabase } from '@/services/supabaseService';
 import DepositsTab from '@/components/DepositsTab';
+import MissingCashTab from '@/components/MissingCashTab';
+
 import CurrentCashTab from '@/components/CurrentCashTab';
 import PaymentsKoreaTab from '@/components/PaymentsKoreaTab';
 import { verifyAdminPassword, authenticateProfile } from '@/services/adminAuth';
@@ -886,7 +888,7 @@ export default function Dashboard() {
     } | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [invoiceHistory, setInvoiceHistory] = useState<InvoiceHistoryEntry[]>([]);
-    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant' | 'cash_deposit' | 'bank_deposit' | 'payments_korea' | 'customs_payments'>('create');
+    const [invoicesSubTab, setInvoicesSubTab] = useState<'create' | 'history' | 'accountant' | 'cash_deposit' | 'bank_deposit' | 'payments_korea' | 'customs_payments' | 'missing_cash'>('create');
     const [invoiceHistorySearch, setInvoiceHistorySearch] = useState('');
     const [invoiceHistoryMonthFilter, setInvoiceHistoryMonthFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
@@ -6507,7 +6509,7 @@ export default function Dashboard() {
                                         <div className="min-w-0">
                                             <h2 className="text-lg md:text-2xl font-black text-slate-900 tracking-tight">{view === 'pdf_list' ? 'PDF' : 'Invoices'}</h2>
                                             <p className="text-[11px] md:text-xs text-slate-500 mt-0.5 leading-relaxed">All sold cars grouped like Sold tab. Download includes only rows with bank paid amount.</p>
-                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-2 sm:grid-cols-7' : 'grid-cols-2 sm:grid-cols-6'}`}>
+                                            <div className={`mt-2 grid w-full rounded-xl border border-slate-200 overflow-hidden sm:inline-grid sm:w-auto ${(isAdmin || isFullSalesViewer(userProfile)) ? 'grid-cols-2 sm:grid-cols-8' : 'grid-cols-2 sm:grid-cols-7'}`}>
                                                 <button type="button" onClick={() => setInvoicesSubTab('create')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'create' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>Create</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('history')} className={`px-3 py-2 text-xs font-semibold text-center ${invoicesSubTab === 'history' ? 'bg-slate-900 text-white' : 'bg-white text-slate-700'}`}>History</button>
                                                 {(isAdmin || isFullSalesViewer(userProfile)) && (
@@ -6517,7 +6519,9 @@ export default function Dashboard() {
                                                 <button type="button" onClick={() => setInvoicesSubTab('bank_deposit')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'bank_deposit' ? 'bg-blue-600 text-white' : 'bg-white text-blue-700'}`}>Bank Deposit</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('payments_korea')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'payments_korea' ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-700'}`}>Payments Korea</button>
                                                 <button type="button" onClick={() => setInvoicesSubTab('customs_payments')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'customs_payments' ? 'bg-amber-600 text-white' : 'bg-white text-amber-700'}`}>Pagesat e Doganes</button>
+                                                <button type="button" onClick={() => setInvoicesSubTab('missing_cash')} className={`px-3 py-2 text-xs font-semibold text-center whitespace-nowrap ${invoicesSubTab === 'missing_cash' ? 'bg-rose-600 text-white' : 'bg-white text-rose-700'}`}>Missing Cash</button>
                                             </div>
+
                                         </div>
                                         {view === 'invoices' && invoicesSubTab === 'create' && (
                                             <div className="flex flex-wrap items-center gap-1.5" aria-label="Invoice mobile action bar">
@@ -6576,6 +6580,12 @@ export default function Dashboard() {
                                             supabaseKey={supabaseKey}
                                             userProfile={userProfile || ''}
                                         />
+                                    ) : invoicesSubTab === 'missing_cash' ? (
+                                        <MissingCashTab
+                                            sales={sales}
+                                            supabaseUrl={supabaseUrl}
+                                            supabaseKey={supabaseKey}
+                                        />
                                     ) : invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' || invoicesSubTab === 'customs_payments' ? (
                                         <DepositsTab
                                             kind={invoicesSubTab === 'cash_deposit' ? 'cash' : invoicesSubTab === 'bank_deposit' ? 'bank' : 'customs'}
@@ -6584,6 +6594,7 @@ export default function Dashboard() {
                                             supabaseKey={supabaseKey}
                                             userProfile={userProfile || ''}
                                         />
+
                                     ) : invoicesSubTab === 'accountant' ? (() => {
                                         // Sales (New) on top, rest grouped by month
                                         const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled' && s.status !== 'Archived');
