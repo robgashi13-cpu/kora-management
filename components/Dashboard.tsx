@@ -4202,6 +4202,17 @@ export default function Dashboard() {
     const totalServices = filteredSales.reduce((acc, s) => acc + (s.servicesCost ?? 30.51), 0);
     const totalProfit = filteredSales.reduce((acc, s) => acc + calculateProfit(s), 0);
     const groupingEnabled = activeCategory === 'SALES' || activeCategory === 'SHIPPED' || activeCategory === 'AUTOSALLON';
+    const dotSummary = React.useMemo(() => {
+        let green = 0, blue = 0, none = 0;
+        filteredSales.forEach(s => {
+            const k = isKoreaPaid(s);
+            const b = isBankPaid(s);
+            if (k) green++;
+            if (b) blue++;
+            if (!k && !b) none++;
+        });
+        return { green, blue, none };
+    }, [filteredSales, isKoreaPaid, isBankPaid]);
 
     const groupedSales = React.useMemo(() => {
         const groups: Record<string, CarSale[]> = {};
