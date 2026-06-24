@@ -4374,7 +4374,7 @@ export default function Dashboard() {
                 if (restrictedTabs && !restrictedTabs.has(item.id)) return false;
                 return true;
             });
-            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON'].includes(item.id));
+            const salesGroupItems = mainNavItems.filter((item) => ['SALES', 'SHIPPED', 'AUTOSALLON', 'AUTOSALLON_LIST'].includes(item.id));
             const operationsGroupItems = mainNavItems.filter((item) => ['INSPECTIONS', 'INVOICES', 'MECHANIC', 'ANKESA_DOGANA'].includes(item.id));
             const financeControlGroupItems = mainNavItems.filter((item) => ['BALANCE_DUE', 'TRANSPORTI', 'RECORD', 'PDF_LOGS'].includes(item.id));
             const pdfNavItem = mainNavItems.find((item) => item.id === 'PDF');
