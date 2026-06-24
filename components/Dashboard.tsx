@@ -1639,19 +1639,50 @@ export default function Dashboard() {
                 if (error || cancelled) return;
                 const vinBySaleId = new Map<string, string>();
                 sales.forEach(s => { if (s.id && s.vin) vinBySaleId.set(s.id, String(s.vin).trim().toLowerCase()); });
+                // Index sales by normalized "brand model year" for fallback matching when source_sale_id is missing
+                const norm = (v: any) => String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                const salesByLabel = new Map<string, typeof sales>();
+                sales.forEach(s => {
+                    const candidates = [
+                        norm(`${s.brand} ${s.model} ${s.year || ''}`),
+                        norm(`${s.brand} ${s.model}`),
+                    ];
+                    candidates.forEach(k => {
+                        if (!k) return;
+                        const arr = salesByLabel.get(k) || [];
+                        arr.push(s);
+                        salesByLabel.set(k, arr);
+                    });
+                });
                 const next = new Map<string, BankPayItem[]>();
                 const pushTo = (key: string, item: BankPayItem) => {
                     const arr = next.get(key) || [];
+                    if (arr.some(x => x.id === item.id)) return; // dedupe
                     arr.push(item);
                     next.set(key, arr);
                 };
                 (data || []).forEach((r: any) => {
-                    if (!r.source_sale_id) return;
                     const item: BankPayItem = { id: r.id, date: r.date || r.created_at || null, amount: Number(r.amount || 0), description: r.description || null };
-                    const vin = vinBySaleId.get(r.source_sale_id) || '';
-                    // Key by sale id as a stable fallback, and by VIN so any sale sharing that VIN gets the dot
-                    pushTo(`id:${r.source_sale_id}`, item);
-                    if (vin) pushTo(vin, item);
+                    if (r.source_sale_id) {
+                        pushTo(`id:${r.source_sale_id}`, item);
+                        const vin = vinBySaleId.get(r.source_sale_id) || '';
+                        if (vin) pushTo(vin, item);
+                        return;
+                    }
+                    // Fallback: match by car_name against sales (brand + model + year)
+                    const label = norm(r.car_name);
+                    if (!label) return;
+                    let matched = salesByLabel.get(label);
+                    if (!matched || matched.length === 0) {
+                        // Try without year
+                        const noYear = label.replace(/\s*\b(19|20)\d{2}\b\s*$/, '').trim();
+                        matched = salesByLabel.get(noYear);
+                    }
+                    (matched || []).forEach(s => {
+                        pushTo(`id:${s.id}`, item);
+                        const v = vinBySaleId.get(s.id);
+                        if (v) pushTo(v, item);
+                    });
                 });
                 // Sort each list by date desc
                 next.forEach(list => list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))));
