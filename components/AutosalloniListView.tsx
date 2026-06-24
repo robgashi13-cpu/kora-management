@@ -6,6 +6,7 @@ type Props = {
     sales: CarSale[];
     koreaAmountByVin: Map<string, number>;
     bankPaidByVin: Map<string, { id: string; date: string | null; amount: number; description: string | null }[]>;
+    koreaRegisteredSaleIds?: Set<string>;
     onOpenSale: (sale: CarSale) => void;
     onOpenKorea: (sale: CarSale) => void;
     onOpenBank: (sale: CarSale) => void;
