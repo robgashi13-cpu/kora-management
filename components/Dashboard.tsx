@@ -6580,6 +6580,12 @@ export default function Dashboard() {
                                             supabaseKey={supabaseKey}
                                             userProfile={userProfile || ''}
                                         />
+                                    ) : invoicesSubTab === 'missing_cash' ? (
+                                        <MissingCashTab
+                                            sales={sales}
+                                            supabaseUrl={supabaseUrl}
+                                            supabaseKey={supabaseKey}
+                                        />
                                     ) : invoicesSubTab === 'cash_deposit' || invoicesSubTab === 'bank_deposit' || invoicesSubTab === 'customs_payments' ? (
                                         <DepositsTab
                                             kind={invoicesSubTab === 'cash_deposit' ? 'cash' : invoicesSubTab === 'bank_deposit' ? 'bank' : 'customs'}
@@ -6588,6 +6594,7 @@ export default function Dashboard() {
                                             supabaseKey={supabaseKey}
                                             userProfile={userProfile || ''}
                                         />
+
                                     ) : invoicesSubTab === 'accountant' ? (() => {
                                         // Sales (New) on top, rest grouped by month
                                         const allSalesForAccountant = sales.filter(s => s.status !== 'Cancelled' && s.status !== 'Archived');
