@@ -7820,7 +7820,7 @@ export default function Dashboard() {
             })()}
 
             {koreaHistorySale && (() => {
-                const list = koreaItemsByVin.get(koreaHistorySale.vin) || [];
+                const list = koreaItemsByVin.get(koreaHistorySale.vin) || (koreaHistorySale.saleId ? koreaItemsByVin.get(`id:${koreaHistorySale.saleId}`) : undefined) || [];
                 const total = list.reduce((sum, r) => sum + Number(r.amount || 0), 0);
                 return (
                     <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setKoreaHistorySale(null)}>
