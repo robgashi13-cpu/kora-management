@@ -40,6 +40,23 @@ const PaymentsKoreaTab: React.FC<Props> = ({ sales, supabaseUrl, supabaseKey, us
 
     const eligibleCars = useMemo(() => sales, [sales]);
 
+    const paidVins = useMemo(() => {
+        const vinSet = new Set<string>();
+        const idSet = new Set<string>();
+        rows.forEach(r => (r.car_ids || []).forEach(id => idSet.add(id)));
+        idSet.forEach(id => {
+            const s = sales.find(x => x.id === id);
+            const v = (s?.vin || '').trim().toLowerCase();
+            if (v) vinSet.add(v);
+        });
+        return vinSet;
+    }, [rows, sales]);
+
+    const isCarPaid = (s: CarSale) => {
+        const v = (s.vin || '').trim().toLowerCase();
+        return v ? paidVins.has(v) : false;
+    };
+
     const filteredCars = useMemo(() => {
         const q = search.trim().toLowerCase();
         if (!q) return eligibleCars;
