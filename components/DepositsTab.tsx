@@ -499,16 +499,18 @@ const DepositsTab: React.FC<Props> = ({ kind, sales, supabaseUrl, supabaseKey, u
                 const targetLabelFull = norm(historyCar.name);
                 const targetLabelNoYear = stripYear(targetLabelFull);
                 const carRows = rows.filter(r => {
-                    // 1) Exact sale id match
+                    // 1) Exact sale id match — strongest
                     if (historyCar.id && r.source_sale_id === historyCar.id) return true;
-                    // 2) VIN match via linked sale
-                    if (targetVin) {
-                        const rowVin = r.source_sale_id ? (vinBySaleId.get(r.source_sale_id) || '') : '';
+                    // 2) VIN match via linked sale — only when the row IS linked to a sale
+                    if (r.source_sale_id && targetVin) {
+                        const rowVin = vinBySaleId.get(r.source_sale_id) || '';
                         if (rowVin === targetVin) return true;
                     }
-                    // 3) Fallback: match by car_name (brand+model+year, or without year)
-                    const rowLabel = norm((r as any).car_name);
-                    if (rowLabel && (rowLabel === targetLabelFull || stripYear(rowLabel) === targetLabelNoYear)) return true;
+                    // 3) Name fallback ONLY when the row has no source_sale_id at all
+                    if (!r.source_sale_id) {
+                        const rowLabel = norm((r as any).car_name);
+                        if (rowLabel && (rowLabel === targetLabelFull || stripYear(rowLabel) === targetLabelNoYear)) return true;
+                    }
                     return false;
                 }).sort((a, b) => {
                     const da = ((a as any)[dateField] || a.created_at || '');
