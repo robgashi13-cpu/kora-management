@@ -7293,6 +7293,10 @@ export default function Dashboard() {
                                                                     <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllInvoicesZip('active')} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 border-t border-slate-100 disabled:opacity-50">
                                                                         {zippingGroupKey === 'all-new' ? <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> : <Download className="w-3 h-3 text-blue-600" />} Only New (PDFs ZIP)
                                                                     </button>
+                                                                    <div className="px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 border-y border-slate-100">Excel Export</div>
+                                                                    <button type="button" disabled={zippingGroupKey !== null} onClick={() => downloadAllCarsXlsx()} className="w-full text-left px-3 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50">
+                                                                        {zippingGroupKey === 'all-cars-xlsx' ? <Loader2 className="w-3 h-3 animate-spin text-emerald-700" /> : <Download className="w-3 h-3 text-emerald-700" />} All Cars (XLSX — Sales, Shipped, Autosallon)
+                                                                    </button>
                                                                 </div>
                                                             )}
 
