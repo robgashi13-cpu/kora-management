@@ -3858,14 +3858,11 @@ export default function Dashboard() {
         setShowCarDocumentsForm(false);
     };
 
-    const canAccessSale = useCallback((sale: CarSale) => {
-        if (isAdmin) return true;
-        if (isFullSalesViewer(userProfile)) return true;
-        const normalizedUser = normalizeProfileName(userProfile);
-        const normalizedSoldBy = normalizeProfileName(sale.soldBy);
-        const normalizedSellerName = normalizeProfileName(sale.sellerName);
-        return normalizedSoldBy === normalizedUser || normalizedSellerName === normalizedUser;
-    }, [isAdmin, userProfile]);
+    const canAccessSale = useCallback((_sale: CarSale) => {
+        // All logged-in profiles can see all sales on all devices.
+        return true;
+    }, []);
+
 
     const filteredSales = React.useMemo(() => searchableSales.map(({ sale: s, searchBlob }) => ({ s, searchBlob })).filter(({ s, searchBlob }) => {
         if (!canAccessSale(s)) return false;
@@ -3875,14 +3872,13 @@ export default function Dashboard() {
             if (['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
         } else {
             if (activeCategory === 'SHIPPED') {
-                if (!isAdmin) return false;
                 if (s.status !== 'Shipped') return false;
             }
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
             if (activeCategory === 'AUTOSALLON') {
-                if (!isAdmin) return false;
                 if (s.status !== 'Autosallon') return false;
             }
+
         }
 
         const term = deferredSearchTerm.toLowerCase().trim();

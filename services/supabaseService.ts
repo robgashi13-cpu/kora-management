@@ -21,12 +21,11 @@ const encodeStorageKey = (value: string) => {
 
 const FULL_SALES_VIEWER_PROFILES = new Set(['shyqa', 'besi', 'renat']);
 
-const canAccessSale = (sale: CarSale, profile: string) => {
-    if (isAdminProfile(profile)) return true;
-    const normalizedProfile = normalizeProfileName(profile);
-    if (FULL_SALES_VIEWER_PROFILES.has(normalizedProfile.toLowerCase())) return true;
-    return normalizeProfileName(sale.soldBy) === normalizedProfile || normalizeProfileName(sale.sellerName) === normalizedProfile;
+const canAccessSale = (_sale: CarSale, _profile: string) => {
+    // All logged-in profiles can see every sale on every device.
+    return true;
 };
+
 
 export const createSupabaseClient = (url: string, key: string): SupabaseClient => {
     const cacheKey = `${url}::${key}`;
