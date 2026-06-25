@@ -3872,14 +3872,13 @@ export default function Dashboard() {
             if (['Shipped', 'Inspection', 'Autosallon'].includes(s.status)) return false;
         } else {
             if (activeCategory === 'SHIPPED') {
-                if (!isAdmin) return false;
                 if (s.status !== 'Shipped') return false;
             }
             if (activeCategory === 'INSPECTIONS' && s.status !== 'Inspection') return false;
             if (activeCategory === 'AUTOSALLON') {
-                if (!isAdmin) return false;
                 if (s.status !== 'Autosallon') return false;
             }
+
         }
 
         const term = deferredSearchTerm.toLowerCase().trim();
