@@ -7028,6 +7028,91 @@ export default function Dashboard() {
                                                 setZippingGroupKey(null);
                                             }
                                         };
+                                        const downloadAllCarsXlsx = async () => {
+                                            setShowAccountantPdfOptions(false);
+                                            const allCars = sales.slice();
+                                            if (allCars.length === 0) { alert('No cars to download.'); return; }
+                                            setZippingGroupKey('all-cars-xlsx');
+                                            try {
+                                                const XLSX = await import('xlsx');
+                                                const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+                                                const toRow = (s: CarSale) => {
+                                                    const cash = Number(s.amountPaidCash || 0);
+                                                    const bank = Number(s.amountPaidBank || 0);
+                                                    const dep = Number(s.deposit || 0);
+                                                    const korea = Number(s.amountPaidToKorea || 0);
+                                                    const sold = Number(s.soldPrice || 0);
+                                                    const cost = Number(s.costToBuy || 0);
+                                                    const clientPaid = cash + bank + dep;
+                                                    return {
+                                                        'Status': s.status || '',
+                                                        'Brand': s.brand || '',
+                                                        'Model': s.model || '',
+                                                        'Year': s.year || '',
+                                                        'KM': s.km || '',
+                                                        'Color': s.color || '',
+                                                        'Plate': s.plateNumber || '',
+                                                        'VIN': s.vin || '',
+                                                        'Seller': s.sellerName || '',
+                                                        'Buyer': s.buyerName || '',
+                                                        'Buyer ID': s.buyerPersonalId || '',
+                                                        'Shipping Name': s.shippingName || '',
+                                                        'Shipping Date': fmtDate(s.shippingDate),
+                                                        'Cost to Buy (€)': cost,
+                                                        'Sold Price (€)': sold,
+                                                        'Paid Cash (€)': cash,
+                                                        'Paid Bank (€)': bank,
+                                                        'Deposit (€)': dep,
+                                                        'Deposit Date': fmtDate(s.depositDate),
+                                                        'Services Cost (€)': Number(s.servicesCost || 0),
+                                                        'Tax (€)': Number(s.tax || 0),
+                                                        'Transport Cost (€)': Number(s.transportCost || 0),
+                                                        'Total Client Paid (€)': clientPaid,
+                                                        'Paid in Korea (€)': korea,
+                                                        'Paid Date Korea': fmtDate(s.paidDateToKorea),
+                                                        'Paid Date From Client': fmtDate(s.paidDateFromClient),
+                                                        'Balance Due (€)': sold - clientPaid,
+                                                        'Payment Method': s.paymentMethod || '',
+                                                        'Is Paid': s.isPaid ? 'YES' : 'NO',
+                                                        'Group': s.group || '',
+                                                        'Sold By': s.soldBy || '',
+                                                        'Invoice ID': s.invoiceId || '',
+                                                        'Notes': s.notes || '',
+                                                        'Created At': fmtDate(s.createdAt),
+                                                    };
+                                                };
+                                                const wb = XLSX.utils.book_new();
+                                                const addSheet = (name: string, items: CarSale[]) => {
+                                                    if (items.length === 0) return;
+                                                    const rows = items.map(toRow);
+                                                    const ws = XLSX.utils.json_to_sheet(rows);
+                                                    XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+                                                };
+                                                addSheet('All Cars', allCars);
+                                                addSheet('Sales', allCars.filter(s => s.status === 'New' || s.status === 'In Progress'));
+                                                addSheet('Shipped', allCars.filter(s => s.status === 'Shipped'));
+                                                addSheet('Autosallon', allCars.filter(s => s.status === 'Autosallon'));
+                                                addSheet('Completed', allCars.filter(s => s.status === 'Completed'));
+                                                addSheet('Inspection', allCars.filter(s => s.status === 'Inspection'));
+                                                addSheet('Archived', allCars.filter(s => s.status === 'Archived'));
+                                                addSheet('Cancelled', allCars.filter(s => s.status === 'Cancelled'));
+                                                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                                                const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `Libri_i_Shitblerjes_${new Date().toISOString().slice(0,10)}.xlsx`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                a.remove();
+                                                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                                            } catch (e) {
+                                                console.error('XLSX generation failed', e);
+                                                alert('Failed to generate Excel file.');
+                                            } finally {
+                                                setZippingGroupKey(null);
+                                            }
+                                        };
                                         const downloadFullDetailsPdf = async () => {
                                             setShowAccountantPdfOptions(false);
                                             if (allSalesForAccountant.length === 0) { alert('No cars to download.'); return; }
